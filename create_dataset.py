@@ -7,10 +7,15 @@ import matplotlib.pyplot as plt
 from glob import glob
 import multiprocessing
 from itertools import repeat
+import os
+import time
+import warnings
 
 def process_cif(input):
 
     (cif, number_of_points) = input
+
+    cif_number = int(os.path.basename(cif).split(".")[0])
 
     # NaCl for testing:
     #test_cif_file = r"C:\Users\hscho\BigFiles\OCD database\cif\1\00\00\1000041.cif"
@@ -102,7 +107,16 @@ def process_cif(input):
     if bravais not in ["aP", "mP", "mS", "oP", "oS", "oI", "oF", "tP", "tI", "cP", "cI", "cF", "hP", "hR"]:
         raise Exception("Bravais lattice {} not recognized.".format(bravais))
 
-    return (ys, bravais, group_number)
+    #plt.plot(xs, ys)
+    #plt.show()
+
+    return [cif_number, *ys, bravais, group_number]
+
+def track_job(job, update_interval=3):
+    while job._number_left > 0:
+        print("Tasks remaining = {0}".format(
+        job._number_left * job._chunksize))
+        time.sleep(update_interval)
 
 if __name__ == "__main__":
 
@@ -113,8 +127,14 @@ if __name__ == "__main__":
     number_of_points = 181
 
     pool = multiprocessing.Pool(processes=8)
-    result = pool.map(process_cif, zip(all_cifs[0:1000], repeat(number_of_points)))
+    handle = pool.map_async(process_cif, zip(all_cifs[0:10000], repeat(number_of_points)))
+    track_job(handle)
 
-    print(result)
+    result = handle.get()
 
-    # TODO: Remove nones from array
+    result = [x for x in result if x is not None]
+    result = np.array(result)
+
+    np.savetxt("dataset.csv", result, delimiter=" ", fmt="%s")
+
+    # TODO: Something is wrong with this one: 1008652
