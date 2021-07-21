@@ -1,0 +1,4 @@
+*.csv
+*.json
+trainings/
+old_datasets/

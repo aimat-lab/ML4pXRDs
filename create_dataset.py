@@ -10,8 +10,12 @@ from itertools import repeat
 import os
 import time
 import warnings
+import json
 
 def process_cif(input):
+
+    #warnings.filterwarnings(action='error')
+    warnings.filterwarnings(action='ignore')
 
     (cif, number_of_points) = input
 
@@ -42,7 +46,15 @@ def process_cif(input):
 
     calculator = XRDCalculator()
 
-    pattern = calculator.get_pattern(structure, scaled=False)
+    try:
+
+        pattern = calculator.get_pattern(structure, scaled=True)
+    
+    except Exception as error:
+
+        print("##### Error encountered calculating XRD of cif {}, skipping structure:".format(cif))
+        print(error)
+        return None
 
     xs = np.linspace(0, 90, number_of_points)
 
@@ -70,13 +82,16 @@ def process_cif(input):
 
     # determine space group:
 
-    analyzer = SpacegroupAnalyzer(structure)
-
     try:
+        analyzer = SpacegroupAnalyzer(structure)
+
         group_number = analyzer.get_space_group_number()
         crystal_system = analyzer.get_crystal_system()
+        space_group_symbol = analyzer.get_space_group_symbol()[0]
+
     except Exception as error:
-        print("Error encountered analyzing crystal structure, skipping structure:")
+
+        print("##### Error encountered analyzing crystal structure, skipping structure:")
         print(error)
         return None
 
@@ -95,9 +110,8 @@ def process_cif(input):
     elif crystal_system == "hexagonal" or crystal_system == "trigonal":
         crystal_system_letter = "h"
     else:
-        raise Exception("Crystal system {} not recognized.".format(crystal_system))
-
-    space_group_symbol = analyzer.get_space_group_symbol()[0]
+        print("Crystal system {} not recognized. Skipping structure.".format(crystal_system))
+        return None
 
     if space_group_symbol in "ABC":
         space_group_symbol = "S" # side centered
@@ -105,14 +119,15 @@ def process_cif(input):
     bravais = crystal_system_letter + space_group_symbol
 
     if bravais not in ["aP", "mP", "mS", "oP", "oS", "oI", "oF", "tP", "tI", "cP", "cI", "cF", "hP", "hR"]:
-        raise Exception("Bravais lattice {} not recognized.".format(bravais))
+        print("Bravais lattice {} not recognized. Skipping structure.".format(bravais))
+        return None
 
     #plt.plot(xs, ys)
     #plt.show()
 
     return [cif_number, *ys, bravais, group_number]
 
-def track_job(job, update_interval=3):
+def track_job(job, update_interval=5):
     while job._number_left > 0:
         print("Tasks remaining = {0}".format(
         job._number_left * job._chunksize))
@@ -123,18 +138,26 @@ if __name__ == "__main__":
     all_cifs = glob(r"C:\Users\hscho\BigFiles\OCD database\cif\**\*.cif", recursive=True)
     print("{} cif files found".format(len(all_cifs)))
 
+    #json.dump(all_cifs, open("filenames.json", "w"))
+    all_cifs = json.load(open("filenames_bak.json","r"))
+
     # number of points to use for angle range:
     number_of_points = 181
 
     pool = multiprocessing.Pool(processes=8)
-    handle = pool.map_async(process_cif, zip(all_cifs[0:10000], repeat(number_of_points)))
+
+    start = time.time()
+
+    handle = pool.map_async(process_cif, zip(all_cifs[400000:], repeat(number_of_points)))
     track_job(handle)
 
     result = handle.get()
 
+    end = time.time()
+
+    print("##### Result obtained after {} s".format(end-start))
+
     result = [x for x in result if x is not None]
     result = np.array(result)
 
-    np.savetxt("dataset.csv", result, delimiter=" ", fmt="%s")
-
-    # TODO: Something is wrong with this one: 1008652
+    np.savetxt("dataset_8.csv", result, delimiter=" ", fmt="%s")
