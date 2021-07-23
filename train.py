@@ -6,7 +6,7 @@ import datetime
 import os
 
 filenames = ["dataset_1.csv", "dataset_2.csv", "dataset_3.csv", "dataset_4.csv", "dataset_5.csv", "dataset_6.csv", "dataset_7.csv", "dataset_8.csv"]
-model = "lstm" # also possible: lstm
+model = "fully_connected" # also possible: lstm, fully_connected
 
 x = None
 bravais_str = None
@@ -44,7 +44,9 @@ assert not np.any(np.isnan(y))
 print("##### Loaded {} training points".format(len(x)))
 
 # when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
-x = np.expand_dims(x, axis=2)
+
+if model == "lstm" or model == "conv":
+    x = np.expand_dims(x, axis=2)
 
 # Split into train, validation, test set
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
@@ -53,6 +55,7 @@ x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 if model == "lstm":
 
     model = tf.keras.models.Sequential([
+
         tf.keras.layers.LSTM(32, return_sequences=False, input_shape=(181, 1)),
         tf.keras.layers.Dropout(0.3),
         tf.keras.layers.Dense(512),
@@ -64,20 +67,30 @@ elif model == "conv":
 
     model = tf.keras.models.Sequential([
 
-        tf.keras.layers.Conv1D(32, 40, input_shape=(181, 1)),
+        tf.keras.layers.Conv1D(16, 40, input_shape=(181, 1)),
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.MaxPooling1D(pool_size=2, strides=2),
 
-        tf.keras.layers.Conv1D(32, 20, input_shape=(181, 1)),
+        tf.keras.layers.Conv1D(16, 20, input_shape=(181, 1)),
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.MaxPooling1D(pool_size=2, strides=2),
 
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.0007)),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Dense(1014, activation='relu', kernel_regularizer=regularizers.l2(0.0007)),
+        tf.keras.layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.0007)),
         tf.keras.layers.Dropout(0.3),
         tf.keras.layers.Dense(14)
+
+    ])
+
+elif model == "fully_connected":
+
+    model = tf.keras.models.Sequential([
+
+        tf.keras.layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.0007), input_shape=(181,)),
+        tf.keras.layers.Dropout(0.3),
+        tf.keras.layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.0007)),
+        tf.keras.layers.Dropout(0.3),
+        tf.keras.layers.Dense(14, activation='relu', kernel_regularizer=regularizers.l2(0.0007))
 
     ])
 
