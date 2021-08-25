@@ -2,3 +2,4 @@
 *.json
 trainings/
 old_datasets/
+tuner/
