@@ -9,8 +9,6 @@ import os
 from keras_tuner import BayesianOptimization
 from keras_tuner import Hyperband
 
-print(os.getcwd())
-
 filenames = ["dataset_1.csv", "dataset_2.csv", "dataset_3.csv", "dataset_4.csv", "dataset_5.csv", "dataset_6.csv", "dataset_7.csv", "dataset_8.csv"]
 
 model_str = "fully_connected" # possible: conv, lstm, fully_connected

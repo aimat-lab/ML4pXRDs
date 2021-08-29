@@ -1,25 +1,22 @@
 from pymatgen.io.cif import CifParser
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 import numpy as np
 import matplotlib.pyplot as plt
 from glob import glob
 import multiprocessing
-from itertools import repeat
 import os
 import time
 import warnings
 import json
+import math
 
-def process_cif(input):
+def process_cif(cif):
 
     #warnings.filterwarnings(action='error')
     warnings.filterwarnings(action='ignore')
 
-    (cif, number_of_points) = input
-
-    cif_number = int(os.path.basename(cif).split(".")[0])
+    cif_number = int(os.path.basename(cif).split(".")[0].split("_")[-1])
 
     # NaCl for testing:
     #test_cif_file = r"C:\Users\hscho\BigFiles\OCD database\cif\1\00\00\1000041.cif"
@@ -56,7 +53,8 @@ def process_cif(input):
         print(error)
         return None
 
-    xs = np.linspace(0, 90, number_of_points)
+    #xs = np.linspace(0, 90, number_of_points)
+    xs = np.linspace(5, 90, 8501) # use 0.01 steps
 
     def smeared_peaks(xs):
 
@@ -64,7 +62,7 @@ def process_cif(input):
 
         for x, y in zip(pattern.x, pattern.y):
 
-            sigma = 0.2
+            sigma = 0.1
             mean = x
             
             ys = 1/(sigma*np.sqrt(2*np.pi))*np.exp(-1/(2*sigma**2)*(xs-mean)**2)
@@ -83,6 +81,7 @@ def process_cif(input):
     # determine space group:
 
     try:
+
         analyzer = SpacegroupAnalyzer(structure)
 
         group_number = analyzer.get_space_group_number()
@@ -129,35 +128,54 @@ def process_cif(input):
 
 def track_job(job, update_interval=5):
     while job._number_left > 0:
-        print("Tasks remaining = {0}".format(
+        print("Tasks remaining in this batch of 10000: {0}".format(
         job._number_left * job._chunksize))
         time.sleep(update_interval)
 
 if __name__ == "__main__":
 
-    all_cifs = glob(r"C:\Users\hscho\BigFiles\OCD database\cif\**\*.cif", recursive=True)
+    output_dir = "databases/icsd/"
+
+    if not os.path.exists(os.path.join(output_dir, "filenames.json")):
+
+        #all_cifs = glob(r"C:\Users\hscho\BigFiles\OCD database\cif\**\*.cif", recursive=True)
+        all_cifs = glob(r"/mnt/c/Users/legion/BigFiles/ICSD_cleaned/*.cif", recursive=True)
+        json.dump(all_cifs, open(os.path.join(output_dir, "filenames.json"), "w"))
+
+    else:
+
+        all_cifs = json.load(open(os.path.join(output_dir, "filenames.json"), "r"))
+
     print("{} cif files found".format(len(all_cifs)))
 
-    #json.dump(all_cifs, open("filenames.json", "w"))
-    all_cifs = json.load(open("filenames_bak.json","r"))
+    # put 10000 entries into one file:
+    for i in range(0, math.ceil(len(all_cifs) / 10000)):
+        
+        if os.path.exists(os.path.join(output_dir, "dataset_" + str(i) + ".csv")):
+            continue
+        
+        if ((i+1) * 10000) < len(all_cifs):
+            end_index = (i+1)*10000 
+            cifs = all_cifs[i*10000:end_index]
+        else:
+            cifs = all_cifs[i*10000:]
+            end_index = len(all_cifs)
 
-    # number of points to use for angle range:
-    number_of_points = 181
+        pool = multiprocessing.Pool(processes=8)
 
-    pool = multiprocessing.Pool(processes=8)
+        start = time.time()
 
-    start = time.time()
+        handle = pool.map_async(process_cif, cifs)
 
-    handle = pool.map_async(process_cif, zip(all_cifs[400000:], repeat(number_of_points)))
-    track_job(handle)
+        track_job(handle)
 
-    result = handle.get()
+        result = handle.get()
 
-    end = time.time()
+        end = time.time()
 
-    print("##### Result obtained after {} s".format(end-start))
+        result = [x for x in result if x is not None]
+        result = np.array(result)
 
-    result = [x for x in result if x is not None]
-    result = np.array(result)
+        np.savetxt(os.path.join(output_dir, "dataset_" + str(i) + ".csv"), result, delimiter=" ", fmt="%s")
 
-    np.savetxt("dataset_8.csv", result, delimiter=" ", fmt="%s")
+        print("##### Calculated from cif {} to {} (total: {}) in {} s".format(i*10000, end_index, len(all_cifs), end-start))
