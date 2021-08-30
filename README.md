@@ -1,7 +1,7 @@
 # Inference of Bravais Lattice Type from XRD Patterns
 
 This projects aims to extract the bravais lattice type from a given xrd pattern.
-This is done with different types of neural networks (convolutional and LSTM at the moment)
+This is done with different types of neural networks (fully connected, convolutional and lstm at the moment)
 with varying accuracy. The goal of this project is mostly testing purposes, the aim 
 is not to be able to infere the bravais lattice type from actual noisy experimental data.
 

@@ -8,45 +8,77 @@ import datetime
 import os
 from keras_tuner import BayesianOptimization
 from keras_tuner import Hyperband
+from glob import glob
+import pandas as pd
 
-filenames = ["dataset_1.csv", "dataset_2.csv", "dataset_3.csv", "dataset_4.csv", "dataset_5.csv", "dataset_6.csv", "dataset_7.csv", "dataset_8.csv"]
+# filenames = ["dataset_1.csv", "dataset_2.csv", "dataset_3.csv", "dataset_4.csv", "dataset_5.csv", "dataset_6.csv", "dataset_7.csv", "dataset_8.csv"]
+filenames = glob(r"databases/icsd/*.csv")[0:10]
+# number_of_values = 181
+number_of_values = 9001
 
-model_str = "fully_connected" # possible: conv, lstm, fully_connected
+model_str = "conv"  # possible: conv, lstm, fully_connected
 tune_hyperparameters = True
-tuner_str = "hyperband" # possible: hyperband and bayesian
+tuner_str = "hyperband"  # possible: hyperband and bayesian
 
-if tune_hyperparameters:
-    filenames = filenames[0:3]
+# if tune_hyperparameters:
+#    filenames = filenames[0:3]
 
-x = None 
+x = None
 bravais_str = None
 space_group_number = None
 
-for filename in filenames:
-    x_more = np.loadtxt(filename, delimiter=' ', usecols=list(range(1,182))) 
+for i, filename in enumerate(filenames):
+
+    print()
+    print("Loading csv file {} of {}".format(i + 1, len(filenames)))
+
+    data = pd.read_csv(filename, delimiter=" ", header=None)
+
+    # x_more = np.loadtxt(filename, delimiter=' ', usecols=list(range(1, number_of_values + 1))) # too slow
+    x_more = np.array(data[range(1, number_of_values + 1)])
+
     if x is None:
         x = x_more
     else:
         x = np.append(x, x_more, axis=0)
 
-    bravais_str_more = np.loadtxt(filename, delimiter=' ', usecols=[182], dtype=str)
+    # bravais_str_more = np.loadtxt(filename, delimiter=' ', usecols=[number_of_values + 1], dtype=str) # too slow
+    bravais_str_more = np.array(data[number_of_values + 1], dtype=str)
     if bravais_str is None:
         bravais_str = bravais_str_more
     else:
         bravais_str = np.append(bravais_str, bravais_str_more, axis=0)
 
-    space_group_number_more = np.loadtxt(filename, delimiter=' ', usecols=[183], dtype=int)
+    # space_group_number_more = np.loadtxt(filename, delimiter=' ', usecols=[number_of_values + 2], dtype=int) # too slow
+    space_group_number_more = np.array(data[number_of_values + 2], dtype=int)
     if space_group_number is None:
         space_group_number = space_group_number_more
     else:
-        space_group_number = np.append(space_group_number, space_group_number_more, axis=0)
+        space_group_number = np.append(
+            space_group_number, space_group_number_more, axis=0
+        )
 
-space_group_number = space_group_number - 1 # make integers zero-based
+space_group_number = space_group_number - 1  # make integers zero-based
 
-bravais_labels = ["aP", "mP", "mS", "oP", "oS", "oI", "oF", "tP", "tI", "cP", "cI", "cF", "hP", "hR"]
+bravais_labels = [
+    "aP",
+    "mP",
+    "mS",
+    "oP",
+    "oS",
+    "oI",
+    "oF",
+    "tP",
+    "tI",
+    "cP",
+    "cI",
+    "cF",
+    "hP",
+    "hR",
+]
 y = np.array([int(bravais_labels.index(name)) for name in bravais_str])
 
-x = x / 100 # set maximum volume under a peak to 1
+x = x / 100  # set maximum volume under a peak to 1
 
 assert not np.any(np.isnan(x))
 assert not np.any(np.isnan(y))
@@ -62,20 +94,21 @@ if model_str == "lstm" or model_str == "conv":
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 
-print(np.shape(x_train))
-
 if model_str == "lstm":
 
-    model = tf.keras.models.Sequential([
-
-        tf.keras.layers.LSTM(32, return_sequences=False, input_shape=(181, 1)),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Dense(256),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Dense(256),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Dense(14)
-    ])
+    model = tf.keras.models.Sequential(
+        [
+            tf.keras.layers.LSTM(
+                32, return_sequences=False, input_shape=(number_of_values, 1)
+            ),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(256),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(256),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(14),
+        ]
+    )
 
 elif model_str == "conv":
 
@@ -84,40 +117,66 @@ elif model_str == "conv":
         model = tf.keras.models.Sequential()
 
         for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=4)):
-            
+
             if i == 0:
-                model.add(tf.keras.layers.Conv1D(hp.Int("number_of_filters", min_value=10, max_value=200, step=10), 
-                        hp.Choice("filter_size", [3,5,7,9]), input_shape=(181, 1)))
+                model.add(
+                    tf.keras.layers.Conv1D(
+                        hp.Int(
+                            "number_of_filters", min_value=10, max_value=200, step=10
+                        ),
+                        hp.Choice("filter_size", [3, 5, 7, 9]),
+                        input_shape=(number_of_values, 1),
+                    )
+                )
             else:
-                model.add(tf.keras.layers.Conv1D(hp.Int("number_of_filters", min_value=10, max_value=200, step=10), 
-                        hp.Choice("filter_size", [3,5,7,9])))
+                model.add(
+                    tf.keras.layers.Conv1D(
+                        hp.Int(
+                            "number_of_filters", min_value=10, max_value=200, step=10
+                        ),
+                        hp.Choice("filter_size", [3, 5, 7, 9]),
+                    )
+                )
 
             model.add(tf.keras.layers.BatchNormalization())
-            #model.add(tf.keras.layers.MaxPooling1D(pool_size=hp.Choice("pool_size", [3,5,7,9]), strides=hp.Choice("pool_size", [3,5,7,9])))
+            # model.add(tf.keras.layers.MaxPooling1D(pool_size=hp.Choice("pool_size", [3,5,7,9]), strides=hp.Choice("pool_size", [3,5,7,9])))
             model.add(tf.keras.layers.MaxPooling1D(pool_size=2, strides=2))
 
         model.add(tf.keras.layers.Flatten())
 
         for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=10)):
 
-            model.add(tf.keras.layers.Dense(hp.Int("number_of_dense_units", min_value=32, max_value=512, step=32), 
-                        activation='relu', kernel_regularizer=regularizers.l2(hp.Float('l2_reg', 0, 0.005, step=0.0001))))
-            model.add(tf.keras.layers.Dropout(hp.Float('dropout', 0, 0.5, step=0.1, default=0.5)))
+            model.add(
+                tf.keras.layers.Dense(
+                    hp.Int(
+                        "number_of_dense_units", min_value=32, max_value=512, step=32
+                    ),
+                    activation="relu",
+                    kernel_regularizer=regularizers.l2(
+                        hp.Float("l2_reg", 0, 0.005, step=0.0001)
+                    ),
+                )
+            )
+            model.add(
+                tf.keras.layers.Dropout(
+                    hp.Float("dropout", 0, 0.5, step=0.1, default=0.5)
+                )
+            )
 
         tf.keras.layers.Dense(14)
 
-        optimizer_str=hp.Choice('optimizer', values=['adam', 'adagrad', 'SGD'])
+        optimizer_str = hp.Choice("optimizer", values=["adam", "adagrad", "SGD"])
 
-        if optimizer_str == 'adam':
-            optimizer=tf.keras.optimizers.Adam(
+        if optimizer_str == "adam":
+            optimizer = tf.keras.optimizers.Adam(
                 hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
             )
-        elif optimizer_str == 'adagrad':
-            optimizer=tf.keras.optimizers.Adagrad(
+        elif optimizer_str == "adagrad":
+            optimizer = tf.keras.optimizers.Adagrad(
                 hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
             )
-        elif optimizer_str == 'SGD':
-            optimizer=tf.keras.optimizers.SGD(
+        elif optimizer_str == "SGD":
+            optimizer = tf.keras.optimizers.SGD(
                 hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
             )
 
@@ -127,41 +186,55 @@ elif model_str == "conv":
             metrics=["accuracy"],
         )
 
+        model.summary()
+
         return model
+
 
 elif model_str == "fully_connected":
 
     def build_model(hp):
-        
+
         model = tf.keras.models.Sequential()
 
         for i in range(0, hp.Int("number_of_layers", min_value=1, max_value=15)):
-            
+
             if i == 0:
-                tf.keras.layers.Dense(hp.Int("units_" + str(i), min_value=64, max_value=2048, step=64), activation='relu', 
-                                    kernel_regularizer=regularizers.l2(hp.Float('l2_reg', 0, 0.005, step=0.0001)), input_shape=(181,))
+                tf.keras.layers.Dense(
+                    hp.Int("units_" + str(i), min_value=64, max_value=2048, step=64),
+                    activation="relu",
+                    kernel_regularizer=regularizers.l2(
+                        hp.Float("l2_reg", 0, 0.005, step=0.0001)
+                    ),
+                    input_shape=(number_of_values,),
+                )
 
             else:
 
-                tf.keras.layers.Dense(hp.Int("units_" + str(i), min_value=64, max_value=2048, step=64), activation='relu', 
-                                    kernel_regularizer=regularizers.l2(hp.Float('l2_reg', 0, 0.005, step=0.0001)))
+                tf.keras.layers.Dense(
+                    hp.Int("units_" + str(i), min_value=64, max_value=2048, step=64),
+                    activation="relu",
+                    kernel_regularizer=regularizers.l2(
+                        hp.Float("l2_reg", 0, 0.005, step=0.0001)
+                    ),
+                )
 
-            tf.keras.layers.Dropout(hp.Float('dropout', 0, 0.5, step=0.1, default=0.2))
+            tf.keras.layers.Dropout(hp.Float("dropout", 0, 0.5, step=0.1, default=0.2))
 
         tf.keras.layers.Dense(14)
 
-        optimizer_str=hp.Choice('optimizer', values=['adam', 'adagrad', 'SGD'])
+        optimizer_str = hp.Choice("optimizer", values=["adam", "adagrad", "SGD"])
 
-        if optimizer_str == 'adam':
-            optimizer=tf.keras.optimizers.Adam(
+        if optimizer_str == "adam":
+            optimizer = tf.keras.optimizers.Adam(
                 hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
             )
-        elif optimizer_str == 'adagrad':
-            optimizer=tf.keras.optimizers.Adagrad(
+        elif optimizer_str == "adagrad":
+            optimizer = tf.keras.optimizers.Adagrad(
                 hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
             )
-        elif optimizer_str == 'SGD':
-            optimizer=tf.keras.optimizers.SGD(
+        elif optimizer_str == "SGD":
+            optimizer = tf.keras.optimizers.SGD(
                 hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
             )
 
@@ -172,6 +245,7 @@ elif model_str == "fully_connected":
         )
 
         return model
+
 
 else:
     raise Exception("Model not recognized.")
@@ -180,8 +254,8 @@ if tuner_str == "bayesian":
 
     class MyTuner(BayesianOptimization):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs['batch_size'] = 500
-            kwargs['epochs'] = 10
+            kwargs["batch_size"] = 100
+            kwargs["epochs"] = 10
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
     tuner = MyTuner(
@@ -192,15 +266,15 @@ if tuner_str == "bayesian":
         overwrite=False,
         project_name="bayesian_opt_" + model_str,
         directory="tuner",
-        num_initial_points=3*9,
+        num_initial_points=3 * 9,
     )
 
 elif tuner_str == "hyperband":
 
     class MyTuner(Hyperband):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs['batch_size'] = 500
-            kwargs['epochs'] = 10
+            kwargs["batch_size"] = 100
+            kwargs["epochs"] = 10
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
     tuner = MyTuner(
@@ -210,7 +284,7 @@ elif tuner_str == "hyperband":
         overwrite=False,
         directory="tuner",
         project_name="hyperband_opt_" + model_str,
-        hyperband_iterations=1000
+        hyperband_iterations=1000,
     )
 
 if tune_hyperparameters:
@@ -239,24 +313,28 @@ else:
     # use tensorboard to inspect the graph, write log file periodically:
     out_dir = training_outdir + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     log_dir = out_dir + "/log"
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(
+        log_dir=log_dir, histogram_freq=1
+    )
 
     # periodically save the weights to a checkpoint file:
     checkpoint_path = out_dir + "/cp.ckpt"
     checkpoint_dir = os.path.dirname(checkpoint_path)
-    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
-                                                    verbose=1, save_weights_only=True)
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_path, verbose=1, save_weights_only=True
+    )
 
-
-    model.fit(x_train, y_train, epochs=1000, batch_size=200, validation_data=(x_val, y_val), 
-    callbacks=[tensorboard_callback, cp_callback])
+    model.fit(
+        x_train,
+        y_train,
+        epochs=1000,
+        batch_size=200,
+        validation_data=(x_val, y_val),
+        callbacks=[tensorboard_callback, cp_callback],
+    )
 
     print("\nOn test dataset:")
-    model.evaluate(x_test,  y_test, verbose=2)
+    model.evaluate(x_test, y_test, verbose=2)
     print()
 
     model.save(out_dir + "/model")
-
-# TODO: 
-# - Implement this also for lstm
-# - Can I do the search without saving the model as a checkpoint?
