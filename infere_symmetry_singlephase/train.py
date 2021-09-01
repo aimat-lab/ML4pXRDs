@@ -10,15 +10,22 @@ from keras_tuner import BayesianOptimization
 from keras_tuner import Hyperband
 from glob import glob
 import pandas as pd
+import pickle
 
 # filenames = ["dataset_1.csv", "dataset_2.csv", "dataset_3.csv", "dataset_4.csv", "dataset_5.csv", "dataset_6.csv", "dataset_7.csv", "dataset_8.csv"]
-filenames = glob(r"databases/icsd/*.csv")[0:10]
+csv_filenames = glob(r"databases/icsd/*.csv")
 # number_of_values = 181
-number_of_values = 9001
+number_of_values_initial = 9001
+skip_values = 5
+number_of_values = (number_of_values_initial - 1) // skip_values
 
 model_str = "conv"  # possible: conv, lstm, fully_connected
 tune_hyperparameters = True
 tuner_str = "hyperband"  # possible: hyperband and bayesian
+
+read_from_csv = False
+pickle_database = False
+pickle_path = "databases/icsd/database"
 
 # if tune_hyperparameters:
 #    filenames = filenames[0:3]
@@ -27,36 +34,51 @@ x = None
 bravais_str = None
 space_group_number = None
 
-for i, filename in enumerate(filenames):
+if read_from_csv:
 
-    print()
-    print("Loading csv file {} of {}".format(i + 1, len(filenames)))
+    for i, filename in enumerate(csv_filenames):
 
-    data = pd.read_csv(filename, delimiter=" ", header=None)
+        print()
+        print("Loading csv file {} of {}".format(i + 1, len(csv_filenames)))
 
-    # x_more = np.loadtxt(filename, delimiter=' ', usecols=list(range(1, number_of_values + 1))) # too slow
-    x_more = np.array(data[range(1, number_of_values + 1)])
+        data = pd.read_csv(filename, delimiter=" ", header=None)
 
-    if x is None:
-        x = x_more
-    else:
-        x = np.append(x, x_more, axis=0)
+        # x_more = np.loadtxt(filename, delimiter=' ', usecols=list(range(1, number_of_values + 1))) # too slow
+        x_more = np.array(data[range(1, number_of_values_initial + 1)])[
+            :, ::skip_values
+        ]
 
-    # bravais_str_more = np.loadtxt(filename, delimiter=' ', usecols=[number_of_values + 1], dtype=str) # too slow
-    bravais_str_more = np.array(data[number_of_values + 1], dtype=str)
-    if bravais_str is None:
-        bravais_str = bravais_str_more
-    else:
-        bravais_str = np.append(bravais_str, bravais_str_more, axis=0)
+        if x is None:
+            x = x_more
+        else:
+            x = np.append(x, x_more, axis=0)
 
-    # space_group_number_more = np.loadtxt(filename, delimiter=' ', usecols=[number_of_values + 2], dtype=int) # too slow
-    space_group_number_more = np.array(data[number_of_values + 2], dtype=int)
-    if space_group_number is None:
-        space_group_number = space_group_number_more
-    else:
-        space_group_number = np.append(
-            space_group_number, space_group_number_more, axis=0
+        # bravais_str_more = np.loadtxt(filename, delimiter=' ', usecols=[number_of_values + 1], dtype=str) # too slow
+        bravais_str_more = np.array(data[number_of_values_initial + 1], dtype=str)
+        if bravais_str is None:
+            bravais_str = bravais_str_more
+        else:
+            bravais_str = np.append(bravais_str, bravais_str_more, axis=0)
+
+        # space_group_number_more = np.loadtxt(filename, delimiter=' ', usecols=[number_of_values + 2], dtype=int) # too slow
+        space_group_number_more = np.array(
+            data[number_of_values_initial + 2], dtype=int
         )
+        if space_group_number is None:
+            space_group_number = space_group_number_more
+        else:
+            space_group_number = np.append(
+                space_group_number, space_group_number_more, axis=0
+            )
+
+else:
+
+    x, bravais_str, space_group_number = pickle.load(open(pickle_path, "rb"))
+
+if pickle_database:
+
+    database = (x, bravais_str, space_group_number)
+    pickle.dump(database, open(pickle_path, "wb"))
 
 space_group_number = space_group_number - 1  # make integers zero-based
 
@@ -79,6 +101,9 @@ bravais_labels = [
 y = np.array([int(bravais_labels.index(name)) for name in bravais_str])
 
 x = x / 100  # set maximum volume under a peak to 1
+
+# x = x[:, ::50]
+# print(x.shape)
 
 assert not np.any(np.isnan(x))
 assert not np.any(np.isnan(y))
@@ -186,8 +211,6 @@ elif model_str == "conv":
             metrics=["accuracy"],
         )
 
-        model.summary()
-
         return model
 
 
@@ -273,7 +296,7 @@ elif tuner_str == "hyperband":
 
     class MyTuner(Hyperband):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = 100
+            kwargs["batch_size"] = 500
             kwargs["epochs"] = 10
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
