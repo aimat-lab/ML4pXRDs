@@ -1,12 +1,13 @@
-# Inference of Bravais Lattice Type from XRD Patterns
+# Inference of Crystal Symmetry from XRD Diffractograms
 
-This projects aims to extract the bravais lattice type from a given xrd pattern.
+This part of the project aims to extract the bravais lattice type (14 categories) from a given XRD pattern.
 This is done with different types of neural networks (fully connected, convolutional and lstm at the moment)
-with varying accuracy. The goal of this project is mostly testing purposes, the aim 
-is not to be able to infere the bravais lattice type from actual noisy experimental data.
+with varying accuracy. The goal, for now, is a proof of concept. 
+
+Actual noisy experimental data with background and space group prediction will come later.
 
 ## The dataset
 The XRD patterns in the dataset for training were simulated using the python library `pymatgen`.
-The structures were taken from the `Crystallography Open Database` (476894 structures).
-You can use the script `create_dataset.py` to simulate your own dataset (you need to download the CIF files first). The simulation, however,
-takes a couple hundred CPU-hours. If you just want to play around with the dataset, I can upload it somewhere, just contact me.
+The structures were taken from the ICSD database (239679 structures after clearning by Timo Sommer (thanks!)).
+
+The script `create_dataset.py` can be used to simulate the dataset from the cif files of the database.
