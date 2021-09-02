@@ -1,6 +1,6 @@
 *.csv
 *.json
-trainings/
-old_datasets/
-tuner/
-databases/
+infere_symmetry_singlephase/trainings/
+infere_symmetry_singlephase/old_datasets/
+infere_symmetry_singlephase/tuner/
+infere_symmetry_singlephase/databases/
