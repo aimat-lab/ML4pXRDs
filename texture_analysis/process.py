@@ -66,15 +66,6 @@ def baseline_als(y, lam=3 * 10 ** 3, p=0.3, niter=10):
     return z
 
 
-test_file = "data/XRD_6_component_systems.csv"
-df = pd.read_csv(test_file, sep=";")
-
-xs = np.array(df.iloc[:, list(range(0, len(df.columns.values), 2))])
-ys = np.array(df.iloc[:, list(range(1, len(df.columns.values), 2))])
-
-names = df.columns.values[1::2]
-
-
 def fit_baseline(xs, ys):
 
     # TODO: Maybe find even better parameters for this
@@ -92,7 +83,72 @@ def fit_baseline(xs, ys):
     return ys_baseline
 
 
+def gaussian(x, a, x0, sigma):
+    return (
+        a
+        * 1
+        / (sigma * np.sqrt(2 * np.pi))
+        * np.exp(-((x - x0) ** 2) / (2 * sigma ** 2))
+    )
+
+
+# TODO: Maybe at some point fit a mixture of Lorentzian and Gaussian instead of only Gaussian
+def fit_gaussian(peak_index, xs, ys):
+
+    # find first index where function increases, again (to the left and to the right)
+
+    last_entry = ys[peak_index]
+    for i in range(peak_index + 1, len(ys)):
+        if ys[i] > last_entry:
+            if xs[i] - xs[peak_index] > 0.5:
+                break
+        else:
+            last_entry = ys[i]
+    right = i
+
+    last_entry = ys[peak_index]
+    for i in reversed(range(0, peak_index)):
+        if ys[i] > last_entry:
+            if xs[peak_index] - xs[i] > 0.5:
+                break
+        else:
+            last_entry = ys[i]
+    left = i
+
+    plt.scatter([xs[left], xs[right]], [ys[left], ys[right]], c="r")
+
+    fit = curve_fit(
+        gaussian,
+        xs[left : right + 1],
+        ys[left : right + 1],
+        p0=[100, xs[peak_index], 0.3],
+    )
+
+    plt.plot(xs, gaussian(xs, *fit[0]))
+
+    return fit[0][0]  # return the area
+
+
+def peak_to_str(fit_results):
+    return "Area: {}\nMean: {}\nSigma: {}\nFWHM:{}".format(
+        str(fit_results[0]),
+        str(fit_results[1]),
+        str(fit_results[2]),
+        str(2 * np.sqrt(2 * np.ln(2)) * fit_results[2]),
+    )
+
+
+data_file_path = "data/XRD_6_component_systems.csv"
+df = pd.read_csv(data_file_path, sep=";")
+
+xs = np.array(df.iloc[:, list(range(0, len(df.columns.values), 2))])
+ys = np.array(df.iloc[:, list(range(1, len(df.columns.values), 2))])
+
+names = df.columns.values[1::2]
+
 ratios = []
+properties_peak_0 = []  # biggest peak
+properties_peak_1 = []  # second biggest peak
 
 for i in range(0, xs.shape[1]):
     # for i in range(0, 5):
@@ -140,70 +196,79 @@ for i in range(0, xs.shape[1]):
     plt.ylabel("Intensity")
     plt.title("Smoothed, baseline removed, with marked peaks and gauss fit")
 
-    def gaussian(x, a, x0, sigma):
-        return (
-            a
-            * 1
-            / (sigma * np.sqrt(2 * np.pi))
-            * np.exp(-((x - x0) ** 2) / (2 * sigma ** 2))
+    areas = []
+    for peak in peaks:
+        area = fit_gaussian(peak, xs_current, ys_smoothed)
+        areas.append(area)
+    zipped_sorted = sorted(zip(areas, peaks), key=lambda x: x[0])
+
+    text += "\nBiggest peak:\n"
+    if len(peaks) > 0:
+        text += peak_to_str(zipped_sorted[-1][0]) + "\n"
+        properties_peak_0.append(
+            (
+                zipped_sorted[-1][0][0],
+                zipped_sorted[-1][0][1],
+                zipped_sorted[-1][0][2],
+                2 * np.sqrt(2 * np.ln(2)) * zipped_sorted[-1][0][2],
+            )
         )
+    else:
+        text += "Not found\n"
+        properties_peak_0.append(("None", "None", "None", "None"))
 
-    # TODO: Maybe at some point fit a mixture of Lorentzian and Gaussian instead of only Gaussian
-    def fit_gaussian(peak_index, xs, ys, min_distance=0.5):
-
-        # find first index where function increases, again (to the left and to the right)
-
-        last_entry = ys[peak_index]
-        for i in range(peak_index + 1, len(ys)):
-            if ys[i] > last_entry:
-                if xs[i] - xs[peak_index] > 0.5:
-                    break
-            else:
-                last_entry = ys[i]
-        right = i
-
-        last_entry = ys[peak_index]
-        for i in reversed(range(0, peak_index)):
-            if ys[i] > last_entry:
-                if xs[peak_index] - xs[i] > 0.5:
-                    break
-            else:
-                last_entry = ys[i]
-        left = i
-
-        plt.scatter([xs[left], xs[right]], [ys[left], ys[right]], c="r")
-
-        fit = curve_fit(
-            gaussian,
-            xs[left : right + 1],
-            ys[left : right + 1],
-            p0=[100, xs[peak_index], 0.3],
-        )
-
-        plt.plot(xs, gaussian(xs, *fit[0]))
-
-        return fit[0][0]  # return the area
-
+    text += "\n\nSecond biggest peak:\n"
     if len(peaks) > 1:
-        areas = []
+        text += peak_to_str(zipped_sorted[-2][0]) + "\n"
+        properties_peak_1.append(
+            (
+                zipped_sorted[-2][0][0],
+                zipped_sorted[-2][0][1],
+                zipped_sorted[-2][0][2],
+                2 * np.sqrt(2 * np.ln(2)) * zipped_sorted[-2][0][2],
+            )
+        )
+    else:
+        text += "Not found\n"
+        properties_peak_1.append(("None", "None", "None", "None"))
 
-        for peak in peaks:
-            area = fit_gaussian(peak, xs_current, ys_smoothed)
-            areas.append(area)
-
-        zipped_sorted = sorted(zip(areas, peaks), key=lambda x: x[0])
+    text = "\nRatio of the two highest peaks:\n"
+    if len(peaks) > 1:
 
         ratio = zipped_sorted[1][0] / zipped_sorted[0][0]
-        ax[1, 1].text(0.1, 0.5, "Ratio of two highest peaks:\n" + str(ratio))
+        text += str(ratio) + "\n"
         ratios.append(ratio)
 
     else:
 
-        ax[1, 1].text(0.1, 0.5, "Found less than two peaks.")
+        text += "Found less than two peaks.\n"
         ratios.append("None")
+
+    ax[1, 1].text(0.1, 0.5, text)
 
     plt.savefig("plots/" + names[i] + ".pdf", dpi=100)
 
     with open("ratios.csv", "w") as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=";")
-        csv_writer.writerows(zip(names, ratios))
+
+        # transpose the lists:
+        properties_peak_0 = list(map(list, zip(*properties_peak_0)))
+        properties_peak_1 = list(map(list, zip(*properties_peak_1)))
+
+        header = [
+            "Sample name",
+            "Ratio",
+            "Peak_0 area",
+            "Peak_0 mean",
+            "Peak_0 sigma",
+            "Peak_0 FWHM",
+            "Peak_1 area",
+            "Peak_1 mean",
+            "Peak_1 sigma",
+            "Peak_1 FWHM",
+        ]
+
+        data = zip(names, ratios, *properties_peak_0, *properties_peak_1)
+
+        csv_writer.writerow(header)
+        csv_writer.writerows(data)
