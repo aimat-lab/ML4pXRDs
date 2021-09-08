@@ -8,6 +8,7 @@ from scipy.sparse import linalg
 from numpy.linalg import norm
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
+import csv
 
 # both of the following functions are taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
 # TODO: Maybe use this library for baseline removal in the future: https://github.com/StatguyUser/BaselineRemoval (algorithm should be the same, though)
@@ -74,62 +75,80 @@ ys = np.array(df.iloc[:, list(range(1, len(df.columns.values), 2))])
 names = df.columns.values[1::2]
 
 
-def fit_baseline(xs, ys, num_of_samples):
+def fit_baseline(xs, ys):
 
+    # TODO: Maybe find even better parameters for this
     # ys_baseline = baseline_als(ys, 3 * 10 ** 3, 0.3)
     ys_baseline = baseline_arPLS(ys, 0.1, lam=10 ** 7)
 
-    plt.figure("Plot {} of {}".format(i + 1, num_of_samples), figsize=(16, 16))
     plt.subplot(221)
     plt.plot(xs, ys)
     plt.plot(xs, ys_baseline)
+    plt.xlabel(r"$ 2 \theta \, / \, ° $")
+    plt.ylabel("Intensity")
+
     plt.title("Raw data with baseline fit")
 
     return ys_baseline
 
 
-for i in range(0, xs.shape[1]):
+ratios = []
 
-    # use this for testing
+for i in range(0, xs.shape[1]):
+    # for i in range(0, 5):
+
+    plt.figure("Plot {} of {}".format(i + 1, xs.shape[1]))
+    fig, ax = plt.subplots(2, 2)
+    ax[1, 1].set_axis_off()
+    fig.set_size_inches(18.5, 10.5)
+
+    print("Processing {} of {}".format(i + 1, xs.shape[1]))
+
     xs_current = xs[:, i]
     ys_current = ys[:, i]
 
-    ys_baseline = fit_baseline(xs_current, ys_current, xs.shape[1])
+    ys_baseline = fit_baseline(xs_current, ys_current)
 
     ys_baseline_removed = ys_current - ys_baseline
 
     plt.subplot(222)
     plt.plot(xs, ys_baseline_removed)
+    plt.xlabel(r"$ 2 \theta \, / \, ° $")
+    plt.ylabel("Intensity")
     plt.title("Raw data with baseline removed")
 
     # use moving average smoothing
     window_width = 50
-    cumsum_vec = np.cumsum(np.insert(ys_baseline_removed, 0, 0))
-    ys_smoothed = (
-        cumsum_vec[window_width:] - cumsum_vec[:-window_width]
-    ) / window_width
+    ys_smoothed = np.convolve(
+        ys_baseline_removed, np.ones(window_width) / window_width, mode="same"
+    )
 
-    # TODO: Don't do this
-    cumsum_vec = np.cumsum(np.insert(xs_current, 0, 0))
-    xs_smoothed = (
-        cumsum_vec[window_width:] - cumsum_vec[:-window_width]
-    ) / window_width
-
-    peaks, props = find_peaks(
+    (
+        peaks,
+        props,
+    ) = find_peaks(  # TODO: Change these parameters when doing more sophisticated analysis
         ys_smoothed,
-        distance=0.5 / (xs_smoothed[1] - xs_smoothed[0]),
+        distance=0.5 / (xs_current[1] - xs_current[0]),
         prominence=20,
         height=10,
     )
 
     plt.subplot(223)
-    plt.plot(xs_smoothed, ys_smoothed)
-    plt.scatter(xs_smoothed[peaks], ys_smoothed[peaks], color="r")
+    plt.plot(xs_current, ys_smoothed)
+    plt.scatter(xs_current[peaks], ys_smoothed[peaks], c="r")
+    plt.xlabel(r"$ 2 \theta \, / \, ° $")
+    plt.ylabel("Intensity")
     plt.title("Smoothed, baseline removed, with marked peaks and gauss fit")
 
     def gaussian(x, a, x0, sigma):
-        return a * np.exp(-((x - x0) ** 2) / (2 * sigma ** 2))
+        return (
+            a
+            * 1
+            / (sigma * np.sqrt(2 * np.pi))
+            * np.exp(-((x - x0) ** 2) / (2 * sigma ** 2))
+        )
 
+    # TODO: Maybe at some point fit a mixture of Lorentzian and Gaussian instead of only Gaussian
     def fit_gaussian(peak_index, xs, ys, min_distance=0.5):
 
         # find first index where function increases, again (to the left and to the right)
@@ -152,7 +171,7 @@ for i in range(0, xs.shape[1]):
                 last_entry = ys[i]
         left = i
 
-        plt.scatter([xs[left], xs[right]], [ys[left], ys[right]])
+        plt.scatter([xs[left], xs[right]], [ys[left], ys[right]], c="r")
 
         fit = curve_fit(
             gaussian,
@@ -163,8 +182,28 @@ for i in range(0, xs.shape[1]):
 
         plt.plot(xs, gaussian(xs, *fit[0]))
 
-    for peak in peaks:
-        fit_gaussian(peak, xs_smoothed, ys_smoothed)
+        return fit[0][0]  # return the area
 
-    plt.show()
+    if len(peaks) > 1:
+        areas = []
 
+        for peak in peaks:
+            area = fit_gaussian(peak, xs_current, ys_smoothed)
+            areas.append(area)
+
+        zipped_sorted = sorted(zip(areas, peaks), key=lambda x: x[0])
+
+        ratio = zipped_sorted[1][0] / zipped_sorted[0][0]
+        ax[1, 1].text(0.1, 0.5, "Ratio of two highest peaks:\n" + str(ratio))
+        ratios.append(ratio)
+
+    else:
+
+        ax[1, 1].text(0.1, 0.5, "Found less than two peaks.")
+        ratios.append("None")
+
+    plt.savefig("plots/" + names[i] + ".pdf", dpi=100)
+
+    with open("ratios.csv", "w") as csv_file:
+        csv_writer = csv.writer(csv_file, delimiter=";")
+        csv_writer.writerows(zip(names, ratios))
