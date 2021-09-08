@@ -126,7 +126,7 @@ def fit_gaussian(peak_index, xs, ys):
 
     plt.plot(xs, gaussian(xs, *fit[0]))
 
-    return fit[0][0]  # return the area
+    return fit[0]  # return the fit parameters
 
 
 def peak_to_str(fit_results):
@@ -134,7 +134,7 @@ def peak_to_str(fit_results):
         str(fit_results[0]),
         str(fit_results[1]),
         str(fit_results[2]),
-        str(2 * np.sqrt(2 * np.ln(2)) * fit_results[2]),
+        str(2 * np.sqrt(2 * np.log(2)) * fit_results[2]),
     )
 
 
@@ -151,7 +151,7 @@ properties_peak_0 = []  # biggest peak
 properties_peak_1 = []  # second biggest peak
 
 for i in range(0, xs.shape[1]):
-    # for i in range(0, 5):
+    # for i in range(0, 3):
 
     plt.figure("Plot {} of {}".format(i + 1, xs.shape[1]))
     fig, ax = plt.subplots(2, 2)
@@ -196,13 +196,15 @@ for i in range(0, xs.shape[1]):
     plt.ylabel("Intensity")
     plt.title("Smoothed, baseline removed, with marked peaks and gauss fit")
 
-    areas = []
+    parameters = []
     for peak in peaks:
-        area = fit_gaussian(peak, xs_current, ys_smoothed)
-        areas.append(area)
-    zipped_sorted = sorted(zip(areas, peaks), key=lambda x: x[0])
+        para = fit_gaussian(peak, xs_current, ys_smoothed)
+        parameters.append(para)
+    zipped_sorted = sorted(
+        zip(parameters, peaks), key=lambda x: x[0][0]
+    )  # sort by area
 
-    text += "\nBiggest peak:\n"
+    text = "\nBiggest peak:\n"
     if len(peaks) > 0:
         text += peak_to_str(zipped_sorted[-1][0]) + "\n"
         properties_peak_0.append(
@@ -210,7 +212,7 @@ for i in range(0, xs.shape[1]):
                 zipped_sorted[-1][0][0],
                 zipped_sorted[-1][0][1],
                 zipped_sorted[-1][0][2],
-                2 * np.sqrt(2 * np.ln(2)) * zipped_sorted[-1][0][2],
+                2 * np.sqrt(2 * np.log(2)) * zipped_sorted[-1][0][2],
             )
         )
     else:
@@ -225,17 +227,17 @@ for i in range(0, xs.shape[1]):
                 zipped_sorted[-2][0][0],
                 zipped_sorted[-2][0][1],
                 zipped_sorted[-2][0][2],
-                2 * np.sqrt(2 * np.ln(2)) * zipped_sorted[-2][0][2],
+                2 * np.sqrt(2 * np.log(2)) * zipped_sorted[-2][0][2],
             )
         )
     else:
         text += "Not found\n"
         properties_peak_1.append(("None", "None", "None", "None"))
 
-    text = "\nRatio of the two highest peaks:\n"
+    text += "\nRatio of the two biggest peaks:\n"
     if len(peaks) > 1:
 
-        ratio = zipped_sorted[1][0] / zipped_sorted[0][0]
+        ratio = zipped_sorted[-1][0][0] / zipped_sorted[-2][0][0]
         text += str(ratio) + "\n"
         ratios.append(ratio)
 
@@ -244,31 +246,38 @@ for i in range(0, xs.shape[1]):
         text += "Found less than two peaks.\n"
         ratios.append("None")
 
-    ax[1, 1].text(0.1, 0.5, text)
+    ax[1, 1].text(
+        0.5, 0.5, text, horizontalalignment="center", verticalalignment="center"
+    )
 
     plt.savefig("plots/" + names[i] + ".pdf", dpi=100)
 
-    with open("ratios.csv", "w") as csv_file:
-        csv_writer = csv.writer(csv_file, delimiter=";")
+with open("ratios.csv", "w") as csv_file:
+    csv_writer = csv.writer(csv_file, delimiter=";")
 
-        # transpose the lists:
-        properties_peak_0 = list(map(list, zip(*properties_peak_0)))
-        properties_peak_1 = list(map(list, zip(*properties_peak_1)))
+    # transpose the lists:
+    properties_peak_0 = list(map(list, zip(*properties_peak_0)))
+    properties_peak_1 = list(map(list, zip(*properties_peak_1)))
 
-        header = [
-            "Sample name",
-            "Ratio",
-            "Peak_0 area",
-            "Peak_0 mean",
-            "Peak_0 sigma",
-            "Peak_0 FWHM",
-            "Peak_1 area",
-            "Peak_1 mean",
-            "Peak_1 sigma",
-            "Peak_1 FWHM",
-        ]
+    header = [
+        "Sample name",
+        "Ratio",
+        "Peak_0 area",
+        "Peak_0 mean",
+        "Peak_0 sigma",
+        "Peak_0 FWHM",
+        "Peak_1 area",
+        "Peak_1 mean",
+        "Peak_1 sigma",
+        "Peak_1 FWHM",
+    ]
 
-        data = zip(names, ratios, *properties_peak_0, *properties_peak_1)
+    print(names)
+    print(ratios)
+    print(*properties_peak_0)
+    print(*properties_peak_1)
 
-        csv_writer.writerow(header)
-        csv_writer.writerows(data)
+    data = zip(names, ratios, *properties_peak_0, *properties_peak_1)
+
+    csv_writer.writerow(header)
+    csv_writer.writerows(data)
