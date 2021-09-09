@@ -1,5 +1,3 @@
-from keras_tuner.engine.hyperparameters import HyperParameter
-from keras_tuner.tuners import hyperband
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -16,7 +14,7 @@ import pickle
 csv_filenames = glob(r"databases/icsd/*.csv")
 # number_of_values = 181
 number_of_values_initial = 9001
-skip_values = 5
+skip_values = 10
 number_of_values = (number_of_values_initial - 1) // skip_values
 
 model_str = "conv"  # possible: conv, lstm, fully_connected
@@ -307,7 +305,7 @@ elif tuner_str == "hyperband":
         overwrite=False,
         directory="tuner",
         project_name="hyperband_opt_" + model_str,
-        hyperband_iterations=1000,
+        hyperband_iterations=100000,
     )
 
 if tune_hyperparameters:
