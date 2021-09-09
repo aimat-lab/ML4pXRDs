@@ -9,6 +9,7 @@ from numpy.linalg import norm
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 import csv
+from scipy.signal import savgol_filter
 
 # both of the following functions are taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
 # TODO: Maybe use this library for baseline removal in the future: https://github.com/StatguyUser/BaselineRemoval (algorithm should be the same, though)
@@ -93,29 +94,31 @@ def gaussian(x, a, x0, sigma):
 
 
 # TODO: Maybe at some point fit a mixture of Lorentzian and Gaussian instead of only Gaussian
-def fit_gaussian(peak_index, xs, ys):
+def fit_gaussian(peak_index, xs, ys, ys_smoothed):
 
     # find first index where function increases, again (to the left and to the right)
 
-    last_entry = ys[peak_index]
-    for i in range(peak_index + 1, len(ys)):
-        if ys[i] > last_entry:
+    last_entry = ys_smoothed[peak_index]
+    for i in range(peak_index + 1, len(ys_smoothed)):
+        if ys_smoothed[i] > last_entry:
             if xs[i] - xs[peak_index] > 0.5:
                 break
         else:
-            last_entry = ys[i]
+            last_entry = ys_smoothed[i]
     right = i
 
-    last_entry = ys[peak_index]
+    last_entry = ys_smoothed[peak_index]
     for i in reversed(range(0, peak_index)):
-        if ys[i] > last_entry:
+        if ys_smoothed[i] > last_entry:
             if xs[peak_index] - xs[i] > 0.5:
                 break
         else:
-            last_entry = ys[i]
+            last_entry = ys_smoothed[i]
     left = i
 
-    plt.scatter([xs[left], xs[right]], [ys[left], ys[right]], c="r")
+    plt.subplot(223)
+    plt.scatter([xs[left], xs[right]], [ys_smoothed[left], ys_smoothed[right]], c="r")
+    plt.subplot(222)
 
     fit = curve_fit(
         gaussian,
@@ -129,13 +132,27 @@ def fit_gaussian(peak_index, xs, ys):
     return fit[0]  # return the fit parameters
 
 
-def peak_to_str(fit_results):
-    return "Area: {}\nMean: {}\nSigma: {}\nFWHM:{}".format(
+def peak_to_str(fit_results, height_raw, height_after_removal):
+    return "Area: {}\nMean: {}\nSigma: {}\nFWHM: {}\nHeight raw: {}\nHeight after removal: {}".format(
         str(fit_results[0]),
         str(fit_results[1]),
         str(fit_results[2]),
         str(2 * np.sqrt(2 * np.log(2)) * fit_results[2]),
+        height_raw,
+        height_after_removal,
     )
+
+
+def get_real_maximum(xs, ys, index, tollerance_left_right):
+
+    step = xs[1] - xs[0]
+    no_steps = int(tollerance_left_right / step)
+
+    ys_current = ys[index - no_steps : index + no_steps + 1]
+
+    true_maximum_index = np.argmax(ys_current)
+
+    return (true_maximum_index + index - no_steps, ys_current[true_maximum_index])
 
 
 data_file_path = "data/XRD_6_component_systems.csv"
@@ -151,10 +168,10 @@ properties_peak_0 = []  # biggest peak
 properties_peak_1 = []  # second biggest peak
 
 for i in range(0, xs.shape[1]):
-    # for i in range(0, 3):
+    # for i in range(0, 10):
 
-    plt.figure("Plot {} of {}".format(i + 1, xs.shape[1]))
     fig, ax = plt.subplots(2, 2)
+    fig.canvas.set_window_title("Plot {} of {}".format(i + 1, xs.shape[1]))
     ax[1, 1].set_axis_off()
     fig.set_size_inches(18.5, 10.5)
 
@@ -171,10 +188,12 @@ for i in range(0, xs.shape[1]):
     plt.plot(xs, ys_baseline_removed)
     plt.xlabel(r"$ 2 \theta \, / \, ° $")
     plt.ylabel("Intensity")
-    plt.title("Raw data with baseline removed")
+    plt.title("Raw data with baseline removed and gauß fits")
 
     # use moving average smoothing
+    # window_width = int(0.5 / (xs_current[1] - xs_current[0]))
     window_width = 50
+    # print("Window width: {}".format(window_width))
     ys_smoothed = np.convolve(
         ys_baseline_removed, np.ones(window_width) / window_width, mode="same"
     )
@@ -194,11 +213,12 @@ for i in range(0, xs.shape[1]):
     plt.scatter(xs_current[peaks], ys_smoothed[peaks], c="r")
     plt.xlabel(r"$ 2 \theta \, / \, ° $")
     plt.ylabel("Intensity")
-    plt.title("Smoothed, baseline removed, with marked peaks and gauss fit")
+    plt.title("Smoothed, baseline removed, with marked peaks")
 
+    plt.subplot(222)
     parameters = []
     for peak in peaks:
-        para = fit_gaussian(peak, xs_current, ys_smoothed)
+        para = fit_gaussian(peak, xs_current, ys_baseline_removed, ys_smoothed)
         parameters.append(para)
     zipped_sorted = sorted(
         zip(parameters, peaks), key=lambda x: x[0][0]
@@ -206,33 +226,77 @@ for i in range(0, xs.shape[1]):
 
     text = "\nBiggest peak:\n"
     if len(peaks) > 0:
-        text += peak_to_str(zipped_sorted[-1][0]) + "\n"
+
+        real_maximum_raw = get_real_maximum(
+            xs_current, ys_current, zipped_sorted[-1][1], 0.3
+        )
+        real_maximum_baseline_removed = get_real_maximum(
+            xs_current, ys_baseline_removed, zipped_sorted[-1][1], 0.3
+        )
+        # real_maximum_smoothed = get_real_maximum(
+        #    xs_current, ys_smoothed, zipped_sorted[-1][1], 0.3
+        # )
+
+        text += (
+            peak_to_str(
+                zipped_sorted[-1][0],
+                real_maximum_raw[1],
+                real_maximum_baseline_removed[1],
+                # real_maximum_smoothed[1],
+            )
+            + "\n"
+        )
         properties_peak_0.append(
             (
                 zipped_sorted[-1][0][0],
                 zipped_sorted[-1][0][1],
                 zipped_sorted[-1][0][2],
                 2 * np.sqrt(2 * np.log(2)) * zipped_sorted[-1][0][2],
+                real_maximum_raw[1],
+                real_maximum_baseline_removed[1],
+                # real_maximum_smoothed[1],
             )
         )
     else:
         text += "Not found\n"
-        properties_peak_0.append(("None", "None", "None", "None"))
+        properties_peak_0.append(("None", "None", "None", "None", "None", "None"))
 
     text += "\n\nSecond biggest peak:\n"
     if len(peaks) > 1:
-        text += peak_to_str(zipped_sorted[-2][0]) + "\n"
+
+        real_maximum_raw = get_real_maximum(
+            xs_current, ys_current, zipped_sorted[-2][1], 0.3
+        )
+        real_maximum_baseline_removed = get_real_maximum(
+            xs_current, ys_baseline_removed, zipped_sorted[-2][1], 0.3
+        )
+        # real_maximum_smoothed = get_real_maximum(
+        #    xs_current, ys_smoothed, zipped_sorted[-2][1], 0.3
+        # )
+
+        text += (
+            peak_to_str(
+                zipped_sorted[-2][0],
+                real_maximum_raw[1],
+                real_maximum_baseline_removed[1],
+                # real_maximum_smoothed[1],
+            )
+            + "\n"
+        )
         properties_peak_1.append(
             (
                 zipped_sorted[-2][0][0],
                 zipped_sorted[-2][0][1],
                 zipped_sorted[-2][0][2],
                 2 * np.sqrt(2 * np.log(2)) * zipped_sorted[-2][0][2],
+                real_maximum_raw[1],
+                real_maximum_baseline_removed[1],
+                # real_maximum_smoothed[1],
             )
         )
     else:
         text += "Not found\n"
-        properties_peak_1.append(("None", "None", "None", "None"))
+        properties_peak_1.append(("None", "None", "None", "None", "None", "None"))
 
     text += "\nRatio of the two biggest peaks:\n"
     if len(peaks) > 1:
@@ -251,6 +315,7 @@ for i in range(0, xs.shape[1]):
     )
 
     plt.savefig("plots/" + names[i] + ".pdf", dpi=100)
+    # plt.show()
 
 with open("ratios.csv", "w") as csv_file:
     csv_writer = csv.writer(csv_file, delimiter=";")
@@ -266,16 +331,20 @@ with open("ratios.csv", "w") as csv_file:
         "Peak_0 mean",
         "Peak_0 sigma",
         "Peak_0 FWHM",
+        "Peak_0 height raw",
+        "Peak_0 height after removal",
         "Peak_1 area",
         "Peak_1 mean",
         "Peak_1 sigma",
         "Peak_1 FWHM",
+        "Peak_1 height raw",
+        "Peak_1 height after removal",
     ]
 
-    print(names)
-    print(ratios)
-    print(*properties_peak_0)
-    print(*properties_peak_1)
+    # print(names)
+    # print(ratios)
+    # print(*properties_peak_0)
+    # print(*properties_peak_1)
 
     data = zip(names, ratios, *properties_peak_0, *properties_peak_1)
 

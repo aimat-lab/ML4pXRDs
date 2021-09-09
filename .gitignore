@@ -3,6 +3,6 @@ infere_symmetry_singlephase/old_datasets/
 infere_symmetry_singlephase/tuner/
 infere_symmetry_singlephase/databases/
 .vscode
-texture_analysis/plots/
-texture_analysis/ratios.csv
+texture_analysis/plots*/
+texture_analysis/ratios*.csv
 texture_analysis/old
