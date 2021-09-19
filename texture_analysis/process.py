@@ -355,4 +355,4 @@ with open("ratios.csv", "w") as csv_file:
     csv_writer.writerow(header)
     csv_writer.writerows(data)
 
-os.system("convert -density 300 plots/*.pdf plots/all.pdf")
+os.system("pdfunite plots/*.pdf plots/all.pdf")
