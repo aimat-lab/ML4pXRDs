@@ -10,6 +10,7 @@ from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 import csv
 from scipy.signal import savgol_filter
+import os
 
 # both of the following functions are taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
 # TODO: Maybe use this library for baseline removal in the future: https://github.com/StatguyUser/BaselineRemoval (algorithm should be the same, though)
@@ -74,8 +75,8 @@ def fit_baseline(xs, ys):
     ys_baseline = baseline_arPLS(ys, 0.1, lam=10 ** 7)
 
     plt.subplot(221)
-    plt.plot(xs, ys)
-    plt.plot(xs, ys_baseline)
+    plt.plot(xs, ys, rasterized=True)
+    plt.plot(xs, ys_baseline, rasterized=True)
     plt.xlabel(r"$ 2 \theta \, / \, ° $")
     plt.ylabel("Intensity")
 
@@ -117,7 +118,7 @@ def fit_gaussian(peak_index, xs, ys, ys_smoothed):
     left = i
 
     plt.subplot(223)
-    plt.scatter([xs[left], xs[right]], [ys_smoothed[left], ys_smoothed[right]], c="r")
+    plt.scatter([xs[left], xs[right]], [ys_smoothed[left], ys_smoothed[right]], c="r", rasterized=True)
     plt.subplot(222)
 
     fit = curve_fit(
@@ -127,7 +128,7 @@ def fit_gaussian(peak_index, xs, ys, ys_smoothed):
         p0=[100, xs[peak_index], 0.3],
     )
 
-    plt.plot(xs, gaussian(xs, *fit[0]))
+    plt.plot(xs, gaussian(xs, *fit[0]), rasterized=True)
 
     return fit[0]  # return the fit parameters
 
@@ -171,7 +172,10 @@ for i in range(0, xs.shape[1]):
     # for i in range(0, 10):
 
     fig, ax = plt.subplots(2, 2)
-    fig.canvas.set_window_title("Plot {} of {}".format(i + 1, xs.shape[1]))
+
+    fig.canvas.manager.set_window_title("Plot {} of {}".format(i + 1, xs.shape[1]))
+    plt.suptitle("Sample " + names[i])    
+
     ax[1, 1].set_axis_off()
     fig.set_size_inches(18.5, 10.5)
 
@@ -185,7 +189,7 @@ for i in range(0, xs.shape[1]):
     ys_baseline_removed = ys_current - ys_baseline
 
     plt.subplot(222)
-    plt.plot(xs, ys_baseline_removed)
+    plt.plot(xs, ys_baseline_removed, rasterized=True)
     plt.xlabel(r"$ 2 \theta \, / \, ° $")
     plt.ylabel("Intensity")
     plt.title("Raw data with baseline removed and gauß fits")
@@ -209,8 +213,8 @@ for i in range(0, xs.shape[1]):
     )
 
     plt.subplot(223)
-    plt.plot(xs_current, ys_smoothed)
-    plt.scatter(xs_current[peaks], ys_smoothed[peaks], c="r")
+    plt.plot(xs_current, ys_smoothed, rasterized=True)
+    plt.scatter(xs_current[peaks], ys_smoothed[peaks], c="r", rasterized=True)
     plt.xlabel(r"$ 2 \theta \, / \, ° $")
     plt.ylabel("Intensity")
     plt.title("Smoothed, baseline removed, with marked peaks")
@@ -314,7 +318,7 @@ for i in range(0, xs.shape[1]):
         0.5, 0.5, text, horizontalalignment="center", verticalalignment="center"
     )
 
-    plt.savefig("plots/" + names[i] + ".pdf", dpi=100)
+    plt.savefig("plots/" + names[i] + ".pdf", dpi=300)
     # plt.show()
 
 with open("ratios.csv", "w") as csv_file:
@@ -350,3 +354,5 @@ with open("ratios.csv", "w") as csv_file:
 
     csv_writer.writerow(header)
     csv_writer.writerows(data)
+
+os.system("convert -density 300 plots/*.pdf plots/all.pdf")
