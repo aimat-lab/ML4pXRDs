@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from pymatgen.io.cif import CifParser
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
-
 crystal = xu.materials.Crystal.fromCIF("test.cif")
 
 powder = xu.simpack.Powder(crystal, 1)
@@ -16,10 +15,14 @@ powder_model = xu.simpack.PowderModel(powder, I0=100)
 xs = np.arange(5,120,0.01)
 diffractogram = powder_model.simulate(xs)
 
-print(diffractogram)
+# Default settings:
+print(powder_model.pdiff[0].settings)
+# Further information on the default settings: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
 
-plt.plot(xs, diffractogram)
-plt.title("xrayutilities")
+powder_model.plot(xs)
+plt.show()
+
+exit()
 
 # do the same with pymatgen:
 
