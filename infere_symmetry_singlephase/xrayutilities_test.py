@@ -5,7 +5,16 @@ import matplotlib.pyplot as plt
 
 crystal = xu.materials.Crystal.fromCIF("test.cif")
 
-powder = xu.simpack.Powder(crystal, 1)
+powder = xu.simpack.Powder(
+    crystal,
+    1,
+    crystallite_size_lor=2e-07,  # default
+    crystallite_size_gauss=2e-07,  # default
+    strain_lor=0,
+    strain_gauss=0,
+    preferred_orientation=(0, 0, 0),
+    preferred_orientation_factor=1,
+)
 
 # Further information on the settings: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
 powder_model = xu.simpack.PowderModel(
@@ -30,12 +39,12 @@ powder_model = xu.simpack.PowderModel(
             "emiss_intensities": (1.0),
             "emiss_gauss_widths": (3e-14),
             "emiss_lor_widths": (3e-14),
-            "crystallite_size_lor": 2e-07,
-            "crystallite_size_gauss": 2e-07,
-            "strain_lor": 0,
-            "strain_gauss": 0,
-            "preferred_orientation": (0, 0, 0),
-            "preferred_orientation_factor": 1,
+            # "crystallite_size_lor": 2e-07,  # this needs to be set for the powder
+            # "crystallite_size_gauss": 2e-07,  # this needs to be set for the powder
+            # "strain_lor": 0,  # this needs to be set for the powder
+            # "strain_gauss": 0,  # this needs to be set for the powder
+            # "preferred_orientation": (0, 0, 0),  # this needs to be set for the powder
+            # "preferred_orientation_factor": 1,  # this needs to be set for the powder
         },
         "axial": {
             "axDiv": "full",
