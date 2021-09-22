@@ -1,5 +1,4 @@
 import xrayutilities as xu
-from xrayutilities.materials.cif import CIFFile
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -8,11 +7,10 @@ crystal = xu.materials.Crystal.fromCIF("test.cif")
 
 powder = xu.simpack.Powder(crystal, 1)
 
-# Apply all settings
 # Further information on the settings: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
-powder_model = xu.simpack.PowderModel(
-    powder,
-    I0=100,
+powder_model = xu.simpack.PowderModel(powder, I0=100)
+
+"""
     fpsettings={
         "classoptions": {
             "anglemode": "twotheta",
@@ -59,12 +57,12 @@ powder_model = xu.simpack.PowderModel(
         },
     },
 )
-
+"""
 xs = np.arange(5, 120, 0.01)
 diffractogram = powder_model.simulate(xs)
 
 # Default settings:
-# print(powder_model.pdiff[0].settings)
+print(powder_model.pdiff[0].settings)
 
 powder_model.plot(xs)
 plt.show()

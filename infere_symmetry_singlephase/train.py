@@ -9,6 +9,7 @@ from keras_tuner import Hyperband
 from glob import glob
 import pandas as pd
 import pickle
+import matplotlib.pyplot as plt
 
 # filenames = ["dataset_1.csv", "dataset_2.csv", "dataset_3.csv", "dataset_4.csv", "dataset_5.csv", "dataset_6.csv", "dataset_7.csv", "dataset_8.csv"]
 csv_filenames = glob(r"databases/icsd/*.csv")
@@ -99,6 +100,17 @@ bravais_labels = [
 y = np.array([int(bravais_labels.index(name)) for name in bravais_str])
 
 x = x / 100  # set maximum volume under a peak to 1
+
+"""
+# plot as test
+xs = np.linspace(0, 90, 9001)[::10]
+ys = x[1000]
+
+plt.plot(xs, ys)
+plt.show()
+
+exit()
+"""
 
 # x = x[:, ::50]
 # print(x.shape)
