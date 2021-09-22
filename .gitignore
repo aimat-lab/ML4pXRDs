@@ -7,3 +7,4 @@ texture_analysis/plots*/
 texture_analysis/ratios*.csv
 texture_analysis/old
 UV-vis_analysis/GapExtractor
+*.pdf

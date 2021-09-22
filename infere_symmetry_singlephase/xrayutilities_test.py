@@ -8,9 +8,9 @@ crystal = xu.materials.Crystal.fromCIF("test.cif")
 powder = xu.simpack.Powder(crystal, 1)
 
 # Further information on the settings: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
-powder_model = xu.simpack.PowderModel(powder, I0=100)
-
-"""
+powder_model = xu.simpack.PowderModel(
+    powder,
+    I0=100,
     fpsettings={
         "classoptions": {
             "anglemode": "twotheta",
@@ -23,7 +23,7 @@ powder_model = xu.simpack.PowderModel(powder, I0=100)
             "geometry_incidence_angle": None,
             "diffractometer_radius": 0.3,
             "equatorial_divergence_deg": 0.5,
-            "dominant_wavelength": 1.5405929888444028e-10,
+            # "dominant_wavelength": 1.207930e-10, # this is a read-only setting!
         },
         "emission": {
             "emiss_wavelengths": (1.207930e-10),
@@ -57,12 +57,15 @@ powder_model = xu.simpack.PowderModel(powder, I0=100)
         },
     },
 )
-"""
-xs = np.arange(5, 120, 0.01)
+
+xs = np.arange(0, 90, 0.01)
 diffractogram = powder_model.simulate(xs)
 
 # Default settings:
-print(powder_model.pdiff[0].settings)
+# print(powder_model.pdiff[0].settings)
 
 powder_model.plot(xs)
+
+# plt.savefig("test.pdf")
+
 plt.show()
