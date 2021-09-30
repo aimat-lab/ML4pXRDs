@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-crystal = xu.materials.Crystal.fromCIF("test.cif")
+crystal = xu.materials.Crystal.fromCIF(
+    "/home/henrik/Dokumente/ICSD_cleaned/ICSD_1529.cif"
+)
 
 powder = xu.simpack.Powder(
     crystal,
