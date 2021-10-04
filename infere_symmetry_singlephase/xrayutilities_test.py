@@ -71,6 +71,7 @@ powder_model = xu.simpack.PowderModel(
 
 xs = np.arange(0, 90, 0.01)
 diffractogram = powder_model.simulate(xs)
+# TODO: evt. Lorentz and Polarization correction
 
 # Default settings:
 # print(powder_model.pdiff[0].settings)

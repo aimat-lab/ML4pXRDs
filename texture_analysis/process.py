@@ -12,6 +12,23 @@ import csv
 from scipy.signal import savgol_filter
 import os
 
+# baseline_arPLS parameters:
+arPLS_ratio = 0.1
+arPLS_lam = 10 ** 7
+arPLS_niter = 10
+
+# smoothing window width:
+window_width = 100
+
+# additional width to the left and right for the gaussian fit:
+additional_left_right = 0.7
+
+# parameters for find_peaks:
+find_peaks_distance = 0.5
+# find_peaks_prominence = 10.5
+find_peaks_prominence = 8.4
+# find_peaks_height = 6
+
 # both of the following functions are taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
 # TODO: Maybe use this library for baseline removal in the future: https://github.com/StatguyUser/BaselineRemoval (algorithm should be the same, though)
 def baseline_arPLS(y, ratio=1e-6, lam=100, niter=10, full_output=False):
@@ -56,23 +73,12 @@ def baseline_arPLS(y, ratio=1e-6, lam=100, niter=10, full_output=False):
         return z
 
 
-def baseline_als(y, lam=3 * 10 ** 3, p=0.3, niter=10):
-    L = len(y)
-    D = sparse.diags([1, -2, 1], [0, -1, -2], shape=(L, L - 2))
-    w = np.ones(L)
-    for i in range(niter):
-        W = sparse.spdiags(w, 0, L, L)
-        Z = W + lam * D.dot(D.transpose())
-        z = spsolve(Z, w * y)
-        w = p * (y > z) + (1 - p) * (y < z)
-    return z
-
-
 def fit_baseline(xs, ys):
 
     # TODO: Maybe find even better parameters for this
-    # ys_baseline = baseline_als(ys, 3 * 10 ** 3, 0.3)
-    ys_baseline = baseline_arPLS(ys, 0.1, lam=10 ** 7)
+    ys_baseline = baseline_arPLS(
+        ys, ratio=arPLS_ratio, lam=arPLS_lam, niter=arPLS_niter
+    )
 
     plt.subplot(221)
     plt.plot(xs, ys, rasterized=True)
@@ -117,20 +123,24 @@ def fit_gaussian(peak_index, xs, ys, ys_smoothed):
             last_entry = ys_smoothed[i]
     left = i
 
-    plt.subplot(223)
-    plt.scatter([xs[left], xs[right]], [ys_smoothed[left], ys_smoothed[right]], c="r", rasterized=True)
-    plt.subplot(222)
+    step = xs[1] - xs[0]
+    additional = int(additional_left_right / step)
+    left = np.max([0, left - additional])
+    right = np.min([len(xs) - 1, right + additional])
 
     fit = curve_fit(
         gaussian,
         xs[left : right + 1],
         ys[left : right + 1],
         p0=[100, xs[peak_index], 0.3],
+        maxfev=5000,
     )
 
-    plt.plot(xs, gaussian(xs, *fit[0]), rasterized=True)
-
-    return fit[0]  # return the fit parameters
+    return (
+        *fit[0],
+        left,
+        right,
+    )  # return the fit parameters + left and right bounds of fitting procedure
 
 
 def peak_to_str(fit_results, height_raw, height_after_removal):
@@ -156,30 +166,83 @@ def get_real_maximum(xs, ys, index, tollerance_left_right):
     return (true_maximum_index + index - no_steps, ys_current[true_maximum_index])
 
 
+def process_peak(params, index, xs_current, ys_current, ys_baseline_removed):
+
+    real_maximum_raw = get_real_maximum(xs_current, ys_current, index, 0.3)
+    real_maximum_baseline_removed = get_real_maximum(
+        xs_current, ys_baseline_removed, index, 0.3
+    )
+
+    result_text = (
+        peak_to_str(params, real_maximum_raw[1], real_maximum_baseline_removed[1],)
+        + "\n"
+    )
+
+    result_properties = (
+        params[0],
+        params[1],
+        params[2],
+        2 * np.sqrt(2 * np.log(2)) * params[2],
+        real_maximum_raw[1],
+        real_maximum_baseline_removed[1],
+        # real_maximum_smoothed[1],
+    )
+
+    plt.subplot(223)
+    plt.scatter(
+        xs_current[index], ys_smoothed[index], c="r", rasterized=True,
+    )
+    plt.subplot(223)
+    # print(zipped_sorted[-1][0])
+    plt.scatter(
+        [xs_current[params[3]], xs_current[params[4]]],
+        [ys_smoothed[params[3]], ys_smoothed[params[4]]],
+        c="r",
+        rasterized=True,
+    )
+    plt.subplot(222)
+    plt.plot(
+        xs_current, gaussian(xs_current, *params[0:3]), rasterized=True,
+    )
+
+    return result_text, result_properties
+
+
+"""
 data_file_path = "data/XRD_6_component_systems.csv"
 df = pd.read_csv(data_file_path, sep=";")
 
 xs = np.array(df.iloc[:, list(range(0, len(df.columns.values), 2))])
 ys = np.array(df.iloc[:, list(range(1, len(df.columns.values), 2))])
+"""
 
-names = df.columns.values[1::2]
+data_file_path = "data/XRD_6_component_systems_repeat.csv"
+df = pd.read_csv(data_file_path, sep=";")
+
+x = np.array(df.iloc[:, 0])
+xs = np.repeat(x[:, np.newaxis], len(df.columns.values) - 1, axis=1)
+ys = np.array(df.iloc[:, list(range(1, len(df.columns.values)))])
+
+names = df.columns.values[1::]
 
 ratios = []
-properties_peak_0 = []  # biggest peak
-properties_peak_1 = []  # second biggest peak
+properties_peak_0 = []  # first peak
+properties_peak_1 = []  # second peak
 
 for i in range(0, xs.shape[1]):
-    # for i in range(0, 10):
+
+    # if names[i] != "HTM3":
+    #    continue
 
     fig, ax = plt.subplots(2, 2)
 
     fig.canvas.manager.set_window_title("Plot {} of {}".format(i + 1, xs.shape[1]))
-    plt.suptitle("Sample " + names[i])    
+    plt.suptitle("Sample " + names[i])
 
     ax[1, 1].set_axis_off()
     fig.set_size_inches(18.5, 10.5)
 
-    print("Processing {} of {}".format(i + 1, xs.shape[1]))
+    print("Processing {} of {}: {}".format(i + 1, xs.shape[1], names[i]))
 
     xs_current = xs[:, i]
     ys_current = ys[:, i]
@@ -195,123 +258,76 @@ for i in range(0, xs.shape[1]):
     plt.title("Raw data with baseline removed and gauß fits")
 
     # use moving average smoothing
-    # window_width = int(0.5 / (xs_current[1] - xs_current[0]))
-    window_width = 50
-    # print("Window width: {}".format(window_width))
     ys_smoothed = np.convolve(
         ys_baseline_removed, np.ones(window_width) / window_width, mode="same"
     )
+    # ys_smoothed = savgol_filter(ys_baseline_removed, 201, 4)
 
     (
         peaks,
         props,
     ) = find_peaks(  # TODO: Change these parameters when doing more sophisticated analysis
         ys_smoothed,
-        distance=0.5 / (xs_current[1] - xs_current[0]),
-        prominence=20,
-        height=10,
+        distance=find_peaks_distance / (xs_current[1] - xs_current[0]),
+        prominence=find_peaks_prominence,
+        # height=find_peaks_height,
     )
+
+    # print(peaks)
 
     plt.subplot(223)
     plt.plot(xs_current, ys_smoothed, rasterized=True)
-    plt.scatter(xs_current[peaks], ys_smoothed[peaks], c="r", rasterized=True)
     plt.xlabel(r"$ 2 \theta \, / \, ° $")
     plt.ylabel("Intensity")
     plt.title("Smoothed, baseline removed, with marked peaks")
 
-    plt.subplot(222)
+    # plt.show()
+
     parameters = []
     for peak in peaks:
         para = fit_gaussian(peak, xs_current, ys_baseline_removed, ys_smoothed)
         parameters.append(para)
-    zipped_sorted = sorted(
-        zip(parameters, peaks), key=lambda x: x[0][0]
-    )  # sort by area
+    zipped_sorted = list(
+        reversed(sorted(zip(parameters, peaks), key=lambda x: x[0][1]))
+    )  # sort by mean
 
-    text = "\nBiggest peak:\n"
-    if len(peaks) > 0:
+    near_0 = sorted(zipped_sorted, key=lambda x: np.abs(x[0][1] - 31.26))
+    near_1 = sorted(zipped_sorted, key=lambda x: np.abs(x[0][1] - 44.94))
 
-        real_maximum_raw = get_real_maximum(
-            xs_current, ys_current, zipped_sorted[-1][1], 0.3
-        )
-        real_maximum_baseline_removed = get_real_maximum(
-            xs_current, ys_baseline_removed, zipped_sorted[-1][1], 0.3
-        )
-        # real_maximum_smoothed = get_real_maximum(
-        #    xs_current, ys_smoothed, zipped_sorted[-1][1], 0.3
-        # )
+    text = ""
+    if (
+        len(peaks) > 1
+        and np.abs(near_0[0][0][1] - 31.26) < 2
+        and np.abs(near_1[0][0][1] - 44.94) < 2
+        and len(peaks) < 6
+        and not names[i] == "HTA12"  # just noise
+    ):
 
-        text += (
-            peak_to_str(
-                zipped_sorted[-1][0],
-                real_maximum_raw[1],
-                real_maximum_baseline_removed[1],
-                # real_maximum_smoothed[1],
-            )
-            + "\n"
-        )
-        properties_peak_0.append(
-            (
-                zipped_sorted[-1][0][0],
-                zipped_sorted[-1][0][1],
-                zipped_sorted[-1][0][2],
-                2 * np.sqrt(2 * np.log(2)) * zipped_sorted[-1][0][2],
-                real_maximum_raw[1],
-                real_maximum_baseline_removed[1],
-                # real_maximum_smoothed[1],
-            )
-        )
-    else:
-        text += "Not found\n"
-        properties_peak_0.append(("None", "None", "None", "None", "None", "None"))
+        text = "\nFirst peak:\n"
 
-    text += "\n\nSecond biggest peak:\n"
-    if len(peaks) > 1:
-
-        real_maximum_raw = get_real_maximum(
-            xs_current, ys_current, zipped_sorted[-2][1], 0.3
+        result_text, result_properties = process_peak(
+            near_0[0][0], near_0[0][1], xs_current, ys_current, ys_baseline_removed,
         )
-        real_maximum_baseline_removed = get_real_maximum(
-            xs_current, ys_baseline_removed, zipped_sorted[-2][1], 0.3
-        )
-        # real_maximum_smoothed = get_real_maximum(
-        #    xs_current, ys_smoothed, zipped_sorted[-2][1], 0.3
-        # )
+        text += result_text
+        properties_peak_0.append(result_properties)
 
-        text += (
-            peak_to_str(
-                zipped_sorted[-2][0],
-                real_maximum_raw[1],
-                real_maximum_baseline_removed[1],
-                # real_maximum_smoothed[1],
-            )
-            + "\n"
+        text += "\n\nSecond peak:\n"
+        result_text, result_properties = process_peak(
+            near_1[0][0], near_1[0][1], xs_current, ys_current, ys_baseline_removed,
         )
-        properties_peak_1.append(
-            (
-                zipped_sorted[-2][0][0],
-                zipped_sorted[-2][0][1],
-                zipped_sorted[-2][0][2],
-                2 * np.sqrt(2 * np.log(2)) * zipped_sorted[-2][0][2],
-                real_maximum_raw[1],
-                real_maximum_baseline_removed[1],
-                # real_maximum_smoothed[1],
-            )
-        )
-    else:
-        text += "Not found\n"
-        properties_peak_1.append(("None", "None", "None", "None", "None", "None"))
+        text += result_text
+        properties_peak_1.append(result_properties)
 
-    text += "\nRatio of the two biggest peaks:\n"
-    if len(peaks) > 1:
-
-        ratio = zipped_sorted[-1][0][0] / zipped_sorted[-2][0][0]
+        text += "\nRatio of the two first peaks:\n"
+        ratio = near_0[0][0][0] / near_1[0][0][0]
         text += str(ratio) + "\n"
         ratios.append(ratio)
 
     else:
 
-        text += "Found less than two peaks.\n"
+        text = "Found less than two peaks."
+        properties_peak_0.append(("None", "None", "None", "None", "None", "None"))
+        properties_peak_1.append(("None", "None", "None", "None", "None", "None"))
         ratios.append("None")
 
     ax[1, 1].text(
