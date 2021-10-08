@@ -11,6 +11,11 @@ import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
 import os
+from sklearn.utils import shuffle
+from tensorflow.python.client import device_lib
+
+# print available devices:
+print(device_lib.list_local_devices())
 
 csv_filenames = glob(r"databases/icsd/*.csv")
 
@@ -75,11 +80,13 @@ if pickle_database:
     database = (x, bravais_str, space_group_number)
     pickle.dump(database, open(pickle_path, "wb"))
 
-exit()
-
 # Use less training data for hyperparameter optimization
-# if tune_hyperparameters:
-#    csv_filenames = csv_filenames[0:100]  # only use 100k patterns
+if tune_hyperparameters:
+    x = x[0:100000]  # only use 100k patterns for hyper optimization
+    bravais_str = bravais_str[0:100000]
+    space_group_number = space_group_number[0:100000]
+
+exit()
 
 space_group_number = space_group_number - 1  # make integers zero-based
 
@@ -100,7 +107,16 @@ bravais_labels = [
     "hR",
 ]
 y = np.array([int(bravais_labels.index(name)) for name in bravais_str])
-# TODO: Check how many land in which class
+
+# Plot distribution over bravais lattices:
+# plt.bar(*np.unique(y, return_counts=True))
+# plt.show()
+# Very inbalanced!
+
+# Distribution of space groups:
+# plt.bar(*np.unique(space_group_number, return_counts=True))
+# plt.show()
+# also very very inbalanced!
 
 x = x / 100  # set maximum volume under a peak to 1
 
@@ -115,8 +131,6 @@ plt.show()
 exit()
 """
 
-# print(x.shape)
-
 assert not np.any(np.isnan(x))
 assert not np.any(np.isnan(y))
 
@@ -127,7 +141,12 @@ print("##### Loaded {} training points".format(len(x)))
 if model_str == "conv":
     x = np.expand_dims(x, axis=2)
 
-# Split into train, validation, test set
+# Split into train, validation, test set + shuffle
+
+x, y, bravais_str, space_group_number = shuffle(
+    x, y, bravais_str, space_group_number, random_state=1234
+)
+
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 
@@ -137,7 +156,11 @@ if model_str == "conv":
 
         model = tf.keras.models.Sequential()
 
-        for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=4)):
+        starting_filter_size = hp.Int(
+            "starting_filter_size", min_value=10, max_value=510, step=20
+        )
+
+        for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=7)):
 
             if i == 0:
                 model.add(
@@ -145,27 +168,20 @@ if model_str == "conv":
                         hp.Int(
                             "number_of_filters", min_value=10, max_value=200, step=10
                         ),
-                        hp.Choice("filter_size", [3, 5, 7, 9]),
-                        input_shape=(number_of_values, 1),
-                    )
-                )
-            else:
-                model.add(
-                    tf.keras.layers.Conv1D(
-                        hp.Int(
-                            "number_of_filters", min_value=10, max_value=200, step=10
-                        ),
-                        hp.Choice("filter_size", [3, 5, 7, 9]),
+                        int(starting_filter_size / (i + 1)),
+                        input_shape=(number_of_values, 1) if i == 0 else None,
+                        activation="relu",
                     )
                 )
 
             model.add(tf.keras.layers.BatchNormalization())
-            # model.add(tf.keras.layers.MaxPooling1D(pool_size=hp.Choice("pool_size", [3,5,7,9]), strides=hp.Choice("pool_size", [3,5,7,9])))
             model.add(tf.keras.layers.MaxPooling1D(pool_size=2, strides=2))
 
         model.add(tf.keras.layers.Flatten())
 
-        for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=10)):
+        print(model.layers[-1].get_output_at(0).get_shape().as_list()[1])
+
+        for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=4)):
 
             model.add(
                 tf.keras.layers.Dense(
@@ -173,9 +189,6 @@ if model_str == "conv":
                         "number_of_dense_units", min_value=32, max_value=512, step=32
                     ),
                     activation="relu",
-                    kernel_regularizer=regularizers.l2(
-                        hp.Float("l2_reg", 0, 0.005, step=0.0001)
-                    ),
                 )
             )
             model.add(
@@ -186,26 +199,17 @@ if model_str == "conv":
 
         tf.keras.layers.Dense(14)
 
-        optimizer_str = hp.Choice("optimizer", values=["adam", "adagrad", "SGD"])
-
-        if optimizer_str == "adam":
-            optimizer = tf.keras.optimizers.Adam(
-                hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
-            )
-        elif optimizer_str == "adagrad":
-            optimizer = tf.keras.optimizers.Adagrad(
-                hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
-            )
-        elif optimizer_str == "SGD":
-            optimizer = tf.keras.optimizers.SGD(
-                hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
-            )
+        optimizer = tf.keras.optimizers.Adam(
+            hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
+        )
 
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=["accuracy"],
         )
+
+        # model.summary()
 
         return model
 
@@ -270,12 +274,11 @@ else:
 
     raise Exception("Model not recognized.")
 
-# TODO: Try ray tune here
 if tuner_str == "bayesian":
 
     class MyTuner(BayesianOptimization):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = 100
+            kwargs["batch_size"] = 1000
             kwargs["epochs"] = 10
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
