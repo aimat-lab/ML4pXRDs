@@ -12,18 +12,14 @@ import pickle
 import matplotlib.pyplot as plt
 import os
 
-if os.environ["USER"] == "la2559":
-    csv_filenames = glob(r"~/Databases/ICSD_cleaned/*.csv")[:]
-elif os.environ["USER"] == "henrik":
-    csv_filenames = glob(r"~/Dokumente/Big_Files/ICSD_cleaned/*.csv")[:]
-else:
-    raise Exception("Environment not recognized.")
+csv_filenames = glob(r"databases/icsd/*.csv")
 
 number_of_values_initial = 9001
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 step = 2  # only use every step'th point in pattern
 starting_angle = 5  # where to start using the simulated pattern
-used_range = simulated_range[np.where(simulated_range == starting_angle)[0][0] :: step]
+used_range_beginning = np.where(simulated_range == starting_angle)[0][0]
+used_range = simulated_range[used_range_beginning::step]
 number_of_values = len(used_range)
 
 model_str = "conv"  # possible: conv, fully_connected
@@ -33,16 +29,7 @@ tuner_str = "hyperband"  # possible: hyperband and bayesian
 read_from_csv = True
 pickle_database = True  # for future, faster loading
 
-if os.environ["USER"] == "la2559":
-    pickle_path = r"~/Databases/ICSD_cleaned/database"
-elif os.environ["USER"] == "henrik":
-    pickle_path = r"~/Dokumente/Big_Files/ICSD_cleaned/database"
-else:
-    raise Exception("Environment not recognized.")
-
-# Use less training data for hyperparameter optimization
-# if tune_hyperparameters:
-#    filenames = filenames[0:3]
+pickle_path = r"databases/icsd/database"
 
 x = None
 bravais_str = None
@@ -57,22 +44,20 @@ if read_from_csv:
 
         data = pd.read_csv(filename, delimiter=" ", header=None)
 
-        # x_more = np.loadtxt(filename, delimiter=' ', usecols=list(range(1, number_of_values + 1))) # too slow
-        x_more = np.array(data[range(1, number_of_values_initial + 1)])[:, ::step]
-
+        x_more = np.array(data[range(1, number_of_values_initial + 1)])[
+            :, used_range_beginning::step
+        ]
         if x is None:
             x = x_more
         else:
             x = np.append(x, x_more, axis=0)
 
-        # bravais_str_more = np.loadtxt(filename, delimiter=' ', usecols=[number_of_values + 1], dtype=str) # too slow
         bravais_str_more = np.array(data[number_of_values_initial + 1], dtype=str)
         if bravais_str is None:
             bravais_str = bravais_str_more
         else:
             bravais_str = np.append(bravais_str, bravais_str_more, axis=0)
 
-        # space_group_number_more = np.loadtxt(filename, delimiter=' ', usecols=[number_of_values + 2], dtype=int) # too slow
         space_group_number_more = np.array(
             data[number_of_values_initial + 2], dtype=int
         )
@@ -84,13 +69,17 @@ if read_from_csv:
             )
 
 else:
-
     x, bravais_str, space_group_number = pickle.load(open(pickle_path, "rb"))
 
 if pickle_database:
-
     database = (x, bravais_str, space_group_number)
     pickle.dump(database, open(pickle_path, "wb"))
+
+exit()
+
+# Use less training data for hyperparameter optimization
+# if tune_hyperparameters:
+#    csv_filenames = csv_filenames[0:100]  # only use 100k patterns
 
 space_group_number = space_group_number - 1  # make integers zero-based
 
