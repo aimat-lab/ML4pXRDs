@@ -26,8 +26,8 @@ model_str = "conv"  # possible: conv, fully_connected
 tune_hyperparameters = True
 tuner_str = "hyperband"  # possible: hyperband and bayesian
 
-read_from_csv = True
-pickle_database = True  # for future, faster loading
+read_from_csv = False
+pickle_database = False  # for future, faster loading
 
 pickle_path = r"databases/icsd/database"
 

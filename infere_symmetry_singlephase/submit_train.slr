@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=4
+#SBATCH --time=48:00:00
+#SBATCH --mem=50000mb
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=gpu_test
+#SBATCH --partition=gpu_4
+
+export PARNODES="$SLURM_CPUS_PER_TASK"
+export OMP_NUM_THREADS=10
+
+conda activate tf_25
+python train.py
