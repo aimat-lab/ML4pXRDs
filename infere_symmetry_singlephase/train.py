@@ -29,7 +29,7 @@ number_of_values = len(used_range)
 
 model_str = "conv"  # possible: conv, fully_connected
 tune_hyperparameters = True
-tuner_str = "hyperband"  # possible: hyperband and bayesian
+tuner_str = "bayesian"  # possible: hyperband and bayesian
 
 read_from_csv = False
 pickle_database = False  # for future, faster loading
@@ -80,13 +80,6 @@ if pickle_database:
     database = (x, bravais_str, space_group_number)
     pickle.dump(database, open(pickle_path, "wb"))
 
-# Use less training data for hyperparameter optimization
-if tune_hyperparameters:
-    x = x[0:100000]  # only use 100k patterns for hyper optimization
-    bravais_str = bravais_str[0:100000]
-    space_group_number = space_group_number[0:100000]
-
-exit()
 
 space_group_number = space_group_number - 1  # make integers zero-based
 
@@ -147,6 +140,13 @@ x, y, bravais_str, space_group_number = shuffle(
     x, y, bravais_str, space_group_number, random_state=1234
 )
 
+# Use less training data for hyperparameter optimization
+if tune_hyperparameters:
+    x = x[0:100000]  # only use 100k patterns for hyper optimization
+    y = y[0:100000]
+    bravais_str = bravais_str[0:100000]
+    space_group_number = space_group_number[0:100000]
+
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 
@@ -179,14 +179,18 @@ if model_str == "conv":
 
         model.add(tf.keras.layers.Flatten())
 
-        print(model.layers[-1].get_output_at(0).get_shape().as_list()[1])
+        # flattended_size = model.layers[-1].get_output_at(0).get_shape().as_list()[1]
+        # reduce_factor = hp.Int("reduce_factor", min_value=2, max_value=4)
 
         for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=4)):
 
             model.add(
                 tf.keras.layers.Dense(
                     hp.Int(
-                        "number_of_dense_units", min_value=32, max_value=512, step=32
+                        "number_of_dense_units_" + str(i),
+                        min_value=32,
+                        max_value=2080,
+                        step=128,
                     ),
                     activation="relu",
                 )
@@ -278,8 +282,8 @@ if tuner_str == "bayesian":
 
     class MyTuner(BayesianOptimization):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = 1000
-            kwargs["epochs"] = 10
+            kwargs["batch_size"] = 500
+            kwargs["epochs"] = 4
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
     tuner = MyTuner(
