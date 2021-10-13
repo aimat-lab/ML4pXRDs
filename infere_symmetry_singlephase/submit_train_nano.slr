@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=4
+#SBATCH --time=10-48:00:00
+#SBATCH --mem=50000mb
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=ml_tf
+#SBATCH --partition=gpu
+
+export PARNODES="$SLURM_CPUS_PER_TASK"
+export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
+source /home/ws/uvgnh/mambaforge/etc/profile.d/conda.sh
+conda activate tf_23
+
+nvidia-smi
+
+module load CUDA
+
+nvidia-smi
+
+python train.py
