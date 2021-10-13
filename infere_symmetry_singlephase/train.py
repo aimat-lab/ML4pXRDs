@@ -318,7 +318,7 @@ elif tuner_str == "hyperband":
 if tune_hyperparameters:
 
     tuner.search_space_summary()
-    tuner.search(x_train, y_train, validation_data=(x_val, y_val))
+    tuner.search(x_train, y_train, validation_data=(x_val, y_val), verbose=2)
 
 else:  # build model from best set of hyperparameters
 
