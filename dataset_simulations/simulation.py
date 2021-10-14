@@ -5,4 +5,4 @@ class Simulator:
     pass
 
 
-# function to simulate all that are in a list
+# function to simulate all that are in a list; use xrayutilities
