@@ -13,8 +13,11 @@ model_path = ""  # path to the model to test on
 experimental_file = ""
 
 # baseline_arPLS parameters:
-arPLS_ratio = 0.001
-arPLS_lam = 1 * 10 ** 6
+current_ratio = -2.37287
+current_lambda = 7.311915
+
+arPLS_ratio = 10 ** current_ratio
+arPLS_lam = 10 ** current_lambda
 arPLS_niter = 100
 
 tune_arPLS_parameters = True
@@ -23,10 +26,11 @@ tune_arPLS_parameters = True
 # TODO: Maybe use this library for baseline removal in the future: https://github.com/StatguyUser/BaselineRemoval (algorithm should be the same, though)
 def baseline_arPLS(y, ratio=None, lam=None, niter=None, full_output=False):
 
-    print(f"Ratio {ratio:.5E} lam {lam:.5E}")
     ratio = arPLS_ratio if not ratio else ratio
     lam = arPLS_lam if not lam else lam
     niter = arPLS_niter if not niter else niter
+
+    print(f"Ratio {ratio:.5E} lam {lam:.5E}")
 
     L = len(y)
 
@@ -103,19 +107,18 @@ if __name__ == "__main__":
 
         else:
 
+            # TODO: Try to run this algorithm twice with two different parameter sets! The second one will do a lot less correction
+
             fig, ax = plt.subplots()
 
             axwave1 = plt.axes([0.17, 0.06, 0.65, 0.03])  # slider dimensions
             axwave2 = plt.axes([0.17, 0, 0.65, 0.03])  # slider dimensions
 
-            initial_ratio = -2.37287
-            initial_lambda = 8.3395
-
             slider_ratio = Slider(
-                axwave1, "Event No. 1", -3, -1, valinit=initial_ratio, valfmt="%E"
+                axwave1, "Event No. 1", -3, -1, valinit=current_ratio, valfmt="%E"
             )  # 1
             slider_lam = Slider(
-                axwave2, "Event No. 2", 2, 9, valinit=initial_lambda, valfmt="%E"
+                axwave2, "Event No. 2", 2, 9, valinit=current_lambda, valfmt="%E"
             )  # 2
 
             def update_wave(val):
@@ -129,19 +132,24 @@ if __name__ == "__main__":
                 ax.plot(xs[:, i], 0.4 + ys[:, i])
                 ax.plot(xs[:, i], 0.4 + baseline)
                 ax.plot(xs[:, i], ys[:, i] - baseline)
+                ax.plot(xs[:, i], [0] * len(xs[:, i]))
                 fig.canvas.draw_idle()
 
             baseline = baseline_arPLS(
-                ys[:, i], 10 ** initial_ratio, 10 ** initial_lambda
+                ys[:, i], 10 ** current_ratio, 10 ** current_lambda
             )
             ax.plot(xs[:, i], 0.4 + ys[:, i])
             ax.plot(
                 xs[:, i], 0.4 + baseline,
             )
             ax.plot(xs[:, i], ys[:, i] - baseline)
+            ax.plot(xs[:, i], [0] * len(xs[:, i]))
 
             slider_ratio.on_changed(update_wave)
             slider_lam.on_changed(update_wave)
 
             plt.show()
+
+            current_lambda = slider_lam.val
+            current_ratio = slider_ratio.val
 
