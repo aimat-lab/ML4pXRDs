@@ -8,3 +8,9 @@
 # - only certain elements
 # - only oxides, hydroxides, etc.
 # - switch structure factors
+
+"""
+        crystal = xu.materials.Crystal.fromCIF(
+            "/home/henrik/Dokumente/ICSD_cleaned/ICSD_1529.cif"
+        )
+"""

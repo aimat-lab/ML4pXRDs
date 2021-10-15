@@ -107,8 +107,6 @@ if __name__ == "__main__":
 
         else:
 
-            # TODO: Try to run this algorithm twice with two different parameter sets! The second one will do a lot less correction
-
             fig, ax = plt.subplots()
 
             axwave1 = plt.axes([0.17, 0.06, 0.65, 0.03])  # slider dimensions
