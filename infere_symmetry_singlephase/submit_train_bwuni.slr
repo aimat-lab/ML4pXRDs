@@ -5,10 +5,13 @@
 #SBATCH --mem=50000mb
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=gpu_test
-#SBATCH --partition=gpu_4
+#SBATCH --partition=gpu_8
 
 export PARNODES="$SLURM_CPUS_PER_TASK"
-export OMP_NUM_THREADS=10
+export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
+
+module load devel/cuda/10.1
+module load devel/cudnn/10.1
 
 conda activate tf_25
 python train.py
