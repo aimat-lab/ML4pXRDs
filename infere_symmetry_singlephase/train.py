@@ -282,7 +282,7 @@ if tuner_str == "bayesian":
 
     class MyTuner(BayesianOptimization):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = 500
+            kwargs["batch_size"] = 100
             kwargs["epochs"] = 4
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
