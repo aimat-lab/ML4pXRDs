@@ -8,6 +8,9 @@ import multiprocessing
 
 batch_size = 1000
 total_threads = 16
+return_mode = "pattern"  # only full pattern supported at the moment
+simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
+output_dir = ""
 
 
 class Simulator:
