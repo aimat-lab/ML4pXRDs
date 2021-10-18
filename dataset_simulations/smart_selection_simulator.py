@@ -14,3 +14,5 @@
             "/home/henrik/Dokumente/ICSD_cleaned/ICSD_1529.cif"
         )
 """
+
+# Implement first: Narrow selection, only one structure per class, same as before!
