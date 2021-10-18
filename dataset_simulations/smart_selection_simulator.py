@@ -15,4 +15,5 @@
         )
 """
 
-# Implement first: Narrow selection, only one structure per class, same as before!
+# Implement first: Narrow selection, only one structure per class, same selection as before!
+# Train probabilistic network!? Train it with pure and then later also mixed samples.
