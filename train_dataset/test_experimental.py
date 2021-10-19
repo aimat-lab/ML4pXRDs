@@ -26,11 +26,10 @@ arPLS_ratio = 10 ** current_ratio
 arPLS_lam = 10 ** current_lambda
 arPLS_niter = 100
 
-rolling_ball_sphere_x = 15
+rolling_ball_sphere_x = 6.619
 rolling_ball_sphere_y = 0.3
 
-# both of the following functions are taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
-# TODO: Maybe use this library for baseline removal in the future: https://github.com/StatguyUser/BaselineRemoval (algorithm should be the same, though)
+# the following function is taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
 def baseline_arPLS(y, ratio=None, lam=None, niter=None, full_output=False):
 
     ratio = arPLS_ratio if not ratio else ratio
@@ -97,18 +96,18 @@ def rolling_ball(
     ys = f(xs)
 
     # ax.plot(xs, ys + 2, label="Cubic spline")
-    ax.plot(xs, ys + 1, label="Cubic spline")
+    # ax.plot(xs, ys + 1, label="Cubic spline")
 
     ## Smooth out noise
     # Smoothing parameters defined by n
-    n = 20
+    n = 25
     b = [1.0 / n] * n
     a = 1
 
     # Filter noise
     ys = filtfilt(b, a, ys, padtype="constant")
 
-    # ax.plot(xs, np.array(ys) + 1, label="Noise filtered")
+    ax.plot(xs, np.array(ys) + 1, label="Noise filtered")
 
     width = sphere_x / (xs[1] - xs[0])
     # ax.add_patch(Ellipse(xy=(10, 0.6), width=sphere_x, height=sphere_y))
@@ -123,7 +122,8 @@ def rolling_ball(
     ax.plot(xs, ys, label="Baseline removed")
 
     ax.plot(xs, [0] * len(xs))
-    # plt.legend()
+
+    ax.legend()
 
     return ys - yb
 
@@ -172,9 +172,7 @@ if __name__ == "__main__":
                     axwave1 = plt.axes([0.17, 0.06, 0.65, 0.03])  # slider dimensions
                     axwave2 = plt.axes([0.17, 0, 0.65, 0.03])  # slider dimensions
 
-                    # TODO: Fix these names again
-
-                    slider_sphere_x = Slider(
+                    slider_ratio = Slider(
                         axwave1,
                         "Event No. 1",
                         -3,
@@ -182,7 +180,7 @@ if __name__ == "__main__":
                         valinit=current_ratio,
                         valfmt="%E",
                     )  # 1
-                    slider_sphere_y = Slider(
+                    slider_lambda = Slider(
                         axwave2,
                         "Event No. 2",
                         2,
@@ -192,13 +190,13 @@ if __name__ == "__main__":
                     )  # 2
 
                     def update_wave(val):
-                        value1 = 10 ** slider_sphere_x.val
-                        slider_sphere_x.valtext.set_text(
-                            f"{value1:.5E} {slider_sphere_x.val}"
+                        value1 = 10 ** slider_ratio.val
+                        slider_ratio.valtext.set_text(
+                            f"{value1:.5E} {slider_ratio.val}"
                         )
-                        value2 = 10 ** slider_sphere_y.val
-                        slider_sphere_y.valtext.set_text(
-                            f"{value2:.5E} {slider_sphere_y.val}"
+                        value2 = 10 ** slider_lambda.val
+                        slider_lambda.valtext.set_text(
+                            f"{value2:.5E} {slider_lambda.val}"
                         )
 
                         ax.cla()
@@ -220,13 +218,13 @@ if __name__ == "__main__":
                     ax.plot(current_xs, current_ys - baseline)
                     ax.plot(current_xs, [0] * len(current_xs))
 
-                    slider_sphere_x.on_changed(update_wave)
-                    slider_sphere_y.on_changed(update_wave)
+                    slider_ratio.on_changed(update_wave)
+                    slider_lambda.on_changed(update_wave)
 
                     plt.show()
 
-                    current_lambda = slider_sphere_y.val
-                    current_ratio = slider_sphere_x.val
+                    current_lambda = slider_ratio.val
+                    current_ratio = slider_lambda.val
 
                 current_ys = current_ys - baseline
 
@@ -234,13 +232,14 @@ if __name__ == "__main__":
 
                 if not tune_parameters:
 
-                    removed = rolling_ball(
+                    current_ys = rolling_ball(
                         xs[:, i],
                         ys[:, i],
                         sphere_x=rolling_ball_sphere_x,
                         sphere_y=rolling_ball_sphere_y,
                         min_x=10,
                         max_x=50,
+                        n_xs=5000,
                     )
 
                 else:
@@ -279,6 +278,7 @@ if __name__ == "__main__":
                             min_x=10,
                             max_x=50,
                             ax=ax,
+                            n_xs=5000,
                         )
 
                         fig.canvas.draw_idle()
@@ -292,3 +292,6 @@ if __name__ == "__main__":
 
                     rolling_ball_sphere_x = slider_sphere_x.val
                     rolling_ball_sphere_y = slider_sphere_y.val
+
+    if tune_parameters:
+        exit()  # do not continue, since the same parameters should be used for all samples. Restart!
