@@ -16,6 +16,7 @@ output_dir = ""
 class Simulator:
     def __init__(self):
         self.crystals = []
+        self.labels = []  # space group, etc.
 
     def track_job(job, update_interval=5):
         while job._number_left > 0:
@@ -28,15 +29,17 @@ class Simulator:
 
     def simulate_all(self):
 
-        output_dir = "databases/icsd/"
+        output_dir = "patterns/smart/"
+        os.system(f"mkdir -p {output_dir}")
 
         print(f"Processing {len(self.crystals)} structures.")
 
-        # put 1000 entries into one file:
-
+        # put 1000 entries ("batch") into one file, process them at once:
         for i in range(0, math.ceil(len(self.crystals) / batch_size)):
 
-            if os.path.exists(os.path.join(output_dir, "dataset_" + str(i) + ".csv")):
+            if os.path.exists(
+                os.path.join(output_dir, "dataset_" + str(i) + ".csv")
+            ):  # make it possible to continue later
                 continue
 
             if ((i + 1) * batch_size) < len(self.crystals):
@@ -46,7 +49,9 @@ class Simulator:
                 current_crystals = self.crystals[i * batch_size :]
                 end_index = len(self.crystals)
 
-            pool = multiprocessing.Pool(processes=total_threads)
+            pool = multiprocessing.Pool(
+                processes=total_threads - 1
+            )  # keep one main thread
 
             start = time.time()
 
@@ -58,12 +63,14 @@ class Simulator:
 
             end = time.time()
 
-            result = [x for x in result if x is not None]
+            result = [
+                x for x in result if x is not None
+            ]  # None indicates an error in the structure
             result = np.array(result)
 
             np.savetxt(
                 os.path.join(output_dir, "dataset_" + str(i) + ".csv"),
-                result,
+                np.concatenate(result, self.labels[i]),
                 delimiter=" ",
                 fmt="%s",
             )
@@ -81,15 +88,16 @@ class Simulator:
             1,
             crystallite_size_lor=2e-07,  # default
             crystallite_size_gauss=2e-07,  # default
-            strain_lor=0,
-            strain_gauss=0,
-            preferred_orientation=(0, 0, 0),
-            preferred_orientation_factor=1,
+            strain_lor=0,  # default
+            strain_gauss=0,  # default
+            preferred_orientation=(0, 0, 0),  # default
+            preferred_orientation_factor=1,  # default
         )
 
         # default parameters are in ~/.xrayutilities.conf
+        # Alread set in config: Use one thread only
         # or use print(powder_model.pdiff[0].settings)
-        # Further information on the settings: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
+        # Further information on the settings can be found here: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
         powder_model = xu.simpack.PowderModel(
             powder,
             I0=100,
@@ -140,10 +148,11 @@ class Simulator:
             },
         )
 
-        xs = np.arange(0, 90, 0.01)
-        diffractogram = powder_model.simulate(xs)
+        xs = np.linspace(
+            0, 90, 9001
+        )  # simulate a rather large range, we can still later use a smaller range for training
+        diffractogram = powder_model.simulate(
+            xs
+        )  # this also includes the Lorentzian + polarization correction
 
         return diffractogram
-
-        # TODO: also return the space group, etc.
-        # TODO: evt. add Lorentz and Polarization correction
