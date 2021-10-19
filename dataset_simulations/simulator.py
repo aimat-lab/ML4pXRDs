@@ -81,7 +81,7 @@ class Simulator:
                 )
             )
 
-    def process_crystal(crystal):
+    def process_crystal(crystal):  # TODO: Add option to augment crystallite size
 
         powder = xu.simpack.Powder(
             crystal,
@@ -147,6 +147,8 @@ class Simulator:
                 },
             },
         )
+        # TODO: Include zero-point shift at some point
+        # TODO: Can I reuse this for other samples? Caching?
 
         xs = np.linspace(
             0, 90, 9001

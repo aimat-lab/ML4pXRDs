@@ -286,6 +286,17 @@ if tuner_str == "bayesian":
             kwargs["epochs"] = 4
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
+        def on_epoch_end(trial, model, epoch, *args, **kwargs):
+
+            checkpoint_files = glob(
+                "tuner/bayesian_opt_"
+                + model_str
+                + "/trial_*/checkpoints/epoch_*/checkpoint*"
+            )
+
+            for file in checkpoint_files:
+                os.system("rm " + file)
+
     tuner = MyTuner(
         build_model,
         objective="val_accuracy",
