@@ -1,31 +1,27 @@
-# At first:
-# find common space groups in icsd (~20)
-# select icsd entries from these space groups
-# simulate
+# "Dumb" selection of structures: Just use all structures of the corresponding space group and use them for training
 
-# Then:
-# Try smarter selections:
-# - only certain elements
-# - only oxides, hydroxides, etc.
-# - switch structure factors
-
-"""
-        crystal = xu.materials.Crystal.fromCIF(
-            "/home/henrik/Dokumente/ICSD_cleaned/ICSD_1529.cif"
-        )
-"""
-
-# Implement first: Narrow selection, only one structure per class, same selection as before!
-# Train probabilistic network!? Train it with pure and then later also mixed samples.
-
-from dataset_simulations.simulator import Simulator
+from simulator import Simulator
+import pandas as pd
 
 
-class SmartSelectionSimulator(Simulator):
-    def __init__():
-        pass
+class DumbSelectionSimulator(Simulator):
+    def __init__(self, icsd_info_file_path, icsd_cifs_dir):
+        super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
-    def generate_structures():
-        pass
+    def fillStructures(self):
+        for space_group in self.icsd_space_group_symbols:
+            if space_group == "F m -3 m":  # 0
+                pass
+            elif space_group == "I a -3":  # 1
+                pass
+            elif space_group == "P 63/m":  # 2
+                pass
 
-        # fill self.structures + self.labels
+
+if __name__ == "__main__":
+    simulator = DumbSelectionSimulator(
+        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+    )
+
+    pass

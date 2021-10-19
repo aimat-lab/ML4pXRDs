@@ -5,6 +5,8 @@ import time
 import math
 import os
 import multiprocessing
+import pandas as pd
+from glob import glob
 
 batch_size = 1000
 total_threads = 16
@@ -14,9 +16,13 @@ output_dir = ""
 
 
 class Simulator:
-    def __init__(self):
+    def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         self.crystals = []
         self.labels = []  # space group, etc.
+        self.icsd_info_file_path = icsd_info_file_path
+        self.icsd_cifs_dir = icsd_cifs_dir
+        self.read_icsd_info()
+        self.load_all_cif_paths()
 
     def track_job(job, update_interval=5):
         while job._number_left > 0:
@@ -55,7 +61,7 @@ class Simulator:
 
             start = time.time()
 
-            handle = pool.map_async(Simulator.process_crystal, current_crystals)
+            handle = pool.map_async(Simulator.simulate_crystal, current_crystals)
 
             Simulator.track_job(handle)
 
@@ -81,7 +87,7 @@ class Simulator:
                 )
             )
 
-    def process_crystal(crystal):  # TODO: Add option to augment crystallite size
+    def simulate_crystal(crystal):  # TODO: Add option to augment crystallite size
 
         powder = xu.simpack.Powder(
             crystal,
@@ -158,3 +164,29 @@ class Simulator:
         )  # this also includes the Lorentzian + polarization correction
 
         return diffractogram
+
+    def read_icsd_info(self):
+
+        icsd_info = pd.read_csv(self.icsd_info_file_path, sep=",", skiprows=1)
+
+        self.icsd_ids = icsd_info["CollectionCode"]
+        self.icsd_space_group_symbols = icsd_info["HMS"]
+        self.icsd_formulas = icsd_info["SumFormula"]
+        self.icsd_structure_types = icsd_info["StructureType"]
+        self.icsd_standardised_cell_parameters = icsd_info["StandardisedCellParameter"]
+        self.icsd_r_values = icsd_info["RValue"]
+
+    def load_all_cif_paths(self):
+
+        all_filenames = glob(os.path.join(self.icsd_cifs_dir, "*.cif"))
+        all_ids = [
+            int(os.path.splitext(os.path.basename(filename))[0])
+            for filename in all_filenames
+        ]
+
+        self.icsd_paths = [
+            (all_filenames[all_ids.index(i)] if i in all_ids else None)
+            for i in self.icsd_ids
+        ]
+
+        pass
