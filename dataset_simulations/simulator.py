@@ -24,7 +24,7 @@ class Simulator:
         self.read_icsd_info()
         self.load_all_cif_paths()
 
-    def track_job(job, update_interval=5):
+    def __track_job(job, update_interval=5):
         while job._number_left > 0:
             print(
                 "Tasks remaining in this batch of 1000: {0}".format(
@@ -63,7 +63,7 @@ class Simulator:
 
             handle = pool.map_async(Simulator.simulate_crystal, current_crystals)
 
-            Simulator.track_job(handle)
+            Simulator.__track_job(handle)
 
             result = handle.get()
 
@@ -87,7 +87,9 @@ class Simulator:
                 )
             )
 
-    def simulate_crystal(crystal):  # TODO: Add option to augment crystallite size
+    def simulate_crystal(
+        crystal,
+    ):  # TODO: Add option to augment crystallite size + maybe zero-point-shift
 
         powder = xu.simpack.Powder(
             crystal,
@@ -153,7 +155,6 @@ class Simulator:
                 },
             },
         )
-        # TODO: Include zero-point shift at some point
         # TODO: Can I reuse this for other samples? Caching?
 
         xs = np.linspace(
@@ -169,24 +170,31 @@ class Simulator:
 
         icsd_info = pd.read_csv(self.icsd_info_file_path, sep=",", skiprows=1)
 
-        self.icsd_ids = icsd_info["CollectionCode"]
-        self.icsd_space_group_symbols = icsd_info["HMS"]
-        self.icsd_formulas = icsd_info["SumFormula"]
-        self.icsd_structure_types = icsd_info["StructureType"]
-        self.icsd_standardised_cell_parameters = icsd_info["StandardisedCellParameter"]
-        self.icsd_r_values = icsd_info["RValue"]
+        self.icsd_ids = list(icsd_info["CollectionCode"])
+        self.icsd_space_group_symbols = list(icsd_info["HMS"])
+        self.icsd_formulas = list(icsd_info["SumFormula"])
+        self.icsd_structure_types = list(icsd_info["StructureType"])
+        self.icsd_standardised_cell_parameters = list(
+            icsd_info["StandardisedCellParameter"]
+        )
+        self.icsd_r_values = list(icsd_info["RValue"])
 
     def load_all_cif_paths(self):
 
-        all_filenames = glob(os.path.join(self.icsd_cifs_dir, "*.cif"))
-        all_ids = [
-            int(os.path.splitext(os.path.basename(filename))[0])
-            for filename in all_filenames
-        ]
+        # from dir
+        all_paths = glob(os.path.join(self.icsd_cifs_dir, "*.cif"))
 
-        self.icsd_paths = [
-            (all_filenames[all_ids.index(i)] if i in all_ids else None)
-            for i in self.icsd_ids
-        ]
+        self.icsd_paths = [None] * len(self.icsd_ids)
+
+        for i, path in enumerate(all_paths):
+
+            print(f"{i} of {len(self.icsd_paths)}")
+
+            with open(path) as f:
+                first_line = f.readline()
+                id = int(first_line.strip().replace("data_", "").replace("-ICSD", ""))
+
+                # TODO: handle ids not in list
+                self.icsd_paths[self.icsd_ids.index(id)] = path
 
         pass

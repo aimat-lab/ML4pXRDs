@@ -1,4 +1,5 @@
 # "Dumb" selection of structures: Just use all structures of the corresponding space group and use them for training
+# This won't be able to distinguish between Rocksalt / Fluorite (Fm-3m) and also Spinel / Pyrochlore (Fd-3m)
 
 from simulator import Simulator
 import pandas as pd
