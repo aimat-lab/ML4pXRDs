@@ -9,10 +9,10 @@ from dataset_simulations.simulator import Simulator
 
 
 class NarrowSimulator(Simulator):
-    def __init__():
-        pass
+    def __init__(self):
+        self.output_dir = "patterns/narrow/"
 
-    def generate_structures():
+    def generate_structures(self):
         pass
 
         # fill self.structures + self.labels
