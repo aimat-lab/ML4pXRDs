@@ -5,7 +5,7 @@ from simulator import Simulator
 import pandas as pd
 
 
-class DumbSelectionSimulator(Simulator):
+class SpacegroupSimulator(Simulator):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
@@ -20,7 +20,7 @@ class DumbSelectionSimulator(Simulator):
 
 
 if __name__ == "__main__":
-    simulator = DumbSelectionSimulator(
+    simulator = SpacegroupSimulator(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )

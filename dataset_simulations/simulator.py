@@ -7,6 +7,7 @@ import os
 import multiprocessing
 import pandas as pd
 from glob import glob
+import pickle
 
 batch_size = 1000
 total_threads = 16
@@ -21,8 +22,7 @@ class Simulator:
         self.labels = []  # space group, etc.
         self.icsd_info_file_path = icsd_info_file_path
         self.icsd_cifs_dir = icsd_cifs_dir
-        self.read_icsd_info()
-        self.load_all_cif_paths()
+        self.read_icsd()
 
     def __track_job(job, update_interval=5):
         while job._number_left > 0:
@@ -166,18 +166,48 @@ class Simulator:
 
         return diffractogram
 
-    def read_icsd_info(self):
+    def read_icsd(self):
 
-        icsd_info = pd.read_csv(self.icsd_info_file_path, sep=",", skiprows=1)
+        pickle_file = os.path.join(self.icsd_cifs_dir, "icsd_meta")
+        if not os.path.exists(pickle_file):
+            icsd_info = pd.read_csv(self.icsd_info_file_path, sep=",", skiprows=1)
 
-        self.icsd_ids = list(icsd_info["CollectionCode"])
-        self.icsd_space_group_symbols = list(icsd_info["HMS"])
-        self.icsd_formulas = list(icsd_info["SumFormula"])
-        self.icsd_structure_types = list(icsd_info["StructureType"])
-        self.icsd_standardised_cell_parameters = list(
-            icsd_info["StandardisedCellParameter"]
-        )
-        self.icsd_r_values = list(icsd_info["RValue"])
+            self.icsd_ids = list(icsd_info["CollectionCode"])
+            self.icsd_space_group_symbols = list(icsd_info["HMS"])
+            self.icsd_formulas = list(icsd_info["SumFormula"])
+            self.icsd_structure_types = list(icsd_info["StructureType"])
+            self.icsd_standardised_cell_parameters = list(
+                icsd_info["StandardisedCellParameter"]
+            )
+            self.icsd_r_values = list(icsd_info["RValue"])
+
+            self.load_all_cif_paths()
+
+            to_pickle = (
+                self.icsd_ids,
+                self.icsd_space_group_symbols,
+                self.icsd_formulas,
+                self.icsd_structure_types,
+                self.icsd_standardised_cell_parameters,
+                self.icsd_r_values,
+                self.icsd_paths,
+            )
+
+            with open(pickle_file, "wb") as file:
+                pickle.dump(to_pickle, file)
+
+        else:
+
+            with open(pickle_file, "rb") as file:
+                (
+                    self.icsd_ids,
+                    self.icsd_space_group_symbols,
+                    self.icsd_formulas,
+                    self.icsd_structure_types,
+                    self.icsd_standardised_cell_parameters,
+                    self.icsd_r_values,
+                    self.icsd_paths,
+                ) = pickle.load(file)
 
     def load_all_cif_paths(self):
 
@@ -186,15 +216,31 @@ class Simulator:
 
         self.icsd_paths = [None] * len(self.icsd_ids)
 
+        counter_0 = 0
+        counter_1 = 0
+        counter_2 = 0
+
         for i, path in enumerate(all_paths):
 
             print(f"{i} of {len(self.icsd_paths)}")
 
             with open(path) as f:
                 first_line = f.readline()
+
+                if first_line.strip() == "":
+                    print(f"Skipped cif file {path}")
+                    counter_2 += 1
+                    continue
+
                 id = int(first_line.strip().replace("data_", "").replace("-ICSD", ""))
 
-                # TODO: handle ids not in list
-                self.icsd_paths[self.icsd_ids.index(id)] = path
+                if id in self.icsd_ids:
+                    self.icsd_paths[self.icsd_ids.index(id)] = path
+                else:
+                    counter_0 += 1
 
-        pass
+        counter_1 = self.icsd_paths.count(None)
+
+        print(f"{counter_0} entries where in the cif directory, but not in the csv")
+        print(f"{counter_1} entries where in the csv, but not in the cif directory")
+        print(f"{counter_2} cif files skipped")
