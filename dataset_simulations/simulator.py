@@ -5,6 +5,7 @@ import time
 import math
 import os
 import multiprocessing
+import multiprocessing.pool
 import pandas as pd
 from glob import glob
 import pickle
@@ -19,6 +20,28 @@ crystallite_size_gauss_min = 1 * 10 ** -9
 crystallite_size_gauss_max = 50 * 10 ** -9
 crystallite_size_lor_min = 1 * 10 ** -9
 crystallite_size_lor_max = 50 * 10 ** -9
+
+
+class NoDaemonProcess(multiprocessing.Process):
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, value):
+        pass
+
+
+class NoDaemonContext(type(multiprocessing.get_context())):
+    Process = NoDaemonProcess
+
+
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class NestablePool(multiprocessing.pool.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs["context"] = NoDaemonContext()
+        super(NestablePool, self).__init__(*args, **kwargs)
 
 
 class Simulator:
@@ -44,7 +67,7 @@ class Simulator:
 
     def simulate_all(self):
 
-        self.crystals = self.crystals[0:20]
+        # self.crystals = self.crystals[0:20] # only for testing
 
         os.system(f"mkdir -p {self.output_dir}")
 
@@ -67,10 +90,7 @@ class Simulator:
 
             start = time.time()
 
-            """
-            pool = multiprocessing.Pool(
-                processes=total_threads - 1
-            )  # keep one main thread
+            pool = NestablePool(processes=total_threads - 1)  # keep one main thread
 
             handle = pool.map_async(Simulator.simulate_crystal, current_crystals)
 
@@ -78,11 +98,9 @@ class Simulator:
 
             result = handle.get()
 
-            """
-
-            result = [
-                Simulator.simulate_crystal(crystal) for crystal in current_crystals
-            ]
+            # result = [
+            #    Simulator.simulate_crystal(crystal) for crystal in current_crystals
+            # ]
 
             end = time.time()
 
@@ -288,3 +306,17 @@ class Simulator:
         print(f"{counter_0} entries where in the cif directory, but not in the csv")
         print(f"{counter_1} entries where in the csv, but not in the cif directory")
         print(f"{counter_2} cif files skipped")
+
+    def save_crystals_and_labels(self):
+
+        pickle_file = os.path.join(self.output_dir, "crystals_labels")
+
+        with open(pickle_file, "wb") as file:
+            pickle.dump((self.crystals, self.labels), file)
+
+    def load_crystals_and_labels(self):
+
+        pickle_file = os.path.join(self.output_dir, "crystals_labels")
+
+        with open(pickle_file, "rb") as file:
+            (self.crystals, self.labels) = pickle.load(file)

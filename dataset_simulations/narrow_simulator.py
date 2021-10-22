@@ -1,5 +1,7 @@
 from simulator import Simulator
 import xrayutilities as xu
+import pickle
+import os
 
 # Use a very narrow selection of ICSD entries
 
@@ -15,7 +17,11 @@ class NarrowSimulator(Simulator):
 
         self.output_dir = "patterns/narrow/"
 
-    def generate_structures(self):
+    def generate_structures(self, read_from_pickle=False, write_to_pickle=False):
+
+        if read_from_pickle:
+            self.load_crystals_and_labels()
+            return
 
         for i, path in enumerate(self.icsd_paths):
             """
@@ -43,6 +49,9 @@ class NarrowSimulator(Simulator):
             self.crystals.append(crystal)
             self.labels.append(label)
 
+        if write_to_pickle:
+            self.save_crystals_and_labels()
+
 
 if __name__ == "__main__":
     simulator = NarrowSimulator(
@@ -50,7 +59,7 @@ if __name__ == "__main__":
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-    simulator.generate_structures()
+    simulator.generate_structures(read_from_pickle=True, write_to_pickle=False)
 
     print(len(simulator.crystals))
     print(simulator.labels.count(0))

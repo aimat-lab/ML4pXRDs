@@ -9,3 +9,5 @@ texture_analysis/old
 UV-vis_analysis/GapExtractor
 *.pdf
 slurm*
+.VSCodeCounter
+dataset_simulations/patterns
