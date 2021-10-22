@@ -150,6 +150,7 @@ if tune_hyperparameters:
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 
+# TODO: Add Lee CNN
 if model_str == "conv":
 
     def build_model(hp):  # define model with hyperparameters

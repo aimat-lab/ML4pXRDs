@@ -1,4 +1,4 @@
-from dataset_simulations.simulator import Simulator
+from simulator import Simulator
 
 # Build the crystals for the already known HEOs (Rock salt, spinel, cubic perovskite, ortho perovskite, fluorite, bixbyite, pyrochlore, (O3 layered)) (Maybe more?)
 # Vary all open parameters (only lattice parameters?) of the structures
@@ -6,17 +6,10 @@ from dataset_simulations.simulator import Simulator
 
 
 class SmartSelectionSimulator(Simulator):
-    def __init__():
-        pass
+    def __init__(self, icsd_info_file_path, icsd_cifs_dir):
+        super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
-    def generate_structures():
+    def generate_structures(self):
         pass
 
         # fill self.structures + self.labels
-
-
-"""
-        crystal = xu.materials.Crystal.fromCIF(
-            "/home/henrik/Dokumente/ICSD_cleaned/ICSD_1529.cif"
-        )
-"""

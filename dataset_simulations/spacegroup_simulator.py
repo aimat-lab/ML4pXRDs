@@ -24,5 +24,3 @@ if __name__ == "__main__":
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
-
-    pass
