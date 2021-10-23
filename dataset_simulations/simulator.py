@@ -71,7 +71,7 @@ class Simulator:
 
         os.system(f"mkdir -p {self.output_dir}")
 
-        print(f"Processing {len(self.crystals)} structures.")
+        print(f"Simulating {len(self.crystals)} structures.")
 
         # put 1000 entries ("batch") into one file, process them at once:
         for i in range(0, math.ceil(len(self.crystals) / batch_size)):
@@ -127,7 +127,7 @@ class Simulator:
             )
 
     def simulate_crystal(crystal,):
-        # TODO: Maybe add option for zero-point shifts
+        # TODO: add option for zero-point shifts
 
         diffractograms = []
 
@@ -141,18 +141,19 @@ class Simulator:
                 crystallite_size_lor_min, crystallite_size_lor_max
             )
 
-            powder = xu.simpack.Powder(
-                crystal,
-                1,
-                crystallite_size_lor=size_lor,  # default: 2e-07
-                crystallite_size_gauss=size_gauss,  # default: 2e-07
-                strain_lor=0,  # default
-                strain_gauss=0,  # default
-                preferred_orientation=(0, 0, 0),  # default
-                preferred_orientation_factor=1,  # default
-            )
-
             try:
+
+                powder = xu.simpack.Powder(
+                    crystal,
+                    1,
+                    crystallite_size_lor=size_lor,  # default: 2e-07
+                    crystallite_size_gauss=size_gauss,  # default: 2e-07
+                    strain_lor=0,  # default
+                    strain_gauss=0,  # default
+                    preferred_orientation=(0, 0, 0),  # default
+                    preferred_orientation_factor=1,  # default
+                )
+
                 # default parameters are in ~/.xrayutilities.conf
                 # Alread set in config: Use one thread only
                 # or use print(powder_model.pdiff[0].settings)
@@ -212,12 +213,12 @@ class Simulator:
                     0, 90, 9001
                 )  # simulate a rather large range, we can still later use a smaller range for training
                 diffractogram = powder_model.simulate(
-                    xs
+                    xs, mode="local"
                 )  # this also includes the Lorentzian + polarization correction
 
-                diffractograms.append(diffractogram)
-
                 powder_model.close()
+
+                diffractograms.append(diffractogram)
 
             except Exception as ex:
 

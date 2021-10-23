@@ -21,36 +21,41 @@ class NarrowSimulator(Simulator):
 
         if read_from_pickle:
             self.load_crystals_and_labels()
-            return
+        else:
 
-        for i, path in enumerate(self.icsd_paths):
-            """
-            if self.icsd_sumformulas[i] == "Ce1 O2":
-                label = 0
-            elif self.icsd_sumformulas[i] == "O3 Y2":
-                label = 1
-            elif self.icsd_formulas[i] == "La (O H)3":
-                label = 2
-            else:
-                continue
-            """
+            for i, path in enumerate(self.icsd_paths):
+                """
+                if self.icsd_sumformulas[i] == "Ce1 O2":
+                    label = 0
+                elif self.icsd_sumformulas[i] == "O3 Y2":
+                    label = 1
+                elif self.icsd_formulas[i] == "La (O H)3":
+                    label = 2
+                else:
+                    continue
+                """
 
-            if self.icsd_structure_types[i] == "Fluorite#CaF2":
-                label = 0
-            elif self.icsd_structure_types[i] == "Bixbyite#(MnFe)O3":
-                label = 1
-            elif self.icsd_structure_types[i] == "UCl3":
-                label = 2
-            else:
-                continue
+                if self.icsd_structure_types[i] == "Fluorite#CaF2":
+                    label = 0
+                elif self.icsd_structure_types[i] == "Bixbyite#(MnFe)O3":
+                    label = 1
+                elif self.icsd_structure_types[i] == "UCl3":
+                    label = 2
+                else:
+                    continue
 
-            crystal = xu.materials.Crystal.fromCIF(path)
+                crystal = xu.materials.Crystal.fromCIF(path)
 
-            self.crystals.append(crystal)
-            self.labels.append(label)
+                self.crystals.append(crystal)
+                self.labels.append(label)
 
         if write_to_pickle:
             self.save_crystals_and_labels()
+
+        print(f"Loaded {len(simulator.crystals)} crystals")
+        print(f"Fluorite#CaF2: {simulator.labels.count(0)}")
+        print(f"Bixbyite#(MnFe)O3: {simulator.labels.count(1)}")
+        print(f"UCl3: {simulator.labels.count(2)}")
 
 
 if __name__ == "__main__":
@@ -60,10 +65,5 @@ if __name__ == "__main__":
     )
 
     simulator.generate_structures(read_from_pickle=True, write_to_pickle=False)
-
-    print(len(simulator.crystals))
-    print(simulator.labels.count(0))
-    print(simulator.labels.count(1))
-    print(simulator.labels.count(2))
 
     simulator.simulate_all()

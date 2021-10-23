@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import os
 from sklearn.utils import shuffle
 from tensorflow.python.client import device_lib
+import tensorflow.keras as keras
 
 # print available devices:
 print(device_lib.list_local_devices())
@@ -27,8 +28,10 @@ used_range_beginning = np.where(simulated_range == starting_angle)[0][0]
 used_range = simulated_range[used_range_beginning::step]
 number_of_values = len(used_range)
 
-model_str = "conv"  # possible: conv, fully_connected
-tune_hyperparameters = True
+n_classes = 14  # TODO: read this directly from the csv
+
+model_str = "Lee"  # possible: conv, fully_connected, Lee (CNN-3)
+tune_hyperparameters = False
 tuner_str = "bayesian"  # possible: hyperband and bayesian
 
 read_from_csv = False
@@ -150,7 +153,6 @@ if tune_hyperparameters:
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 
-# TODO: Add Lee CNN
 if model_str == "conv":
 
     def build_model(hp):  # define model with hyperparameters
@@ -161,7 +163,7 @@ if model_str == "conv":
             "starting_filter_size", min_value=10, max_value=510, step=20
         )
 
-        for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=7)):
+        for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=4)):
 
             if i == 0:
                 model.add(
@@ -169,8 +171,18 @@ if model_str == "conv":
                         hp.Int(
                             "number_of_filters", min_value=10, max_value=200, step=10
                         ),
-                        int(starting_filter_size / (i + 1)),
-                        input_shape=(number_of_values, 1) if i == 0 else None,
+                        int(starting_filter_size * (3 / 4) ** i),
+                        input_shape=(number_of_values, 1),
+                        activation="relu",
+                    )
+                )
+            else:
+                model.add(
+                    tf.keras.layers.Conv1D(
+                        hp.Int(
+                            "number_of_filters", min_value=10, max_value=200, step=10
+                        ),
+                        int(starting_filter_size * (3 / 4) ** i),
                         activation="relu",
                     )
                 )
@@ -202,7 +214,7 @@ if model_str == "conv":
                 )
             )
 
-        tf.keras.layers.Dense(14)
+        model.add(tf.keras.layers.Dense(14))
 
         optimizer = tf.keras.optimizers.Adam(
             hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
@@ -214,7 +226,7 @@ if model_str == "conv":
             metrics=["accuracy"],
         )
 
-        # model.summary()
+        model.summary()
 
         return model
 
@@ -228,28 +240,40 @@ elif model_str == "fully_connected":
         for i in range(0, hp.Int("number_of_layers", min_value=1, max_value=15)):
 
             if i == 0:
-                tf.keras.layers.Dense(
-                    hp.Int("units_" + str(i), min_value=64, max_value=2048, step=64),
-                    activation="relu",
-                    kernel_regularizer=regularizers.l2(
-                        hp.Float("l2_reg", 0, 0.005, step=0.0001)
-                    ),
-                    input_shape=(number_of_values,),
+                model.add(
+                    tf.keras.layers.Dense(
+                        hp.Int(
+                            "units_" + str(i), min_value=64, max_value=2048, step=64
+                        ),
+                        activation="relu",
+                        kernel_regularizer=regularizers.l2(
+                            hp.Float("l2_reg", 0, 0.005, step=0.0001)
+                        ),
+                        input_shape=(number_of_values,),
+                    )
                 )
 
             else:
 
-                tf.keras.layers.Dense(
-                    hp.Int("units_" + str(i), min_value=64, max_value=2048, step=64),
-                    activation="relu",
-                    kernel_regularizer=regularizers.l2(
-                        hp.Float("l2_reg", 0, 0.005, step=0.0001)
-                    ),
+                model.add(
+                    tf.keras.layers.Dense(
+                        hp.Int(
+                            "units_" + str(i), min_value=64, max_value=2048, step=64
+                        ),
+                        activation="relu",
+                        kernel_regularizer=regularizers.l2(
+                            hp.Float("l2_reg", 0, 0.005, step=0.0001)
+                        ),
+                    )
                 )
 
-            tf.keras.layers.Dropout(hp.Float("dropout", 0, 0.5, step=0.1, default=0.2))
+            model.add(
+                tf.keras.layers.Dropout(
+                    hp.Float("dropout", 0, 0.5, step=0.1, default=0.2)
+                )
+            )
 
-        tf.keras.layers.Dense(14)
+        model.add(tf.keras.layers.Dense(14))
 
         optimizer_str = hp.Choice("optimizer", values=["adam", "adagrad", "SGD"])
 
@@ -271,6 +295,93 @@ elif model_str == "fully_connected":
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=["accuracy"],
         )
+
+        return model
+
+
+elif model_str == "Lee":
+
+    def build_model(hp=None):
+
+        keep_prob_ = 0.5
+        learning_rate_ = 0.001
+
+        inputs = keras.Input(
+            shape=(number_of_values, 1), dtype=tf.float32, name="inputs"
+        )
+
+        conv1 = keras.layers.Conv1D(
+            filters=64,
+            kernel_size=20,
+            strides=1,
+            padding="same",
+            kernel_initializer=keras.initializers.GlorotNormal(seed=None),
+            activation="relu",
+        )(inputs)
+
+        max_pool_1 = keras.layers.MaxPool1D(pool_size=3, strides=3, padding="same")(
+            conv1
+        )
+
+        conv2 = keras.layers.Conv1D(
+            filters=64,
+            kernel_size=15,
+            strides=1,
+            padding="same",
+            kernel_initializer=keras.initializers.GlorotNormal(seed=None),
+            activation="relu",
+        )(max_pool_1)
+
+        max_pool_2 = keras.layers.MaxPool1D(pool_size=2, strides=3, padding="same")(
+            conv2
+        )
+
+        conv3 = keras.layers.Conv1D(
+            filters=64,
+            kernel_size=10,
+            strides=2,
+            padding="same",
+            kernel_initializer=keras.initializers.GlorotNormal(seed=None),
+            activation="relu",
+        )(max_pool_2)
+
+        max_pool_3 = keras.layers.MaxPool1D(pool_size=1, strides=2, padding="same")(
+            conv3
+        )
+
+        flat = keras.layers.Flatten()(max_pool_3)
+
+        drop1 = keras.layers.Dropout(keep_prob_)(flat)
+
+        # TODO: Why do they not use activation functions here?
+
+        dense1 = keras.layers.Dense(
+            2500, kernel_initializer=keras.initializers.GlorotNormal(seed=None)
+        )(drop1)
+
+        drop2 = keras.layers.Dropout(keep_prob_)(dense1)
+
+        dense2 = keras.layers.Dense(
+            1000, kernel_initializer=keras.initializers.GlorotNormal(seed=None)
+        )(drop2)
+
+        drop3 = keras.layers.Dropout(keep_prob_)(dense2)
+
+        dense3 = keras.layers.Dense(
+            n_classes, kernel_initializer=keras.initializers.GlorotNormal(seed=None)
+        )(drop3)
+
+        model = keras.Model(inputs=inputs, outputs=dense3)
+
+        optimizer = keras.optimizers.Adam(learning_rate=learning_rate_)
+
+        model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=["accuracy"],
+        )
+
+        model.summary()
 
         return model
 
@@ -336,19 +447,25 @@ else:  # build model from best set of hyperparameters
 
     training_outdir = "trainings/" + model_str + "/"
 
-    best_hp = tuner.get_best_hyperparameters()[0]
+    if not model_str == "Lee":
 
-    config = best_hp.get_config()
-    # config["values"]["dropout"] = 0.3 # modify the dropout rate
+        best_hp = tuner.get_best_hyperparameters()[0]
 
-    changed_hp = best_hp.from_config(config)
+        config = best_hp.get_config()
+        # config["values"]["dropout"] = 0.3 # modify the dropout rate
 
-    model = tuner.hypermodel.build(changed_hp)
+        changed_hp = best_hp.from_config(config)
 
-    print("Model with best hyperparameters:")
-    print(changed_hp.get_config())
+        model = tuner.hypermodel.build(changed_hp)
 
-    model.summary()
+        print("Model with best hyperparameters:")
+        print(changed_hp.get_config())
+
+        model.summary()
+
+    else:
+
+        model = build_model(None)
 
     # use tensorboard to inspect the graph, write log file periodically:
     out_dir = training_outdir + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -367,8 +484,8 @@ else:  # build model from best set of hyperparameters
     model.fit(
         x_train,
         y_train,
-        epochs=1000,
-        batch_size=200,
+        epochs=20,
+        batch_size=50,
         validation_data=(x_val, y_val),
         callbacks=[tensorboard_callback, cp_callback],
     )
