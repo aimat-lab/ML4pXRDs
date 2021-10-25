@@ -14,6 +14,7 @@ import os
 from sklearn.utils import shuffle
 from tensorflow.python.client import device_lib
 import tensorflow.keras as keras
+from sklearn.preprocessing import StandardScaler
 
 # print available devices:
 print(device_lib.list_local_devices())
@@ -21,14 +22,14 @@ print(device_lib.list_local_devices())
 csv_filenames = glob(r"databases/icsd/*.csv")
 
 number_of_values_initial = 9001
+n_classes = 14  # TODO: read this directly from the csv
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 step = 2  # only use every step'th point in pattern
 starting_angle = 5  # where to start using the simulated pattern
 used_range_beginning = np.where(simulated_range == starting_angle)[0][0]
 used_range = simulated_range[used_range_beginning::step]
 number_of_values = len(used_range)
-
-n_classes = 14  # TODO: read this directly from the csv
+scale_features = True
 
 model_str = "Lee"  # possible: conv, fully_connected, Lee (CNN-3)
 tune_hyperparameters = False
@@ -153,6 +154,13 @@ if tune_hyperparameters:
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 
+# scale features
+if scale_features:
+    sc = StandardScaler()
+    x_train = sc.fit_transform(x_train)
+    x_test = sc.transform(x_test)
+    x_val = sc.transform(x_val)
+
 if model_str == "conv":
 
     def build_model(hp):  # define model with hyperparameters
@@ -191,9 +199,6 @@ if model_str == "conv":
             model.add(tf.keras.layers.MaxPooling1D(pool_size=2, strides=2))
 
         model.add(tf.keras.layers.Flatten())
-
-        # flattended_size = model.layers[-1].get_output_at(0).get_shape().as_list()[1]
-        # reduce_factor = hp.Int("reduce_factor", min_value=2, max_value=4)
 
         for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=4)):
 
@@ -353,7 +358,7 @@ elif model_str == "Lee":
 
         drop1 = keras.layers.Dropout(keep_prob_)(flat)
 
-        # TODO: Why do they not use activation functions here?
+        # TODO: Why do they originally not use activation functions here? Let's better use them.
 
         dense1 = keras.layers.Dense(
             2500, kernel_initializer=keras.initializers.GlorotNormal(seed=None)
