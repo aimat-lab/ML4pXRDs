@@ -16,7 +16,8 @@ class ComparisonSimulation(Simulation):
         path = self.icsd_paths[self.icsd_ids.index(238381)]
         crystal = xu.materials.Crystal.fromCIF(path)
         self.crystals.append(crystal)
-        self.labels.append(0)
+        self.labels.append([0])
+        self.metas.append([238381])
 
 
 if __name__ == "__main__":
@@ -27,7 +28,7 @@ if __name__ == "__main__":
     )
 
     simulator.generate_structures()
-    simulator.simulate_all()
+    simulator.simulate_all(test_crystallite_sizes=True)
 
     simulator.load_simulated_patterns()
 

@@ -10,6 +10,7 @@ import pandas as pd
 from glob import glob
 import pickle
 import random
+import itertools
 
 batch_size = 1000
 num_threads = 8
@@ -52,9 +53,11 @@ class Simulation:
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         random.seed(1234)
 
-        self.patterns = []
         self.crystals = []
+        self.patterns = []
         self.labels = []  # space group, etc.
+        self.metas = []  # meta data: icsd id, ...
+
         self.icsd_info_file_path = icsd_info_file_path
         self.icsd_cifs_dir = icsd_cifs_dir
         self.read_icsd()
@@ -70,7 +73,7 @@ class Simulation:
             )
             time.sleep(update_interval)
 
-    def simulate_all(self):
+    def simulate_all(self, test_crystallite_sizes=False):
 
         self.crystals = self.crystals[0:16]  # only for testing
 
@@ -97,7 +100,10 @@ class Simulation:
 
             pool = NestablePool(processes=num_threads)  # keep one main thread
 
-            handle = pool.map_async(Simulation.simulate_crystal, current_crystals)
+            handle = pool.map_async(
+                Simulation.simulate_crystal,
+                zip(current_crystals, itertools.repeat(test_crystallite_sizes)),
+            )
 
             Simulation.__track_job(handle)
 
@@ -116,7 +122,7 @@ class Simulation:
             )
 
             to_save = [
-                np.append(item, self.labels[i])
+                np.append(item, [*self.labels[i], *self.metas[i]])
                 for i, sublist in enumerate(result)
                 for item in sublist
                 if item is not None
@@ -129,43 +135,49 @@ class Simulation:
                 to_save,
                 delimiter=" ",
                 fmt="%s",
+                header=f"{len(self.labels[0])} {len(self.metas[0])}",
             )
 
-    def simulate_crystal(crystal,):
+    def simulate_crystal(arguments):
         # TODO: add option for zero-point shifts
+
+        crystal = arguments[0]
+        test_crystallite_sizes = arguments[1]
 
         diffractograms = []
 
         # draw 5 crystallite sizes per crystal:
-        for i in range(0, 5):
+        for i in range(0, 5 if not test_crystallite_sizes else 6):
 
-            size_gauss = random.uniform(
-                crystallite_size_gauss_min, crystallite_size_gauss_max
-            )
-            size_lor = random.uniform(
-                crystallite_size_lor_min, crystallite_size_lor_max
-            )
+            if not test_crystallite_sizes:
+                size_gauss = random.uniform(
+                    crystallite_size_gauss_min, crystallite_size_gauss_max
+                )
+                size_lor = random.uniform(
+                    crystallite_size_lor_min, crystallite_size_lor_max
+                )
 
-            """ # For comparing the different crystallite sizes
-            if i == 0:
-                size_gauss = crystallite_size_gauss_max
-                size_lor = 3 * 10 ** 8
-            elif i == 2:
-                size_gauss = crystallite_size_gauss_max
-                size_lor = crystallite_size_lor_max
-            elif i == 1:
-                size_gauss = 3 * 10 ** 8
-                size_lor = crystallite_size_lor_max
-            elif i == 3:
-                size_gauss = crystallite_size_gauss_min
-                size_lor = 3 * 10 ** 8
-            elif i == 4:
-                size_gauss = 3 * 10 ** 8
-                size_lor = crystallite_size_lor_min
-            elif i == 5:
-                size_gauss = crystallite_size_lor_min
-                size_lor = crystallite_size_gauss_min
-            """
+            else:
+
+                # For comparing the different crystallite sizes
+                if i == 0:
+                    size_gauss = crystallite_size_gauss_max
+                    size_lor = 3 * 10 ** 8
+                elif i == 2:
+                    size_gauss = crystallite_size_gauss_max
+                    size_lor = crystallite_size_lor_max
+                elif i == 1:
+                    size_gauss = 3 * 10 ** 8
+                    size_lor = crystallite_size_lor_max
+                elif i == 3:
+                    size_gauss = crystallite_size_gauss_min
+                    size_lor = 3 * 10 ** 8
+                elif i == 4:
+                    size_gauss = 3 * 10 ** 8
+                    size_lor = crystallite_size_lor_min
+                elif i == 5:
+                    size_gauss = crystallite_size_lor_min
+                    size_lor = crystallite_size_gauss_min
 
             try:
 
@@ -341,30 +353,40 @@ class Simulation:
         print(f"{counter_1} entries where in the csv, but not in the cif directory")
         print(f"{counter_2} cif files skipped")
 
-    def save_crystals_and_labels(self):
+    def save_crystals(self):
 
         pickle_file = os.path.join(self.output_dir, "crystals_labels")
 
         with open(pickle_file, "wb") as file:
-            pickle.dump((self.crystals, self.labels), file)
+            pickle.dump(self.crystals, file)
 
-    def load_crystals_and_labels(self):
+    def load_crystals(self):
 
         pickle_file = os.path.join(self.output_dir, "crystals_labels")
 
         with open(pickle_file, "rb") as file:
-            (self.crystals, self.labels) = pickle.load(file)
+            self.crystals = pickle.load(file)
 
-    def load_simulated_patterns(self):
+    def load_simulated_patterns(self):  # also loads labels and metadata from csv
 
+        self.labels = []
+        self.metas = []
         self.patterns = np.zeros((0, angle_n))
 
         csv_files = glob(os.path.join(self.output_dir, "*.csv"))
 
         for csv_file in csv_files:
-            data = np.genfromtxt(csv_file, delimiter=" ")
+            with open(csv_file, "r") as file:
+                info = file.readline()[1:].strip().split(" ")
+                n_labels = int(info[0])
+                n_metas = int(info[1])
+
+            data = np.genfromtxt(csv_file, delimiter=" ", skip_header=1)
 
             ys_simulated = data[:, :angle_n]
+            labels = data[:, angle_n : angle_n + n_labels]
+            metas = data[:, angle_n + n_labels :]
 
+            self.labels.extend(labels.tolist())
+            self.metas.extend(metas.tolist())
             self.patterns = np.append(self.patterns, ys_simulated, axis=0)
-
