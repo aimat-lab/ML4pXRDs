@@ -20,6 +20,7 @@ from sklearn.preprocessing import StandardScaler
 # TODO: Read n_classes from csv
 # TODO: Give the trainings a unique name, so I can find them again; put these names in the google keep
 # TODO: Implement undersampling technique
+# TODO: Use https://optuna.org/#code_examples instead of keras !?
 
 path_to_patterns = "../dataset_simulations/patterns/narrow/"
 csv_filenames = glob(r"databases/icsd/*.csv")

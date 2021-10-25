@@ -24,7 +24,7 @@ def bg(l):
 """
 
 
-def generate_background():
+def generate_background_and_noise():
 
     xs = np.linspace(-1.0, 1.0, N)
     coefficients = [
@@ -35,27 +35,28 @@ def generate_background():
     ys = sum(coefficient * xs ** (n + 1) for n, coefficient in enumerate(coefficients))
 
     ys -= np.min(ys)
-    ys /= np.max(ys)
 
     ys += random.uniform(0, 0.2)
 
     """
     fluct_noise_level_max = 1.0
     ys *= np.random.normal(N) * fluct_noise_level_max
-    base_noise_level_max = 0.0001
-    ys += np.random.normal(N) * base_noise_level_max
     """
+    base_noise_level_max = 0.004
+    ys += np.random.normal(size=N) * base_noise_level_max
 
     return ys
 
 
 for i in range(0, number_of_samples):
 
-    ys = generate_background()
+    ys_altered = generate_background_and_noise()
+    ys_unaltered = np.zeros(N)
+
+    sigma = random.uniform(0.1, 0.4)
 
     for j in range(0, random.randint(1, max_peaks_per_sample)):
 
-        sigma = 0.3
         mean = random.uniform(0, 90)
 
         peak = (
@@ -64,8 +65,10 @@ for i in range(0, number_of_samples):
             * np.exp(-1 / (2 * sigma ** 2) * (xs - mean) ** 2)
         ) * random.uniform(0, 0.1)
 
-        ys += peak
+        ys_altered += peak
+        ys_unaltered += peak
 
-    plt.plot(xs, ys)
+    ys_altered /= np.max(ys_altered)
+    plt.plot(xs, ys_altered)
 
 plt.show()
