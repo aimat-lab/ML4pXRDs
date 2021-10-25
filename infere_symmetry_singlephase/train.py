@@ -31,8 +31,8 @@ used_range = simulated_range[used_range_beginning::step]
 number_of_values = len(used_range)
 scale_features = True
 
-model_str = "Lee"  # possible: conv, fully_connected, Lee (CNN-3)
-tune_hyperparameters = False
+model_str = "conv"  # possible: conv, fully_connected, Lee (CNN-3)
+tune_hyperparameters = True
 tuner_str = "bayesian"  # possible: hyperband and bayesian
 
 read_from_csv = False
@@ -167,19 +167,25 @@ if model_str == "conv":
 
         model = tf.keras.models.Sequential()
 
-        starting_filter_size = hp.Int(
-            "starting_filter_size", min_value=10, max_value=510, step=20
-        )
+        # starting_filter_size = hp.Int(
+        #    "starting_filter_size", min_value=10, max_value=510, step=20
+        # )
 
-        for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=4)):
+        for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=3)):
 
             if i == 0:
                 model.add(
                     tf.keras.layers.Conv1D(
                         hp.Int(
-                            "number_of_filters", min_value=10, max_value=200, step=10
+                            "number_of_filters", min_value=10, max_value=210, step=20
                         ),
-                        int(starting_filter_size * (3 / 4) ** i),
+                        # int(starting_filter_size * (3 / 4) ** i),
+                        hp.Int(
+                            "filter_size_" + str(i),
+                            min_value=10,
+                            max_value=510,
+                            step=20,
+                        ),
                         input_shape=(number_of_values, 1),
                         activation="relu",
                     )
@@ -188,9 +194,15 @@ if model_str == "conv":
                 model.add(
                     tf.keras.layers.Conv1D(
                         hp.Int(
-                            "number_of_filters", min_value=10, max_value=200, step=10
+                            "number_of_filters", min_value=10, max_value=200, step=20
                         ),
-                        int(starting_filter_size * (3 / 4) ** i),
+                        # int(starting_filter_size * (3 / 4) ** i),
+                        hp.Int(
+                            "filter_size_" + str(i),
+                            min_value=10,
+                            max_value=510,
+                            step=20,
+                        ),
                         activation="relu",
                     )
                 )
@@ -200,7 +212,7 @@ if model_str == "conv":
 
         model.add(tf.keras.layers.Flatten())
 
-        for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=4)):
+        for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=3)):
 
             model.add(
                 tf.keras.layers.Dense(
@@ -219,7 +231,7 @@ if model_str == "conv":
                 )
             )
 
-        model.add(tf.keras.layers.Dense(14))
+        model.add(tf.keras.layers.Dense(n_classes))
 
         optimizer = tf.keras.optimizers.Adam(
             hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
@@ -341,6 +353,7 @@ elif model_str == "Lee":
             conv2
         )
 
+        """
         conv3 = keras.layers.Conv1D(
             filters=64,
             kernel_size=10,
@@ -355,25 +368,33 @@ elif model_str == "Lee":
         )
 
         flat = keras.layers.Flatten()(max_pool_3)
+        """
+        flat = keras.layers.Flatten()(max_pool_2)
 
         drop1 = keras.layers.Dropout(keep_prob_)(flat)
 
         # TODO: Why do they originally not use activation functions here? Let's better use them.
 
         dense1 = keras.layers.Dense(
-            2500, kernel_initializer=keras.initializers.GlorotNormal(seed=None)
+            2500,
+            kernel_initializer=keras.initializers.GlorotNormal(seed=None),
+            activation="relu",
         )(drop1)
 
         drop2 = keras.layers.Dropout(keep_prob_)(dense1)
 
         dense2 = keras.layers.Dense(
-            1000, kernel_initializer=keras.initializers.GlorotNormal(seed=None)
+            1000,
+            kernel_initializer=keras.initializers.GlorotNormal(seed=None),
+            activation="relu",
         )(drop2)
 
         drop3 = keras.layers.Dropout(keep_prob_)(dense2)
 
         dense3 = keras.layers.Dense(
-            n_classes, kernel_initializer=keras.initializers.GlorotNormal(seed=None)
+            n_classes,
+            kernel_initializer=keras.initializers.GlorotNormal(seed=None),
+            activation="relu",
         )(drop3)
 
         model = keras.Model(inputs=inputs, outputs=dense3)
@@ -489,10 +510,11 @@ else:  # build model from best set of hyperparameters
     model.fit(
         x_train,
         y_train,
-        epochs=20,
-        batch_size=50,
+        epochs=40,
+        batch_size=100,
         validation_data=(x_val, y_val),
         callbacks=[tensorboard_callback, cp_callback],
+        verbose=2,
     )
 
     print("\nOn test dataset:")
