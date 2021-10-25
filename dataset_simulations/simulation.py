@@ -21,6 +21,10 @@ crystallite_size_gauss_max = 50 * 10 ** -9
 crystallite_size_lor_min = 15 * 10 ** -9
 crystallite_size_lor_max = 50 * 10 ** -9
 
+angle_min = 0
+angle_max = 90
+angle_n = 9001
+
 
 class NoDaemonProcess(multiprocessing.Process):
     @property
@@ -44,10 +48,11 @@ class NestablePool(multiprocessing.pool.Pool):
         super(NestablePool, self).__init__(*args, **kwargs)
 
 
-class Simulator:
+class Simulation:
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         random.seed(1234)
 
+        self.patterns = []
         self.crystals = []
         self.labels = []  # space group, etc.
         self.icsd_info_file_path = icsd_info_file_path
@@ -92,9 +97,9 @@ class Simulator:
 
             pool = NestablePool(processes=num_threads)  # keep one main thread
 
-            handle = pool.map_async(Simulator.simulate_crystal, current_crystals)
+            handle = pool.map_async(Simulation.simulate_crystal, current_crystals)
 
-            Simulator.__track_job(handle)
+            Simulation.__track_job(handle)
 
             result = handle.get()
 
@@ -233,7 +238,7 @@ class Simulator:
                 # print(powder_model.pdiff[0].settings)
 
                 xs = np.linspace(
-                    0, 90, 9001
+                    angle_min, angle_max, angle_n
                 )  # simulate a rather large range, we can still later use a smaller range for training
 
                 diffractogram = powder_model.simulate(
@@ -349,3 +354,17 @@ class Simulator:
 
         with open(pickle_file, "rb") as file:
             (self.crystals, self.labels) = pickle.load(file)
+
+    def load_simulated_patterns(self):
+
+        self.patterns = np.zeros((0, angle_n))
+
+        csv_files = glob(os.path.join(self.output_dir, "*.csv"))
+
+        for csv_file in csv_files:
+            data = np.genfromtxt(csv_file, delimiter=" ")
+
+            ys_simulated = data[:, :angle_n]
+
+            self.patterns = np.append(self.patterns, ys_simulated, axis=0)
+

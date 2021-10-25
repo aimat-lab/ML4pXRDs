@@ -1,11 +1,11 @@
 # "Dumb" selection of structures: Just use all structures of the corresponding space group and use them for training
 # This won't be able to distinguish between Rocksalt / Fluorite (Fm-3m) and also Spinel / Pyrochlore (Fd-3m)
 
-from simulator import Simulator
+from simulation import Simulation
 import pandas as pd
 
 
-class SpacegroupSimulator(Simulator):
+class SpacegroupSimulation(Simulation):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
@@ -20,7 +20,7 @@ class SpacegroupSimulator(Simulator):
 
 
 if __name__ == "__main__":
-    simulator = SpacegroupSimulator(
+    simulator = SpacegroupSimulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )

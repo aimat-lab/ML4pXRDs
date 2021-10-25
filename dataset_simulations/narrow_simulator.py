@@ -1,4 +1,4 @@
-from simulator import Simulator
+from simulation import Simulation
 import xrayutilities as xu
 import pickle
 import os
@@ -11,7 +11,7 @@ import os
 # Lanthanum hydroxide La (O H)3, P63/m (not possible for HEOs)
 
 
-class NarrowSimulator(Simulator):
+class NarrowSimulation(Simulation):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 

@@ -1,11 +1,11 @@
-from simulator import Simulator
+from simulation import Simulation
 import xrayutilities as xu
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 
 
-class ComparisonSimulator(Simulator):
+class ComparisonSimulation(Simulation):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
@@ -21,7 +21,7 @@ class ComparisonSimulator(Simulator):
 
 if __name__ == "__main__":
 
-    simulator = ComparisonSimulator(
+    simulator = ComparisonSimulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
@@ -29,18 +29,18 @@ if __name__ == "__main__":
     simulator.generate_structures()
     simulator.simulate_all()
 
-    data = np.genfromtxt(
-        os.path.join(simulator.output_dir, "dataset_0.csv"), delimiter=" "
-    )
+    simulator.load_simulated_patterns()
+
+    data = simulator.patterns
 
     xs_simulated = np.linspace(0, 90, 9001)
 
-    ys_simulated1 = data[0, :-1]
-    ys_simulated2 = data[1, :-1]
-    ys_simulated3 = data[2, :-1]
-    ys_simulated4 = data[3, :-1]
-    ys_simulated5 = data[4, :-1]
-    ys_simulated6 = data[5, :-1]
+    ys_simulated1 = data[0, :]
+    ys_simulated2 = data[1, :]
+    ys_simulated3 = data[2, :]
+    ys_simulated4 = data[3, :]
+    ys_simulated5 = data[4, :]
+    ys_simulated6 = data[5, :]
 
     plt.plot(
         xs_simulated, ys_simulated1 / np.max(ys_simulated1), label="gauss_max, lor_0"
@@ -61,13 +61,17 @@ if __name__ == "__main__":
         xs_simulated, ys_simulated6 / np.max(ys_simulated6), label="gauss_min, lor_min"
     )
 
-    plt.legend()
-
     data_compare_to = np.genfromtxt("comparison_Ce_O2.csv", autostrip=True)
     xs_compare_to = data_compare_to[:, 0]
     ys_compare_to = data_compare_to[:, 1]
 
-    plt.plot(np.array(xs_compare_to) - 0.2, ys_compare_to / np.max(ys_compare_to))
+    plt.plot(
+        np.array(xs_compare_to) - 0.2,
+        ys_compare_to / np.max(ys_compare_to),
+        label="exp. Ce O2",
+    )
+
+    plt.legend()
 
     plt.show()
 
