@@ -16,9 +16,9 @@ num_threads = 8
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
 
-crystallite_size_gauss_min = 1 * 10 ** -9
+crystallite_size_gauss_min = 15 * 10 ** -9
 crystallite_size_gauss_max = 50 * 10 ** -9
-crystallite_size_lor_min = 1 * 10 ** -9
+crystallite_size_lor_min = 15 * 10 ** -9
 crystallite_size_lor_max = 50 * 10 ** -9
 
 
@@ -141,6 +141,27 @@ class Simulator:
                 crystallite_size_lor_min, crystallite_size_lor_max
             )
 
+            """ # For comparing the different crystallite sizes
+            if i == 0:
+                size_gauss = crystallite_size_gauss_max
+                size_lor = 3 * 10 ** 8
+            elif i == 2:
+                size_gauss = crystallite_size_gauss_max
+                size_lor = crystallite_size_lor_max
+            elif i == 1:
+                size_gauss = 3 * 10 ** 8
+                size_lor = crystallite_size_lor_max
+            elif i == 3:
+                size_gauss = crystallite_size_gauss_min
+                size_lor = 3 * 10 ** 8
+            elif i == 4:
+                size_gauss = 3 * 10 ** 8
+                size_lor = crystallite_size_lor_min
+            elif i == 5:
+                size_gauss = crystallite_size_lor_min
+                size_lor = crystallite_size_gauss_min
+            """
+
             try:
 
                 powder = xu.simpack.Powder(
@@ -207,7 +228,9 @@ class Simulator:
                         },
                     },
                 )
-                # TODO: Can I reuse this for other samples? Caching?
+
+                # powder_model = xu.simpack.PowderModel(powder, I0=100,) # with default parameters
+                # print(powder_model.pdiff[0].settings)
 
                 xs = np.linspace(
                     0, 90, 9001
