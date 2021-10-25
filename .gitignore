@@ -11,3 +11,5 @@ UV-vis_analysis/GapExtractor
 slurm*
 .VSCodeCounter
 dataset_simulations/patterns
+*.pyc
+dataset_simulations/__py_cache__

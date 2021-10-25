@@ -12,7 +12,7 @@ import pickle
 import random
 
 batch_size = 1000
-total_threads = 16
+num_threads = 8
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
 
@@ -67,7 +67,7 @@ class Simulator:
 
     def simulate_all(self):
 
-        # self.crystals = self.crystals[0:20] # only for testing
+        self.crystals = self.crystals[0:16]  # only for testing
 
         os.system(f"mkdir -p {self.output_dir}")
 
@@ -90,7 +90,7 @@ class Simulator:
 
             start = time.time()
 
-            pool = NestablePool(processes=total_threads - 1)  # keep one main thread
+            pool = NestablePool(processes=num_threads)  # keep one main thread
 
             handle = pool.map_async(Simulator.simulate_crystal, current_crystals)
 
@@ -103,6 +103,12 @@ class Simulator:
             # ]
 
             end = time.time()
+
+            print(
+                "##### Calculated from cif {} to {} (total: {}) in {} s".format(
+                    i * batch_size, end_index, len(self.crystals), end - start
+                )
+            )
 
             to_save = [
                 np.append(item, self.labels[i])
@@ -118,12 +124,6 @@ class Simulator:
                 to_save,
                 delimiter=" ",
                 fmt="%s",
-            )
-
-            print(
-                "##### Calculated from cif {} to {} (total: {}) in {} s".format(
-                    i * batch_size, end_index, len(self.crystals), end - start
-                )
             )
 
     def simulate_crystal(crystal,):
@@ -212,9 +212,14 @@ class Simulator:
                 xs = np.linspace(
                     0, 90, 9001
                 )  # simulate a rather large range, we can still later use a smaller range for training
+
                 diffractogram = powder_model.simulate(
                     xs, mode="local"
                 )  # this also includes the Lorentzian + polarization correction
+
+                # diffractogram = powder_model.simulate(
+                #    xs
+                # )  # this also includes the Lorentzian + polarization correction
 
                 powder_model.close()
 
