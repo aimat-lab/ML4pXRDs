@@ -15,19 +15,15 @@ from sklearn.utils import shuffle
 from tensorflow.python.client import device_lib
 import tensorflow.keras as keras
 from sklearn.preprocessing import StandardScaler
+from dataset_simulations.narrow_simulation import NarrowSimulation
 
-# TODO: Use simulator class to load the data, here
-# TODO: Read n_classes from csv
 # TODO: Give the trainings a unique name, so I can find them again; put these names in the google keep
 # TODO: Implement undersampling technique
-# TODO: Use https://optuna.org/#code_examples instead of keras !?
+# TODO: Maybe at some later point, use https://optuna.org/#code_examples instead of keras !?
 
-path_to_patterns = "../dataset_simulations/patterns/narrow/"
-csv_filenames = glob(r"databases/icsd/*.csv")
+current_data_source = "narrow"
 
 number_of_values_initial = 9001
-n_classes = 14  # TODO: read this directly from the csv
-
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 step = 2  # only use every step'th point in pattern
 starting_angle = 5  # where to start using the simulated pattern
@@ -37,127 +33,57 @@ number_of_values = len(used_range)
 scale_features = True
 
 model_str = "conv"  # possible: conv, fully_connected, Lee (CNN-3)
-tune_hyperparameters = True
 tuner_str = "bayesian"  # possible: hyperband and bayesian
+tune_hyperparameters = True
 
-read_from_csv = False
-pickle_database = False  # for future, faster loading
+# read data
+if current_data_source == "narrow":
 
-pickle_path = r"databases/icsd/database"
+    n_classes = 14  # TODO: Change this, not true
+    path_to_patterns = "../dataset_simulations/patterns/narrow/"
+
+    sim = NarrowSimulation(
+        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+    )
+
+    sim.load()
+
+    patterns_per_structure = len(sim.sim_patterns[0])
+
+    patterns = np.array(sim.sim_patterns)
+    labels = []
+
+    for sim_label in sim.sim_labels:
+        labels.extend([sim_label[0]] * patterns_per_structure)
+
+    x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
+    y = np.array(labels)
+    # TODO: THEY CAN BE NONE! be careful with this, handle this
+
+else:
+    raise Exception("Data source not recognized.")
 
 # print available devices:
 print(device_lib.list_local_devices())
 
-x = None
-bravais_str = None
-space_group_number = None
-
-if read_from_csv:
-
-    for i, filename in enumerate(csv_filenames):
-
-        print()
-        print("Loading csv file {} of {}".format(i + 1, len(csv_filenames)))
-
-        data = pd.read_csv(filename, delimiter=" ", header=None)
-
-        x_more = np.array(data[range(1, number_of_values_initial + 1)])[
-            :, used_range_beginning::step
-        ]
-        if x is None:
-            x = x_more
-        else:
-            x = np.append(x, x_more, axis=0)
-
-        bravais_str_more = np.array(data[number_of_values_initial + 1], dtype=str)
-        if bravais_str is None:
-            bravais_str = bravais_str_more
-        else:
-            bravais_str = np.append(bravais_str, bravais_str_more, axis=0)
-
-        space_group_number_more = np.array(
-            data[number_of_values_initial + 2], dtype=int
-        )
-        if space_group_number is None:
-            space_group_number = space_group_number_more
-        else:
-            space_group_number = np.append(
-                space_group_number, space_group_number_more, axis=0
-            )
-
-else:
-    x, bravais_str, space_group_number = pickle.load(open(pickle_path, "rb"))
-
-if pickle_database:
-    database = (x, bravais_str, space_group_number)
-    pickle.dump(database, open(pickle_path, "wb"))
-
-
-space_group_number = space_group_number - 1  # make integers zero-based
-
-bravais_labels = [
-    "aP",
-    "mP",
-    "mS",
-    "oP",
-    "oS",
-    "oI",
-    "oF",
-    "tP",
-    "tI",
-    "cP",
-    "cI",
-    "cF",
-    "hP",
-    "hR",
-]
-y = np.array([int(bravais_labels.index(name)) for name in bravais_str])
-
-# Plot distribution over bravais lattices:
-# plt.bar(*np.unique(y, return_counts=True))
-# plt.show()
-# Very inbalanced!
-
-# Distribution of space groups:
-# plt.bar(*np.unique(space_group_number, return_counts=True))
-# plt.show()
-# also very very inbalanced!
-
-x = x / 100  # set maximum volume under a peak to 1
-
-"""
-# plot as test
-xs = np.linspace(0, 90, 9001)[::10]
-ys = x[1000]
-
-plt.plot(xs, ys)
-plt.show()
-
-exit()
-"""
-
 assert not np.any(np.isnan(x))
 assert not np.any(np.isnan(y))
+assert len(x) == len(y)
 
 print("##### Loaded {} training points".format(len(x)))
 
 # when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
-
 if model_str == "conv":
     x = np.expand_dims(x, axis=2)
 
 # Split into train, validation, test set + shuffle
-
-x, y, bravais_str, space_group_number = shuffle(
-    x, y, bravais_str, space_group_number, random_state=1234
-)
+x, y = shuffle(x, y, random_state=1234)
 
 # Use less training data for hyperparameter optimization
 if tune_hyperparameters:
     x = x[0:100000]  # only use 100k patterns for hyper optimization
     y = y[0:100000]
-    bravais_str = bravais_str[0:100000]
-    space_group_number = space_group_number[0:100000]
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
@@ -298,7 +224,7 @@ elif model_str == "fully_connected":
                 )
             )
 
-        model.add(tf.keras.layers.Dense(14))
+        model.add(tf.keras.layers.Dense(n_classes))
 
         optimizer_str = hp.Choice("optimizer", values=["adam", "adagrad", "SGD"])
 

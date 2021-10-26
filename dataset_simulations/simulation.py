@@ -15,8 +15,9 @@ from pymatgen.io.cif import CifParser
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import lzma
+import gc
 
-batch_size = 20000
+batch_size = 300
 num_threads = 8
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
@@ -98,8 +99,8 @@ class Simulation:
         print(f"Saving after each batch.")
 
         if start_from_scratch == True:
-            self.sim_patterns = [] * len(self.sim_crystals)
-            self.sim_variations = [] * len(self.sim_crystals)
+            self.sim_patterns = [[]] * len(self.sim_crystals)
+            self.sim_variations = [[]] * len(self.sim_crystals)
             crystals_to_process = self.sim_crystals  # process all crystals
             crystals_to_process_indices = range(
                 len(self.sim_crystals)
@@ -118,6 +119,8 @@ class Simulation:
             print(f"Starting from crystal number {self.sim_simulation_done_upto + 1}")
 
         for i in range(0, math.ceil(len(crystals_to_process) / batch_size)):
+
+            gc.collect()
 
             if ((i + 1) * batch_size) < len(crystals_to_process):
                 end = (i + 1) * batch_size
@@ -146,7 +149,7 @@ class Simulation:
             end_time = time.time()
 
             print(
-                f"Finished batch of {batch_size} after {(end_time - start_time)/3600}h"
+                f"Finished batch of {batch_size} after {(end_time - start_time)/60} min"
             )
 
             for i, result in enumerate(results):
@@ -297,6 +300,8 @@ class Simulation:
                 diffractograms.append(None)
 
         return (diffractograms, variations)
+
+        # return (np.random.random(size=9001), np.random.random(size=5))
 
     def read_icsd(self):
 
