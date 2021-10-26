@@ -12,6 +12,11 @@ import pickle
 import random
 import itertools
 import gzip
+from pymatgen.io.cif import CifParser
+from pymatgen.analysis.diffraction.xrd import XRDCalculator
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+import gemmi
+from gemmi import cif
 
 batch_size = 1000
 num_threads = 8
@@ -396,3 +401,110 @@ class Simulation:
             self.labels.extend(labels.tolist())
             self.metas.extend(metas.tolist())
             self.patterns = np.append(self.patterns, ys_simulated, axis=0)
+
+    def get_space_group_number(self, id):
+
+        cif_path = self.icsd_paths[self.icsd_ids.index(id)]
+
+        # TODO: Check if symmetry information is correct using https://spglib.github.io/spglib/python-spglib.html
+        # TODO: Pymatgen seems to be doing this already!
+        # TODO: Bring them both together!!!
+
+        # Important: We don't really care about the bravais lattice type, here!
+
+        """
+        try:
+
+            parser = CifParser(cif_path)
+            structures = parser.get_structures()
+
+        except Exception as error:
+
+            return None
+
+        if len(structures) == 0:
+
+            return None
+
+        else:
+
+            structure = structures[0]
+
+        # determine space group:
+
+        try:
+
+            analyzer = SpacegroupAnalyzer(structure)
+
+            group_number = analyzer.get_space_group_number()
+            crystal_system = analyzer.get_crystal_system()
+            space_group_symbol = analyzer.get_space_group_symbol()[0]
+
+        except Exception as error:
+
+            return None
+
+        crystal_system_letter = ""
+
+        if crystal_system == "anortic" or crystal_system == "triclinic":
+            crystal_system_letter = "a"
+        elif crystal_system == "monoclinic":
+            crystal_system_letter = "m"
+        elif crystal_system == "orthorhombic":
+            crystal_system_letter = "o"
+        elif crystal_system == "tetragonal":
+            crystal_system_letter = "t"
+        elif crystal_system == "cubic":
+            crystal_system_letter = "c"
+        elif crystal_system == "hexagonal" or crystal_system == "trigonal":
+            crystal_system_letter = "h"
+        else:
+            return None
+
+        if space_group_symbol in "ABC":
+            space_group_symbol = "S"  # side centered
+
+        bravais = crystal_system_letter + space_group_symbol
+
+        if bravais not in [
+            "aP",
+            "mP",
+            "mS",
+            "oP",
+            "oS",
+            "oI",
+            "oF",
+            "tP",
+            "tI",
+            "cP",
+            "cI",
+            "cF",
+            "hP",
+            "hR",
+        ]:
+            print(
+                "Bravais lattice {} not recognized. Skipping structure.".format(bravais)
+            )
+            return None
+
+        # alternative way of determining bravais lattice from space group numer:
+        # (for safety)
+
+        return [bravais, group_number]
+        """
+
+        """
+        space_group_symbol = self.icsd_space_group_symbols[self.icsd_ids.index(id)]
+
+        sg = gemmi.find_spacegroup_by_name(space_group_symbol)
+
+        space_group_number = sg.number
+    
+        return space_group_number
+
+        """
+
+        # error on file '/home/henrik/Dokumente/Big_Files/ICSD/cif/966672.cif'
+        doc = cif.read_file(cif_path)
+
+        print(doc)

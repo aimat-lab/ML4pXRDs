@@ -1,7 +1,5 @@
 from simulation import Simulation
 import xrayutilities as xu
-import pickle
-import os
 
 # Use a very narrow selection of ICSD entries
 
@@ -43,18 +41,19 @@ class NarrowSimulation(Simulation):
         if write_to_pickle:
             self.save_crystals_pickle()
 
-        print(f"Loaded {len(simulator.crystals)} crystals")
-        print(f"Fluorite#CaF2: {simulator.labels.count(0)}")
-        print(f"Bixbyite#(MnFe)O3: {simulator.labels.count(1)}")
-        print(f"UCl3: {simulator.labels.count(2)}")
+        print(f"Loaded {len(self.crystals)} crystals")
+        print(f"Fluorite#CaF2: {self.labels.count(0)}")
+        print(f"Bixbyite#(MnFe)O3: {self.labels.count(1)}")
+        print(f"UCl3: {self.labels.count(2)}")
 
 
 if __name__ == "__main__":
-    simulator = NarrowSimulation(
+
+    simulation = NarrowSimulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-    simulator.generate_structures(read_from_pickle=True, write_to_pickle=False)
+    simulation.generate_structures(read_from_pickle=True, write_to_pickle=False)
 
-    simulator.simulate_all()
+    simulation.simulate_all()
