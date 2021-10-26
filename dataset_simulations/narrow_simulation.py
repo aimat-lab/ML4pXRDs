@@ -17,14 +17,24 @@ class NarrowSimulation(Simulation):
 
     def generate_structures(self):
 
+        counter_0 = 0
+        counter_1 = 0
+        counter_2 = 0
+
         for i, path in enumerate(self.icsd_paths):
+
+            if (i % 1000) == 0:
+                print(f"Processed {i} structures.")
 
             if self.icsd_structure_types[i] == "Fluorite#CaF2":
                 label = 0
+                counter_0 += 1
             elif self.icsd_structure_types[i] == "Bixbyite#(MnFe)O3":
                 label = 1
+                counter_1 += 1
             elif self.icsd_structure_types[i] == "UCl3":
                 label = 2
+                counter_2 += 1
             else:
                 continue
 
@@ -38,9 +48,9 @@ class NarrowSimulation(Simulation):
             self.sim_variations.append([])
 
         print(f"Loaded {len(self.sim_crystals)} crystals")
-        print(f"Fluorite#CaF2: {self.sim_labels.count(0)}")
-        print(f"Bixbyite#(MnFe)O3: {self.sim_labels.count(1)}")
-        print(f"UCl3: {self.sim_labels.count(2)}")
+        print(f"Fluorite#CaF2: {counter_0}")
+        print(f"Bixbyite#(MnFe)O3: {counter_1}")
+        print(f"UCl3: {counter_2}")
 
 
 if __name__ == "__main__":

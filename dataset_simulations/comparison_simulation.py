@@ -31,7 +31,7 @@ if __name__ == "__main__":
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-    if True:  # toggle
+    if False:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     simulation.simulate_all(test_crystallite_sizes=True)
 
-    data = simulation.patterns
+    data = np.array(simulation.sim_patterns[0])
 
     xs_simulated = np.linspace(0, 90, 9001)
 

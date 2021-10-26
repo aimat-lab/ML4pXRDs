@@ -14,6 +14,7 @@ import itertools
 from pymatgen.io.cif import CifParser
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+import lzma
 
 batch_size = 20000
 num_threads = 8
@@ -79,8 +80,8 @@ class Simulation:
     def __track_job(job, update_interval=5):
         while job._number_left > 0:
             print(
-                "Tasks remaining in this batch of 1000: {0}".format(
-                    job._number_left * job._chunksize
+                "Tasks remaining in this batch of {}: {} (chunksize: {})".format(
+                    batch_size, job._number_left * job._chunksize, job._chunksize
                 )
             )
             time.sleep(update_interval)
@@ -108,13 +109,13 @@ class Simulation:
 
         else:
             crystals_to_process = self.sim_crystals[
-                len(self.sim_simulation_done_upto) :
+                self.sim_simulation_done_upto :
             ]  # only crystals that have not been simulated, yet
             crystals_to_process_indices = range(
-                len(self.sim_simulation_done_upto), len(self.sim_crystals)
+                self.sim_simulation_done_upto, len(self.sim_crystals)
             )
 
-            print(f"Starting from crystal number {self.sim_simulation_done_upto}")
+            print(f"Starting from crystal number {self.sim_simulation_done_upto + 1}")
 
         for i in range(0, math.ceil(len(crystals_to_process) / batch_size)):
 
@@ -144,20 +145,18 @@ class Simulation:
 
             end_time = time.time()
 
-            print(f"Finished batch of {batch_size}")
+            print(
+                f"Finished batch of {batch_size} after {(end_time - start_time)/3600}h"
+            )
 
-            for i, result in results:
+            for i, result in enumerate(results):
                 (diffractograms, variations) = result
                 index = current_crystals_indices[i]
 
                 self.sim_patterns[index] = diffractograms
                 self.sim_variations[index] = variations
 
-            self.sim_simulation_done_upto = (
-                (self.sim_simulation_done_upto + batch_size)
-                if (self.sim_simulation_done_upto + batch_size) < len(self.sim_crystals)
-                else len(self.sim_crystals)
-            )
+            self.sim_simulation_done_upto = current_crystals_indices[-1] + 1
 
             self.save()  # save after each batch to continue later
 
@@ -385,7 +384,7 @@ class Simulation:
 
         pickle_file = os.path.join(self.output_dir, "data")
 
-        with open(pickle_file, "wb") as file:
+        with lzma.open(pickle_file, "wb") as file:
             pickle.dump(
                 (
                     self.sim_crystals,
@@ -393,6 +392,7 @@ class Simulation:
                     self.sim_metas,
                     self.sim_patterns,
                     self.sim_variations,
+                    self.sim_simulation_done_upto,
                 ),
                 file,
             )
@@ -401,13 +401,14 @@ class Simulation:
 
         pickle_file = os.path.join(self.output_dir, "data")
 
-        with open(pickle_file, "rb") as file:
+        with lzma.open(pickle_file, "rb") as file:
             (
                 self.sim_crystals,
                 self.sim_labels,
                 self.sim_metas,
                 self.sim_patterns,
                 self.sim_variations,
+                self.sim_simulation_done_upto,
             ) = pickle.load(file)
 
     def get_space_group_number(self, id):
