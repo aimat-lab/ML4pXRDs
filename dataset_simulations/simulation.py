@@ -504,7 +504,11 @@ class Simulation:
 
         """
 
-        # error on file '/home/henrik/Dokumente/Big_Files/ICSD/cif/966672.cif'
-        doc = cif.read_file(cif_path)
-
-        print(doc)
+        with open(cif_path, "r") as file:
+            for line in file:
+                if "_space_group_IT_number" in line:
+                    space_group_number = int(
+                        line.replace("_space_group_IT_number ", "").strip()
+                    )
+                    # print(space_group_number)
+                    return space_group_number

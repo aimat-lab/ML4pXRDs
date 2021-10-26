@@ -1,5 +1,6 @@
 from simulation import Simulation
 import xrayutilities as xu
+import warnings
 
 
 class ICSDSimulation(Simulation):
@@ -10,6 +11,9 @@ class ICSDSimulation(Simulation):
 
     def generate_structures(self, read_from_pickle=False, write_to_pickle=False):
 
+        # warnings.filterwarnings("ignore", message="/used instead of/")
+        warnings.filterwarnings("ignore")
+
         if read_from_pickle:
             self.load_crystals_pickle()
         else:
@@ -18,17 +22,22 @@ class ICSDSimulation(Simulation):
 
             for i, path in enumerate(self.icsd_paths):
 
+                if (i % 1000) == 0:
+                    print(f"Generated {i} structures.")
+
                 if path is None:
                     counter += 1
                     continue
 
                 try:
+                    xu.materials
                     crystal = xu.materials.Crystal.fromCIF(path)
 
                 except Exception as ex:
                     counter += 1
                     continue
 
+                # Problem! Multiple grain sizes
                 self.crystals.append(crystal)
                 self.labels.append([self.get_space_group_number(self.icsd_ids[i])])
                 self.metas.append([self.icsd_ids[i]])
