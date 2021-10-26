@@ -15,22 +15,31 @@ class ComparisonSimulation(Simulation):
 
         path = self.icsd_paths[self.icsd_ids.index(238381)]
         crystal = xu.materials.Crystal.fromCIF(path)
-        self.crystals.append(crystal)
-        self.labels.append([0])
-        self.metas.append([238381])
+
+        self.sim_crystals.append(crystal)
+        self.sim_labels.append([0])
+        self.sim_metas.append([238381])
+
+        self.sim_patterns.append([])
+        self.sim_variations.append([])
 
 
 if __name__ == "__main__":
 
-    simulator = ComparisonSimulation(
+    simulation = ComparisonSimulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-    simulator.generate_structures()
-    simulator.simulate_all(test_crystallite_sizes=True)
+    if True:  # toggle
+        simulation.load()
+    else:
+        simulation.generate_structures()
+        simulation.save()
 
-    data = simulator.patterns
+    simulation.simulate_all(test_crystallite_sizes=True)
+
+    data = simulation.patterns
 
     xs_simulated = np.linspace(0, 90, 9001)
 

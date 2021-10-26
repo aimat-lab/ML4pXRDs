@@ -11,14 +11,11 @@ from glob import glob
 import pickle
 import random
 import itertools
-import gzip
 from pymatgen.io.cif import CifParser
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-import gemmi
-from gemmi import cif
 
-batch_size = 1000
+batch_size = 20000
 num_threads = 8
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
@@ -59,16 +56,25 @@ class Simulation:
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         random.seed(1234)
 
-        self.crystals = []
-        self.patterns = []
-        self.labels = []  # space group, etc.
-        self.metas = []  # meta data: icsd id, ...
+        self.reset_simulation_status()
 
         self.icsd_info_file_path = icsd_info_file_path
         self.icsd_cifs_dir = icsd_cifs_dir
         self.read_icsd()
 
         self.output_dir = "patterns/default/"  # should be overwritten by child class
+
+    def reset_simulation_status(self):
+        self.sim_crystals = []
+        self.sim_labels = []  # space group, etc.
+        self.sim_metas = []  # meta data: icsd id, ... of the crystal
+        self.sim_patterns = (
+            []
+        )  # for each crystal, the simulated patterns; this can be multiple, depending on sim_variations
+        self.sim_variations = []  # things like crystallite size, etc.
+        self.sim_simulation_done_upto = (
+            0  # up to which index the simulation is done (excluding)
+        )
 
     def __track_job(job, update_interval=5):
         while job._number_left > 0:
@@ -79,30 +85,51 @@ class Simulation:
             )
             time.sleep(update_interval)
 
-    def simulate_all(self, test_crystallite_sizes=False):
+    def simulate_all(self, test_crystallite_sizes=False, start_from_scratch=False):
 
-        self.crystals = self.crystals[0:16]  # only for testing
+        # only for testing:
+        # self.sim_crystals = self.sim_crystals[0:16]
 
         os.system(f"mkdir -p {self.output_dir}")
 
-        print(f"Simulating {len(self.crystals)} structures.")
+        print(f"Simulating {len(self.sim_crystals)} structures.")
+        print(f"Processing {batch_size} structures in each batch.")
+        print(f"Saving after each batch.")
 
-        # put 1000 entries ("batch") into one file, process them at once:
-        for i in range(0, math.ceil(len(self.crystals) / batch_size)):
+        if start_from_scratch == True:
+            self.sim_patterns = [] * len(self.sim_crystals)
+            self.sim_variations = [] * len(self.sim_crystals)
+            crystals_to_process = self.sim_crystals  # process all crystals
+            crystals_to_process_indices = range(
+                len(self.sim_crystals)
+            )  # needed, so the parallely processed jobs know where to put the results
 
-            if os.path.exists(
-                os.path.join(self.output_dir, "dataset_" + str(i) + ".csv")
-            ):  # make it possible to continue later, skip already simulated patterns
-                continue
+            print("Starting from scratch...")
 
-            if ((i + 1) * batch_size) < len(self.crystals):
-                end_index = (i + 1) * batch_size
-                current_crystals = self.crystals[i * batch_size : end_index]
+        else:
+            crystals_to_process = self.sim_crystals[
+                len(self.sim_simulation_done_upto) :
+            ]  # only crystals that have not been simulated, yet
+            crystals_to_process_indices = range(
+                len(self.sim_simulation_done_upto), len(self.sim_crystals)
+            )
+
+            print(f"Starting from crystal number {self.sim_simulation_done_upto}")
+
+        for i in range(0, math.ceil(len(crystals_to_process) / batch_size)):
+
+            if ((i + 1) * batch_size) < len(crystals_to_process):
+                end = (i + 1) * batch_size
+                current_crystals = crystals_to_process[i * batch_size : end]
+                current_crystals_indices = crystals_to_process_indices[
+                    i * batch_size : end
+                ]
             else:
-                current_crystals = self.crystals[i * batch_size :]
-                end_index = len(self.crystals)
+                current_crystals = crystals_to_process[i * batch_size :]
+                current_crystals_indices = crystals_to_process_indices[i * batch_size :]
+                end = len(crystals_to_process)
 
-            start = time.time()
+            start_time = time.time()
 
             pool = NestablePool(processes=num_threads)  # keep one main thread
 
@@ -113,47 +140,37 @@ class Simulation:
 
             Simulation.__track_job(handle)
 
-            result = handle.get()
+            results = handle.get()
 
-            # result = [
-            #    Simulator.simulate_crystal(crystal) for crystal in current_crystals
-            # ]
+            end_time = time.time()
 
-            end = time.time()
+            print(f"Finished batch of {batch_size}")
 
-            print(
-                "##### Calculated from cif {} to {} (total: {}) in {} s".format(
-                    i * batch_size, end_index, len(self.crystals), end - start
-                )
+            for i, result in results:
+                (diffractograms, variations) = result
+                index = current_crystals_indices[i]
+
+                self.sim_patterns[index] = diffractograms
+                self.sim_variations[index] = variations
+
+            self.sim_simulation_done_upto = (
+                (self.sim_simulation_done_upto + batch_size)
+                if (self.sim_simulation_done_upto + batch_size) < len(self.sim_crystals)
+                else len(self.sim_crystals)
             )
 
-            to_save = [
-                np.append(item, [*self.labels[i], *self.metas[i]])
-                for i, sublist in enumerate(result)
-                for item in sublist
-                if item is not None
-            ]  # None indicates an error in the structure
+            self.save()  # save after each batch to continue later
 
-            to_save = np.array(to_save)
-
-            np.savetxt(
-                os.path.join(self.output_dir, "dataset_" + str(i) + ".csv.gz"),
-                to_save,
-                delimiter=" ",
-                fmt="%s",
-                header=f"{len(self.labels[0])} {len(self.metas[0])}",
-            )
-
-        # load all already simulated patterns (including previous run)
-        self.load_simulated_patterns_labels_metas()
-
-    def simulate_crystal(arguments):
-        # TODO: add option for zero-point shifts
+    def simulate_crystal(
+        arguments,
+    ):  # keep this out of the class context to ensure thread safety
+        # TODO: maybe add option for zero-point shifts
 
         crystal = arguments[0]
         test_crystallite_sizes = arguments[1]
 
         diffractograms = []
+        variations = []
 
         # draw 5 crystallite sizes per crystal:
         for i in range(0, 5 if not test_crystallite_sizes else 6):
@@ -187,6 +204,8 @@ class Simulation:
                 elif i == 5:
                     size_gauss = crystallite_size_lor_min
                     size_lor = crystallite_size_gauss_min
+
+            variations.append({"size_gauss": size_gauss, "size_lor": size_lor})
 
             try:
 
@@ -278,7 +297,7 @@ class Simulation:
 
                 diffractograms.append(None)
 
-        return diffractograms
+        return (diffractograms, variations)
 
     def read_icsd(self):
 
@@ -296,7 +315,7 @@ class Simulation:
             )
             self.icsd_r_values = list(icsd_info["RValue"])
 
-            self.load_all_cif_paths()
+            self.__match_icsd_cif_paths()
 
             to_pickle = (
                 self.icsd_ids,
@@ -326,7 +345,7 @@ class Simulation:
                     self.icsd_paths,
                 ) = pickle.load(file)
 
-    def load_all_cif_paths(self):
+    def __match_icsd_cif_paths(self):
 
         # from dir
         all_paths = glob(os.path.join(self.icsd_cifs_dir, "*.cif"))
@@ -362,49 +381,36 @@ class Simulation:
         print(f"{counter_1} entries where in the csv, but not in the cif directory")
         print(f"{counter_2} cif files skipped")
 
-    def save_crystals_pickle(self):
+    def save(self):
 
-        pickle_file = os.path.join(self.output_dir, "crystals_labels")
+        pickle_file = os.path.join(self.output_dir, "data")
 
         with open(pickle_file, "wb") as file:
-            pickle.dump(self.crystals, file)
+            pickle.dump(
+                (
+                    self.sim_crystals,
+                    self.sim_labels,
+                    self.sim_metas,
+                    self.sim_patterns,
+                    self.sim_variations,
+                ),
+                file,
+            )
 
-    def load_crystals_pickle(self):
+    def load(self):
 
-        pickle_file = os.path.join(self.output_dir, "crystals_labels")
+        pickle_file = os.path.join(self.output_dir, "data")
 
         with open(pickle_file, "rb") as file:
-            self.crystals = pickle.load(file)
-
-    def load_simulated_patterns_labels_metas(
-        self,
-    ):  # loads patterns, labels and metadata from csv
-
-        self.labels = []
-        self.metas = []
-        self.patterns = np.zeros((0, angle_n))
-
-        csv_files = glob(os.path.join(self.output_dir, "*.csv.gz"))
-
-        for csv_file in csv_files:
-            with gzip.open(csv_file, "rt") as file:
-                info = file.readline()[1:].strip().split(" ")
-                n_labels = int(info[0])
-                n_metas = int(info[1])
-
-            data = np.genfromtxt(csv_file, delimiter=" ", skip_header=1)
-
-            ys_simulated = data[:, :angle_n]
-            labels = data[:, angle_n : angle_n + n_labels]
-            metas = data[:, angle_n + n_labels :]
-
-            self.labels.extend(labels.tolist())
-            self.metas.extend(metas.tolist())
-            self.patterns = np.append(self.patterns, ys_simulated, axis=0)
+            (
+                self.sim_crystals,
+                self.sim_labels,
+                self.sim_metas,
+                self.sim_patterns,
+                self.sim_variations,
+            ) = pickle.load(file)
 
     def get_space_group_number(self, id):
-
-        cif_path = self.icsd_paths[self.icsd_ids.index(id)]
 
         # TODO: Check if symmetry information is correct using https://spglib.github.io/spglib/python-spglib.html
         # TODO: Pymatgen seems to be doing this already!
@@ -504,6 +510,9 @@ class Simulation:
 
         """
 
+        cif_path = self.icsd_paths[self.icsd_ids.index(id)]
+
+        # read space group number directly from the cif file
         with open(cif_path, "r") as file:
             for line in file:
                 if "_space_group_IT_number" in line:

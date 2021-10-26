@@ -1,6 +1,5 @@
 from simulation import Simulation
 import xrayutilities as xu
-import warnings
 
 
 class ICSDSimulation(Simulation):
@@ -9,41 +8,36 @@ class ICSDSimulation(Simulation):
 
         self.output_dir = "patterns/icsd/"
 
-    def generate_structures(self, read_from_pickle=False, write_to_pickle=False):
+    def generate_structures(self):
 
-        # warnings.filterwarnings("ignore", message="/used instead of/")
-        warnings.filterwarnings("ignore")
+        self.reset_simulation_status()
 
-        if read_from_pickle:
-            self.load_crystals_pickle()
-        else:
+        counter = 0
 
-            counter = 0
+        for i, path in enumerate(self.icsd_paths):
 
-            for i, path in enumerate(self.icsd_paths):
+            if (i % 1000) == 0:
+                print(f"Generated {i} structures.")
 
-                if (i % 1000) == 0:
-                    print(f"Generated {i} structures.")
+            if path is None:
+                counter += 1
+                continue
 
-                if path is None:
-                    counter += 1
-                    continue
+            try:
+                xu.materials
+                crystal = xu.materials.Crystal.fromCIF(path)
 
-                try:
-                    xu.materials
-                    crystal = xu.materials.Crystal.fromCIF(path)
+            except Exception as ex:
+                counter += 1
+                continue
 
-                except Exception as ex:
-                    counter += 1
-                    continue
-
-                # Problem! Multiple grain sizes
-                self.crystals.append(crystal)
-                self.labels.append([self.get_space_group_number(self.icsd_ids[i])])
-                self.metas.append([self.icsd_ids[i]])
-
-        if write_to_pickle:
-            self.save_crystals_pickle()
+            self.sim_crystals.append(crystal)
+            self.sim_labels.append([self.get_space_group_number(self.icsd_ids[i])])
+            self.sim_metas.append([self.icsd_ids[i]])
+            self.sim_variations.append(
+                []
+            )  # this will later be filled by the simulation, e.g. different corn sizes
+            self.sim_patterns.append([])  # this will also be filled by the simulation
 
         print(f"Skipped {counter} structures due to errors.")
 
@@ -55,6 +49,10 @@ if __name__ == "__main__":
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-    simulation.generate_structures(read_from_pickle=False, write_to_pickle=True)
+    if True:  # toggle
+        simulation.load()
+    else:
+        simulation.generate_structures()
+        simulation.save()
 
     # simulator.simulate_all()
