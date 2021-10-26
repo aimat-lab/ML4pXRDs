@@ -20,7 +20,7 @@ class NarrowSimulation(Simulation):
     def generate_structures(self, read_from_pickle=False, write_to_pickle=False):
 
         if read_from_pickle:
-            self.load_crystals()
+            self.load_crystals_pickle()
         else:
 
             for i, path in enumerate(self.icsd_paths):
@@ -41,7 +41,7 @@ class NarrowSimulation(Simulation):
                 self.metas.append([self.icsd_ids[i]])
 
         if write_to_pickle:
-            self.save_crystals()
+            self.save_crystals_pickle()
 
         print(f"Loaded {len(simulator.crystals)} crystals")
         print(f"Fluorite#CaF2: {simulator.labels.count(0)}")

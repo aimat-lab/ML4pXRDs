@@ -11,6 +11,7 @@ from glob import glob
 import pickle
 import random
 import itertools
+import gzip
 
 batch_size = 1000
 num_threads = 8
@@ -131,12 +132,15 @@ class Simulation:
             to_save = np.array(to_save)
 
             np.savetxt(
-                os.path.join(self.output_dir, "dataset_" + str(i) + ".csv"),
+                os.path.join(self.output_dir, "dataset_" + str(i) + ".csv.gz"),
                 to_save,
                 delimiter=" ",
                 fmt="%s",
                 header=f"{len(self.labels[0])} {len(self.metas[0])}",
             )
+
+        # load all already simulated patterns (including previous run)
+        self.load_simulated_patterns_labels_metas()
 
     def simulate_crystal(arguments):
         # TODO: add option for zero-point shifts
@@ -353,30 +357,32 @@ class Simulation:
         print(f"{counter_1} entries where in the csv, but not in the cif directory")
         print(f"{counter_2} cif files skipped")
 
-    def save_crystals(self):
+    def save_crystals_pickle(self):
 
         pickle_file = os.path.join(self.output_dir, "crystals_labels")
 
         with open(pickle_file, "wb") as file:
             pickle.dump(self.crystals, file)
 
-    def load_crystals(self):
+    def load_crystals_pickle(self):
 
         pickle_file = os.path.join(self.output_dir, "crystals_labels")
 
         with open(pickle_file, "rb") as file:
             self.crystals = pickle.load(file)
 
-    def load_simulated_patterns(self):  # also loads labels and metadata from csv
+    def load_simulated_patterns_labels_metas(
+        self,
+    ):  # loads patterns, labels and metadata from csv
 
         self.labels = []
         self.metas = []
         self.patterns = np.zeros((0, angle_n))
 
-        csv_files = glob(os.path.join(self.output_dir, "*.csv"))
+        csv_files = glob(os.path.join(self.output_dir, "*.csv.gz"))
 
         for csv_file in csv_files:
-            with open(csv_file, "r") as file:
+            with gzip.open(csv_file, "rt") as file:
                 info = file.readline()[1:].strip().split(" ")
                 n_labels = int(info[0])
                 n_metas = int(info[1])

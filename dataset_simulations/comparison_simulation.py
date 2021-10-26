@@ -30,8 +30,6 @@ if __name__ == "__main__":
     simulator.generate_structures()
     simulator.simulate_all(test_crystallite_sizes=True)
 
-    simulator.load_simulated_patterns()
-
     data = simulator.patterns
 
     xs_simulated = np.linspace(0, 90, 9001)
