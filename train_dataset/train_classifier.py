@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append("../")
+
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -7,8 +11,6 @@ import os
 from keras_tuner import BayesianOptimization
 from keras_tuner import Hyperband
 from glob import glob
-import pandas as pd
-import pickle
 import matplotlib.pyplot as plt
 import os
 from sklearn.utils import shuffle
@@ -17,9 +19,11 @@ import tensorflow.keras as keras
 from sklearn.preprocessing import StandardScaler
 from dataset_simulations.narrow_simulation import NarrowSimulation
 
-# TODO: Give the trainings a unique name, so I can find them again; put these names in the google keep
 # TODO: Implement undersampling technique
 
+additional_tag = (
+    ""  # additional tag that will be added to the tuner folder and training folder
+)
 current_data_source = "narrow"
 
 number_of_values_initial = 9001
@@ -35,6 +39,9 @@ model_str = "conv"  # possible: conv, fully_connected, Lee (CNN-3)
 tuner_str = "bayesian"  # possible: hyperband and bayesian
 tune_hyperparameters = True
 
+tuner_epochs = 4
+tuner_batch_size = 128
+
 # read data
 if current_data_source == "narrow":
 
@@ -44,22 +51,30 @@ if current_data_source == "narrow":
     sim = NarrowSimulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        output_dir="../dataset_simulations/patterns/narrow/",
     )
 
     sim.load()
 
-    patterns_per_structure = len(sim.sim_patterns[0])
+    n_patterns_per_crystal = len(sim.sim_patterns[0])
 
-    patterns = np.array(sim.sim_patterns)
-    labels = []
+    patterns = sim.sim_patterns
+    labels = sim.sim_labels
 
-    for sim_label in sim.sim_labels:
-        labels.extend([sim_label[0]] * patterns_per_structure)
+    for i in reversed(range(0, len(patterns))):
+        if any(x is None for x in patterns[i]):
+            del patterns[i]
+            del labels[i]
+
+    patterns = np.array(patterns)
+    print(patterns.shape)
+
+    y = []
+    for label in labels:
+        y.extend([label[0]] * n_patterns_per_crystal)
 
     x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
-    y = np.array(labels)
-
-    # TODO: THEY CAN BE NONE! be careful with this, handle this
+    y = np.array(y)
 
 else:
     raise Exception("Data source not recognized.")
@@ -72,10 +87,6 @@ assert not np.any(np.isnan(y))
 assert len(x) == len(y)
 
 print("##### Loaded {} training points".format(len(x)))
-
-# when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
-if model_str == "conv":
-    x = np.expand_dims(x, axis=2)
 
 # Split into train, validation, test set + shuffle
 x, y = shuffle(x, y, random_state=1234)
@@ -94,6 +105,13 @@ if scale_features:
     x_train = sc.fit_transform(x_train)
     x_test = sc.transform(x_test)
     x_val = sc.transform(x_val)
+
+# when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
+if model_str == "conv":
+    x = np.expand_dims(x, axis=2)
+    x_train = np.expand_dims(x_train, axis=2)
+    x_test = np.expand_dims(x_test, axis=2)
+    x_val = np.expand_dims(x_val, axis=2)
 
 if model_str == "conv":
 
@@ -303,6 +321,7 @@ elif model_str == "Lee":
 
         flat = keras.layers.Flatten()(max_pool_3)
         """
+
         flat = keras.layers.Flatten()(max_pool_2)
 
         drop1 = keras.layers.Dropout(keep_prob_)(flat)
@@ -354,8 +373,8 @@ if tuner_str == "bayesian":
 
     class MyTuner(BayesianOptimization):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = 100
-            kwargs["epochs"] = 4
+            kwargs["batch_size"] = tuner_batch_size
+            kwargs["epochs"] = tuner_epochs
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
         def on_epoch_end(trial, model, epoch, *args, **kwargs):
@@ -375,7 +394,9 @@ if tuner_str == "bayesian":
         max_trials=1000,
         executions_per_trial=1,
         overwrite=False,
-        project_name="bayesian_opt_" + model_str,
+        project_name="bayesian_opt_"
+        + model_str
+        + (("_" + additional_tag) if additional_tag != "" else ""),
         directory="tuner",
         num_initial_points=3 * 9,
     )
@@ -384,24 +405,40 @@ elif tuner_str == "hyperband":
 
     class MyTuner(Hyperband):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = 500
-            kwargs["epochs"] = 10
+            kwargs["batch_size"] = tuner_batch_size
+            kwargs["epochs"] = tuner_epochs
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
     tuner = MyTuner(
         build_model,
         objective="val_accuracy",
-        max_epochs=10,
+        max_epochs=tuner_epochs,
         overwrite=False,
         directory="tuner",
-        project_name="hyperband_opt_" + model_str,
-        hyperband_iterations=100000,
+        project_name="hyperband_opt_"
+        + model_str
+        + (("_" + additional_tag) if additional_tag != "" else ""),
+        hyperband_iterations=10000,
     )
 
 if tune_hyperparameters:
 
     tuner.search_space_summary()
-    tuner.search(x_train, y_train, validation_data=(x_val, y_val), verbose=2)
+    tuner.search(
+        x_train,
+        y_train,
+        validation_data=(x_val, y_val),
+        verbose=2,
+        callbacks=[
+            keras.callbacks.TensorBoard(
+                "tuner/"
+                + ("hyperband_opt_" if tuner_str == "hyperband" else "bayesian_opt_")
+                + model_str
+                + (("_" + additional_tag) if additional_tag != "" else "")
+                + "/tf"
+            )
+        ],
+    )
 
 else:  # build model from best set of hyperparameters
 

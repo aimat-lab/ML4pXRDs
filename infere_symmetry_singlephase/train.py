@@ -133,11 +133,6 @@ assert not np.any(np.isnan(y))
 
 print("##### Loaded {} training points".format(len(x)))
 
-# when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
-
-if model_str == "conv":
-    x = np.expand_dims(x, axis=2)
-
 # Split into train, validation, test set + shuffle
 
 x, y, bravais_str, space_group_number = shuffle(
@@ -160,6 +155,14 @@ if scale_features:
     x_train = sc.fit_transform(x_train)
     x_test = sc.transform(x_test)
     x_val = sc.transform(x_val)
+
+# when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
+if model_str == "conv":
+    x = np.expand_dims(x, axis=2)
+    x_train = np.expand_dims(x_train, axis=2)
+    x_test = np.expand_dims(x_test, axis=2)
+    x_val = np.expand_dims(x_val, axis=2)
+
 
 if model_str == "conv":
 
@@ -418,10 +421,9 @@ else:
 
 if tuner_str == "bayesian":
 
-    """
     class MyTuner(BayesianOptimization):
         def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = 100
+            kwargs["batch_size"] = 128
             kwargs["epochs"] = 4
             super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
@@ -446,9 +448,6 @@ if tuner_str == "bayesian":
         directory="tuner",
         num_initial_points=3 * 9,
     )
-    """
-
-    tuner = BayesianOptimization()
 
 elif tuner_str == "hyperband":
 

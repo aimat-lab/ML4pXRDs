@@ -1,4 +1,4 @@
-from simulation import Simulation
+from dataset_simulations.simulation import Simulation
 import xrayutilities as xu
 
 # Use a very narrow selection of ICSD entries
@@ -10,10 +10,13 @@ import xrayutilities as xu
 
 
 class NarrowSimulation(Simulation):
-    def __init__(self, icsd_info_file_path, icsd_cifs_dir):
+    def __init__(self, icsd_info_file_path, icsd_cifs_dir, output_dir=None):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
-        self.output_dir = "patterns/narrow/"
+        if output_dir is None:
+            self.output_dir = "patterns/narrow/"
+        else:
+            self.output_dir = output_dir
 
     def generate_structures(self):
 
