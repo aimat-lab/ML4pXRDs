@@ -19,7 +19,6 @@ from dataset_simulations.narrow_simulation import NarrowSimulation
 
 # TODO: Give the trainings a unique name, so I can find them again; put these names in the google keep
 # TODO: Implement undersampling technique
-# TODO: Maybe at some later point, use https://optuna.org/#code_examples instead of keras !?
 
 current_data_source = "narrow"
 
@@ -59,6 +58,7 @@ if current_data_source == "narrow":
 
     x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
     y = np.array(labels)
+
     # TODO: THEY CAN BE NONE! be careful with this, handle this
 
 else:

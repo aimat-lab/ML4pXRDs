@@ -418,6 +418,7 @@ else:
 
 if tuner_str == "bayesian":
 
+    """
     class MyTuner(BayesianOptimization):
         def run_trial(self, trial, *args, **kwargs):
             kwargs["batch_size"] = 100
@@ -445,6 +446,9 @@ if tuner_str == "bayesian":
         directory="tuner",
         num_initial_points=3 * 9,
     )
+    """
+
+    tuner = BayesianOptimization()
 
 elif tuner_str == "hyperband":
 

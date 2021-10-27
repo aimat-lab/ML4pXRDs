@@ -17,7 +17,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import lzma
 import gc
 
-batch_size = 300
+batch_size = 500
 num_threads = 8
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
@@ -74,9 +74,7 @@ class Simulation:
             []
         )  # for each crystal, the simulated patterns; this can be multiple, depending on sim_variations
         self.sim_variations = []  # things like crystallite size, etc.
-        self.sim_simulation_done_upto = (
-            0  # up to which index the simulation is done (excluding)
-        )
+        self.sim_batches_simulated = 0
 
     def __track_job(job, update_interval=5):
         while job._number_left > 0:
@@ -98,29 +96,38 @@ class Simulation:
         print(f"Processing {batch_size} structures in each batch.")
         print(f"Saving after each batch.")
 
+        crystals_to_process = self.sim_crystals  # process all crystals
+        crystals_to_process_indices = range(
+            len(self.sim_crystals)
+        )  # needed, so the parallely processed jobs know where to put the results
+
         if start_from_scratch == True:
+
             self.sim_patterns = [[]] * len(self.sim_crystals)
             self.sim_variations = [[]] * len(self.sim_crystals)
-            crystals_to_process = self.sim_crystals  # process all crystals
-            crystals_to_process_indices = range(
-                len(self.sim_crystals)
-            )  # needed, so the parallely processed jobs know where to put the results
 
-            print("Starting from scratch...")
+            print("Starting simulation from scratch...")
+
+            self.sim_batches_simulated = 0
 
         else:
-            crystals_to_process = self.sim_crystals[
-                self.sim_simulation_done_upto :
-            ]  # only crystals that have not been simulated, yet
-            crystals_to_process_indices = range(
-                self.sim_simulation_done_upto, len(self.sim_crystals)
+
+            sim_batches_simulated_file = os.path.join(
+                self.output_dir, "sim_batches_simulated"
             )
+            if os.path.exists(sim_batches_simulated_file):
+                with open(sim_batches_simulated_file, "r") as file:
+                    self.sim_batches_simulated = int(file.readline().strip())
 
-            print(f"Starting from crystal number {self.sim_simulation_done_upto + 1}")
-
-        for i in range(0, math.ceil(len(crystals_to_process) / batch_size)):
+        for i in range(
+            self.sim_batches_simulated, math.ceil(len(crystals_to_process) / batch_size)
+        ):
 
             gc.collect()
+
+            print(
+                f"Processing batch {i+1} of {math.ceil(len(crystals_to_process) / batch_size)} with batch size {batch_size}"
+            )
 
             if ((i + 1) * batch_size) < len(crystals_to_process):
                 end = (i + 1) * batch_size
@@ -152,16 +159,21 @@ class Simulation:
                 f"Finished batch of {batch_size} after {(end_time - start_time)/60} min"
             )
 
-            for i, result in enumerate(results):
+            for j, result in enumerate(results):
                 (diffractograms, variations) = result
-                index = current_crystals_indices[i]
+                index = current_crystals_indices[j]
 
                 self.sim_patterns[index] = diffractograms
                 self.sim_variations[index] = variations
 
-            self.sim_simulation_done_upto = current_crystals_indices[-1] + 1
+            self.sim_batches_simulated += 1
 
-            self.save()  # save after each batch to continue later
+            self.save(i)  # save after each batch to continue later
+
+            del handle
+            pool.close()
+            del pool
+            gc.collect()
 
     def simulate_crystal(
         arguments,
@@ -385,36 +397,69 @@ class Simulation:
         print(f"{counter_1} entries where in the csv, but not in the cif directory")
         print(f"{counter_2} cif files skipped")
 
-    def save(self):
+    def save(self, i=None):  # i specifies which batch to save
 
-        pickle_file = os.path.join(self.output_dir, "data")
+        sim_batches_simulated_file = os.path.join(
+            self.output_dir, "sim_batches_simulated"
+        )
+        with open(sim_batches_simulated_file, "w") as file:
+            file.write(str(self.sim_batches_simulated))
+
+        if i is not None:
+            if ((i + 1) * batch_size) < len(self.sim_crystals):
+                start = i * batch_size
+                end = (i + 1) * batch_size
+            else:
+                start = i * batch_size
+                end = len(self.sim_crystals)
+        else:  # save all
+
+            for j in range(0, math.ceil(len(self.sim_crystals) / batch_size)):
+                self.save(i=j)
+
+            return
+
+        pickle_file = os.path.join(self.output_dir, f"data_{i}.lzma")
 
         with lzma.open(pickle_file, "wb") as file:
             pickle.dump(
                 (
-                    self.sim_crystals,
-                    self.sim_labels,
-                    self.sim_metas,
-                    self.sim_patterns,
-                    self.sim_variations,
-                    self.sim_simulation_done_upto,
+                    self.sim_crystals[start:end],
+                    self.sim_labels[start:end],
+                    self.sim_metas[start:end],
+                    self.sim_patterns[start:end],
+                    self.sim_variations[start:end],
                 ),
                 file,
             )
 
     def load(self):
 
-        pickle_file = os.path.join(self.output_dir, "data")
+        self.reset_simulation_status()
 
-        with lzma.open(pickle_file, "rb") as file:
-            (
-                self.sim_crystals,
-                self.sim_labels,
-                self.sim_metas,
-                self.sim_patterns,
-                self.sim_variations,
-                self.sim_simulation_done_upto,
-            ) = pickle.load(file)
+        sim_batches_simulated_file = os.path.join(
+            self.output_dir, "sim_batches_simulated"
+        )
+        if os.path.exists(sim_batches_simulated_file):
+            with open(sim_batches_simulated_file, "r") as file:
+                self.sim_batches_simulated = int(file.readline().strip())
+
+        pickle_files = glob(os.path.join(self.output_dir, f"data_*.lzma"))
+        pickle_files = sorted(
+            pickle_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("data_", "").replace(".lzma", "")
+            ),
+        )
+
+        for pickle_file in pickle_files:
+            with lzma.open(pickle_file, "rb") as file:
+                additional = pickle.load(file)
+                self.sim_crystals.extend(additional[0])
+                self.sim_labels.extend(additional[1])
+                self.sim_metas.extend(additional[2])
+                self.sim_patterns.extend(additional[3])
+                self.sim_variations.extend(additional[4])
 
     def get_space_group_number(self, id):
 

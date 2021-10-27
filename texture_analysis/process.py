@@ -245,6 +245,10 @@ for i in range(0, xs.shape[1]):
     print("Processing {} of {}: {}".format(i + 1, xs.shape[1], names[i]))
 
     xs_current = xs[:, i]
+
+    # print(xs_current[1] - xs_current[0])
+    # exit()
+
     ys_current = ys[:, i]
 
     ys_baseline = fit_baseline(xs_current, ys_current)
