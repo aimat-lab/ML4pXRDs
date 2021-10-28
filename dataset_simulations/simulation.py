@@ -20,7 +20,7 @@ import gc
 from xrayutilities.simpack import powdermodel
 
 batch_size = 500
-num_threads = 8
+num_threads = 80
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
 
