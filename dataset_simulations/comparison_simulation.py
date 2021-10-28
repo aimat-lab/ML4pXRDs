@@ -31,7 +31,7 @@ if __name__ == "__main__":
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-    if True:  # toggle
+    if False:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
@@ -50,9 +50,12 @@ if __name__ == "__main__":
     ys_simulated5 = data[4, :]
     ys_simulated6 = data[5, :]
 
-    plt.plot(
-        xs_simulated, ys_simulated1 / np.max(ys_simulated1), label="gauss_max, lor_0"
-    )
+    # plt.plot(
+    #    xs_simulated, ys_simulated1 / np.max(ys_simulated1), label="gauss_max, lor_0"
+    # )
+    plt.plot(xs_simulated, ys_simulated1, label="gauss_max, lor_0")
+
+    """
     plt.plot(
         xs_simulated, ys_simulated2 / np.max(ys_simulated2), label="gauss_0 lor_max"
     )
@@ -78,6 +81,8 @@ if __name__ == "__main__":
         ys_compare_to / np.max(ys_compare_to),
         label="exp. Ce O2",
     )
+    
+    """
 
     plt.legend()
 

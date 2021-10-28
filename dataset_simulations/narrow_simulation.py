@@ -1,4 +1,4 @@
-from dataset_simulations.simulation import Simulation
+from simulation import Simulation
 import xrayutilities as xu
 
 # Use a very narrow selection of ICSD entries
@@ -69,4 +69,4 @@ if __name__ == "__main__":
         simulation.generate_structures()
         simulation.save()
 
-    simulation.simulate_all(start_from_scratch=False)
+    simulation.simulate_all(start_from_scratch=True)

@@ -1,3 +1,4 @@
+from re import S
 import sys
 
 sys.path.append("../")
@@ -18,8 +19,7 @@ from tensorflow.python.client import device_lib
 import tensorflow.keras as keras
 from sklearn.preprocessing import StandardScaler
 from dataset_simulations.narrow_simulation import NarrowSimulation
-
-# TODO: Implement undersampling technique
+from sklearn.utils import class_weight
 
 additional_tag = (
     ""  # additional tag that will be added to the tuner folder and training folder
@@ -76,7 +76,10 @@ if current_data_source == "narrow":
     x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
     y = np.array(y)
 
-    # TODO: Use this: https://scikit-learn.org/stable/modules/generated/sklearn.utils.class_weight.compute_class_weight.html
+    class_weights = class_weight.compute_class_weight("balanced", np.unique(y), y)
+
+    print("Class weights:")
+    print(class_weights)
 
 else:
     raise Exception("Data source not recognized.")
@@ -435,6 +438,7 @@ if tune_hyperparameters:
                 + "/tf"
             )
         ],
+        class_weights=class_weights,  # TODO: Is it actually using these class weights?
     )
 
 else:  # build model from best set of hyperparameters

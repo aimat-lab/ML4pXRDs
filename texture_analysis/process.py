@@ -2,14 +2,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import sparse
-from scipy.sparse.linalg import spsolve
-from scipy.signal import savgol_filter
 from scipy.sparse import linalg
 from numpy.linalg import norm
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 import csv
-from scipy.signal import savgol_filter
 import os
 
 # baseline_arPLS parameters:
@@ -29,8 +26,7 @@ find_peaks_distance = 0.5
 find_peaks_prominence = 8.4
 # find_peaks_height = 6
 
-# both of the following functions are taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
-# TODO: Maybe use this library for baseline removal in the future: https://github.com/StatguyUser/BaselineRemoval (algorithm should be the same, though)
+# This function is from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
 def baseline_arPLS(y, ratio=1e-6, lam=100, niter=10, full_output=False):
     L = len(y)
 
@@ -75,7 +71,6 @@ def baseline_arPLS(y, ratio=1e-6, lam=100, niter=10, full_output=False):
 
 def fit_baseline(xs, ys):
 
-    # TODO: Maybe find even better parameters for this
     ys_baseline = baseline_arPLS(
         ys, ratio=arPLS_ratio, lam=arPLS_lam, niter=arPLS_niter
     )
@@ -100,7 +95,6 @@ def gaussian(x, a, x0, sigma):
     )
 
 
-# TODO: Maybe at some point fit a mixture of Lorentzian and Gaussian instead of only Gaussian
 def fit_gaussian(peak_index, xs, ys, ys_smoothed):
 
     # find first index where function increases, again (to the left and to the right)
