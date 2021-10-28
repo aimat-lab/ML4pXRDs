@@ -76,6 +76,8 @@ if current_data_source == "narrow":
     x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
     y = np.array(y)
 
+    # TODO: Use this: https://scikit-learn.org/stable/modules/generated/sklearn.utils.class_weight.compute_class_weight.html
+
 else:
     raise Exception("Data source not recognized.")
 
@@ -90,11 +92,6 @@ print("##### Loaded {} training points".format(len(x)))
 
 # Split into train, validation, test set + shuffle
 x, y = shuffle(x, y, random_state=1234)
-
-# Use less training data for hyperparameter optimization
-if tune_hyperparameters:
-    x = x[0:100000]  # only use 100k patterns for hyper optimization
-    y = y[0:100000]
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
 x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)

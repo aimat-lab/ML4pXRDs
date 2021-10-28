@@ -399,6 +399,9 @@ class Simulation:
 
     def save(self, i=None):  # i specifies which batch to save
 
+        if not os.path.exists(self.output_dir):
+            os.system("mkdir -p " + self.output_dir)
+
         sim_batches_simulated_file = os.path.join(
             self.output_dir, "sim_batches_simulated"
         )
