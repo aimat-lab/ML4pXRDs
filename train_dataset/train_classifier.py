@@ -35,7 +35,7 @@ used_range = simulated_range[used_range_beginning::step]
 number_of_values = len(used_range)
 scale_features = True
 
-model_str = "conv"  # possible: conv, fully_connected, Lee (CNN-3)
+model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
 tuner_str = "bayesian"  # possible: hyperband and bayesian
 tune_hyperparameters = True
 
@@ -45,7 +45,6 @@ tuner_batch_size = 128
 # read data
 if current_data_source == "narrow":
 
-    n_classes = 14  # TODO: Change this, not true
     path_to_patterns = "../dataset_simulations/patterns/narrow/"
 
     sim = NarrowSimulation(
@@ -74,12 +73,21 @@ if current_data_source == "narrow":
         y.extend([label[0]] * n_patterns_per_crystal)
 
     x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
+    x = x[:, used_range_beginning::step]
     y = np.array(y)
 
-    class_weights = class_weight.compute_class_weight("balanced", np.unique(y), y)
+    class_weights = {}
+    classes = np.unique(y)
+    class_weight_array = class_weight.compute_class_weight(
+        class_weight="balanced", classes=classes, y=y
+    )
+    for i, weight in enumerate(class_weight_array):
+        class_weights[classes[i]] = weight
 
     print("Class weights:")
-    print(class_weights)
+    print(class_weight)
+
+    n_classes = len(np.unique(y))
 
 else:
     raise Exception("Data source not recognized.")
@@ -107,7 +115,7 @@ if scale_features:
     x_val = sc.transform(x_val)
 
 # when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
-if model_str == "conv":
+if "conv" in model_str:
     x = np.expand_dims(x, axis=2)
     x_train = np.expand_dims(x_train, axis=2)
     x_test = np.expand_dims(x_test, axis=2)
@@ -165,6 +173,89 @@ if model_str == "conv":
         model.add(tf.keras.layers.Flatten())
 
         for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=3)):
+
+            model.add(
+                tf.keras.layers.Dense(
+                    hp.Int(
+                        "number_of_dense_units_" + str(i),
+                        min_value=32,
+                        max_value=2080,
+                        step=128,
+                    ),
+                    activation="relu",
+                )
+            )
+            model.add(
+                tf.keras.layers.Dropout(
+                    hp.Float("dropout", 0, 0.5, step=0.1, default=0.5)
+                )
+            )
+
+        model.add(tf.keras.layers.Dense(n_classes))
+
+        optimizer = tf.keras.optimizers.Adam(
+            hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
+        )
+
+        model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=["accuracy"],
+        )
+
+        model.summary()
+
+        return model
+
+
+if model_str == "conv_narrow":
+
+    def build_model(hp):  # define model with hyperparameters
+
+        model = tf.keras.models.Sequential()
+
+        for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=2)):
+
+            if i == 0:
+                model.add(
+                    tf.keras.layers.Conv1D(
+                        hp.Int(
+                            "number_of_filters", min_value=10, max_value=210, step=20
+                        ),
+                        # int(starting_filter_size * (3 / 4) ** i),
+                        hp.Int(
+                            "filter_size_" + str(i),
+                            min_value=10,
+                            max_value=510,
+                            step=20,
+                        ),
+                        input_shape=(number_of_values, 1),
+                        activation="relu",
+                    )
+                )
+            else:
+                model.add(
+                    tf.keras.layers.Conv1D(
+                        hp.Int(
+                            "number_of_filters", min_value=10, max_value=200, step=20
+                        ),
+                        # int(starting_filter_size * (3 / 4) ** i),
+                        hp.Int(
+                            "filter_size_" + str(i),
+                            min_value=10,
+                            max_value=510,
+                            step=20,
+                        ),
+                        activation="relu",
+                    )
+                )
+
+            model.add(tf.keras.layers.BatchNormalization())
+            model.add(tf.keras.layers.MaxPooling1D(pool_size=2, strides=2))
+
+        model.add(tf.keras.layers.Flatten())
+
+        for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=2)):
 
             model.add(
                 tf.keras.layers.Dense(
@@ -438,7 +529,7 @@ if tune_hyperparameters:
                 + "/tf"
             )
         ],
-        class_weights=class_weights,  # TODO: Is it actually using these class weights?
+        class_weight=class_weights,  # TODO: Is it actually using these class weights?
     )
 
 else:  # build model from best set of hyperparameters

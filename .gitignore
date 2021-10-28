@@ -13,3 +13,4 @@ slurm*
 dataset_simulations/patterns
 *.pyc
 dataset_simulations/__py_cache__
+train_dataset/tuner
