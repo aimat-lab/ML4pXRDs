@@ -11,6 +11,7 @@ from scipy.signal import find_peaks, filtfilt
 from skimage import data, restoration, util
 from matplotlib.patches import Ellipse
 
+
 remove_background = True
 model_path = ""  # path to the model to test on
 experimental_file = ""
@@ -212,8 +213,7 @@ if __name__ == "__main__":
                     )
                     ax.plot(current_xs, 0.4 + current_ys)
                     ax.plot(
-                        current_xs,
-                        0.4 + baseline,
+                        current_xs, 0.4 + baseline,
                     )
                     ax.plot(current_xs, current_ys - baseline)
                     ax.plot(current_xs, [0] * len(current_xs))
@@ -295,3 +295,6 @@ if __name__ == "__main__":
 
     if tune_parameters:
         exit()  # do not continue, since the same parameters should be used for all samples. Restart!
+
+
+# TODO: Don't forget to transform first

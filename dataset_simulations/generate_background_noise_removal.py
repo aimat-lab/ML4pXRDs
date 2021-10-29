@@ -1,10 +1,13 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import pickle
+import lzma
 
-N = 9001
+# N = 9001
+N = 4224
 xs = np.linspace(0, 90, N)
-number_of_samples = 5  # number of samples to generate
+number_of_samples = 100000  # number of samples to generate
 max_peaks_per_sample = 20  # max number of peaks per sample
 polynomial_degree = 3
 polymomial_parameters_range = 0.5
@@ -48,7 +51,13 @@ def generate_background_and_noise():
     return ys
 
 
+ys_all_altered = []
+ys_all_unaltered = []
+
 for i in range(0, number_of_samples):
+
+    if (i % 1000) == 0:
+        print(f"Generated {i} samples.")
 
     ys_altered = generate_background_and_noise()
     ys_unaltered = np.zeros(N)
@@ -68,7 +77,10 @@ for i in range(0, number_of_samples):
         ys_altered += peak
         ys_unaltered += peak
 
-    ys_altered /= np.max(ys_altered)
-    plt.plot(xs, ys_altered)
+    # plt.plot(xs, ys_altered)
 
-plt.show()
+    ys_all_altered.append(ys_altered)
+    ys_all_unaltered.append(ys_unaltered)
+
+with open("patterns/noise_background/data", "wb") as file:
+    pickle.dump((np.array(ys_all_altered), np.array(ys_all_unaltered)), file)
