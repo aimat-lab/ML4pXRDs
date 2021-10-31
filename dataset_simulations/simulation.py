@@ -17,8 +17,8 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import lzma
 import gc
 
-batch_size = 500
-num_threads = 80
+batch_size = 2000
+num_threads = 40
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
 
