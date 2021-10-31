@@ -20,7 +20,7 @@ import gc
 from xrayutilities.simpack import powdermodel
 
 batch_size = 500
-num_threads = 80
+num_threads = 8
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
 
@@ -304,7 +304,7 @@ class Simulation:
                 rs = []
                 for key, value in powder_model.pdiff[0].data.items():
                     rs.append(value["r"])
-                print("Max intensity: " + str(np.max(rs)))
+                # print("Max intensity: " + str(np.max(rs)))
 
                 powder_model.close()
 

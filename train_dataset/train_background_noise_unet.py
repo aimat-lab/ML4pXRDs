@@ -25,7 +25,8 @@ model.summary()
 # read training data:
 
 
-def load_and_shuffle(Q):
+def load_shuffle_split(Q):
+
     with open("../dataset_simulations/patterns/noise_background/data", "rb") as file:
         ys_altered, ys_unaltered = pickle.load(file)
 
@@ -35,34 +36,28 @@ def load_and_shuffle(Q):
     # Split into train, validation, test set + shuffle
     x, y = shuffle(x, y, random_state=1234)
 
-    Q.put((x, y))
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
+    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
+
+    Q.put((x_train, x_test, x_val, y_train, y_test, y_val))
 
 
-Q = Queue()
-process_1 = Process(target=load_and_shuffle, args=[Q])
+Q_1 = Queue()
+process_1 = Process(target=load_shuffle_split, args=[Q_1])
 process_1.start()
-print(Q.get())
+(x_train, x_test, x_val, y_train, y_test, y_val) = Q_1.get()
 process_1.join()
 
-
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
-x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
-
 sc = StandardScaler()
-x_train = sc.fit_transform(x_train)
-x_test = sc.transform(x_test)
-x_val = sc.transform(x_val)
-
-x = np.expand_dims(x, axis=2)
-x_train = np.expand_dims(x_train, axis=2)
-x_test = np.expand_dims(x_test, axis=2)
-x_val = np.expand_dims(x_val, axis=2)
+x_train = np.expand_dims(sc.fit_transform(x_train), axis=2)
+x_test = np.expand_dims(sc.transform(x_test), axis=2)
+x_val = np.expand_dims(sc.transform(x_val), axis=2)
 
 model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError())
-model.fit(ys_altered, ys_unaltered, epochs=5, batch_size=5)
+model.fit(x_train, y_train, epochs=1, batch_size=5)
 model.save_weights("weights")
 
-predictions = model(x_test).numpy()
+predictions = model(x_test[0:10]).numpy()
 
 for i, prediction in enumerate(predictions):
     plt.plot(pattern_x, prediction)
