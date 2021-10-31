@@ -19,6 +19,7 @@ import gc
 
 batch_size = 2000
 num_threads = 40
+
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
 
@@ -299,9 +300,10 @@ class Simulation:
                     xs, mode="local"
                 )  # this also includes the Lorentzian + polarization correction
 
-                # diffractogram = powder_model.simulate(
-                #    xs
-                # )  # this also includes the Lorentzian + polarization correction
+                rs = []
+                for key, value in powder_model.pdiff[0].data.items():
+                    rs.append(value["r"])
+                # print("Max intensity: " + str(np.max(rs)))
 
                 powder_model.close()
 
