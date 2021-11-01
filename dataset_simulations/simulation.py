@@ -18,6 +18,9 @@ import lzma
 import gc
 from datetime import datetime
 
+# make print statement always flush
+print = functools.partial(print, flush=True)
+
 batch_size = 4000
 num_threads = 20
 

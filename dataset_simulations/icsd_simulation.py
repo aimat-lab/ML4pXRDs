@@ -1,6 +1,8 @@
 from simulation import Simulation
 import xrayutilities as xu
 
+# make print statement always flush
+print = functools.partial(print, flush=True)
 
 class ICSDSimulation(Simulation):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
