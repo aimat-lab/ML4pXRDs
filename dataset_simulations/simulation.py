@@ -18,10 +18,9 @@ import lzma
 import gc
 from datetime import datetime
 
-from xrayutilities.simpack import powdermodel
-
 batch_size = 4000
 num_threads = 80
+
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
 

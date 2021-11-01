@@ -16,6 +16,8 @@ class ICSDSimulation(Simulation):
 
         for i, path in enumerate(self.icsd_paths):
 
+            #print(path)
+
             if (i % 1000) == 0:
                 print(f"Generated {i} structures.")
 
