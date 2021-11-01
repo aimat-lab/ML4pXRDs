@@ -63,8 +63,8 @@ class NarrowSimulation(Simulation):
 if __name__ == "__main__":
 
     simulation = NarrowSimulation(
-        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
+        "/home/kit/iti/la2559/Databases/ICSD/cif/",
     )
 
     if True:  # toggle

@@ -2,7 +2,7 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=80
 #SBATCH --time=72:00:00
-#SBATCH --job-name=icsd_sim
+#SBATCH --job-name=narrow_sim
 #SBATCH --partition=fat
 
 # --time=30
@@ -14,4 +14,4 @@ export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 source /home/kit/iti/la2559/mambaforge/etc/profile.d/conda.sh
 
 conda activate xrayutilities
-stdbuf -o0 -e0 python icsd_simulation.py
+python narrow_simulation.py
