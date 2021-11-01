@@ -16,7 +16,7 @@ class ICSDSimulation(Simulation):
 
         for i, path in enumerate(self.icsd_paths):
 
-            #print(path)
+            # print(path)
 
             if (i % 1000) == 0:
                 print(f"Generated {i} structures.")
@@ -51,10 +51,10 @@ if __name__ == "__main__":
         "/home/kit/iti/la2559/Databases/ICSD/cif/",
     )
 
-    if False:  # toggle
+    if True:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
         simulation.save()
 
-    simulation.simulate_all()
+    simulation.simulate_all(start_from_scratch=True)
