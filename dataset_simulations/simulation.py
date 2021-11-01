@@ -16,11 +16,12 @@ from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import lzma
 import gc
+from datetime import datetime
 
 from xrayutilities.simpack import powdermodel
 
-batch_size = 500
-num_threads = 8
+batch_size = 4000
+num_threads = 80
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
 
@@ -67,6 +68,8 @@ class Simulation:
         self.read_icsd()
 
         self.output_dir = "patterns/default/"  # should be overwritten by child class
+
+        print("Protocol started: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 
     def reset_simulation_status(self):
         self.sim_crystals = []
@@ -130,6 +133,7 @@ class Simulation:
             print(
                 f"Processing batch {i+1} of {math.ceil(len(crystals_to_process) / batch_size)} with batch size {batch_size}"
             )
+            print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 
             if ((i + 1) * batch_size) < len(crystals_to_process):
                 end = (i + 1) * batch_size
