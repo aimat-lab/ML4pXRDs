@@ -22,7 +22,7 @@ from math import ceil
 import subprocess
 
 num_files = 16
-num_processes = 4
+num_processes = 8
 
 
 class Simulation:
@@ -131,7 +131,7 @@ class Simulation:
                 total += N
                 print(f"Worker {i}: {N} of {crystals_per_process[i]}")
             print(f"Total: {total} of {len(self.sim_crystals)}")
-            print()
+            print(flush=True)
 
     def read_icsd(self):
 

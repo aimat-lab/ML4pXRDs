@@ -8,6 +8,7 @@ import random
 import xrayutilities as xu
 import numpy as np
 import gc
+import functools
 
 crystallite_size_gauss_min = 15 * 10 ** -9
 crystallite_size_gauss_max = 50 * 10 ** -9
@@ -169,6 +170,9 @@ def simulate_crystal(
 
 
 if __name__ == "__main__":
+
+    # make print statement always flush
+    print = functools.partial(print, flush=True)
 
     print("Worker started with args:")
     print(sys.argv)
