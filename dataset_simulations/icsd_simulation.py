@@ -1,5 +1,7 @@
 from simulation import Simulation
 import xrayutilities as xu
+import functools
+import multiprocessing
 
 # make print statement always flush
 print = functools.partial(print, flush=True)
@@ -46,6 +48,11 @@ class ICSDSimulation(Simulation):
 
 
 if __name__ == "__main__":
+    
+    try:
+        multiprocessing.set_start_method('spawn')
+    except RuntimeError:
+        pass
 
     simulation = ICSDSimulation(
         "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",

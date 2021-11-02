@@ -17,12 +17,13 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import lzma
 import gc
 from datetime import datetime
+import functools
 
 # make print statement always flush
 print = functools.partial(print, flush=True)
 
-batch_size = 4000
-num_threads = 20
+batch_size = 2000
+num_threads = 40
 
 return_mode = "pattern"  # only full pattern supported at the moment
 simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
@@ -83,11 +84,11 @@ class Simulation:
         self.sim_variations = []  # things like crystallite size, etc.
         self.sim_batches_simulated = 0
 
-    def __track_job(job, update_interval=5):
+    def __track_job(job, update_interval=10):
         while job._number_left > 0:
             print(
-                "Tasks remaining in this batch of {}: {} (chunksize: {})".format(
-                    batch_size, job._number_left * job._chunksize, job._chunksize
+                "Tasks remaining in this batch of {}: {} (chunksize: {}) at {}".format(
+                    batch_size, job._number_left * job._chunksize, job._chunksize, datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                 )
             )
             time.sleep(update_interval)
@@ -303,8 +304,12 @@ class Simulation:
                     angle_min, angle_max, angle_n
                 )  # simulate a rather large range, we can still later use a smaller range for training
 
+                #diffractogram = powder_model.simulate(
+                #    xs, mode="local"
+                #)  # this also includes the Lorentzian + polarization correction
+
                 diffractogram = powder_model.simulate(
-                    xs, mode="local"
+                    xs
                 )  # this also includes the Lorentzian + polarization correction
 
                 rs = []
