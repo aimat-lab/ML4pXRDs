@@ -1,4 +1,5 @@
 import sys
+import os
 
 sys.path.append("../")
 
@@ -62,10 +63,17 @@ class NarrowSimulation(Simulation):
 
 if __name__ == "__main__":
 
-    simulation = NarrowSimulation(
-        "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
-        "/home/kit/iti/la2559/Databases/ICSD/cif/",
-    )
+    jobid = os.getenv("SLURM_JOB_ID")
+    if jobid is not None and jobid != "":
+        simulation = NarrowSimulation(
+            "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
+            "/home/kit/iti/la2559/Databases/ICSD/cif/",
+        )
+    else:
+        simulation = NarrowSimulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
 
     if True:  # toggle
         simulation.load()

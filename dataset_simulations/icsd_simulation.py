@@ -2,9 +2,8 @@ from simulation import Simulation
 import xrayutilities as xu
 import functools
 import multiprocessing
+import os
 
-# make print statement always flush
-print = functools.partial(print, flush=True)
 
 class ICSDSimulation(Simulation):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
@@ -19,7 +18,7 @@ class ICSDSimulation(Simulation):
         counter = 0
 
         for i, path in enumerate(self.icsd_paths):
-            #print(path)
+            # print(path)
 
             if (i % 1000) == 0:
                 print(f"Generated {i} structures.")
@@ -48,16 +47,25 @@ class ICSDSimulation(Simulation):
 
 
 if __name__ == "__main__":
-    
+    # make print statement always flush
+    print = functools.partial(print, flush=True)
+
     try:
-        multiprocessing.set_start_method('spawn')
+        multiprocessing.set_start_method("spawn")
     except RuntimeError:
         pass
 
-    simulation = ICSDSimulation(
-        "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
-        "/home/kit/iti/la2559/Databases/ICSD/cif/",
-    )
+    jobid = os.getenv("SLURM_JOB_ID")
+    if jobid is not None and jobid != "":
+        simulation = ICSDSimulation(
+            "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
+            "/home/kit/iti/la2559/Databases/ICSD/cif/",
+        )
+    else:
+        simulation = ICSDSimulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
 
     if True:  # toggle
         simulation.load()

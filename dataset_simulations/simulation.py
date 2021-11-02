@@ -17,10 +17,6 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import lzma
 import gc
 from datetime import datetime
-import functools
-
-# make print statement always flush
-print = functools.partial(print, flush=True)
 
 batch_size = 2000
 num_threads = 40
@@ -88,7 +84,10 @@ class Simulation:
         while job._number_left > 0:
             print(
                 "Tasks remaining in this batch of {}: {} (chunksize: {}) at {}".format(
-                    batch_size, job._number_left * job._chunksize, job._chunksize, datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    batch_size,
+                    job._number_left * job._chunksize,
+                    job._chunksize,
+                    datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                 )
             )
             time.sleep(update_interval)
@@ -189,48 +188,48 @@ class Simulation:
     ):  # keep this out of the class context to ensure thread safety
         # TODO: maybe add option for zero-point shifts
 
-        crystal = arguments[0]
-        test_crystallite_sizes = arguments[1]
+        try:
 
-        diffractograms = []
-        variations = []
+            crystal = arguments[0]
+            test_crystallite_sizes = arguments[1]
 
-        # draw 5 crystallite sizes per crystal:
-        for i in range(0, 5 if not test_crystallite_sizes else 6):
+            diffractograms = []
+            variations = []
 
-            if not test_crystallite_sizes:
-                size_gauss = random.uniform(
-                    crystallite_size_gauss_min, crystallite_size_gauss_max
-                )
-                size_lor = random.uniform(
-                    crystallite_size_lor_min, crystallite_size_lor_max
-                )
+            # draw 5 crystallite sizes per crystal:
+            for i in range(0, 5 if not test_crystallite_sizes else 6):
 
-            else:
+                if not test_crystallite_sizes:
+                    size_gauss = random.uniform(
+                        crystallite_size_gauss_min, crystallite_size_gauss_max
+                    )
+                    size_lor = random.uniform(
+                        crystallite_size_lor_min, crystallite_size_lor_max
+                    )
 
-                # For comparing the different crystallite sizes
-                if i == 0:
-                    size_gauss = crystallite_size_gauss_max
-                    size_lor = 3 * 10 ** 8
-                elif i == 2:
-                    size_gauss = crystallite_size_gauss_max
-                    size_lor = crystallite_size_lor_max
-                elif i == 1:
-                    size_gauss = 3 * 10 ** 8
-                    size_lor = crystallite_size_lor_max
-                elif i == 3:
-                    size_gauss = crystallite_size_gauss_min
-                    size_lor = 3 * 10 ** 8
-                elif i == 4:
-                    size_gauss = 3 * 10 ** 8
-                    size_lor = crystallite_size_lor_min
-                elif i == 5:
-                    size_gauss = crystallite_size_lor_min
-                    size_lor = crystallite_size_gauss_min
+                else:
 
-            variations.append({"size_gauss": size_gauss, "size_lor": size_lor})
+                    # For comparing the different crystallite sizes
+                    if i == 0:
+                        size_gauss = crystallite_size_gauss_max
+                        size_lor = 3 * 10 ** 8
+                    elif i == 2:
+                        size_gauss = crystallite_size_gauss_max
+                        size_lor = crystallite_size_lor_max
+                    elif i == 1:
+                        size_gauss = 3 * 10 ** 8
+                        size_lor = crystallite_size_lor_max
+                    elif i == 3:
+                        size_gauss = crystallite_size_gauss_min
+                        size_lor = 3 * 10 ** 8
+                    elif i == 4:
+                        size_gauss = 3 * 10 ** 8
+                        size_lor = crystallite_size_lor_min
+                    elif i == 5:
+                        size_gauss = crystallite_size_lor_min
+                        size_lor = crystallite_size_gauss_min
 
-            try:
+                variations.append({"size_gauss": size_gauss, "size_lor": size_lor})
 
                 powder = xu.simpack.Powder(
                     crystal,
@@ -304,9 +303,9 @@ class Simulation:
                     angle_min, angle_max, angle_n
                 )  # simulate a rather large range, we can still later use a smaller range for training
 
-                #diffractogram = powder_model.simulate(
+                # diffractogram = powder_model.simulate(
                 #    xs, mode="local"
-                #)  # this also includes the Lorentzian + polarization correction
+                # )  # this also includes the Lorentzian + polarization correction
 
                 diffractogram = powder_model.simulate(
                     xs
@@ -321,9 +320,9 @@ class Simulation:
 
                 diffractograms.append(diffractogram)
 
-            except Exception as ex:
+        except Exception as ex:
 
-                diffractograms.append(None)
+            diffractograms = [None] * (5 if not test_crystallite_sizes else 6)
 
         return (diffractograms, variations)
 
