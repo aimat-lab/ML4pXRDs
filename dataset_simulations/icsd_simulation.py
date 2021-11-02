@@ -43,6 +43,9 @@ class ICSDSimulation(Simulation):
             )  # this will later be filled by the simulation, e.g. different corn sizes
             self.sim_patterns.append([])  # this will also be filled by the simulation
 
+            if i == 4000:
+                break
+
         print(f"Skipped {counter} structures due to errors.")
 
 
@@ -71,6 +74,4 @@ if __name__ == "__main__":
         simulation.load()
     else:
         simulation.generate_structures()
-        simulation.save()
-
     simulation.simulate_all(start_from_scratch=True)

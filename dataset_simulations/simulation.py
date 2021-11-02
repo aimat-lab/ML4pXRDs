@@ -17,43 +17,12 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import lzma
 import gc
 from datetime import datetime
+from subprocess import Popen
+from math import ceil
+import subprocess
 
-batch_size = 2000
-num_threads = 40
-
-return_mode = "pattern"  # only full pattern supported at the moment
-simulation_mode = "xrayutilities"  # only xrayutilities supported at the moment
-
-crystallite_size_gauss_min = 15 * 10 ** -9
-crystallite_size_gauss_max = 50 * 10 ** -9
-crystallite_size_lor_min = 15 * 10 ** -9
-crystallite_size_lor_max = 50 * 10 ** -9
-
-angle_min = 0
-angle_max = 90
-angle_n = 9001
-
-
-class NoDaemonProcess(multiprocessing.Process):
-    @property
-    def daemon(self):
-        return False
-
-    @daemon.setter
-    def daemon(self, value):
-        pass
-
-
-class NoDaemonContext(type(multiprocessing.get_context())):
-    Process = NoDaemonProcess
-
-
-# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
-# because the latter is only a wrapper function, not a proper class.
-class NestablePool(multiprocessing.pool.Pool):
-    def __init__(self, *args, **kwargs):
-        kwargs["context"] = NoDaemonContext()
-        super(NestablePool, self).__init__(*args, **kwargs)
+num_files = 16
+num_processes = 4
 
 
 class Simulation:
@@ -78,255 +47,91 @@ class Simulation:
             []
         )  # for each crystal, the simulated patterns; this can be multiple, depending on sim_variations
         self.sim_variations = []  # things like crystallite size, etc.
-        self.sim_batches_simulated = 0
-
-    def __track_job(job, update_interval=10):
-        while job._number_left > 0:
-            print(
-                "Tasks remaining in this batch of {}: {} (chunksize: {}) at {}".format(
-                    batch_size,
-                    job._number_left * job._chunksize,
-                    job._chunksize,
-                    datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                )
-            )
-            time.sleep(update_interval)
+        self.output_files = []
+        self.output_files_Ns = []
 
     def simulate_all(self, test_crystallite_sizes=False, start_from_scratch=False):
 
-        # only for testing:
-        # self.sim_crystals = self.sim_crystals[0:16]
+        batch_size = ceil(len(self.sim_crystals) / num_files)
 
         os.system(f"mkdir -p {self.output_dir}")
+        self.save()
 
-        print(f"Simulating {len(self.sim_crystals)} structures.")
-        print(f"Processing {batch_size} structures in each batch.")
-        print(f"Saving after each batch.")
+        print()
+        print(
+            f"Simulating {len(self.sim_crystals)} structures with {num_processes} workers and batch size {batch_size}."
+        )
 
-        crystals_to_process = self.sim_crystals  # process all crystals
-        crystals_to_process_indices = range(
-            len(self.sim_crystals)
-        )  # needed, so the parallely processed jobs know where to put the results
+        N_files_to_process = len(self.output_files)
+        N_files_per_process = ceil(N_files_to_process / num_processes)
+        handles = []
+        status_files = []
+        crystals_per_process = []
 
-        if start_from_scratch == True:
+        for i in range(0, num_processes):
 
-            self.sim_patterns = [[]] * len(self.sim_crystals)
-            self.sim_variations = [[]] * len(self.sim_crystals)
-
-            print("Starting simulation from scratch...")
-
-            self.sim_batches_simulated = 0
-
-        else:
-
-            sim_batches_simulated_file = os.path.join(
-                self.output_dir, "sim_batches_simulated"
-            )
-            if os.path.exists(sim_batches_simulated_file):
-                with open(sim_batches_simulated_file, "r") as file:
-                    self.sim_batches_simulated = int(file.readline().strip())
-
-        for i in range(
-            self.sim_batches_simulated, math.ceil(len(crystals_to_process) / batch_size)
-        ):
-
-            gc.collect()
-
-            print(
-                f"Processing batch {i+1} of {math.ceil(len(crystals_to_process) / batch_size)} with batch size {batch_size}"
-            )
-            print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-
-            if ((i + 1) * batch_size) < len(crystals_to_process):
-                end = (i + 1) * batch_size
-                current_crystals = crystals_to_process[i * batch_size : end]
-                current_crystals_indices = crystals_to_process_indices[
-                    i * batch_size : end
+            if (i + 1) * N_files_per_process < N_files_to_process:
+                files_of_process = self.output_files[
+                    i * N_files_per_process : (i + 1) * N_files_per_process
                 ]
+                crystals_per_process.append(
+                    np.sum(
+                        self.output_files_Ns[
+                            i * N_files_per_process : (i + 1) * N_files_per_process
+                        ]
+                    )
+                )
             else:
-                current_crystals = crystals_to_process[i * batch_size :]
-                current_crystals_indices = crystals_to_process_indices[i * batch_size :]
-                end = len(crystals_to_process)
+                files_of_process = self.output_files[i * N_files_per_process :]
+                crystals_per_process.append(
+                    np.sum(self.output_files_Ns[i * N_files_per_process :])
+                )
 
-            start_time = time.time()
-
-            pool = NestablePool(processes=num_threads)  # keep one main thread
-
-            handle = pool.map_async(
-                Simulation.simulate_crystal,
-                zip(current_crystals, itertools.repeat(test_crystallite_sizes)),
+            status_file_of_process = os.path.join(
+                self.output_dir, "process_" + str(i) + ".status"
             )
+            status_files.append(status_file_of_process)
 
-            Simulation.__track_job(handle)
-
-            results = handle.get()
-
-            end_time = time.time()
-
-            print(
-                f"Finished batch of {batch_size} after {(end_time - start_time)/60} min"
+            p = Popen(
+                [
+                    "python",
+                    "simulation_worker.py",
+                    status_file_of_process,
+                    "True" if start_from_scratch else "False",
+                    "True" if test_crystallite_sizes else "False",
+                    *files_of_process,
+                ],
+                stdout=open(
+                    os.path.join(self.output_dir, "process_" + str(i) + ".log"), "w"
+                ),
+                stderr=subprocess.STDOUT,
             )
+            handles.append(p)
 
-            for j, result in enumerate(results):
-                (diffractograms, variations) = result
-                index = current_crystals_indices[j]
+        while True:
 
-                self.sim_patterns[index] = diffractograms
-                self.sim_variations[index] = variations
+            time.sleep(30)
 
-            self.sim_batches_simulated += 1
+            polls = [p.poll() for p in handles]
 
-            self.save(i)  # save after each batch to continue later
-
-            del handle
-            pool.close()
-            del pool
-            gc.collect()
-
-    def simulate_crystal(
-        arguments,
-    ):  # keep this out of the class context to ensure thread safety
-        # TODO: maybe add option for zero-point shifts
-
-        try:
-
-            crystal = arguments[0]
-            test_crystallite_sizes = arguments[1]
-
-            diffractograms = []
-            variations = []
-
-            # draw 5 crystallite sizes per crystal:
-            for i in range(0, 5 if not test_crystallite_sizes else 6):
-
-                if not test_crystallite_sizes:
-                    size_gauss = random.uniform(
-                        crystallite_size_gauss_min, crystallite_size_gauss_max
-                    )
-                    size_lor = random.uniform(
-                        crystallite_size_lor_min, crystallite_size_lor_max
-                    )
-
+            if not None in polls:
+                if all(polls == 0):
+                    print("Simulation ended successfully.")
                 else:
+                    print("Simulation ended with problems. Check log files.")
 
-                    # For comparing the different crystallite sizes
-                    if i == 0:
-                        size_gauss = crystallite_size_gauss_max
-                        size_lor = 3 * 10 ** 8
-                    elif i == 2:
-                        size_gauss = crystallite_size_gauss_max
-                        size_lor = crystallite_size_lor_max
-                    elif i == 1:
-                        size_gauss = 3 * 10 ** 8
-                        size_lor = crystallite_size_lor_max
-                    elif i == 3:
-                        size_gauss = crystallite_size_gauss_min
-                        size_lor = 3 * 10 ** 8
-                    elif i == 4:
-                        size_gauss = 3 * 10 ** 8
-                        size_lor = crystallite_size_lor_min
-                    elif i == 5:
-                        size_gauss = crystallite_size_lor_min
-                        size_lor = crystallite_size_gauss_min
+                print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+                break
 
-                variations.append({"size_gauss": size_gauss, "size_lor": size_lor})
-
-                powder = xu.simpack.Powder(
-                    crystal,
-                    1,
-                    crystallite_size_lor=size_lor,  # default: 2e-07
-                    crystallite_size_gauss=size_gauss,  # default: 2e-07
-                    strain_lor=0,  # default
-                    strain_gauss=0,  # default
-                    preferred_orientation=(0, 0, 0),  # default
-                    preferred_orientation_factor=1,  # default
-                )
-
-                # default parameters are in ~/.xrayutilities.conf
-                # Alread set in config: Use one thread only
-                # or use print(powder_model.pdiff[0].settings)
-                # Further information on the settings can be found here: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
-                powder_model = xu.simpack.PowderModel(
-                    powder,
-                    I0=100,
-                    fpsettings={
-                        "classoptions": {
-                            "anglemode": "twotheta",
-                            "oversampling": 4,
-                            "gaussian_smoother_bins_sigma": 1.0,
-                            "window_width": 20.0,
-                        },
-                        "global": {
-                            "geometry": "symmetric",
-                            "geometry_incidence_angle": None,
-                            "diffractometer_radius": 0.3,  # measured on experiment: 19.3 cm
-                            "equatorial_divergence_deg": 0.5,
-                            # "dominant_wavelength": 1.207930e-10, # this is a read-only setting!
-                        },
-                        "emission": {
-                            "emiss_wavelengths": (1.207930e-10),
-                            "emiss_intensities": (1.0),
-                            "emiss_gauss_widths": (3e-14),
-                            "emiss_lor_widths": (3e-14),
-                            # "crystallite_size_lor": 2e-07,  # this needs to be set for the powder
-                            # "crystallite_size_gauss": 2e-07,  # this needs to be set for the powder
-                            # "strain_lor": 0,  # this needs to be set for the powder
-                            # "strain_gauss": 0,  # this needs to be set for the powder
-                            # "preferred_orientation": (0, 0, 0),  # this needs to be set for the powder
-                            # "preferred_orientation_factor": 1,  # this needs to be set for the powder
-                        },
-                        "axial": {
-                            "axDiv": "full",
-                            "slit_length_source": 0.008001,
-                            "slit_length_target": 0.008,
-                            "length_sample": 0.01,
-                            "angI_deg": 2.5,
-                            "angD_deg": 2.5,
-                            "n_integral_points": 10,
-                        },
-                        "absorption": {"absorption_coefficient": 100000.0},
-                        "si_psd": {"si_psd_window_bounds": None},
-                        "receiver_slit": {"slit_width": 5.5e-05},
-                        "tube_tails": {
-                            "main_width": 0.0002,
-                            "tail_left": -0.001,
-                            "tail_right": 0.001,
-                            "tail_intens": 0.001,
-                        },
-                    },
-                )
-
-                # powder_model = xu.simpack.PowderModel(powder, I0=100,) # with default parameters
-                # print(powder_model.pdiff[0].settings)
-
-                xs = np.linspace(
-                    angle_min, angle_max, angle_n
-                )  # simulate a rather large range, we can still later use a smaller range for training
-
-                # diffractogram = powder_model.simulate(
-                #    xs, mode="local"
-                # )  # this also includes the Lorentzian + polarization correction
-
-                diffractogram = powder_model.simulate(
-                    xs
-                )  # this also includes the Lorentzian + polarization correction
-
-                rs = []
-                for key, value in powder_model.pdiff[0].data.items():
-                    rs.append(value["r"])
-                # print("Max intensity: " + str(np.max(rs)))
-
-                powder_model.close()
-
-                diffractograms.append(diffractogram)
-
-        except Exception as ex:
-
-            diffractograms = [None] * (5 if not test_crystallite_sizes else 6)
-
-        return (diffractograms, variations)
-
-        # return (np.random.random(size=9001), np.random.random(size=5))
+            print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+            total = 0
+            for i, status_file in enumerate(status_files):
+                with open(status_file, "r") as file:
+                    N = int(file.readline())
+                total += N
+                print(f"Worker {i}: {N} of {crystals_per_process[i]}")
+            print(f"Total: {total} of {len(self.sim_crystals)}")
+            print()
 
     def read_icsd(self):
 
@@ -412,14 +217,10 @@ class Simulation:
 
     def save(self, i=None):  # i specifies which batch to save
 
+        batch_size = ceil(len(self.sim_crystals) / num_files)
+
         if not os.path.exists(self.output_dir):
             os.system("mkdir -p " + self.output_dir)
-
-        sim_batches_simulated_file = os.path.join(
-            self.output_dir, "sim_batches_simulated"
-        )
-        with open(sim_batches_simulated_file, "w") as file:
-            file.write(str(self.sim_batches_simulated))
 
         if i is not None:
             if ((i + 1) * batch_size) < len(self.sim_crystals):
@@ -430,10 +231,18 @@ class Simulation:
                 end = len(self.sim_crystals)
         else:  # save all
 
+            self.output_files_Ns = []
+            self.output_files = []
+
             for j in range(0, math.ceil(len(self.sim_crystals) / batch_size)):
+                self.output_files.append(
+                    os.path.join(self.output_dir, f"data_{j}.lzma")
+                )
                 self.save(i=j)
 
             return
+
+        self.output_files_Ns.append(end - start)
 
         pickle_file = os.path.join(self.output_dir, f"data_{i}.lzma")
 
@@ -452,13 +261,6 @@ class Simulation:
     def load(self):
 
         self.reset_simulation_status()
-
-        sim_batches_simulated_file = os.path.join(
-            self.output_dir, "sim_batches_simulated"
-        )
-        if os.path.exists(sim_batches_simulated_file):
-            with open(sim_batches_simulated_file, "r") as file:
-                self.sim_batches_simulated = int(file.readline().strip())
 
         pickle_files = glob(os.path.join(self.output_dir, f"data_*.lzma"))
         pickle_files = sorted(
