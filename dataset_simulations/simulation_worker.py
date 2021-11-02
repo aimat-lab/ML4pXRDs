@@ -156,15 +156,14 @@ def simulate_crystal(
 
             gc.collect()
 
-    except:
+    except BaseException as ex:
 
         try:
             powder_model.close()
         except:
             pass
 
-        # return (None, ex.__str__())
-        return (None, "Error ...")
+        return (None, ex.__str__())
 
     return (diffractograms, variations)
 

@@ -66,6 +66,7 @@ class Simulation:
         N_files_per_process = ceil(N_files_to_process / num_processes)
         handles = []
         status_files = []
+        log_files = []
         crystals_per_process = []
 
         for i in range(0, num_processes):
@@ -92,6 +93,9 @@ class Simulation:
             )
             status_files.append(status_file_of_process)
 
+            log_file = os.path.join(self.output_dir, "process_" + str(i) + ".log")
+            log_files.append(log_file)
+
             p = Popen(
                 [
                     "python",
@@ -101,9 +105,7 @@ class Simulation:
                     "True" if test_crystallite_sizes else "False",
                     *files_of_process,
                 ],
-                stdout=open(
-                    os.path.join(self.output_dir, "process_" + str(i) + ".log"), "w"
-                ),
+                stdout=open(log_file, "w"),
                 stderr=subprocess.STDOUT,
             )
             handles.append(p)
@@ -114,13 +116,17 @@ class Simulation:
 
             polls = [p.poll() for p in handles]
 
-            if not None in polls:
-                if all(polls == 0):
+            if not None in polls:  # all are done
+                if all(poll == 0 for poll in polls):
                     print("Simulation ended successfully.")
                 else:
                     print("Simulation ended with problems. Check log files.")
 
                 print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+                break
+
+            if not all(poll == None or poll == 0 for poll in polls):
+                print("One or more of the workers terminated.")
                 break
 
             print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
@@ -131,6 +137,7 @@ class Simulation:
                 total += N
                 print(f"Worker {i}: {N} of {crystals_per_process[i]}")
             print(f"Total: {total} of {len(self.sim_crystals)}")
+
             print(flush=True)
 
     def read_icsd(self):
