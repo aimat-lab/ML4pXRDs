@@ -79,6 +79,5 @@ if __name__ == "__main__":
         simulation.load()
     else:
         simulation.generate_structures()
-        exit()
 
     simulation.simulate_all(start_from_scratch=False)

@@ -9,6 +9,7 @@ import xrayutilities as xu
 import numpy as np
 import gc
 import functools
+import os
 
 crystallite_size_gauss_min = 15 * 10 ** -9
 crystallite_size_gauss_max = 50 * 10 ** -9
@@ -225,6 +226,11 @@ if __name__ == "__main__":
 
             sim_patterns[i] = diffractograms
             sim_variations[i] = variatons
+
+            if (i % 5) == 0:
+                if os.path.exists(os.path.join(os.path.dirname(status_file), "STOP")):
+                    print("Simulation stopped by user.")
+                    exit()
 
             if i in save_points:
                 with lzma.open(file, "wb") as pickle_file:
