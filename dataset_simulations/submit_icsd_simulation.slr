@@ -3,7 +3,7 @@
 #SBATCH --cpus-per-task=40
 #SBATCH --time=72:00:00
 #SBATCH --job-name=icsd_sim
-#SBATCH --partition=fat
+#SBATCH --partition=single
 
 # --time=30
 # --time=48:00:00
