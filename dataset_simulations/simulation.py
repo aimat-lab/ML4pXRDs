@@ -21,8 +21,8 @@ from subprocess import Popen
 from math import ceil
 import subprocess
 
-num_files = 16
-num_processes = 8
+num_files = 30
+num_processes = 30
 
 
 class Simulation:
