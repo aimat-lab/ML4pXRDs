@@ -197,7 +197,7 @@ if __name__ == "__main__":
         sim_patterns = additional[3]
         sim_variations = additional[4]
 
-        save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10))
+        save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10) + 1)
 
         for i, pattern in enumerate(sim_patterns):
             counter += 1
