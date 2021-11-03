@@ -15,8 +15,8 @@ import subprocess
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 
-num_files = 30
-num_processes = 30
+num_files = 16
+num_processes = 8
 
 angle_min = 0
 angle_max = 90
@@ -118,6 +118,10 @@ class Simulation:
             polls = [p.poll() for p in handles]
 
             if not None in polls:  # all are done
+
+                if os.path.exists(os.path.join(self.output_dir, "STOP")):
+                    print("Simulation stopped by user.")
+
                 if all(poll == 0 for poll in polls):
                     print("Simulation ended successfully.")
                 else:
@@ -127,6 +131,10 @@ class Simulation:
                 break
 
             if not all(poll == None or poll == 0 for poll in polls):
+
+                if os.path.exists(os.path.join(self.output_dir, "STOP")):
+                    print("Simulation stopped by user.")
+
                 print("One or more of the workers terminated.")
                 break
 
@@ -226,7 +234,7 @@ class Simulation:
             if (i % 1000) == 0:
                 print(f"{i} of {len(self.icsd_paths)}")
 
-            with open(path) as f:
+            with open(path, "r") as f:
                 first_line = f.readline()
 
                 if first_line.strip() == "":
