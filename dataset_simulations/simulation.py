@@ -146,7 +146,7 @@ class Simulation:
         pickle_file = os.path.join(self.icsd_cifs_dir, "icsd_meta")
         if not os.path.exists(pickle_file):
 
-            print("Rebuilding icsd meta information...")
+            print("Rebuilding icsd meta information...", flush=True)
 
             icsd_info = pd.read_csv(self.icsd_info_file_path, sep=",", skiprows=1)
 
@@ -223,8 +223,7 @@ class Simulation:
 
         for i, path in enumerate(all_paths):
 
-            if (i % 1000) == 0:
-                print(f"{i} of {len(self.icsd_paths)}")
+            print(f"{i} of {len(self.icsd_paths)}", flush=True)
 
             with open(path) as f:
                 first_line = f.readline()
