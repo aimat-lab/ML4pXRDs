@@ -41,6 +41,7 @@ class ICSDSimulation(Simulation):
                 []
             )  # this will later be filled by the simulation, e.g. different corn sizes
             self.sim_patterns.append([])  # this will also be filled by the simulation
+            self.sim_lines_list.append([])  # this will also be filled by the simulation
 
             if i == 1:
                 break
@@ -69,10 +70,10 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    if False:  # toggle
+    if True:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
-    simulation.simulate_all(start_from_scratch=True)
+    # simulation.simulate_all(start_from_scratch=True)
 
     simulation.plot(together=5)

@@ -45,6 +45,7 @@ class Simulation:
             []
         )  # for each crystal, the simulated patterns; this can be multiple, depending on sim_variations
         self.sim_variations = []  # things like crystallite size, etc.
+        self.sim_lines_list = []
         self.output_files = []
         self.output_files_Ns = []
 
@@ -295,6 +296,7 @@ class Simulation:
                     self.sim_metas[start:end],
                     self.sim_patterns[start:end],
                     self.sim_variations[start:end],
+                    self.sim_lines_list[start:end],
                 ),
                 file,
             )
@@ -319,6 +321,7 @@ class Simulation:
                 self.sim_metas.extend(additional[2])
                 self.sim_patterns.extend(additional[3])
                 self.sim_variations.extend(additional[4])
+                self.sim_lines_list.extend(additional[5])
 
     def get_space_group_number(self, id):
 
@@ -446,7 +449,14 @@ class Simulation:
             for j, variation in enumerate(pattern):
                 if variation is not None:
                     plt.plot(xs, variation, label=self.sim_variations[i][j])
+                    lines = np.array(self.sim_lines_list[i][j])[:, 0] * 2
+                    lines = lines[lines < 90]
+                    plt.vlines(
+                        lines, 0.8, 1, lw=0.1,
+                    )
+
                     counter += 1
 
                     if (counter % together) == 0:
+                        plt.legend()
                         plt.show()

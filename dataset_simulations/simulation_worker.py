@@ -29,6 +29,7 @@ def simulate_crystal(
     try:
 
         diffractograms = []
+        lines_list = []
         variations = []
 
         # draw 5 crystallite sizes per crystal:
@@ -146,10 +147,11 @@ def simulate_crystal(
             #    xs
             # )  # this also includes the Lorentzian + polarization correction
 
-            # rs = []
-            # for key, value in powder_model.pdiff[0].data.items():
-            #    rs.append(value["r"])
-            # print("Max intensity: " + str(np.max(rs)))
+            lines = []
+            for key, value in powder_model.pdiff[0].data.items():
+                if value["active"]:
+                    lines.append([value["ang"], value["r"]])
+            lines_list.append(lines)
 
             powder_model.close()
 
@@ -164,9 +166,9 @@ def simulate_crystal(
         except:
             pass
 
-        return (None, ex.__str__())
+        return (None, ex.__str__(), None)
 
-    return (diffractograms, variations)
+    return (diffractograms, variations, lines_list)
 
 
 if __name__ == "__main__":
@@ -197,6 +199,7 @@ if __name__ == "__main__":
         sim_metas = additional[2]
         sim_patterns = additional[3]
         sim_variations = additional[4]
+        sim_lines_list = additional[5]
 
         save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10) + 1)
 
@@ -214,10 +217,11 @@ if __name__ == "__main__":
             result = simulate_crystal(crystal, test_crystallite_sizes)
 
             if result[0] is not None:
-                diffractograms, variatons = result
+                diffractograms, variatons, lines_list = result
             else:
                 sim_variations[i] = [None] * (5 if not test_crystallite_sizes else 6)
                 sim_patterns[i] = [None] * (5 if not test_crystallite_sizes else 6)
+                sim_lines_list[i] = [None] * (5 if not test_crystallite_sizes else 6)
 
                 print(f"Encountered error for cif id {sim_metas[i]}.")
                 print(result[1])
@@ -226,6 +230,7 @@ if __name__ == "__main__":
 
             sim_patterns[i] = diffractograms
             sim_variations[i] = variatons
+            sim_lines_list[i] = lines_list
 
             if (i % 5) == 0:
                 if os.path.exists(os.path.join(os.path.dirname(status_file), "STOP")):
@@ -241,6 +246,7 @@ if __name__ == "__main__":
                             sim_metas,
                             sim_patterns,
                             sim_variations,
+                            sim_lines_list,
                         ),
                         pickle_file,
                     )

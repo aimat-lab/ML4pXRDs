@@ -54,6 +54,7 @@ class NarrowSimulation(Simulation):
 
             self.sim_patterns.append([])
             self.sim_variations.append([])
+            self.sim_lines_list.append([])  # this will also be filled by the simulation
 
         print(f"Loaded {len(self.sim_crystals)} crystals")
         print(f"Fluorite#CaF2: {counter_0}")
@@ -80,4 +81,6 @@ if __name__ == "__main__":
     else:
         simulation.generate_structures()
 
-    simulation.simulate_all(start_from_scratch=False)
+    # simulation.simulate_all(start_from_scratch=True)
+
+    simulation.plot(together=5)
