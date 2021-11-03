@@ -28,7 +28,6 @@ class ICSDSimulation(Simulation):
                 continue
 
             try:
-                xu.materials
                 crystal = xu.materials.Crystal.fromCIF(path)
 
             except Exception as ex:
@@ -43,10 +42,10 @@ class ICSDSimulation(Simulation):
             )  # this will later be filled by the simulation, e.g. different corn sizes
             self.sim_patterns.append([])  # this will also be filled by the simulation
 
-            if i == 4000:
+            if i == 1:
                 break
 
-        print(f"Skipped {counter} structures due to errors.")
+        print(f"Skipped {counter} structures due to errors or missing path.")
 
 
 if __name__ == "__main__":
@@ -75,3 +74,5 @@ if __name__ == "__main__":
     else:
         simulation.generate_structures()
     simulation.simulate_all(start_from_scratch=True)
+
+    simulation.plot(together=5)

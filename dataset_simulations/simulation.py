@@ -1,28 +1,26 @@
-import xrayutilities as xu
 import numpy as np
 import matplotlib.pyplot as pl
 import time
 import math
 import os
-import multiprocessing
-import multiprocessing.pool
 import pandas as pd
 from glob import glob
 import pickle
 import random
-import itertools
-from pymatgen.io.cif import CifParser
-from pymatgen.analysis.diffraction.xrd import XRDCalculator
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import lzma
-import gc
 from datetime import datetime
 from subprocess import Popen
 from math import ceil
 import subprocess
+import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
 
-num_files = 16
-num_processes = 8
+num_files = 8
+num_processes = 2
+
+angle_min = 0
+angle_max = 90
+angle_n = 9001
 
 
 class Simulation:
@@ -55,6 +53,9 @@ class Simulation:
         batch_size = ceil(len(self.sim_crystals) / num_files)
 
         os.system(f"mkdir -p {self.output_dir}")
+
+        for output_file in self.output_files:
+            os.system(f"rm {output_file}")
         self.save()
 
         print()
@@ -144,6 +145,9 @@ class Simulation:
 
         pickle_file = os.path.join(self.icsd_cifs_dir, "icsd_meta")
         if not os.path.exists(pickle_file):
+
+            print("Rebuilding icsd meta information...")
+
             icsd_info = pd.read_csv(self.icsd_info_file_path, sep=",", skiprows=1)
 
             self.icsd_ids = list(icsd_info["CollectionCode"])
@@ -155,8 +159,28 @@ class Simulation:
                 icsd_info["StandardisedCellParameter"]
             )
             self.icsd_r_values = list(icsd_info["RValue"])
-
             self.__match_icsd_cif_paths()
+
+            # Shuffle the entries, so that the simulation is more balanced accross the workers:
+            (
+                self.icsd_ids,
+                self.icsd_space_group_symbols,
+                self.icsd_formulas,
+                self.icsd_sumformulas,
+                self.icsd_structure_types,
+                self.icsd_standardised_cell_parameters,
+                self.icsd_r_values,
+                self.icsd_paths,
+            ) = shuffle(
+                self.icsd_ids,
+                self.icsd_space_group_symbols,
+                self.icsd_formulas,
+                self.icsd_sumformulas,
+                self.icsd_structure_types,
+                self.icsd_standardised_cell_parameters,
+                self.icsd_r_values,
+                self.icsd_paths,
+            )
 
             to_pickle = (
                 self.icsd_ids,
@@ -199,7 +223,8 @@ class Simulation:
 
         for i, path in enumerate(all_paths):
 
-            print(f"{i} of {len(self.icsd_paths)}")
+            if (i % 1000) == 0:
+                print(f"{i} of {len(self.icsd_paths)}")
 
             with open(path) as f:
                 first_line = f.readline()
@@ -221,6 +246,7 @@ class Simulation:
         print(f"{counter_0} entries where in the cif directory, but not in the csv")
         print(f"{counter_1} entries where in the csv, but not in the cif directory")
         print(f"{counter_2} cif files skipped")
+        print()
 
     def save(self, i=None):  # i specifies which batch to save
 
@@ -397,3 +423,22 @@ class Simulation:
                     )
                     # print(space_group_number)
                     return space_group_number
+
+    def plot(self, indices=None, together=1):
+
+        xs = np.linspace(angle_min, angle_max, angle_n)
+
+        if indices is None:
+            patterns = self.sim_patterns
+        else:
+            patterns = [self.sim_patterns[index] for index in indices]
+
+        counter = 0
+        for i, pattern in enumerate(patterns):
+            for j, variation in enumerate(pattern):
+                if variation is not None:
+                    plt.plot(xs, variation, label=self.sim_variations[i][j])
+                    counter += 1
+
+                    if (counter % together) == 0:
+                        plt.show()
