@@ -8,7 +8,7 @@ from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
 
-mode = "removal"  # also possible: "info"
+mode = "info"  # also possible: "info"
 N = 4224
 pattern_x = np.linspace(0, 90, N)
 
@@ -32,7 +32,7 @@ def read_training_data(Q):
         y = data[1]
     elif mode == "info":
         x = data[0]
-        x = data[2]
+        y = data[2]
     else:
         raise Exception("Mode not supported.")
 
@@ -68,14 +68,14 @@ else:
     raise Exception("Mode not supported.")
 
 cp_callback = keras.callbacks.ModelCheckpoint(
-    filepath="unet/" + mode + "_cps" + "/weights.{epoch:02d}-{val_loss:.2f}.hdf5",
+    filepath="unet/" + mode + "_cps" + "/weights{epoch}",
     save_weights_only=True,
     verbose=1,
 )
 model.fit(
     x_train,
     y_train,
-    epochs=20,
+    epochs=10,
     batch_size=100,
     verbose=2,
     callbacks=[
@@ -83,11 +83,22 @@ model.fit(
         keras.callbacks.TensorBoard(log_dir="unet/" + mode + "_tb"),
     ],
 )
+# TODO: Test loss!
 
-"""
-predictions = model(x_test[0:10]).numpy()
+if mode == "removal":
+    predictions = model.predict(x_test[0:20],).numpy()
+else:
+    probability_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
+    predictions = probability_model.predict(x_test[0:20],)
+
 for i, prediction in enumerate(predictions):
-    plt.plot(pattern_x, prediction)
-    plt.plot(pattern_x, x_test[i])
-    plt.show()
-"""
+    if mode == "removal":
+        plt.plot(pattern_x, prediction)
+        plt.plot(pattern_x, x_test[i])
+        plt.show()
+    elif mode == "info":
+        plt.scatter(pattern_x, prediction)
+        plt.plot(pattern_x, x_test[i])
+        plt.show()
+    else:
+        raise Exception("Mode not recognized.")
