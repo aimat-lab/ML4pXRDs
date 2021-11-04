@@ -7,15 +7,18 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
-import gc
-import time
 from multiprocessing import Process, Queue
 
+mode = "removal"  # also possible: "peaks"
 
 N = 4224
 pattern_x = np.linspace(0, 90, N)
 
-my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
+if mode == "removal":
+    my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
+else:
+    my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Classification")
+
 model = my_unet.UNet()
 
 # keras.utils.plot_model(model, show_shapes=True)
@@ -28,10 +31,10 @@ model.summary()
 def load_shuffle_split(Q):
 
     with open("../dataset_simulations/patterns/noise_background/data", "rb") as file:
-        ys_altered, ys_unaltered = pickle.load(file)
+        data = pickle.load(file)
 
-    x = ys_altered
-    y = ys_unaltered
+    x = data[0]
+    y = data[1]
 
     # Split into train, validation, test set + shuffle
     x, y = shuffle(x, y, random_state=1234)
@@ -53,12 +56,12 @@ x_train = np.expand_dims(sc.fit_transform(x_train), axis=2)
 x_test = np.expand_dims(sc.transform(x_test), axis=2)
 x_val = np.expand_dims(sc.transform(x_val), axis=2)
 
+# loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
 model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError())
 model.fit(x_train, y_train, epochs=1, batch_size=5)
 model.save_weights("weights")
 
 predictions = model(x_test[0:10]).numpy()
-
 for i, prediction in enumerate(predictions):
     plt.plot(pattern_x, prediction)
     plt.plot(pattern_x, x_test[i])

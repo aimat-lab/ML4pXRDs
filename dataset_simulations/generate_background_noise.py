@@ -2,7 +2,6 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import pickle
-import lzma
 
 # N = 9001
 N = 4224
@@ -10,24 +9,10 @@ theta_min = 0
 theta_max = 90
 
 xs = np.linspace(theta_min, theta_max, N)
-number_of_samples = 100000  # number of samples to generate
-max_peaks_per_sample = 20  # max number of peaks per sample
-polynomial_degree = 3
-polymomial_parameters_range = 0.5
-
-"""
-def bg(l):
-    a, b, c = np.random.random(3) - 0.5
-    xs = np.linspace(-1.0, 1.0, l)
-    ys = a * xs ** 3.0 + b * xs ** 2.0 + c * xs
-    ys -= np.min(ys)
-    ys /= np.max(ys)
-    fluct_noise_level_max = 100
-    ys *= (np.random.random() * 0.8 + 0.2) * fluct_noise_level_max
-    base_noise_level_max = 100.0
-    ys += (np.random.random() * 0.8 + 0.2) * base_noise_level_max
-    return ys
-"""
+number_of_samples = 500000  # number of samples to generate
+max_peaks_per_sample = 50  # max number of peaks per sample
+polynomial_degree = 6
+polymomial_parameters_range = 1.0
 
 
 def generate_background_and_noise():
@@ -42,14 +27,17 @@ def generate_background_and_noise():
 
     ys -= np.min(ys)
 
-    ys += random.uniform(0, 0.2)
+    # fluct_noise_level_max = 1.0
+    # ys *= np.random.normal(N) * fluct_noise_level_max
 
-    """
-    fluct_noise_level_max = 1.0
-    ys *= np.random.normal(N) * fluct_noise_level_max
-    """
-    base_noise_level_max = 0.004
-    ys += np.random.normal(size=N) * base_noise_level_max
+    # TODO: Implement signal-to-noise ratio as in paper
+
+    base_noise_level_max = 0.05
+    base_noise_level_min = 0.01
+    noise_level = np.random.uniform(low=base_noise_level_min, high=base_noise_level_max)
+    ys += np.random.normal(size=N) * noise_level
+
+    ys -= np.min(ys)
 
     return ys
 
@@ -132,33 +120,52 @@ def generate_background_and_noise_paper():
     return diffractogram
 
 
+def convert_to_discrete(peak_positions, peak_sizes):
+    peak_info_disc = np.zeros(N)
+    peak_size_disc = np.zeros(N)
+
+    for i, peak_pos in enumerate(peak_positions):
+        index = np.argwhere(xs < peak_pos)[-1]
+        peak_info_disc[index] += 1
+        peak_size_disc[index] += peak_sizes[i]
+
+    return peak_info_disc, peak_size_disc
+
+
 ys_all_altered = []
 ys_all_unaltered = []
+all_peak_info_disc = []
+all_peak_size_disc = []
+
 
 for i in range(0, number_of_samples):
 
     if (i % 1000) == 0:
         print(f"Generated {i} samples.")
 
-    # ys_altered = generate_background_and_noise()
-    ys_altered = generate_background_and_noise_paper()
-
-    plt.plot(xs, ys_altered)
-    plt.show()
+    ys_altered = generate_background_and_noise()
+    # ys_altered = generate_background_and_noise_paper()
 
     ys_unaltered = np.zeros(N)
 
-    sigma = random.uniform(0.1, 0.4)
+    sigma = random.uniform(0.1, 0.5)
+    peak_positions = []
+    peak_sizes = []
 
     for j in range(0, random.randint(1, max_peaks_per_sample)):
 
         mean = random.uniform(0, 90)
 
+        peak_positions.append(mean)
+
+        peak_size = random.uniform(0.01, 1)
         peak = (
             1
             / (sigma * np.sqrt(2 * np.pi))
             * np.exp(-1 / (2 * sigma ** 2) * (xs - mean) ** 2)
-        ) * random.uniform(0, 1)
+        ) * peak_size
+
+        peak_sizes.append(peak_size)
 
         ys_altered += peak
         ys_unaltered += peak
@@ -166,5 +173,26 @@ for i in range(0, number_of_samples):
     ys_all_altered.append(ys_altered)
     ys_all_unaltered.append(ys_unaltered)
 
+    peak_info_disc, peak_size_disc = convert_to_discrete(peak_positions, peak_sizes)
+
+    all_peak_info_disc.append(peak_info_disc)
+    all_peak_size_disc.append(peak_size_disc)
+
+    """
+    plt.plot(xs, ys_altered)
+    plt.plot(xs, ys_unaltered)
+    plt.scatter(xs, peak_info_disc)
+    plt.scatter(xs, peak_size_disc)
+    plt.show()
+    """
+
 with open("patterns/noise_background/data", "wb") as file:
-    pickle.dump((np.array(ys_all_altered), np.array(ys_all_unaltered)), file)
+    pickle.dump(
+        (
+            np.array(ys_all_altered),
+            np.array(ys_all_unaltered),
+            np.array(all_peak_info_disc),
+            np.array(all_peak_size_disc),
+        ),
+        file,
+    )
