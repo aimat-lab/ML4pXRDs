@@ -141,7 +141,7 @@ all_peak_size_disc = []
 for i in range(0, number_of_samples):
 
     if (i % 1000) == 0:
-        print(f"Generated {i} samples.")
+        print(f"Generated {i} samples.", flush=True)
 
     ys_altered = generate_background_and_noise()
     # ys_altered = generate_background_and_noise_paper()

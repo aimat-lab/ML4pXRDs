@@ -43,9 +43,6 @@ class ICSDSimulation(Simulation):
             self.sim_patterns.append([])  # this will also be filled by the simulation
             self.sim_lines_list.append([])  # this will also be filled by the simulation
 
-            if i == 1:
-                break
-
         print(f"Skipped {counter} structures due to errors or missing path.")
 
 
@@ -70,12 +67,10 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
     
-    exit()
-
-    if True:  # toggle
+    if False:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
-    # simulation.simulate_all(start_from_scratch=True)
+    simulation.simulate_all(start_from_scratch=False)
 
-    simulation.plot(together=5)
+    #simulation.plot(together=5)

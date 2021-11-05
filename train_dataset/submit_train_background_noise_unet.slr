@@ -1,9 +1,11 @@
 #!/bin/bash
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=80
-#SBATCH --time=72:00:00
-#SBATCH --job-name=icsd_sim
-#SBATCH --partition=fat
+#SBATCH --cpus-per-task=4
+#SBATCH --time=48:00:00
+#SBATCH --mem=80000mb
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=tf
+#SBATCH --partition=gpu_4
 
 # --time=30
 # --time=48:00:00
@@ -13,5 +15,6 @@ export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 
 source /home/kit/iti/la2559/mambaforge/etc/profile.d/conda.sh
 
-conda activate xrayutilities
-stdbuf -o0 -e0 python icsd_simulation.py
+conda activate tf
+
+python train_background_noise_unet.py
