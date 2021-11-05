@@ -71,6 +71,6 @@ if __name__ == "__main__":
         simulation.load()
     else:
         simulation.generate_structures()
-    # simulation.simulate_all(start_from_scratch=True)
+    simulation.simulate_all(start_from_scratch=False)
 
-    simulation.plot(together=5)
+    # simulation.plot(together=5)
