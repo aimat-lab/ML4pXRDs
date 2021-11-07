@@ -1,0 +1,18 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=4
+#SBATCH --time=72:00:00
+#SBATCH --job-name=gen
+#SBATCH --mem=500000mb
+#SBATCH --partition=fat
+
+# --time=30
+# --time=48:00:00
+
+export PARNODES="$SLURM_CPUS_PER_TASK"
+export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
+
+source /home/kit/iti/la2559/mambaforge/etc/profile.d/conda.sh
+
+conda activate base
+stdbuf -o0 -e0 python generate_background_noise.py

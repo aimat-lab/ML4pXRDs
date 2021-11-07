@@ -9,7 +9,7 @@ theta_min = 0
 theta_max = 90
 
 xs = np.linspace(theta_min, theta_max, N)
-number_of_samples = 50000  # number of samples to generate
+number_of_samples = 500000  # number of samples to generate
 max_peaks_per_sample = 50  # max number of peaks per sample
 polynomial_degree = 6
 polymomial_parameters_range = 1.0
