@@ -434,6 +434,8 @@ class Simulation:
                     # print(space_group_number)
                     return space_group_number
 
+        return None
+
     def plot(self, indices=None, together=1):
 
         xs = np.linspace(angle_min, angle_max, angle_n)

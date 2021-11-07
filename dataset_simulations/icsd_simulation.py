@@ -58,8 +58,7 @@ if __name__ == "__main__":
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
         simulation = ICSDSimulation(
-            "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
-            "/home/kit/iti/la2559/Databases/ICSD/cif/",
+            "~/Databases/ICSD/ICSD_data_from_API.csv", "~/Databases/ICSD/cif/",
         )
     else:
         simulation = ICSDSimulation(

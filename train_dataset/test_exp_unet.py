@@ -168,16 +168,19 @@ if __name__ == "__main__":
         f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
 
         ys = [f(pattern_x)]
+
+        ys -= np.min(ys)
         ys = ys / np.max(ys)
+
+        plt.plot(pattern_x, ys, label="Experimental rescaled")
 
         ys = np.expand_dims(sc.transform(ys), axis=2)
 
-        corrected = model.predict(ys)
+        corrected = model.predict([ys])
 
-        plt.plot(current_xs, current_ys)
-        plt.figure()
+        plt.plot(pattern_x, corrected[0, :, 0], label="Corrected via U-Net")
 
-        plt.plot(pattern_x, corrected[0, :, 0])
+        plt.legend()
         plt.show()
 
         """

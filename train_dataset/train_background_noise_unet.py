@@ -56,8 +56,7 @@ def read_training_data(Q):
     x_test = np.expand_dims(sc.transform(x_test), axis=2)
     x_val = np.expand_dims(sc.transform(x_val), axis=2)
 
-    # TODO: Also save for the other mode!!!
-    with open("unet/removal_cps/scaler", "wb") as file:
+    with open("unet/" + mode + "_cps/scaler", "wb") as file:
         pickle.dump(sc, file)
 
     Q.put((x_train, x_test, x_val, y_train, y_test, y_val))
@@ -95,8 +94,8 @@ model.fit(
         cp_callback,
         keras.callbacks.TensorBoard(log_dir="unet/" + mode + "_tb"),
     ],
+    validation_data=[x_val, y_val],
 )
-# TODO: Display test loss!
 
 if mode == "removal":
     predictions = model.predict(x_test[0:20])
