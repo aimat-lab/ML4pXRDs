@@ -21,7 +21,7 @@ class ICSDSimulation(Simulation):
             # print(path)
 
             if (i % 1000) == 0:
-                print(f"Generated {i} structures.")
+                print(f"Generated {i} structures.", flush=True)
 
             if path is None:
                 counter += 1
@@ -66,11 +66,11 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
-    
+
     if False:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
     simulation.simulate_all(start_from_scratch=False)
 
-    #simulation.plot(together=5)
+    # simulation.plot(together=5)

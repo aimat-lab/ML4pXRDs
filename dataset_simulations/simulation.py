@@ -146,7 +146,7 @@ class Simulation:
                     N = int(file.readline())
                 total += N
                 print(f"Worker {i}: {N} of {crystals_per_process[i]}")
-            print(f"Total: {total} of {len(self.sim_crystals)}")
+            print(f"Total: {total} of {len(self.sim_crystals)}", flush=True)
 
             print(flush=True)
 
