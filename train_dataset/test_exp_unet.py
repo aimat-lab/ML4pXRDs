@@ -11,6 +11,8 @@ from scipy.signal import find_peaks, filtfilt
 from skimage import data, restoration, util
 from matplotlib.patches import Ellipse
 from UNet_1DCNN import UNet
+from sklearn.preprocessing import StandardScaler
+import pickle
 
 """
 # baseline_arPLS parameters:
@@ -139,18 +141,44 @@ def load_experimental_data(path, mode="HEO"):
 
 if __name__ == "__main__":
 
-    xs, ys = load_experimental_data("exp_data/XRDdata.csv")
+    xs_exp, ys_exp = load_experimental_data("exp_data/XRDdata.csv")
+
+    N = 9018
+    pattern_x = np.linspace(0, 90, N)
+
+    start_x = 10
+    end_x = 50
+    start_index = np.argwhere(pattern_x >= start_x)[0][0]
+    end_index = np.argwhere(pattern_x <= end_x)[-1][0]
+    pattern_x = pattern_x[start_index : end_index + 1]
+    N = len(pattern_x)
 
     my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
     model = my_unet.UNet()
-    model.load_weights("unet/removal_cps/weights20.index")
+    model.load_weights("unet/removal_cps/weights10")
 
-    exit()
+    with open("unet/removal_cps/scaler", "rb") as file:
+        sc = pickle.load(file)
 
-    for i in range(0, xs.shape[1]):
+    for i in range(0, xs_exp.shape[1]):
 
-        current_xs = xs[:, i]
-        current_ys = ys[:, i]
+        current_xs = xs_exp[:, i]
+        current_ys = ys_exp[:, i]
+
+        f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
+
+        ys = [f(pattern_x)]
+        ys = ys / np.max(ys)
+
+        ys = np.expand_dims(sc.transform(ys), axis=2)
+
+        corrected = model.predict(ys)
+
+        plt.plot(current_xs, current_ys)
+        plt.figure()
+
+        plt.plot(pattern_x, corrected[0, :, 0])
+        plt.show()
 
         """
         baseline_arPLS = baseline_arPLS(current_ys)

@@ -66,11 +66,11 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
-    
+
     if False:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
     simulation.simulate_all(start_from_scratch=False)
 
-    #simulation.plot(together=5)
+    # simulation.plot(together=5)

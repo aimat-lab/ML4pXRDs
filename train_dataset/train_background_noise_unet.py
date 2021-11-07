@@ -7,11 +7,20 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
+import pickle
 
-mode = "info"  # also possible: "info"
-N = 4224
+mode = "removal"  # also possible: "info"
+
+N = 9018
 pattern_x = np.linspace(0, 90, N)
 
+# only use a restricted range of the simulated patterns
+start_x = 10
+end_x = 50
+start_index = np.argwhere(pattern_x >= start_x)[0][0]
+end_index = np.argwhere(pattern_x <= end_x)[-1][0]
+pattern_x = pattern_x[start_index : end_index + 1]
+N = len(pattern_x)
 
 my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
 model = my_unet.UNet()
@@ -28,11 +37,11 @@ def read_training_data(Q):
         data = pickle.load(file)
 
     if mode == "removal":
-        x = data[0]
-        y = data[1]
+        x = data[0][:, start_index : end_index + 1]
+        y = data[1][:, start_index : end_index + 1]
     elif mode == "info":
-        x = data[0]
-        y = data[2]
+        x = data[0][:, start_index : end_index + 1]
+        y = data[2][:, start_index : end_index + 1]
     else:
         raise Exception("Mode not supported.")
 
@@ -46,6 +55,10 @@ def read_training_data(Q):
     x_train = np.expand_dims(sc.fit_transform(x_train), axis=2)
     x_test = np.expand_dims(sc.transform(x_test), axis=2)
     x_val = np.expand_dims(sc.transform(x_val), axis=2)
+
+    # TODO: Also save for the other mode!!!
+    with open("unet/removal_cps/scaler", "wb") as file:
+        pickle.dump(sc, file)
 
     Q.put((x_train, x_test, x_val, y_train, y_test, y_val))
 
@@ -83,13 +96,13 @@ model.fit(
         keras.callbacks.TensorBoard(log_dir="unet/" + mode + "_tb"),
     ],
 )
-# TODO: Test loss!
+# TODO: Display test loss!
 
 if mode == "removal":
-    predictions = model.predict(x_test[0:20],).numpy()
+    predictions = model.predict(x_test[0:20])
 else:
     probability_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
-    predictions = probability_model.predict(x_test[0:20],)
+    predictions = probability_model.predict(x_test[0:20])
 
 for i, prediction in enumerate(predictions):
     if mode == "removal":
