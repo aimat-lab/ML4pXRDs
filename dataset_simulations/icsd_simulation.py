@@ -21,7 +21,7 @@ class ICSDSimulation(Simulation):
             # print(path)
 
             if (i % 1000) == 0:
-                print(f"Generated {i} structures.")
+                print(f"Generated {i} structures.", flush=True)
 
             if path is None:
                 counter += 1
