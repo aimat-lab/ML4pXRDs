@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=8
+#SBATCH --time=10-48:00:00
+#SBATCH --mem=128000mb
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=tf_unet
+
+# --time=30
+# --time=48:00:00
+
+export PARNODES="$SLURM_CPUS_PER_TASK"
+export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
+
+source ~/mambaforge/etc/profile.d/conda.sh
+
+conda activate tf
+
+python train_background_noise_unet.py

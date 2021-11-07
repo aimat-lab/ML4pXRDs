@@ -8,6 +8,7 @@ from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
 import pickle
+import os
 
 mode = "removal"  # also possible: "info"
 
@@ -94,7 +95,7 @@ model.fit(
         cp_callback,
         keras.callbacks.TensorBoard(log_dir="unet/" + mode + "_tb"),
     ],
-    validation_data=[x_val, y_val],
+    validation_data=(x_val, y_val),
 )
 
 if mode == "removal":
@@ -103,14 +104,15 @@ else:
     probability_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
     predictions = probability_model.predict(x_test[0:20])
 
+os.system("mkdir -p predictions")
 for i, prediction in enumerate(predictions):
     if mode == "removal":
         plt.plot(pattern_x, prediction)
         plt.plot(pattern_x, x_test[i])
-        plt.show()
+        plt.savefig(f"predictions/prediction_{i}.pdf")
     elif mode == "info":
         plt.scatter(pattern_x, prediction)
         plt.plot(pattern_x, x_test[i])
-        plt.show()
+        plt.savefig(f"predictions/prediction_{i}.pdf")
     else:
         raise Exception("Mode not recognized.")

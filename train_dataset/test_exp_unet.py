@@ -1,15 +1,15 @@
 import numpy as np
 import pandas as pd
-from scipy.sparse import linalg
-from numpy.linalg import norm
-from scipy import sparse
+#from scipy.sparse import linalg
+#from numpy.linalg import norm
+#from scipy import sparse
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
-from cv2_rolling_ball import subtract_background_rolling_ball
+#from matplotlib.widgets import Slider
+#from cv2_rolling_ball import subtract_background_rolling_ball
 from scipy import interpolate as ip
-from scipy.signal import find_peaks, filtfilt
-from skimage import data, restoration, util
-from matplotlib.patches import Ellipse
+#from scipy.signal import find_peaks, filtfilt
+#from skimage import data, restoration, util
+#from matplotlib.patches import Ellipse
 from UNet_1DCNN import UNet
 from sklearn.preprocessing import StandardScaler
 import pickle
@@ -167,16 +167,15 @@ if __name__ == "__main__":
 
         f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
 
-        ys = [f(pattern_x)]
-
+        ys = f(pattern_x)
         ys -= np.min(ys)
         ys = ys / np.max(ys)
 
         plt.plot(pattern_x, ys, label="Experimental rescaled")
 
-        ys = np.expand_dims(sc.transform(ys), axis=2)
+        ys = np.expand_dims(sc.transform([ys]), axis=2)
 
-        corrected = model.predict([ys])
+        corrected = model.predict(ys)
 
         plt.plot(pattern_x, corrected[0, :, 0], label="Corrected via U-Net")
 
@@ -198,3 +197,4 @@ if __name__ == "__main__":
         )
         """
 
+print("Exiting...")
