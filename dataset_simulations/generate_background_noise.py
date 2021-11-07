@@ -3,14 +3,13 @@ import random
 import matplotlib.pyplot as plt
 import pickle
 
-# N = 9001
-N = 4224
-theta_min = 0
-theta_max = 90
+N = 9018
+start_x = 0
+end_x = 90
+pattern_x = np.linspace(0, 90, N)
 
-xs = np.linspace(theta_min, theta_max, N)
-number_of_samples = 50000  # number of samples to generate
-max_peaks_per_sample = 50  # max number of peaks per sample
+number_of_samples = 30000  # number of samples to generate
+max_peaks_per_sample = 20  # max number of peaks per sample
 polynomial_degree = 6
 polymomial_parameters_range = 1.0
 
@@ -43,7 +42,7 @@ def generate_background_and_noise():
 
 
 def theta_rel(theta):
-    return (theta - theta_min) / (theta_max - theta_min)
+    return (theta - start_x) / (end_x - start_x)
 
 
 def f_step_up(theta, h, alpha, theta_rel_step):
@@ -87,7 +86,7 @@ def generate_background_and_noise_paper():
 
     if choices[0]:
         diffractogram += f_step_up(
-            xs,
+            pattern_x,
             trunc_normal(0, T, T / 3, T / 7),
             np.random.uniform(10, 60),
             np.random.uniform(0, 1 / 7),
@@ -95,7 +94,7 @@ def generate_background_and_noise_paper():
 
     if choices[1]:
         diffractogram += f_step_down(
-            xs,
+            pattern_x,
             trunc_normal(0, T, T / 3, T / 7),
             np.random.uniform(10, 60),
             np.random.uniform(1 - 1 / 7, 1),
@@ -108,11 +107,11 @@ def generate_background_and_noise_paper():
             if np.random.uniform() < 0.5:
                 alpha_n[i] = 3 * T / (2 * (n_max + 1)) * np.random.uniform(-1, 1)
 
-        diffractogram += f_polynomial(xs, n_max, alpha_n)
+        diffractogram += f_polynomial(pattern_x, n_max, alpha_n)
 
     if choices[3]:
         diffractogram += f_bump(
-            xs,
+            pattern_x,
             trunc_normal(0, 3 * T / 5, 2 * T / 5, 3 * T / 35),
             np.random.uniform(40, 70),
         )
@@ -125,7 +124,7 @@ def convert_to_discrete(peak_positions, peak_sizes):
     peak_size_disc = np.zeros(N)
 
     for i, peak_pos in enumerate(peak_positions):
-        index = np.argwhere(xs < peak_pos)[-1]
+        index = np.argwhere(pattern_x < peak_pos)[-1]
         peak_info_disc[index] += 1
         peak_size_disc[index] += peak_sizes[i]
 
@@ -162,13 +161,16 @@ for i in range(0, number_of_samples):
         peak = (
             1
             / (sigma * np.sqrt(2 * np.pi))
-            * np.exp(-1 / (2 * sigma ** 2) * (xs - mean) ** 2)
+            * np.exp(-1 / (2 * sigma ** 2) * (pattern_x - mean) ** 2)
         ) * peak_size
 
         peak_sizes.append(peak_size)
 
         ys_altered += peak
         ys_unaltered += peak
+
+    ys_altered /= np.max(ys_altered)
+    ys_unaltered /= np.max(ys_altered)
 
     ys_all_altered.append(ys_altered)
     ys_all_unaltered.append(ys_unaltered)
