@@ -1,14 +1,17 @@
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 N = 9018
 start_x = 0
 end_x = 90
 pattern_x = np.linspace(0, 90, N)
 
-max_peaks_per_sample = 20  # max number of peaks per sample
+max_peaks_per_sample = 50  # max number of peaks per sample
 polynomial_degree = 6
 polymomial_parameters_range = 1.0
+
+min_peak_height = 0.005
 
 
 def generate_background_and_noise():
@@ -128,15 +131,17 @@ def convert_to_discrete(peak_positions, peak_sizes):
     return peak_info_disc, peak_size_disc
 
 
-def generate_samples(N=128, mode="removal"):
+def generate_samples(N=128, mode="removal", plot=False):
 
     xs_all = []
     ys_all = []
 
     for i in range(0, N):
 
-        ys_altered = generate_background_and_noise()
+        background_noise = generate_background_and_noise()
         # ys_altered = generate_background_and_noise_paper()
+
+        ys_altered = background_noise
 
         ys_unaltered = np.zeros(len(pattern_x))
 
@@ -150,7 +155,7 @@ def generate_samples(N=128, mode="removal"):
 
             peak_positions.append(mean)
 
-            peak_size = random.uniform(0.01, 1)
+            peak_size = random.uniform(min_peak_height, 1)
             peak = (
                 1
                 / (sigma * np.sqrt(2 * np.pi))
@@ -162,8 +167,14 @@ def generate_samples(N=128, mode="removal"):
             ys_altered += peak
             ys_unaltered += peak
 
-        ys_altered /= np.max(ys_altered)
-        ys_unaltered /= np.max(ys_altered)
+        scaler = np.max(ys_altered)
+        ys_altered /= scaler
+        ys_unaltered /= scaler
+
+        if plot:
+            plt.plot(pattern_x, ys_altered)
+            plt.plot(pattern_x, ys_unaltered)
+            plt.show()
 
         if mode == "removal":
 
@@ -180,3 +191,7 @@ def generate_samples(N=128, mode="removal"):
             ys_all.append(peak_info_disc)
 
     return np.array(xs_all), np.array(ys_all)
+
+
+if __name__ == "__main__":
+    generate_samples(10, plot=True)

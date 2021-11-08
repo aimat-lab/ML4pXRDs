@@ -26,13 +26,19 @@ additional_tag = (
 )
 current_data_source = "narrow"
 
+
 number_of_values_initial = 9001
 simulated_range = np.linspace(0, 90, number_of_values_initial)
-step = 2  # only use every step'th point in pattern
-starting_angle = 5  # where to start using the simulated pattern
-used_range_beginning = np.where(simulated_range == starting_angle)[0][0]
-used_range = simulated_range[used_range_beginning::step]
-number_of_values = len(used_range)
+
+# only use a restricted range of the simulated patterns
+start_x = 10
+end_x = 50
+step = 1
+start_index = np.argwhere(simulated_range >= start_x)[0][0]
+end_index = np.argwhere(simulated_range <= end_x)[-1][0]
+used_range = simulated_range[start_index : end_index + 1 : step]
+number_of_values = len(simulated_range)
+
 scale_features = True
 
 model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
@@ -73,7 +79,7 @@ if current_data_source == "narrow":
         y.extend([label[0]] * n_patterns_per_crystal)
 
     x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
-    x = x[:, used_range_beginning::step]
+    x = x[:, start_index : end_index + 1 : step]
     y = np.array(y)
 
     class_weights = {}

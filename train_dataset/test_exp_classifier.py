@@ -1,34 +1,37 @@
 import numpy as np
-import pandas as pd
-from scipy.sparse import linalg
-from numpy.linalg import norm
-from scipy import sparse
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
-from cv2_rolling_ball import subtract_background_rolling_ball
-from scipy import interpolate as ip
-from scipy.signal import find_peaks, filtfilt
-from skimage import data, restoration, util
-from matplotlib.patches import Ellipse
 import sys
+from UNet_1DCNN import UNet
 
 sys.path.append("../")
-
-import train_dataset.utils
-from train_dataset.utils import load_experimental_data, baseline_arPLS, rolling_ball
+from train_dataset.utils import load_experimental_data
+from scipy import interpolate as ip
+import tensorflow.keras as keras
 
 remove_background = True
-model_path = ""  # path to the model to test on
-experimental_file = ""
-bg_subtraction_algorithm = (
-    "rollingball"  # arPLS (without noise filtering), rollingball (with noise filtering)
-)
-tune_parameters = True
-
+unet_model_path = "unet/removal_cps/weights50"
+model_path = "unet/removal_cps/weights50"  # classifier model
 
 if __name__ == "__main__":
 
     xs, ys = load_experimental_data("exp_data/XRDdata.csv")
+
+    N = 9018
+    pattern_x = np.linspace(0, 90, N)
+
+    start_x = 10
+    end_x = 50
+    start_index = np.argwhere(pattern_x >= start_x)[0][0]
+    end_index = np.argwhere(pattern_x <= end_x)[-1][0]
+    pattern_x = pattern_x[start_index : end_index + 1]
+    N = len(pattern_x)
+
+    my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
+    unet_model = my_unet.UNet()
+    unet_model.load_weights()
+
+    classifier_N = 4000  # TODO: Update this
+    classifier_model = keras.models.load_model(model_path)
 
     for i in range(0, xs.shape[1]):
 
@@ -37,147 +40,25 @@ if __name__ == "__main__":
 
         if remove_background:
 
-            if bg_subtraction_algorithm == "arPLS":
+            f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
+            ys = f(pattern_x)
+            ys -= np.min(ys)
+            ys = ys / np.max(ys)
 
-                if not tune_parameters:
+            plt.plot(pattern_x, ys, label="Experimental rescaled")
 
-                    baseline = baseline_arPLS(current_ys)
+            ys = np.expand_dims([ys], axis=2)
 
-                    plt.plot(current_xs, current_ys)
-                    plt.plot(current_xs, baseline)
-                    plt.plot(current_xs, current_ys - baseline)
-                    plt.plot(current_xs, [0] * xs.shape[0])
-                    plt.show()
+            corrected = unet_model.predict(ys)
 
-                else:
+            plt.plot(
+                pattern_x, corrected[0, :, 0], label="Corrected via U-Net",
+            )
 
-                    fig, ax = plt.subplots()
+            plt.plot(pattern_x, np.zeros(len(pattern_x)))
 
-                    axwave1 = plt.axes([0.17, 0.06, 0.65, 0.03])  # slider dimensions
-                    axwave2 = plt.axes([0.17, 0, 0.65, 0.03])  # slider dimensions
+            plt.plot(pattern_x, ys - corrected[0, :, 0], label="Background and noise")
 
-                    slider_ratio = Slider(
-                        axwave1,
-                        "Event No. 1",
-                        -3,
-                        -1,
-                        valinit=current_ratio,
-                        valfmt="%E",
-                    )  # 1
-                    slider_lambda = Slider(
-                        axwave2,
-                        "Event No. 2",
-                        2,
-                        9,
-                        valinit=current_lambda,
-                        valfmt="%E",
-                    )  # 2
+            label = classifier_model.predict(ys)
 
-                    def update_wave(val):
-                        value1 = 10 ** slider_ratio.val
-                        slider_ratio.valtext.set_text(
-                            f"{value1:.5E} {slider_ratio.val}"
-                        )
-                        value2 = 10 ** slider_lambda.val
-                        slider_lambda.valtext.set_text(
-                            f"{value2:.5E} {slider_lambda.val}"
-                        )
-
-                        ax.cla()
-                        baseline = baseline_arPLS(current_ys, value1, value2)
-                        ax.plot(current_xs, 0.4 + current_ys)
-                        ax.plot(current_xs, 0.4 + baseline)
-                        ax.plot(current_xs, current_ys - baseline)
-                        ax.plot(current_xs, [0] * len(current_xs))
-                        fig.canvas.draw_idle()
-
-                    baseline = baseline_arPLS(
-                        current_ys, 10 ** current_ratio, 10 ** current_lambda
-                    )
-                    ax.plot(current_xs, 0.4 + current_ys)
-                    ax.plot(
-                        current_xs, 0.4 + baseline,
-                    )
-                    ax.plot(current_xs, current_ys - baseline)
-                    ax.plot(current_xs, [0] * len(current_xs))
-
-                    slider_ratio.on_changed(update_wave)
-                    slider_lambda.on_changed(update_wave)
-
-                    plt.show()
-
-                    current_lambda = slider_ratio.val
-                    current_ratio = slider_lambda.val
-
-                current_ys = current_ys - baseline
-
-            elif bg_subtraction_algorithm == "rollingball":
-
-                if not tune_parameters:
-
-                    current_ys = rolling_ball(
-                        xs[:, i],
-                        ys[:, i],
-                        sphere_x=rolling_ball_sphere_x,
-                        sphere_y=rolling_ball_sphere_y,
-                        min_x=10,
-                        max_x=50,
-                        n_xs=5000,
-                    )
-
-                else:
-
-                    fig, ax = plt.subplots()
-
-                    axwave1 = plt.axes([0.17, 0.06, 0.65, 0.03])  # slider dimensions
-                    axwave2 = plt.axes([0.17, 0, 0.65, 0.03])  # slider dimensions
-
-                    slider_sphere_x = Slider(
-                        axwave1,
-                        "sphere x",
-                        0,
-                        100,
-                        valinit=rolling_ball_sphere_x,
-                        valfmt="%1.3f",
-                    )  # 1
-                    slider_sphere_y = Slider(
-                        axwave2,
-                        "sphere y",
-                        0,
-                        3,
-                        valinit=rolling_ball_sphere_y,
-                        valfmt="%1.3f",
-                    )  # 2
-
-                    def update_wave(val):
-
-                        ax.cla()
-
-                        removed = rolling_ball(
-                            xs[:, i],
-                            ys[:, i],
-                            sphere_x=slider_sphere_x.val,
-                            sphere_y=slider_sphere_y.val,
-                            min_x=10,
-                            max_x=50,
-                            ax=ax,
-                            n_xs=5000,
-                        )
-
-                        fig.canvas.draw_idle()
-
-                    update_wave(None)
-
-                    slider_sphere_x.on_changed(update_wave)
-                    slider_sphere_y.on_changed(update_wave)
-
-                    plt.show()
-
-                    rolling_ball_sphere_x = slider_sphere_x.val
-                    rolling_ball_sphere_y = slider_sphere_y.val
-
-    if tune_parameters:
-        exit()  # do not continue, since the same parameters should be used for all samples. Restart!
-
-
-# TODO: Don't forget to transform first
+            print(f"Predicted label: {label}")
