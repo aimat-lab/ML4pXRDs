@@ -11,7 +11,7 @@ max_peaks_per_sample = 50  # max number of peaks per sample
 polynomial_degree = 6
 polymomial_parameters_range = 1.0
 
-min_peak_height = 0.005
+min_peak_height = 0.01
 
 
 def generate_background_and_noise():

@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
     model = my_unet.UNet()
-    model.load_weights("unet/removal_cps/weights2")
+    model.load_weights("unet/removal_cps/weights20")
 
     """
     with open("unet/removal_cps/scaler", "rb") as file:
@@ -81,7 +81,9 @@ if __name__ == "__main__":
 
         plt.plot(pattern_x, np.zeros(len(pattern_x)))
 
-        plt.plot(pattern_x, ys - corrected[0, :, 0], label="Background and noise")
+        # plt.plot(
+        #    pattern_x, ys[0, :, 0] - corrected[0, :, 0], label="Background and noise"
+        # )
 
         plt.legend()
         plt.show()
