@@ -1,14 +1,11 @@
 import numpy as np
 import random
-import matplotlib.pyplot as plt
-import pickle
 
 N = 9018
 start_x = 0
 end_x = 90
 pattern_x = np.linspace(0, 90, N)
 
-number_of_samples = 500000  # number of samples to generate
 max_peaks_per_sample = 20  # max number of peaks per sample
 polynomial_degree = 6
 polymomial_parameters_range = 1.0
@@ -131,70 +128,55 @@ def convert_to_discrete(peak_positions, peak_sizes):
     return peak_info_disc, peak_size_disc
 
 
-ys_all_altered = []
-ys_all_unaltered = []
-all_peak_info_disc = []
-all_peak_size_disc = []
+def generate_samples(N=128, mode="removal"):
 
+    xs_all = []
+    ys_all = []
 
-for i in range(0, number_of_samples):
+    for i in range(0, N):
 
-    if (i % 1000) == 0:
-        print(f"Generated {i} samples.", flush=True)
+        ys_altered = generate_background_and_noise()
+        # ys_altered = generate_background_and_noise_paper()
 
-    ys_altered = generate_background_and_noise()
-    # ys_altered = generate_background_and_noise_paper()
+        ys_unaltered = np.zeros(len(pattern_x))
 
-    ys_unaltered = np.zeros(N)
+        sigma = random.uniform(0.1, 0.5)
+        peak_positions = []
+        peak_sizes = []
 
-    sigma = random.uniform(0.1, 0.5)
-    peak_positions = []
-    peak_sizes = []
+        for j in range(0, random.randint(1, max_peaks_per_sample)):
 
-    for j in range(0, random.randint(1, max_peaks_per_sample)):
+            mean = random.uniform(0, 90)
 
-        mean = random.uniform(0, 90)
+            peak_positions.append(mean)
 
-        peak_positions.append(mean)
+            peak_size = random.uniform(0.01, 1)
+            peak = (
+                1
+                / (sigma * np.sqrt(2 * np.pi))
+                * np.exp(-1 / (2 * sigma ** 2) * (pattern_x - mean) ** 2)
+            ) * peak_size
 
-        peak_size = random.uniform(0.01, 1)
-        peak = (
-            1
-            / (sigma * np.sqrt(2 * np.pi))
-            * np.exp(-1 / (2 * sigma ** 2) * (pattern_x - mean) ** 2)
-        ) * peak_size
+            peak_sizes.append(peak_size)
 
-        peak_sizes.append(peak_size)
+            ys_altered += peak
+            ys_unaltered += peak
 
-        ys_altered += peak
-        ys_unaltered += peak
+        ys_altered /= np.max(ys_altered)
+        ys_unaltered /= np.max(ys_altered)
 
-    ys_altered /= np.max(ys_altered)
-    ys_unaltered /= np.max(ys_altered)
+        if mode == "removal":
 
-    ys_all_altered.append(ys_altered)
-    ys_all_unaltered.append(ys_unaltered)
+            xs_all.append(ys_altered)
+            ys_all.append(ys_unaltered)
 
-    peak_info_disc, peak_size_disc = convert_to_discrete(peak_positions, peak_sizes)
+        elif mode == "info":
 
-    all_peak_info_disc.append(peak_info_disc)
-    all_peak_size_disc.append(peak_size_disc)
+            peak_info_disc, peak_size_disc = convert_to_discrete(
+                peak_positions, peak_sizes
+            )
 
-    """
-    plt.plot(xs, ys_altered)
-    plt.plot(xs, ys_unaltered)
-    plt.scatter(xs, peak_info_disc)
-    plt.scatter(xs, peak_size_disc)
-    plt.show()
-    """
+            xs_all.append(ys_altered)
+            ys_all.append(peak_info_disc)
 
-with open("patterns/noise_background/data", "wb") as file:
-    pickle.dump(
-        (
-            np.array(ys_all_altered),
-            np.array(ys_all_unaltered),
-            np.array(all_peak_info_disc),
-            np.array(all_peak_size_disc),
-        ),
-        file,
-    )
+    return np.array(xs_all), np.array(ys_all)

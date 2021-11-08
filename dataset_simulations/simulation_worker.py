@@ -11,6 +11,8 @@ import gc
 import functools
 import os
 
+simulation_software = "xrayutilities"  # also possible: pymatgen
+
 crystallite_size_gauss_min = 15 * 10 ** -9
 crystallite_size_gauss_max = 50 * 10 ** -9
 crystallite_size_lor_min = 15 * 10 ** -9
