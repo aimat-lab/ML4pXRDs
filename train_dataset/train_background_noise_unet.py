@@ -113,35 +113,6 @@ else:
         test_xs[:, start_index : end_index + 1],
         test_batch[1][:, start_index : end_index + 1],
     )
-<<<<<<< HEAD
-else:
-    raise Exception("Mode not supported.")
-
-cp_callback = keras.callbacks.ModelCheckpoint(
-    filepath="unet/" + mode + "_cps" + "/weights{epoch}",
-    save_weights_only=True,
-    verbose=1,
-)
-model.fit(
-    x_train,
-    y_train,
-    epochs=20,
-    batch_size=100,
-    verbose=2,
-    callbacks=[
-        cp_callback,
-        keras.callbacks.TensorBoard(log_dir="unet/" + mode + "_tb"),
-    ],
-    validation_data=(x_val, y_val),
-)
-
-if mode == "removal":
-    predictions = model.predict(x_test[0:20])
-else:
-    probability_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
-    predictions = probability_model.predict(x_test[0:20])
-=======
->>>>>>> 6c6fdf2e790362f9e5127476c85fd92b9273f003
 
     if mode == "removal":
         predictions = model.predict(x_test)
@@ -174,3 +145,4 @@ else:
             plt.figure()
         else:
             raise Exception("Mode not recognized.")
+
