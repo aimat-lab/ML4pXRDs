@@ -1,3 +1,4 @@
+import pickle
 from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 import numpy as np
@@ -10,16 +11,15 @@ import sys
 sys.path.append("../")
 import generate_background_noise_utils
 
-mode = "removal"  # also possible: "info"
-
-training_mode = "train"  # possible: train and test
+mode = "removal"  # possible: "info", "removal"
+training_mode = "test"  # possible: train and test
 
 N = 9018
 pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 20
+number_of_epochs = 25
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
 
@@ -31,7 +31,8 @@ end_index = np.argwhere(pattern_x <= end_x)[-1][0]
 pattern_x = pattern_x[start_index : end_index + 1]
 N = len(pattern_x)
 
-# TODO: Since we generate the dataset on the fly, there is no standard scaler involved. Is this a problem?
+# with open("unet/scaler", "rb") as file:
+#    scaler = pickle.load(file)
 
 if training_mode == "train":
 
@@ -50,8 +51,12 @@ if training_mode == "train":
             batch = generate_background_noise_utils.generate_samples(
                 N=self.batch_size, mode=self.mode
             )
+
+            # xs = scaler.transform(batch[0])
+            xs = batch[0]
+
             return (
-                batch[0][:, self.start_index : self.end_index + 1],
+                xs[:, self.start_index : self.end_index + 1],
                 batch[1][:, self.start_index : self.end_index + 1],
             )
 
@@ -68,7 +73,7 @@ if training_mode == "train":
         model.compile(
             optimizer="adam",
             loss=keras.losses.BinaryCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["binary_crossentropy", "mean_squared_error"],
         )
     else:
         raise Exception("Mode not supported.")
@@ -100,8 +105,12 @@ else:
     model = keras.models.load_model("unet/" + mode + "_final")
 
     test_batch = generate_background_noise_utils.generate_samples(N=100, mode=mode)
+
+    # test_xs = scaler.transform(test_batch[0])
+    test_xs = test_batch[0]
+
     x_test, y_test = (
-        test_batch[0][:, start_index : end_index + 1],
+        test_xs[:, start_index : end_index + 1],
         test_batch[1][:, start_index : end_index + 1],
     )
 
@@ -111,18 +120,23 @@ else:
         probability_model = keras.Sequential(
             [model, keras.layers.Activation("sigmoid")]
         )
-        predictions = probability_model.predict(x_test[0:20])
+        predictions = probability_model.predict(x_test)
 
     os.system("mkdir -p predictions")
     for i, prediction in enumerate(predictions):
         if mode == "removal":
+
             plt.plot(pattern_x, prediction)
-            plt.plot(pattern_x, x_test[i])
+
+            plt.plot(pattern_x, test_batch[0][:, start_index : end_index + 1][i])
+
             plt.savefig(f"predictions/prediction_{i}.pdf")
             plt.show()
             plt.figure()
         elif mode == "info":
-            plt.scatter(pattern_x, prediction)
+            plt.scatter(pattern_x, prediction, s=3)
+            plt.scatter(pattern_x, y_test[i], s=3)
+
             plt.plot(pattern_x, x_test[i])
             plt.savefig(f"predictions/prediction_{i}.pdf")
             plt.show()

@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import interpolate as ip
 from UNet_1DCNN import UNet
+import pickle
 
 
 def load_experimental_data(mode="classification"):
@@ -47,7 +48,7 @@ if __name__ == "__main__":
 
     my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
     model = my_unet.UNet()
-    model.load_weights("unet/removal_cps/weights20")
+    model.load_weights("unet/removal_cps/weights3")
 
     """
     with open("unet/removal_cps/scaler", "rb") as file:
@@ -68,7 +69,13 @@ if __name__ == "__main__":
         ys -= np.min(ys)
         ys = ys / np.max(ys)
 
+        plt.plot(pattern_x, np.zeros(len(pattern_x)))
+
         plt.plot(pattern_x, ys, label="Experimental rescaled")
+
+        # with open("unet/scaler", "rb") as file:
+        #    scaler = pickle.load(file)
+        # ys = scaler.transform(ys)
 
         # ys = np.expand_dims(sc.transform([ys]), axis=2)
         ys = np.expand_dims([ys], axis=2)
@@ -78,8 +85,6 @@ if __name__ == "__main__":
         plt.plot(
             pattern_x, corrected[0, :, 0], label="Corrected via U-Net",
         )
-
-        plt.plot(pattern_x, np.zeros(len(pattern_x)))
 
         plt.plot(
             pattern_x, ys[0, :, 0] - corrected[0, :, 0], label="Background and noise"

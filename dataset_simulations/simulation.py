@@ -18,8 +18,8 @@ from sklearn.utils import shuffle
 # num_files = 140
 # num_processes = 70
 
-num_files = 8
-num_processes = 2
+num_files = 16
+num_processes = 8
 
 angle_min = 0
 angle_max = 90

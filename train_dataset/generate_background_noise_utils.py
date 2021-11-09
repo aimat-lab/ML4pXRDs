@@ -1,13 +1,15 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+import pickle
 
 N = 9018
 start_x = 0
 end_x = 90
 pattern_x = np.linspace(0, 90, N)
 
-max_peaks_per_sample = 25  # max number of peaks per sample
+max_peaks_per_sample = 50  # max number of peaks per sample
 polynomial_degree = 6
 polymomial_parameters_range = 1.0
 
@@ -31,6 +33,8 @@ def generate_background_and_noise():
 
     # TODO: Implement signal-to-noise ratio as in paper
 
+    weight_background = np.sum(ys)
+
     base_noise_level_max = 0.05
     base_noise_level_min = 0.01
     noise_level = np.random.uniform(low=base_noise_level_min, high=base_noise_level_max)
@@ -38,7 +42,7 @@ def generate_background_and_noise():
 
     ys -= np.min(ys)
 
-    return ys
+    return ys, weight_background
 
 
 def theta_rel(theta):
@@ -131,17 +135,18 @@ def convert_to_discrete(peak_positions, peak_sizes):
     return peak_info_disc, peak_size_disc
 
 
-def generate_samples(N=128, mode="removal", plot=False):
+def generate_samples(N=128, mode="removal", do_plot=False, do_print=False, scaler=None):
 
     xs_all = []
     ys_all = []
 
     for i in range(0, N):
 
-        background_noise = generate_background_and_noise()
-        # ys_altered = generate_background_and_noise_paper()
+        if do_print and (i % 1000) == 0:
+            print(f"Generated {i} samples.")
 
-        ys_altered = background_noise
+        background_noise, weight_background = generate_background_and_noise()
+        # ys_altered = generate_background_and_noise_paper()
 
         ys_unaltered = np.zeros(len(pattern_x))
 
@@ -164,22 +169,34 @@ def generate_samples(N=128, mode="removal", plot=False):
 
             peak_sizes.append(peak_size)
 
-            ys_altered += peak
             ys_unaltered += peak
+
+        weight_peaks = np.sum(ys_unaltered)
+        # scaling = random.uniform(0, 1.0)
+        # print(scaling)
+
+        scaling = 2
+
+        ys_altered = (
+            background_noise / weight_background * weight_peaks * scaling + ys_unaltered
+        )
 
         scaler = np.max(ys_altered)
         ys_altered /= scaler
         ys_unaltered /= scaler
 
-        if plot:
+        if do_plot:
             plt.plot(pattern_x, ys_altered)
             plt.plot(pattern_x, ys_unaltered)
+
+            plt.xlim(10, 50)
             plt.show()
 
         if mode == "removal":
 
             xs_all.append(ys_altered)
             ys_all.append(ys_unaltered)
+            # ys_all.append(background_noise / scaler)
 
         elif mode == "info":
 
@@ -194,4 +211,40 @@ def generate_samples(N=128, mode="removal", plot=False):
 
 
 if __name__ == "__main__":
-    generate_samples(10, plot=True)
+    x, y = generate_samples(
+        N=100, mode="removal", do_print=False, do_plot=True
+    )  # mode doesn't matter here, since we are only interested in the input
+
+    """
+  
+    # This code calculates the standard scaler for 100k samples, which is a good estimate for
+    # the overall distribution
+
+    n_samples = 50000
+    path = "unet/scaler"
+
+    x, y = generate_samples(
+        N=n_samples, mode="removal", plot=False, do_print=True
+    )  # mode doesn't matter here, since we are only interested in the input
+
+    # scale features
+    sc = StandardScaler()
+    x_test = sc.fit_transform(x)
+
+    print(sc.mean_)
+    print(sc.var_)
+    print(sc.scale_)
+
+    # plt.plot(sc.var_)
+    # plt.show()
+
+    # Create new scaler where all means and stds are the same
+    # new_scaler = StandardScaler()
+    # new_scaler.mean_ = np.repeat(np.mean(sc.mean_), len(sc.mean_))
+    # new_scaler.var_ = np.repeat(np.mean(sc.var_), len(sc.var_))
+    # new_scaler.scale_ = np.repeat(np.mean(sc.scale_), len(sc.scale_))
+
+    with open(path, "wb") as file:
+        pickle.dump(sc, file)
+
+    """

@@ -20,8 +20,8 @@ class ICSDSimulation(Simulation):
         for i, path in enumerate(self.icsd_paths):
             # print(path)
 
-            if (i % 1000) == 0:
-                print(f"Generated {i} structures.", flush=True)
+            # if (i % 1000) == 0:
+            print(f"Generated {i} structures.", flush=True)
 
             if path is None:
                 counter += 1
@@ -75,10 +75,9 @@ if __name__ == "__main__":
     else:
         simulation.generate_structures()
 
-    simulation.save()
+    # simulation.save()
+    # os.system("cp -r " + simulation.output_dir[:-1] + " patterns/icsd_copy")
 
-    os.system("cp -r " + simulation.output_dir[:-1] + " patterns/icsd_copy")
-
-    simulation.simulate_all(start_from_scratch=False)
+    simulation.simulate_all(start_from_scratch=True)
 
     # simulation.plot(together=5)
