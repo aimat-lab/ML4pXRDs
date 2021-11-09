@@ -81,9 +81,9 @@ if __name__ == "__main__":
 
         plt.plot(pattern_x, np.zeros(len(pattern_x)))
 
-        # plt.plot(
-        #    pattern_x, ys[0, :, 0] - corrected[0, :, 0], label="Background and noise"
-        # )
+        plt.plot(
+            pattern_x, ys[0, :, 0] - corrected[0, :, 0], label="Background and noise"
+        )
 
         plt.legend()
         plt.show()

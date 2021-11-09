@@ -1,13 +1,9 @@
 from UNet_1DCNN import UNet
 import tensorflow.keras as keras
-import pickle
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
-from multiprocessing import Process, Queue
-import pickle
 import os
 import sys
 
@@ -123,9 +119,13 @@ else:
             plt.plot(pattern_x, prediction)
             plt.plot(pattern_x, x_test[i])
             plt.savefig(f"predictions/prediction_{i}.pdf")
+            plt.show()
+            plt.figure()
         elif mode == "info":
             plt.scatter(pattern_x, prediction)
             plt.plot(pattern_x, x_test[i])
             plt.savefig(f"predictions/prediction_{i}.pdf")
+            plt.show()
+            plt.figure()
         else:
             raise Exception("Mode not recognized.")

@@ -7,7 +7,7 @@ start_x = 0
 end_x = 90
 pattern_x = np.linspace(0, 90, N)
 
-max_peaks_per_sample = 50  # max number of peaks per sample
+max_peaks_per_sample = 25  # max number of peaks per sample
 polynomial_degree = 6
 polymomial_parameters_range = 1.0
 

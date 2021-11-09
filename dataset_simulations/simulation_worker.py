@@ -149,11 +149,14 @@ def simulate_crystal(
             #    xs
             # )  # this also includes the Lorentzian + polarization correction
 
+            """
             lines = []
             for key, value in powder_model.pdiff[0].data.items():
                 if value["active"]:
                     lines.append([value["ang"], value["r"]])
             lines_list.append(lines)
+            """
+            lines_list = [None] * (5 if not test_crystallite_sizes else 6)
 
             powder_model.close()
 
@@ -206,6 +209,9 @@ if __name__ == "__main__":
         save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10) + 1)
 
         for i, pattern in enumerate(sim_patterns):
+
+            print(i)
+
             counter += 1
 
             with open(status_file, "w") as write_file:
