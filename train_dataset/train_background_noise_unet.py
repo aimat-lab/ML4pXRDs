@@ -130,6 +130,8 @@ else:
 
             plt.plot(pattern_x, test_batch[0][:, start_index : end_index + 1][i])
 
+            plt.plot(pattern_x, test_batch[1][:, start_index : end_index + 1][i])
+
             plt.savefig(f"predictions/prediction_{i}.pdf")
             plt.show()
             plt.figure()
