@@ -20,8 +20,8 @@ class ICSDSimulation(Simulation):
         for i, path in enumerate(self.icsd_paths):
             # print(path)
 
-            if (i % 1000) == 0:
-                print(f"Generated {i} structures.", flush=True)
+            # if (i % 1000) == 0:
+            print(f"Generated {i} structures.", flush=True)
 
             if path is None:
                 counter += 1
@@ -43,6 +43,9 @@ class ICSDSimulation(Simulation):
             self.sim_patterns.append([])  # this will also be filled by the simulation
             self.sim_lines_list.append([])  # this will also be filled by the simulation
 
+            if i == 999:
+                break
+
         print(f"Skipped {counter} structures due to errors or missing path.")
 
 
@@ -58,7 +61,8 @@ if __name__ == "__main__":
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
         simulation = ICSDSimulation(
-            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"), os.path.expanduser("~/Databases/ICSD/cif/"),
+            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+            os.path.expanduser("~/Databases/ICSD/cif/"),
         )
     else:
         simulation = ICSDSimulation(
@@ -70,6 +74,10 @@ if __name__ == "__main__":
         simulation.load()
     else:
         simulation.generate_structures()
-    simulation.simulate_all(start_from_scratch=False)
+
+    # simulation.save()
+    # os.system("cp -r " + simulation.output_dir[:-1] + " patterns/icsd_copy")
+
+    simulation.simulate_all(start_from_scratch=True)
 
     # simulation.plot(together=5)
