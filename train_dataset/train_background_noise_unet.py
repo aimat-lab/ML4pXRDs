@@ -88,7 +88,7 @@ cp_callback = keras.callbacks.ModelCheckpoint(
 model.fit(
     x_train,
     y_train,
-    epochs=10,
+    epochs=20,
     batch_size=100,
     verbose=2,
     callbacks=[

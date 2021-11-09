@@ -15,8 +15,8 @@ import subprocess
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 
-num_files = 140
-num_processes = 70
+num_files = 80
+num_processes = 20
 
 angle_min = 0
 angle_max = 90
@@ -417,7 +417,7 @@ class Simulation:
         sg = gemmi.find_spacegroup_by_name(space_group_symbol)
 
         space_group_number = sg.number
-    
+
         return space_group_number
 
         """
