@@ -296,42 +296,82 @@ class Simulation:
 
         self.output_files_Ns.append(end - start)
 
-        pickle_file = os.path.join(self.output_dir, f"data_{i}.lzma")
+        data_dir = os.path.join(self.output_dir, "data")
+        os.system("mkdir -p " + data_dir)
 
-        with lzma.open(pickle_file, "wb") as file:
-            pickle.dump(
-                (
-                    self.sim_crystals[start:end],
-                    self.sim_labels[start:end],
-                    self.sim_metas[start:end],
-                    self.sim_patterns[start:end],
-                    self.sim_variations[start:end],
-                    self.sim_lines_list[start:end],
-                ),
-                file,
-            )
+        np.save(
+            self.sim_crystals[start:end], os.path.join(data_dir, f"crystals_{i}.npy")
+        )
+        np.save(self.sim_labels[start:end], os.path.join(data_dir, f"labels_{i}.npy"))
+        np.save(self.sim_metas[start:end], os.path.join(data_dir, f"metas_{i}.npy"))
+        np.save(
+            self.sim_patterns[start:end], os.path.join(data_dir, f"patterns_{i}.npy")
+        )
+        np.save(
+            self.sim_lines_list[start:end],
+            os.path.join(data_dir, f"lines_list_{i}.npy"),
+        )
 
     def load(self):
 
         self.reset_simulation_status()
 
-        pickle_files = glob(os.path.join(self.output_dir, f"data_*.lzma"))
-        pickle_files = sorted(
-            pickle_files,
+        data_dir = os.path.join(self.output_dir, "data")
+
+        crystals_files = glob(os.path.join(data_dir, "crystals_*.npy"))
+        crystals_files = sorted(
+            crystals_files,
             key=lambda x: int(
-                os.path.basename(x).replace("data_", "").replace(".lzma", "")
+                os.path.basename(x).replace("crystals_", "").replace(".npy", "")
             ),
         )
 
-        for pickle_file in pickle_files:
-            with lzma.open(pickle_file, "rb") as file:
-                additional = pickle.load(file)
-                self.sim_crystals.extend(additional[0])
-                self.sim_labels.extend(additional[1])
-                self.sim_metas.extend(additional[2])
-                self.sim_patterns.extend(additional[3])
-                self.sim_variations.extend(additional[4])
-                self.sim_lines_list.extend(additional[5])
+        labels_files = glob(os.path.join(data_dir, "labels_*.npy"))
+        labels_files = sorted(
+            labels_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("labels_", "").replace(".npy", "")
+            ),
+        )
+
+        metas_files = glob(os.path.join(data_dir, "metas_*.npy"))
+        metas_files = sorted(
+            metas_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("metas_", "").replace(".npy", "")
+            ),
+        )
+
+        patterns_files = glob(os.path.join(data_dir, "patterns_*.npy"))
+        patterns_files = sorted(
+            patterns_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("patterns_", "").replace(".npy", "")
+            ),
+        )
+
+        lines_list_files = glob(os.path.join(data_dir, "lines_list_*.npy"))
+        lines_list_files = sorted(
+            lines_list_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("lines_list_", "").replace(".npy", "")
+            ),
+        )
+
+        for file in crystals_files:
+            self.sim_crystals.extend(np.load(file))
+
+        for file in labels_files:
+            self.sim_labels.extend(np.load(file))
+
+        for file in metas_files:
+            self.sim_metas.extend(np.load(file))
+
+        for file in patterns_files:
+            self.sim_patterns.extend(np.load(file))
+
+        for file in lines_list_files:
+            self.sim_lines_list.extend(np.load(file))
 
     def get_space_group_number(self, id):
 
