@@ -2,20 +2,25 @@
 # Therefore, the main programs runs these worker scripts in parallel.
 
 import sys
-import lzma
-import pickle
 import random
 import xrayutilities as xu
 import numpy as np
 import gc
 import functools
 import os
+from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 
+sys.path.append("../")
 
-crystallite_size_gauss_min = 15 * 10 ** -9
-crystallite_size_gauss_max = 50 * 10 ** -9
-crystallite_size_lor_min = 15 * 10 ** -9
-crystallite_size_lor_max = 50 * 10 ** -9
+# xrayutilities
+xrayutil_crystallite_size_gauss_min = 15 * 10 ** -9
+xrayutil_crystallite_size_gauss_max = 50 * 10 ** -9
+xrayutil_crystallite_size_lor_min = 15 * 10 ** -9
+xrayutil_crystallite_size_lor_max = 50 * 10 ** -9
+
+# pymatgen
+paymatgen_crystallite_size_gauss_min = 30 * 10 ** -9  # TODO: Change these ranges?
+paymatgen_crystallite_size_gauss_max = 100 * 10 ** -9
 
 angle_min = 0
 angle_max = 90
@@ -33,134 +38,171 @@ def simulate_crystal(
         lines_list = []
         variations = []
 
-        # draw 5 crystallite sizes per crystal:
-        for i in range(0, 5 if not test_crystallite_sizes else 6):
+        if simulation_software == "xrayutilities":
 
-            if not test_crystallite_sizes:
-                size_gauss = random.uniform(
-                    crystallite_size_gauss_min, crystallite_size_gauss_max
+            # draw 5 crystallite sizes per crystal:
+            for i in range(0, 5 if not test_crystallite_sizes else 6):
+
+                if not test_crystallite_sizes:
+                    size_gauss = random.uniform(
+                        xrayutil_crystallite_size_gauss_min,
+                        xrayutil_crystallite_size_gauss_max,
+                    )
+                    size_lor = random.uniform(
+                        xrayutil_crystallite_size_lor_min,
+                        xrayutil_crystallite_size_lor_max,
+                    )
+
+                else:
+
+                    # For comparing the different crystallite sizes
+                    if i == 0:
+                        size_gauss = xrayutil_crystallite_size_gauss_max
+                        size_lor = 3 * 10 ** 8
+                    elif i == 2:
+                        size_gauss = xrayutil_crystallite_size_gauss_max
+                        size_lor = xrayutil_crystallite_size_lor_max
+                    elif i == 1:
+                        size_gauss = 3 * 10 ** 8
+                        size_lor = xrayutil_crystallite_size_lor_max
+                    elif i == 3:
+                        size_gauss = xrayutil_crystallite_size_gauss_min
+                        size_lor = 3 * 10 ** 8
+                    elif i == 4:
+                        size_gauss = 3 * 10 ** 8
+                        size_lor = xrayutil_crystallite_size_lor_min
+                    elif i == 5:
+                        size_gauss = xrayutil_crystallite_size_lor_min
+                        size_lor = xrayutil_crystallite_size_gauss_min
+
+                variations.append({"size_gauss": size_gauss, "size_lor": size_lor})
+
+                powder = xu.simpack.Powder(
+                    crystal,
+                    1,
+                    crystallite_size_lor=size_lor,  # default: 2e-07
+                    crystallite_size_gauss=size_gauss,  # default: 2e-07
+                    strain_lor=0,  # default
+                    strain_gauss=0,  # default
+                    preferred_orientation=(0, 0, 0),  # default
+                    preferred_orientation_factor=1,  # default
                 )
-                size_lor = random.uniform(
-                    crystallite_size_lor_min, crystallite_size_lor_max
+
+                # default parameters are in ~/.xrayutilities.conf
+                # Alread set in config: Use one thread only
+                # or use print(powder_model.pdiff[0].settings)
+                # Further information on the settings can be found here: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
+                powder_model = xu.simpack.PowderModel(
+                    powder,
+                    I0=100,
+                    fpsettings={
+                        "classoptions": {
+                            "anglemode": "twotheta",
+                            "oversampling": 4,
+                            "gaussian_smoother_bins_sigma": 1.0,
+                            "window_width": 20.0,
+                        },
+                        "global": {
+                            "geometry": "symmetric",
+                            "geometry_incidence_angle": None,
+                            "diffractometer_radius": 0.3,  # measured on experiment: 19.3 cm
+                            "equatorial_divergence_deg": 0.5,
+                            # "dominant_wavelength": 1.207930e-10, # this is a read-only setting!
+                        },
+                        "emission": {
+                            "emiss_wavelengths": (1.207930e-10),
+                            "emiss_intensities": (1.0),
+                            "emiss_gauss_widths": (3e-14),
+                            "emiss_lor_widths": (3e-14),
+                            # "crystallite_size_lor": 2e-07,  # this needs to be set for the powder
+                            # "crystallite_size_gauss": 2e-07,  # this needs to be set for the powder
+                            # "strain_lor": 0,  # this needs to be set for the powder
+                            # "strain_gauss": 0,  # this needs to be set for the powder
+                            # "preferred_orientation": (0, 0, 0),  # this needs to be set for the powder
+                            # "preferred_orientation_factor": 1,  # this needs to be set for the powder
+                        },
+                        "axial": {
+                            "axDiv": "full",
+                            "slit_length_source": 0.008001,
+                            "slit_length_target": 0.008,
+                            "length_sample": 0.01,
+                            "angI_deg": 2.5,
+                            "angD_deg": 2.5,
+                            "n_integral_points": 10,
+                        },
+                        "absorption": {"absorption_coefficient": 100000.0},
+                        "si_psd": {"si_psd_window_bounds": None},
+                        "receiver_slit": {"slit_width": 5.5e-05},
+                        "tube_tails": {
+                            "main_width": 0.0002,
+                            "tail_left": -0.001,
+                            "tail_right": 0.001,
+                            "tail_intens": 0.001,
+                        },
+                    },
                 )
 
-            else:
+                # powder_model = xu.simpack.PowderModel(powder, I0=100,) # with default parameters
+                # print(powder_model.pdiff[0].settings)
 
-                # For comparing the different crystallite sizes
-                if i == 0:
-                    size_gauss = crystallite_size_gauss_max
-                    size_lor = 3 * 10 ** 8
-                elif i == 2:
-                    size_gauss = crystallite_size_gauss_max
-                    size_lor = crystallite_size_lor_max
-                elif i == 1:
-                    size_gauss = 3 * 10 ** 8
-                    size_lor = crystallite_size_lor_max
-                elif i == 3:
-                    size_gauss = crystallite_size_gauss_min
-                    size_lor = 3 * 10 ** 8
-                elif i == 4:
-                    size_gauss = 3 * 10 ** 8
-                    size_lor = crystallite_size_lor_min
-                elif i == 5:
-                    size_gauss = crystallite_size_lor_min
-                    size_lor = crystallite_size_gauss_min
+                xs = np.linspace(
+                    angle_min, angle_max, angle_n
+                )  # simulate a rather large range, we can still later use a smaller range for training
 
-            variations.append({"size_gauss": size_gauss, "size_lor": size_lor})
+                diffractogram = powder_model.simulate(
+                    xs, mode="local"
+                )  # this also includes the Lorentzian + polarization correction
 
-            powder = xu.simpack.Powder(
-                crystal,
-                1,
-                crystallite_size_lor=size_lor,  # default: 2e-07
-                crystallite_size_gauss=size_gauss,  # default: 2e-07
-                strain_lor=0,  # default
-                strain_gauss=0,  # default
-                preferred_orientation=(0, 0, 0),  # default
-                preferred_orientation_factor=1,  # default
-            )
+                # diffractogram = powder_model.simulate(
+                #    xs
+                # )  # this also includes the Lorentzian + polarization correction
 
-            # default parameters are in ~/.xrayutilities.conf
-            # Alread set in config: Use one thread only
-            # or use print(powder_model.pdiff[0].settings)
-            # Further information on the settings can be found here: https://nvlpubs.nist.gov/nistpubs/jres/120/jres.120.014.c.py
-            powder_model = xu.simpack.PowderModel(
-                powder,
-                I0=100,
-                fpsettings={
-                    "classoptions": {
-                        "anglemode": "twotheta",
-                        "oversampling": 4,
-                        "gaussian_smoother_bins_sigma": 1.0,
-                        "window_width": 20.0,
-                    },
-                    "global": {
-                        "geometry": "symmetric",
-                        "geometry_incidence_angle": None,
-                        "diffractometer_radius": 0.3,  # measured on experiment: 19.3 cm
-                        "equatorial_divergence_deg": 0.5,
-                        # "dominant_wavelength": 1.207930e-10, # this is a read-only setting!
-                    },
-                    "emission": {
-                        "emiss_wavelengths": (1.207930e-10),
-                        "emiss_intensities": (1.0),
-                        "emiss_gauss_widths": (3e-14),
-                        "emiss_lor_widths": (3e-14),
-                        # "crystallite_size_lor": 2e-07,  # this needs to be set for the powder
-                        # "crystallite_size_gauss": 2e-07,  # this needs to be set for the powder
-                        # "strain_lor": 0,  # this needs to be set for the powder
-                        # "strain_gauss": 0,  # this needs to be set for the powder
-                        # "preferred_orientation": (0, 0, 0),  # this needs to be set for the powder
-                        # "preferred_orientation_factor": 1,  # this needs to be set for the powder
-                    },
-                    "axial": {
-                        "axDiv": "full",
-                        "slit_length_source": 0.008001,
-                        "slit_length_target": 0.008,
-                        "length_sample": 0.01,
-                        "angI_deg": 2.5,
-                        "angD_deg": 2.5,
-                        "n_integral_points": 10,
-                    },
-                    "absorption": {"absorption_coefficient": 100000.0},
-                    "si_psd": {"si_psd_window_bounds": None},
-                    "receiver_slit": {"slit_width": 5.5e-05},
-                    "tube_tails": {
-                        "main_width": 0.0002,
-                        "tail_left": -0.001,
-                        "tail_right": 0.001,
-                        "tail_intens": 0.001,
-                    },
-                },
-            )
+                lines = []
+                for key, value in powder_model.pdiff[0].data.items():
+                    if value["active"]:
+                        lines.append([value["ang"], value["r"]])
+                lines_list.append(lines)
 
-            # powder_model = xu.simpack.PowderModel(powder, I0=100,) # with default parameters
-            # print(powder_model.pdiff[0].settings)
+                # lines_list = [None] * (5 if not test_crystallite_sizes else 6)
 
-            xs = np.linspace(
-                angle_min, angle_max, angle_n
-            )  # simulate a rather large range, we can still later use a smaller range for training
+                powder_model.close()
 
-            diffractogram = powder_model.simulate(
-                xs, mode="local"
-            )  # this also includes the Lorentzian + polarization correction
+                diffractograms.append(diffractogram)
 
-            # diffractogram = powder_model.simulate(
-            #    xs
-            # )  # this also includes the Lorentzian + polarization correction
+                gc.collect()
 
-            lines = []
-            for key, value in powder_model.pdiff[0].data.items():
-                if value["active"]:
-                    lines.append([value["ang"], value["r"]])
-            lines_list.append(lines)
+            else:  # pymatgen
 
-            # lines_list = [None] * (5 if not test_crystallite_sizes else 6)
+                for i in range(0, 5 if not test_crystallite_sizes else 6):
 
-            powder_model.close()
+                    if not test_crystallite_sizes:
+                        size_gauss = random.uniform(
+                            xrayutil_crystallite_size_gauss_min,
+                            xrayutil_crystallite_size_gauss_max,
+                        )
+                        size_lor = random.uniform(
+                            xrayutil_crystallite_size_lor_min,
+                            xrayutil_crystallite_size_lor_max,
+                        )
 
-            diffractograms.append(diffractogram)
+                    else:
 
-            gc.collect()
+                        # For comparing the different crystallite sizes
+                        # if i == 0:
+                        #    size_gauss = paymatgen_crystallite_size_gauss_min
+                        # elif i == 2:
+                        #    size_gauss = paymatgen_crystallite_size_gauss_max
+
+                        broadener = BroadGen(
+                            min_domain_size=paymatgen_crystallite_size_gauss_min,
+                            max_domain_size=paymatgen_crystallite_size_gauss_max,
+                            min_angle=angle_min,
+                            max_angle=angle_max,
+                        )
+
+                    broadener.broadened_spectrum()
+
+                    # TODO: Also output the None * 5 stuff
 
     except BaseException as ex:
 

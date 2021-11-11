@@ -29,7 +29,7 @@ class BroadGen(object):
         min_domain_size=1,
         max_domain_size=100,
         min_angle=10.0,
-        max_angle=80.0,
+        max_angle=90.0,
     ):
         """
         Args:
@@ -41,7 +41,10 @@ class BroadGen(object):
         """
         self.calculator = xrd.XRDCalculator()
         self.struc = struc
-        self.possible_domains = np.linspace(min_domain_size, max_domain_size, 100)
+
+        self.min_domain_size = min_domain_size
+        self.max_domain_size = max_domain_size
+
         self.min_angle = min_angle
         self.max_angle = max_angle
         self.pattern = self.calculator.get_pattern(
@@ -80,7 +83,7 @@ class BroadGen(object):
         return sigma ** 2
 
     @property
-    def broadened_spectrum(self):
+    def broadened_spectrum(self, domain_size=None):
 
         angles = self.angles
         intensities = self.intensities
@@ -94,9 +97,11 @@ class BroadGen(object):
             idx = np.argmin(np.abs(ang - steps))
             signals[i, idx] = intensities[i]
 
-        # Convolute every row with unique kernel
-        # Iterate over rows; not vectorizable, changing kernel for every row
-        domain_size = random.choice(self.possible_domains)
+        if domain_size is None:
+            # Convolute every row with unique kernel
+            # Iterate over rows; not vectorizable, changing kernel for every row
+            domain_size = random.uniform(self.min_domain_size, self.max_domain_size)
+
         step_size = (self.max_angle - self.min_angle) / 4501
         for i in range(signals.shape[0]):
             row = signals[i, :]
