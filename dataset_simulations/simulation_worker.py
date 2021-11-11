@@ -149,14 +149,13 @@ def simulate_crystal(
             #    xs
             # )  # this also includes the Lorentzian + polarization correction
 
-            """
             lines = []
             for key, value in powder_model.pdiff[0].data.items():
                 if value["active"]:
                     lines.append([value["ang"], value["r"]])
             lines_list.append(lines)
-            """
-            lines_list = [None] * (5 if not test_crystallite_sizes else 6)
+
+            # lines_list = [None] * (5 if not test_crystallite_sizes else 6)
 
             powder_model.close()
 
@@ -196,26 +195,37 @@ if __name__ == "__main__":
 
     for file in files_to_process:
 
-        with lzma.open(file, "rb") as read_file:
-            additional = pickle.load(read_file)
+        id_str = os.path.basename(file).replace("crystals_", "").replace(".npy", "")
 
-        sim_crystals = additional[0]
-        sim_labels = additional[1]
-        sim_metas = additional[2]
-        sim_patterns = additional[3]
-        sim_variations = additional[4]
-        sim_lines_list = additional[5]
+        sim_crystals = np.load(file)
+        sim_metas = np.load(
+            os.path.join(os.path.dirname(file), "metas_" + id_str + ".npy",)
+        )  # just for printing the id when errors occurr
+
+        sim_patterns_filepath = os.path.join(
+            os.path.dirname(file), "patterns_" + id_str + ".npy",
+        )
+        sim_patterns = np.load(sim_patterns_filepath)
+
+        sim_variations_filepath = os.path.join(
+            os.path.dirname(file), "variations_" + id_str + ".npy",
+        )
+        sim_variations = np.load(sim_variations_filepath)
+
+        sim_lines_list_filepath = os.path.join(
+            os.path.dirname(file), "lines_list_" + id_str + ".npy",
+        )
+        sim_lines_list = np.load(sim_lines_list_filepath)
 
         save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10) + 1)
 
         for i, pattern in enumerate(sim_patterns):
 
-            print(i)
-
             counter += 1
 
-            with open(status_file, "w") as write_file:
-                write_file.write(str(counter))
+            if (i % 5) == 0:
+                with open(status_file, "w") as write_file:
+                    write_file.write(str(counter))
 
             if not len(pattern) == 0 and not start_from_scratch:  # already processed
                 continue
@@ -246,17 +256,8 @@ if __name__ == "__main__":
                     exit()
 
             if i in save_points:
-                with lzma.open(file, "wb") as pickle_file:
-                    pickle.dump(
-                        (
-                            sim_crystals,
-                            sim_labels,
-                            sim_metas,
-                            sim_patterns,
-                            sim_variations,
-                            sim_lines_list,
-                        ),
-                        pickle_file,
-                    )
+                np.save(sim_patterns, sim_patterns_filepath)
+                np.save(sim_variations, sim_variations_filepath)
+                np.save(sim_lines_list, sim_lines_list_filepath)
 
             gc.collect()
