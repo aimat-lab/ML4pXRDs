@@ -146,7 +146,15 @@ class Simulation:
             total = 0
             for i, status_file in enumerate(status_files):
                 with open(status_file, "r") as file:
-                    N = int(file.readline())
+
+                    content = file.readline()
+
+                    try:
+                        N = int(content)
+                    except:
+                        N = 0
+                        print(f"Was not able to access status file of worker {i}")
+
                 total += N
                 print(f"Worker {i}: {N} of {crystals_per_process[i]}")
             print(f"Total: {total} of {len(self.sim_crystals)}", flush=True)
