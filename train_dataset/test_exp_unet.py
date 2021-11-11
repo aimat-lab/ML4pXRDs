@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import interpolate as ip
 from UNet_1DCNN import UNet
-import pickle
+import tensorflow.keras as keras
 
 
 def load_experimental_data(mode="classification"):
@@ -46,9 +46,7 @@ if __name__ == "__main__":
     pattern_x = pattern_x[start_index : end_index + 1]
     N = len(pattern_x)
 
-    my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
-    model = my_unet.UNet()
-    model.load_weights("unet/removal_cps/weights25")
+    model = keras.models.load_model("unet/" + "removal" + "_final")
 
     """
     with open("unet/removal_cps/scaler", "rb") as file:
@@ -86,9 +84,9 @@ if __name__ == "__main__":
             pattern_x, corrected[0, :, 0], label="Corrected via U-Net",
         )
 
-        # plt.plot(
-        #    pattern_x, ys[0, :, 0] - corrected[0, :, 0], label="Background and noise"
-        # )
+        plt.plot(
+            pattern_x, ys[0, :, 0] - corrected[0, :, 0], label="Background and noise"
+        )
 
         plt.legend()
         plt.show()

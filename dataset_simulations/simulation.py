@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as pl
 import time
 import math
 import os
@@ -7,7 +6,6 @@ import pandas as pd
 from glob import glob
 import pickle
 import random
-import lzma
 from datetime import datetime
 from subprocess import Popen
 from math import ceil
@@ -15,11 +13,10 @@ import subprocess
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 
-# num_files = 140
-# num_processes = 70
-
 num_files = 16
 num_processes = 8
+
+simulation_software = "xrayutilities"  # also possible: pymatgen
 
 angle_min = 0
 angle_max = 90
@@ -49,8 +46,8 @@ class Simulation:
         )  # for each crystal, the simulated patterns; this can be multiple, depending on sim_variations
         self.sim_variations = []  # things like crystallite size, etc.
         self.sim_lines_list = []
-        self.output_files = []
-        self.output_files_Ns = []
+        self.crystal_files = []
+        self.crystal_files_Ns = []
 
     def simulate_all(self, test_crystallite_sizes=False, start_from_scratch=False):
 
@@ -58,7 +55,7 @@ class Simulation:
 
         os.system(f"mkdir -p {self.output_dir}")
 
-        for output_file in self.output_files:
+        for output_file in self.crystal_files:
             os.system(f"rm {output_file}")
         self.save()
 
@@ -67,7 +64,7 @@ class Simulation:
             f"Simulating {len(self.sim_crystals)} structures with {num_processes} workers and batch size {batch_size}."
         )
 
-        N_files_to_process = len(self.output_files)
+        N_files_to_process = len(self.crystal_files)
         N_files_per_process = ceil(N_files_to_process / num_processes)
         handles = []
         status_files = []
@@ -77,20 +74,20 @@ class Simulation:
         for i in range(0, num_processes):
 
             if (i + 1) * N_files_per_process < N_files_to_process:
-                files_of_process = self.output_files[
+                files_of_process = self.crystal_files[
                     i * N_files_per_process : (i + 1) * N_files_per_process
                 ]
                 crystals_per_process.append(
                     np.sum(
-                        self.output_files_Ns[
+                        self.crystal_files_Ns[
                             i * N_files_per_process : (i + 1) * N_files_per_process
                         ]
                     )
                 )
             else:
-                files_of_process = self.output_files[i * N_files_per_process :]
+                files_of_process = self.crystal_files[i * N_files_per_process :]
                 crystals_per_process.append(
-                    np.sum(self.output_files_Ns[i * N_files_per_process :])
+                    np.sum(self.crystal_files_Ns[i * N_files_per_process :])
                 )
 
             status_file_of_process = os.path.join(
@@ -108,6 +105,7 @@ class Simulation:
                     status_file_of_process,
                     "True" if start_from_scratch else "False",
                     "True" if test_crystallite_sizes else "False",
+                    simulation_software,
                     *files_of_process,
                 ],
                 stdout=open(log_file, "w"),
@@ -146,7 +144,15 @@ class Simulation:
             total = 0
             for i, status_file in enumerate(status_files):
                 with open(status_file, "r") as file:
-                    N = int(file.readline())
+
+                    content = file.readline()
+
+                    try:
+                        N = int(content)
+                    except:
+                        N = 0
+                        print(f"Was not able to access status file of worker {i}")
+
                 total += N
                 print(f"Worker {i}: {N} of {crystals_per_process[i]}")
             print(f"Total: {total} of {len(self.sim_crystals)}", flush=True)
@@ -261,6 +267,9 @@ class Simulation:
 
     def save(self, i=None):  # i specifies which batch to save
 
+        data_dir = os.path.join(self.output_dir, "data")
+        os.system("mkdir -p " + data_dir)
+
         batch_size = ceil(len(self.sim_crystals) / num_files)
 
         if not os.path.exists(self.output_dir):
@@ -275,61 +284,111 @@ class Simulation:
                 end = len(self.sim_crystals)
         else:  # save all
 
-            self.output_files_Ns = []
-            self.output_files = []
+            self.crystal_files_Ns = []
+            self.crystal_files = []
 
             for j in range(0, math.ceil(len(self.sim_crystals) / batch_size)):
-                self.output_files.append(
-                    os.path.join(self.output_dir, f"data_{j}.lzma")
-                )
+                self.crystal_files.append(os.path.join(data_dir, f"crystals_{j}.npy"))
                 self.save(i=j)
 
             return
 
-        self.output_files_Ns.append(end - start)
+        self.crystal_files_Ns.append(end - start)
 
-        pickle_file = os.path.join(self.output_dir, f"data_{i}.lzma")
-
-        with lzma.open(pickle_file, "wb") as file:
-            pickle.dump(
-                (
-                    self.sim_crystals[start:end],
-                    self.sim_labels[start:end],
-                    self.sim_metas[start:end],
-                    self.sim_patterns[start:end],
-                    self.sim_variations[start:end],
-                    self.sim_lines_list[start:end],
-                ),
-                file,
-            )
+        np.save(
+            self.sim_crystals[start:end], os.path.join(data_dir, f"crystals_{i}.npy")
+        )
+        np.save(self.sim_labels[start:end], os.path.join(data_dir, f"labels_{i}.npy"))
+        np.save(self.sim_metas[start:end], os.path.join(data_dir, f"metas_{i}.npy"))
+        np.save(
+            self.sim_patterns[start:end], os.path.join(data_dir, f"patterns_{i}.npy")
+        )
+        np.save(
+            self.sim_variations[start:end],
+            os.path.join(data_dir, f"variations_{i}.npy"),
+        )
+        np.save(
+            self.sim_lines_list[start:end],
+            os.path.join(data_dir, f"lines_list_{i}.npy"),
+        )
 
     def load(self):
 
         self.reset_simulation_status()
 
-        pickle_files = glob(os.path.join(self.output_dir, f"data_*.lzma"))
-        pickle_files = sorted(
-            pickle_files,
+        data_dir = os.path.join(self.output_dir, "data")
+
+        crystals_files = glob(os.path.join(data_dir, "crystals_*.npy"))
+        crystals_files = sorted(
+            crystals_files,
             key=lambda x: int(
-                os.path.basename(x).replace("data_", "").replace(".lzma", "")
+                os.path.basename(x).replace("crystals_", "").replace(".npy", "")
             ),
         )
 
-        for pickle_file in pickle_files:
-            with lzma.open(pickle_file, "rb") as file:
-                additional = pickle.load(file)
-                self.sim_crystals.extend(additional[0])
-                self.sim_labels.extend(additional[1])
-                self.sim_metas.extend(additional[2])
-                self.sim_patterns.extend(additional[3])
-                self.sim_variations.extend(additional[4])
-                self.sim_lines_list.extend(additional[5])
+        labels_files = glob(os.path.join(data_dir, "labels_*.npy"))
+        labels_files = sorted(
+            labels_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("labels_", "").replace(".npy", "")
+            ),
+        )
+
+        metas_files = glob(os.path.join(data_dir, "metas_*.npy"))
+        metas_files = sorted(
+            metas_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("metas_", "").replace(".npy", "")
+            ),
+        )
+
+        patterns_files = glob(os.path.join(data_dir, "patterns_*.npy"))
+        patterns_files = sorted(
+            patterns_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("patterns_", "").replace(".npy", "")
+            ),
+        )
+
+        variations_files = glob(os.path.join(data_dir, "variations_*.npy"))
+        variations_files = sorted(
+            variations_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("variations_", "").replace(".npy", "")
+            ),
+        )
+
+        lines_list_files = glob(os.path.join(data_dir, "lines_list_*.npy"))
+        lines_list_files = sorted(
+            lines_list_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("lines_list_", "").replace(".npy", "")
+            ),
+        )
+
+        for file in crystals_files:
+            self.sim_crystals.extend(np.load(file))
+
+        for file in labels_files:
+            self.sim_labels.extend(np.load(file))
+
+        for file in metas_files:
+            self.sim_metas.extend(np.load(file))
+
+        for file in patterns_files:
+            self.sim_patterns.extend(np.load(file))
+
+        for file in variations_files:
+            self.sim_variations.extend(np.load(file))
+
+        for file in lines_list_files:
+            self.sim_lines_list.extend(np.load(file))
 
     def get_space_group_number(self, id):
 
         # TODO: Check if symmetry information is correct using https://spglib.github.io/spglib/python-spglib.html
         # TODO: Pymatgen seems to be doing this already!
-        # TODO: Bring them both together!!!
+        # TODO: Bring them both together!
 
         # Important: We don't really care about the bravais lattice type, here!
 

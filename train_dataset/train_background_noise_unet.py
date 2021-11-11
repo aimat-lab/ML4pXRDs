@@ -1,9 +1,6 @@
-import pickle
 from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 import os
 import sys
