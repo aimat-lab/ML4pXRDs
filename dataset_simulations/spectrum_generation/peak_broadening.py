@@ -9,11 +9,9 @@ DOI: 10.1021/acs.chemmater.1c01071
 """
 
 
-import pymatgen as mg
 from pymatgen.analysis.diffraction import xrd
 from scipy.ndimage import gaussian_filter1d
 import random
-import math
 import numpy as np
 
 
@@ -116,32 +114,6 @@ class BroadGen(object):
         signal = np.sum(signals, axis=0)
 
         # Normalize signal
-        norm_signal = 100 * signal / max(signal)
+        norm_signal = signal / max(signal)
 
-        noise = np.random.normal(0, 0.25, 4501)
-        noisy_signal = norm_signal + noise
-
-        # Formatted for CNN
-        form_signal = [[val] for val in noisy_signal]
-
-        return form_signal
-
-
-def main(
-    struc,
-    num_broadened,
-    min_domain_size,
-    max_domain_size,
-    min_angle=10.0,
-    max_angle=80.0,
-):
-
-    broad_generator = BroadGen(
-        struc, min_domain_size, max_domain_size, min_angle, max_angle
-    )
-
-    broadened_patterns = [
-        broad_generator.broadened_spectrum for i in range(num_broadened)
-    ]
-
-    return broadened_patterns
+        return norm_signal, domain_size

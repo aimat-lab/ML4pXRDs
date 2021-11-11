@@ -38,6 +38,11 @@ def generate_background_and_noise():
     base_noise_level_max = 0.05
     base_noise_level_min = 0.01
     noise_level = np.random.uniform(low=base_noise_level_min, high=base_noise_level_max)
+
+    # TODO: here is how the probability paper generates noise:
+    # norm_signal = 100 * signal / max(signal)
+    # noise = np.random.normal(0, 0.25, 4501)
+
     ys += np.random.normal(size=N) * noise_level
 
     ys -= np.min(ys)
@@ -123,14 +128,24 @@ def generate_background_and_noise_paper():
     return diffractogram
 
 
-def convert_to_discrete(peak_positions, peak_sizes):
+def convert_to_discrete(peak_positions, peak_sizes, N=N):
     peak_info_disc = np.zeros(N)
     peak_size_disc = np.zeros(N)
 
     for i, peak_pos in enumerate(peak_positions):
         index = np.argwhere(pattern_x < peak_pos)[-1]
-        peak_info_disc[index] += 1
-        peak_size_disc[index] += peak_sizes[i]
+
+        while True:
+
+            if peak_info_disc[index] == 0:
+
+                peak_info_disc[index] += 1
+                peak_size_disc[index] += peak_sizes[i]
+
+            else:
+
+                print("Two or more peaks in the same spot!")
+                index += 1  # move peak to the right
 
     return peak_info_disc, peak_size_disc
 

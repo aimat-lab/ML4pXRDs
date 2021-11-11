@@ -9,6 +9,7 @@ import gc
 import functools
 import os
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
+from train_dataset.generate_background_noise_utils import convert_to_discrete
 
 sys.path.append("../")
 
@@ -28,15 +29,17 @@ angle_n = 9001
 
 
 def simulate_crystal(
-    crystal, test_crystallite_sizes, simulation_software
+    crystal, test_crystallite_sizes, simulation_software, id
 ):  # keep this out of the class context to ensure thread safety
     # TODO: maybe add option for zero-point shifts
 
     try:
 
         diffractograms = []
-        lines_list = []
+        lines_lists = []
         variations = []
+        peak_info_discs = []
+        peak_size_discs = []
 
         if simulation_software == "xrayutilities":
 
@@ -157,13 +160,26 @@ def simulate_crystal(
                 #    xs
                 # )  # this also includes the Lorentzian + polarization correction
 
-                lines = []
+                peak_positions = []
+                peak_sizes = []
                 for key, value in powder_model.pdiff[0].data.items():
                     if value["active"]:
-                        lines.append([value["ang"], value["r"]])
-                lines_list.append(lines)
+                        peak_positions.append(value["ang"])
+                        peak_sizes.append(value["r"])
+
+                peak_sizes = np.array(peak_sizes) / np.max(peak_sizes)
+
+                lines = list(zip(peak_positions, peak_sizes))
+                lines_lists.append(lines)
 
                 # lines_list = [None] * (5 if not test_crystallite_sizes else 6)
+
+                peak_info_disc, peak_size_disc = convert_to_discrete(
+                    peak_positions, peak_sizes, N=angle_n
+                )
+
+                peak_info_discs.append(peak_info_disc)
+                peak_size_discs.append(peak_size_disc)
 
                 powder_model.close()
 
@@ -173,36 +189,47 @@ def simulate_crystal(
 
             else:  # pymatgen
 
-                for i in range(0, 5 if not test_crystallite_sizes else 6):
+                broadener = BroadGen(
+                    min_domain_size=paymatgen_crystallite_size_gauss_min,
+                    max_domain_size=paymatgen_crystallite_size_gauss_max,
+                    min_angle=angle_min,
+                    max_angle=angle_max,
+                )
+
+                for i in range(0, 5 if not test_crystallite_sizes else 2):
 
                     if not test_crystallite_sizes:
-                        size_gauss = random.uniform(
-                            xrayutil_crystallite_size_gauss_min,
-                            xrayutil_crystallite_size_gauss_max,
-                        )
-                        size_lor = random.uniform(
-                            xrayutil_crystallite_size_lor_min,
-                            xrayutil_crystallite_size_lor_max,
-                        )
+
+                        diffractogram, domain_size = broadener.broadened_spectrum()
 
                     else:
 
                         # For comparing the different crystallite sizes
-                        # if i == 0:
-                        #    size_gauss = paymatgen_crystallite_size_gauss_min
-                        # elif i == 2:
-                        #    size_gauss = paymatgen_crystallite_size_gauss_max
+                        if i == 0:
+                            size_gauss = paymatgen_crystallite_size_gauss_min
+                        elif i == 1:
+                            size_gauss = paymatgen_crystallite_size_gauss_max
 
-                        broadener = BroadGen(
-                            min_domain_size=paymatgen_crystallite_size_gauss_min,
-                            max_domain_size=paymatgen_crystallite_size_gauss_max,
-                            min_angle=angle_min,
-                            max_angle=angle_max,
+                        (diffractogram, domain_size,) = broadener.broadened_spectrum(
+                            domain_size=size_gauss
                         )
 
-                    broadener.broadened_spectrum()
+                    peak_positions = broadener.angles
+                    peak_sizes = np.array(broadener.intensities) / np.max(
+                        broadener.intensities
+                    )
+                    peak_info_disc, peak_size_disc = convert_to_discrete(
+                        peak_positions, peak_sizes, N=angle_n
+                    )
+                    lines_list = list(zip(peak_positions, peak_sizes))
 
-                    # TODO: Also output the None * 5 stuff
+                    peak_info_discs.append(peak_info_disc)
+                    peak_size_discs.append(peak_size_disc)
+                    diffractograms.append(diffractogram)
+                    variations.append(domain_size)
+                    lines_lists.append(lines_list)
+
+                    gc.collect()
 
     except BaseException as ex:
 
@@ -211,9 +238,26 @@ def simulate_crystal(
         except:
             pass
 
-        return (None, ex.__str__(), None)
+        print(f"Encountered error for cif id {id}.")
+        print(ex)
 
-    return (diffractograms, variations, lines_list)
+        diffractograms = [None] * (
+            5
+            if not test_crystallite_sizes
+            else (6 if simulation_software == "xrayutilities" else 2)
+        )
+        variations = [None] * (
+            5
+            if not test_crystallite_sizes
+            else (6 if simulation_software == "xrayutilities" else 2)
+        )
+        lines_lists = [None] * (
+            5
+            if not test_crystallite_sizes
+            else (6 if simulation_software == "xrayutilities" else 2)
+        )
+
+    return (diffractograms, variations, lines_lists)
 
 
 if __name__ == "__main__":
@@ -254,10 +298,10 @@ if __name__ == "__main__":
         )
         sim_variations = np.load(sim_variations_filepath)
 
-        sim_lines_list_filepath = os.path.join(
-            os.path.dirname(file), "lines_list_" + id_str + ".npy",
+        sim_lines_lists_filepath = os.path.join(
+            os.path.dirname(file), "lines_lists_" + id_str + ".npy",
         )
-        sim_lines_list = np.load(sim_lines_list_filepath)
+        sim_lines_lists = np.load(sim_lines_lists_filepath)
 
         save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10) + 1)
 
@@ -275,24 +319,16 @@ if __name__ == "__main__":
             crystal = sim_crystals[i]
 
             result = simulate_crystal(
-                crystal, test_crystallite_sizes, simulation_software
+                crystal, test_crystallite_sizes, simulation_software, sim_metas[i]
             )
 
-            if result[0] is not None:
-                diffractograms, variatons, lines_list = result
-            else:
-                sim_variations[i] = [None] * (5 if not test_crystallite_sizes else 6)
-                sim_patterns[i] = [None] * (5 if not test_crystallite_sizes else 6)
-                sim_lines_list[i] = [None] * (5 if not test_crystallite_sizes else 6)
+            diffractograms, variatons, lines_lists = result
 
-                print(f"Encountered error for cif id {sim_metas[i]}.")
-                print(result[1])
-
-                continue
+            peak_info_disc, peak_size_disc = convert_to_discrete()
 
             sim_patterns[i] = diffractograms
             sim_variations[i] = variatons
-            sim_lines_list[i] = lines_list
+            sim_lines_lists[i] = lines_lists
 
             if (i % 5) == 0:
                 if os.path.exists(os.path.join(os.path.dirname(status_file), "STOP")):
@@ -302,6 +338,6 @@ if __name__ == "__main__":
             if i in save_points:
                 np.save(sim_patterns, sim_patterns_filepath)
                 np.save(sim_variations, sim_variations_filepath)
-                np.save(sim_lines_list, sim_lines_list_filepath)
+                np.save(sim_lines_lists, sim_lines_lists_filepath)
 
             gc.collect()
