@@ -16,6 +16,8 @@ from sklearn.utils import shuffle
 num_files = 16
 num_processes = 8
 
+simulation_software = "xrayutilities"  # also possible: pymatgen
+
 angle_min = 0
 angle_max = 90
 angle_n = 9001
@@ -103,6 +105,7 @@ class Simulation:
                     status_file_of_process,
                     "True" if start_from_scratch else "False",
                     "True" if test_crystallite_sizes else "False",
+                    simulation_software,
                     *files_of_process,
                 ],
                 stdout=open(log_file, "w"),

@@ -11,7 +11,6 @@ import gc
 import functools
 import os
 
-simulation_software = "xrayutilities"  # also possible: pymatgen
 
 crystallite_size_gauss_min = 15 * 10 ** -9
 crystallite_size_gauss_max = 50 * 10 ** -9
@@ -24,7 +23,7 @@ angle_n = 9001
 
 
 def simulate_crystal(
-    crystal, test_crystallite_sizes,
+    crystal, test_crystallite_sizes, simulation_software
 ):  # keep this out of the class context to ensure thread safety
     # TODO: maybe add option for zero-point shifts
 
@@ -186,7 +185,8 @@ if __name__ == "__main__":
     status_file = sys.argv[1]
     start_from_scratch = True if sys.argv[2] == "True" else False
     test_crystallite_sizes = True if sys.argv[3] == "True" else False
-    files_to_process = sys.argv[4:]
+    simulation_software = sys.arv[4]
+    files_to_process = sys.argv[5:]
 
     with open(status_file, "w") as file:
         file.write("0")
@@ -232,7 +232,9 @@ if __name__ == "__main__":
 
             crystal = sim_crystals[i]
 
-            result = simulate_crystal(crystal, test_crystallite_sizes)
+            result = simulate_crystal(
+                crystal, test_crystallite_sizes, simulation_software
+            )
 
             if result[0] is not None:
                 diffractograms, variatons, lines_list = result
