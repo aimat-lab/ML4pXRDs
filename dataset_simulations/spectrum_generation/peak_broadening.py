@@ -81,12 +81,12 @@ class BroadGen(object):
         return sigma ** 2
 
     @property
-    def broadened_spectrum(self, domain_size=None):
+    def broadened_spectrum(self, domain_size=None, N=4008):
 
         angles = self.angles
         intensities = self.intensities
 
-        steps = np.linspace(self.min_angle, self.max_angle, 4501)
+        steps = np.linspace(self.min_angle, self.max_angle, N)
 
         signals = np.zeros([len(angles), steps.shape[0]])
 
@@ -100,7 +100,7 @@ class BroadGen(object):
             # Iterate over rows; not vectorizable, changing kernel for every row
             domain_size = random.uniform(self.min_domain_size, self.max_domain_size)
 
-        step_size = (self.max_angle - self.min_angle) / 4501
+        step_size = (self.max_angle - self.min_angle) / N
         for i in range(signals.shape[0]):
             row = signals[i, :]
             ang = steps[np.argmax(row)]

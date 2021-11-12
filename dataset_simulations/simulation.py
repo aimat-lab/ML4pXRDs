@@ -20,7 +20,7 @@ simulation_software = "xrayutilities"  # also possible: pymatgen
 
 angle_min = 0
 angle_max = 90
-angle_n = 9001
+angle_n = 9018
 
 
 class Simulation:
@@ -45,7 +45,9 @@ class Simulation:
             []
         )  # for each crystal, the simulated patterns; this can be multiple, depending on sim_variations
         self.sim_variations = []  # things like crystallite size, etc.
-        self.sim_lines_lists = []
+        self.sim_angles = []
+        self.sim_intensities = []
+
         self.crystal_files = []
         self.crystal_files_Ns = []
 
@@ -308,8 +310,11 @@ class Simulation:
             os.path.join(data_dir, f"variations_{i}.npy"),
         )
         np.save(
-            self.sim_lines_lists[start:end],
-            os.path.join(data_dir, f"lines_list_{i}.npy"),
+            self.sim_angles[start:end], os.path.join(data_dir, f"angles_{i}.npy"),
+        )
+        np.save(
+            self.sim_intensities[start:end],
+            os.path.join(data_dir, f"intensities_{i}.npy"),
         )
 
     def load(self):
@@ -358,11 +363,19 @@ class Simulation:
             ),
         )
 
-        lines_list_files = glob(os.path.join(data_dir, "lines_list_*.npy"))
-        lines_list_files = sorted(
-            lines_list_files,
+        angles_files = glob(os.path.join(data_dir, "angles_*.npy"))
+        angles_files = sorted(
+            angles_files,
             key=lambda x: int(
-                os.path.basename(x).replace("lines_list_", "").replace(".npy", "")
+                os.path.basename(x).replace("angles_", "").replace(".npy", "")
+            ),
+        )
+
+        intensities_files = glob(os.path.join(data_dir, "intensities_*.npy"))
+        intensities_files = sorted(
+            intensities_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("intensities_", "").replace(".npy", "")
             ),
         )
 
@@ -381,8 +394,11 @@ class Simulation:
         for file in variations_files:
             self.sim_variations.extend(np.load(file))
 
-        for file in lines_list_files:
-            self.sim_lines_lists.extend(np.load(file))
+        for file in angles_files:
+            self.sim_angles.extend(np.load(file))
+
+        for file in intensities_files:
+            self.sim_intensities.extend(np.load(file))
 
     def get_space_group_number(self, id):
 
