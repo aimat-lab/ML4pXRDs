@@ -133,7 +133,7 @@ def convert_to_discrete(peak_positions, peak_sizes, N=N):
     peak_size_disc = np.zeros(N)
 
     for i, peak_pos in enumerate(peak_positions):
-        index = np.argwhere(pattern_x < peak_pos)[-1]
+        index = np.argwhere(pattern_x < peak_pos)[-1][0]
 
         while True:
 
@@ -141,6 +141,7 @@ def convert_to_discrete(peak_positions, peak_sizes, N=N):
 
                 peak_info_disc[index] += 1
                 peak_size_disc[index] += peak_sizes[i]
+                break
 
             else:
 

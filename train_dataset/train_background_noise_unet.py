@@ -8,8 +8,8 @@ import sys
 sys.path.append("../")
 import generate_background_noise_utils
 
-mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+mode = "info"  # possible: "info", "removal"
+training_mode = "test"  # possible: train and test
 
 N = 9018
 pattern_x = np.linspace(0, 90, N)
