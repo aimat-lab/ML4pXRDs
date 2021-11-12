@@ -12,6 +12,8 @@ from math import ceil
 import subprocess
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
+import xrayutilities as xu
+from pymatgen.io.cif import CifParser
 
 num_files = 16
 num_processes = 8
@@ -539,3 +541,35 @@ class Simulation:
                     if (counter % together) == 0:
                         plt.legend()
                         plt.show()
+
+    def add_crystal_to_be_simulated(self, path_to_crystal, labels, metas):
+
+        try:
+
+            if simulation_software == "xrayutilities":
+                crystal = xu.materials.Crystal.fromCIF(path_to_crystal)
+            else:
+                parser = CifParser(path_to_crystal)
+                crystals = parser.get_structures()
+                crystal = crystals[0]
+
+        except Exception as error:
+
+            print(
+                "Error encountered adding cif with id {}, skipping structure:".format(
+                    metas[0]
+                )
+            )
+            print(error)
+            return None
+
+        self.sim_crystals.append(crystal)
+        self.sim_labels.append(labels)
+        self.sim_metas.append(metas)
+
+        self.sim_patterns.append([])
+        self.sim_variations.append([])
+        self.sim_angles.append([])
+        self.sim_intensities.append([])
+
+        return 1

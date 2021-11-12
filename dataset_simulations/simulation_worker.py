@@ -183,6 +183,7 @@ def simulate_crystal(
             else:  # pymatgen
 
                 broadener = BroadGen(
+                    crystal,
                     min_domain_size=paymatgen_crystallite_size_gauss_min,
                     max_domain_size=paymatgen_crystallite_size_gauss_max,
                     min_angle=angle_min,

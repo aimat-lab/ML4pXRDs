@@ -2,9 +2,7 @@ import sys
 import os
 
 sys.path.append("../")
-
 from dataset_simulations.simulation import Simulation
-import xrayutilities as xu
 
 # Use a very narrow selection of ICSD entries
 
@@ -46,15 +44,7 @@ class NarrowSimulation(Simulation):
             else:
                 continue
 
-            crystal = xu.materials.Crystal.fromCIF(path)
-
-            self.sim_crystals.append(crystal)
-            self.sim_labels.append([label])
-            self.sim_metas.append([self.icsd_ids[i]])
-
-            self.sim_patterns.append([])
-            self.sim_variations.append([])
-            self.sim_lines_list.append([])  # this will also be filled by the simulation
+            self.add_crystal_to_be_simulated(path, [label], [self.icsd_ids[i]])
 
         print(f"Loaded {len(self.sim_crystals)} crystals")
         print(f"Fluorite#CaF2: {counter_0}")
@@ -76,10 +66,14 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    if True:  # toggle
+    if False:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
+
+    simulation.save()
+
+    exit()
 
     simulation.simulate_all(start_from_scratch=True)
 
