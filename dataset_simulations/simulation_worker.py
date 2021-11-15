@@ -8,10 +8,10 @@ import numpy as np
 import gc
 import functools
 import os
-from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
-from train_dataset.generate_background_noise_utils import convert_to_discrete
 
 sys.path.append("../")
+from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
+
 
 # xrayutilities
 xrayutil_crystallite_size_gauss_min = 15 * 10 ** -9
@@ -180,49 +180,48 @@ def simulate_crystal(
 
                 gc.collect()
 
-            else:  # pymatgen
+        else:  # pymatgen
 
-                broadener = BroadGen(
-                    crystal,
-                    min_domain_size=paymatgen_crystallite_size_gauss_min,
-                    max_domain_size=paymatgen_crystallite_size_gauss_max,
-                    min_angle=angle_min,
-                    max_angle=angle_max,
-                )
+            broadener = BroadGen(
+                crystal,
+                min_domain_size=paymatgen_crystallite_size_gauss_min,
+                max_domain_size=paymatgen_crystallite_size_gauss_max,
+                min_angle=angle_min,
+                max_angle=angle_max,
+            )
 
-                for i in range(0, 5 if not test_crystallite_sizes else 2):
+            for i in range(0, 5 if not test_crystallite_sizes else 2):
 
-                    if not test_crystallite_sizes:
+                if not test_crystallite_sizes:
 
-                        diffractogram, domain_size = broadener.broadened_spectrum(
-                            N=angle_n
-                        )
+                    diffractogram, domain_size = broadener.broadened_spectrum(N=angle_n)
 
-                    else:
+                else:
 
-                        # For comparing the different crystallite sizes
-                        if i == 0:
-                            size_gauss = paymatgen_crystallite_size_gauss_min
-                        elif i == 1:
-                            size_gauss = paymatgen_crystallite_size_gauss_max
-
-                        (diffractogram, domain_size,) = broadener.broadened_spectrum(
-                            domain_size=size_gauss, N=angle_n
-                        )
-
+                    # For comparing the different crystallite sizes
                     if i == 0:
-                        peak_positions = broadener.angles
-                        peak_sizes = np.array(broadener.intensities) / np.max(
-                            broadener.intensities
-                        )
+                        size_gauss = paymatgen_crystallite_size_gauss_min
+                    elif i == 1:
+                        size_gauss = paymatgen_crystallite_size_gauss_max
 
-                        angles = peak_positions
-                        intensities = peak_sizes
+                    (
+                        diffractogram,
+                        domain_size,
+                    ) = broadener.broadened_spectrum(domain_size=size_gauss, N=angle_n)
 
-                    diffractograms.append(diffractogram)
-                    variations.append([domain_size])
+                if i == 0:
+                    peak_positions = broadener.angles
+                    peak_sizes = np.array(broadener.intensities) / np.max(
+                        broadener.intensities
+                    )
 
-                    gc.collect()
+                    angles = peak_positions
+                    intensities = peak_sizes
+
+                diffractograms.append(diffractogram)
+                variations.append([domain_size])
+
+                gc.collect()
 
     except BaseException as ex:
 
@@ -261,7 +260,7 @@ if __name__ == "__main__":
     status_file = sys.argv[1]
     start_from_scratch = True if sys.argv[2] == "True" else False
     test_crystallite_sizes = True if sys.argv[3] == "True" else False
-    simulation_software = sys.arv[4]
+    simulation_software = sys.argv[4]
     files_to_process = sys.argv[5:]
 
     with open(status_file, "w") as file:
@@ -273,30 +272,38 @@ if __name__ == "__main__":
 
         id_str = os.path.basename(file).replace("crystals_", "").replace(".npy", "")
 
-        sim_crystals = np.load(file)
+        sim_crystals = np.load(file, allow_pickle=True)
         sim_metas = np.load(
-            os.path.join(os.path.dirname(file), "metas_" + id_str + ".npy",)
+            os.path.join(
+                os.path.dirname(file),
+                "metas_" + id_str + ".npy",
+            ),
+            allow_pickle=True,
         )  # just for printing the id when errors occurr
 
         sim_patterns_filepath = os.path.join(
-            os.path.dirname(file), "patterns_" + id_str + ".npy",
+            os.path.dirname(file),
+            "patterns_" + id_str + ".npy",
         )
-        sim_patterns = np.load(sim_patterns_filepath)
+        sim_patterns = np.load(sim_patterns_filepath, allow_pickle=True)
 
         sim_variations_filepath = os.path.join(
-            os.path.dirname(file), "variations_" + id_str + ".npy",
+            os.path.dirname(file),
+            "variations_" + id_str + ".npy",
         )
-        sim_variations = np.load(sim_variations_filepath)
+        sim_variations = np.load(sim_variations_filepath, allow_pickle=True)
 
         sim_angles_filepath = os.path.join(
-            os.path.dirname(file), "angles_" + id_str + ".npy",
+            os.path.dirname(file),
+            "angles_" + id_str + ".npy",
         )
-        sim_angles = np.load(sim_angles_filepath)
+        sim_angles = np.load(sim_angles_filepath, allow_pickle=True)
 
         sim_intensities_filepath = os.path.join(
-            os.path.dirname(file), "intensities_" + id_str + ".npy",
+            os.path.dirname(file),
+            "intensities_" + id_str + ".npy",
         )
-        sim_intensities = np.load(sim_intensities_filepath)
+        sim_intensities = np.load(sim_intensities_filepath, allow_pickle=True)
 
         save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10) + 1)
 
@@ -308,7 +315,7 @@ if __name__ == "__main__":
                 with open(status_file, "w") as write_file:
                     write_file.write(str(counter))
 
-            if not len(pattern) == 0 and not start_from_scratch:  # already processed
+            if pattern is not None and not start_from_scratch:  # already processed
                 continue
 
             crystal = sim_crystals[i]
@@ -330,9 +337,11 @@ if __name__ == "__main__":
                     exit()
 
             if i in save_points:
-                np.save(sim_patterns, sim_patterns_filepath)
-                np.save(sim_variations, sim_variations_filepath)
-                np.save(sim_angles, sim_angles_filepath)
-                np.save(sim_intensities, sim_intensities_filepath)
+                np.save(sim_patterns_filepath, np.array(sim_patterns, dtype=object))
+                np.save(sim_variations_filepath, np.array(sim_variations, dtype=object))
+                np.save(sim_angles_filepath, np.array(sim_angles, dtype=object))
+                np.save(
+                    sim_intensities_filepath, np.array(sim_intensities, dtype=object)
+                )
 
             gc.collect()

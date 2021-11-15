@@ -18,7 +18,7 @@ from pymatgen.io.cif import CifParser
 num_files = 16
 num_processes = 8
 
-simulation_software = "xrayutilities"  # also possible: pymatgen
+simulation_software = "pymatgen"  # possible: pymatgen and xrayutilities
 
 angle_min = 0
 angle_max = 90
@@ -300,23 +300,32 @@ class Simulation:
         self.crystal_files_Ns.append(end - start)
 
         np.save(
-            self.sim_crystals[start:end], os.path.join(data_dir, f"crystals_{i}.npy")
-        )
-        np.save(self.sim_labels[start:end], os.path.join(data_dir, f"labels_{i}.npy"))
-        np.save(self.sim_metas[start:end], os.path.join(data_dir, f"metas_{i}.npy"))
-        np.save(
-            self.sim_patterns[start:end], os.path.join(data_dir, f"patterns_{i}.npy")
+            os.path.join(data_dir, f"crystals_{i}.npy"),
+            np.array(self.sim_crystals[start:end], dtype=object),
         )
         np.save(
-            self.sim_variations[start:end],
+            os.path.join(data_dir, f"labels_{i}.npy"),
+            np.array(self.sim_labels[start:end], dtype=object),
+        )
+        np.save(
+            os.path.join(data_dir, f"metas_{i}.npy"),
+            np.array(self.sim_metas[start:end], dtype=object),
+        )
+        np.save(
+            os.path.join(data_dir, f"patterns_{i}.npy"),
+            np.array(self.sim_patterns[start:end], dtype=object),
+        )
+        np.save(
             os.path.join(data_dir, f"variations_{i}.npy"),
+            np.array(self.sim_variations[start:end], dtype=object),
         )
         np.save(
-            self.sim_angles[start:end], os.path.join(data_dir, f"angles_{i}.npy"),
+            os.path.join(data_dir, f"angles_{i}.npy"),
+            np.array(self.sim_angles[start:end], dtype=object),
         )
         np.save(
-            self.sim_intensities[start:end],
             os.path.join(data_dir, f"intensities_{i}.npy"),
+            np.array(self.sim_intensities[start:end], dtype=object),
         )
 
     def load(self):
@@ -382,25 +391,25 @@ class Simulation:
         )
 
         for file in crystals_files:
-            self.sim_crystals.extend(np.load(file))
+            self.sim_crystals.extend(np.load(file, allow_pickle=True))
 
         for file in labels_files:
-            self.sim_labels.extend(np.load(file))
+            self.sim_labels.extend(np.load(file, allow_pickle=True))
 
         for file in metas_files:
-            self.sim_metas.extend(np.load(file))
+            self.sim_metas.extend(np.load(file, allow_pickle=True))
 
         for file in patterns_files:
-            self.sim_patterns.extend(np.load(file))
+            self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
         for file in variations_files:
-            self.sim_variations.extend(np.load(file))
+            self.sim_variations.extend(np.load(file, allow_pickle=True))
 
         for file in angles_files:
-            self.sim_angles.extend(np.load(file))
+            self.sim_angles.extend(np.load(file, allow_pickle=True))
 
         for file in intensities_files:
-            self.sim_intensities.extend(np.load(file))
+            self.sim_intensities.extend(np.load(file, allow_pickle=True))
 
     def get_space_group_number(self, id):
 
@@ -533,7 +542,10 @@ class Simulation:
                     lines = np.array(self.sim_lines_lists[i][j])[:, 0] * 2
                     lines = lines[lines < 90]
                     plt.vlines(
-                        lines, 0.8, 1, lw=0.1,
+                        lines,
+                        0.8,
+                        1,
+                        lw=0.1,
                     )
 
                     counter += 1
@@ -567,9 +579,9 @@ class Simulation:
         self.sim_labels.append(labels)
         self.sim_metas.append(metas)
 
-        self.sim_patterns.append([])
-        self.sim_variations.append([])
-        self.sim_angles.append([])
-        self.sim_intensities.append([])
+        self.sim_patterns.append(None)
+        self.sim_variations.append(None)
+        self.sim_angles.append(None)
+        self.sim_intensities.append(None)
 
         return 1
