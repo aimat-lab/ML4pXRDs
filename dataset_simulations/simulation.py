@@ -18,7 +18,7 @@ from pymatgen.io.cif import CifParser
 num_files = 16
 num_processes = 8
 
-simulation_software = "pymatgen"  # possible: pymatgen and xrayutilities
+simulation_software = "xrayutilities"  # possible: pymatgen and xrayutilities
 
 angle_min = 0
 angle_max = 90
