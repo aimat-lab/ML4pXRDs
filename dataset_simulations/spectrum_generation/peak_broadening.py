@@ -9,12 +9,12 @@ DOI: 10.1021/acs.chemmater.1c01071
 """
 
 
-import pymatgen as mg
 from pymatgen.analysis.diffraction import xrd
 from scipy.ndimage import gaussian_filter1d
 import random
-import math
 import numpy as np
+from pymatgen.io.cif import CifParser
+import matplotlib.pyplot as plt
 
 
 class BroadGen(object):
@@ -26,10 +26,11 @@ class BroadGen(object):
     def __init__(
         self,
         struc,
+        wavelength=1.207930,
         min_domain_size=1,
         max_domain_size=100,
         min_angle=10.0,
-        max_angle=80.0,
+        max_angle=90.0,
     ):
         """
         Args:
@@ -39,9 +40,12 @@ class BroadGen(object):
             max_domain_size: largest domain size (in nm) to be sampled,
                 leading to the most narrow peaks
         """
-        self.calculator = xrd.XRDCalculator()
+        self.calculator = xrd.XRDCalculator(wavelength=wavelength)
         self.struc = struc
-        self.possible_domains = np.linspace(min_domain_size, max_domain_size, 100)
+
+        self.min_domain_size = min_domain_size
+        self.max_domain_size = max_domain_size
+
         self.min_angle = min_angle
         self.max_angle = max_angle
         self.pattern = self.calculator.get_pattern(
@@ -79,13 +83,12 @@ class BroadGen(object):
         sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
         return sigma ** 2
 
-    @property
-    def broadened_spectrum(self):
+    def broadened_spectrum(self, domain_size=None, N=4008):
 
         angles = self.angles
         intensities = self.intensities
 
-        steps = np.linspace(self.min_angle, self.max_angle, 4501)
+        steps = np.linspace(self.min_angle, self.max_angle, N)
 
         signals = np.zeros([len(angles), steps.shape[0]])
 
@@ -94,10 +97,12 @@ class BroadGen(object):
             idx = np.argmin(np.abs(ang - steps))
             signals[i, idx] = intensities[i]
 
-        # Convolute every row with unique kernel
-        # Iterate over rows; not vectorizable, changing kernel for every row
-        domain_size = random.choice(self.possible_domains)
-        step_size = (self.max_angle - self.min_angle) / 4501
+        if domain_size is None:
+            # Convolute every row with unique kernel
+            # Iterate over rows; not vectorizable, changing kernel for every row
+            domain_size = random.uniform(self.min_domain_size, self.max_domain_size)
+
+        step_size = (self.max_angle - self.min_angle) / N
         for i in range(signals.shape[0]):
             row = signals[i, :]
             ang = steps[np.argmax(row)]
@@ -111,32 +116,30 @@ class BroadGen(object):
         signal = np.sum(signals, axis=0)
 
         # Normalize signal
-        norm_signal = 100 * signal / max(signal)
+        norm_signal = signal / max(signal)
 
-        noise = np.random.normal(0, 0.25, 4501)
-        noisy_signal = norm_signal + noise
-
-        # Formatted for CNN
-        form_signal = [[val] for val in noisy_signal]
-
-        return form_signal
+        return norm_signal, domain_size
 
 
-def main(
-    struc,
-    num_broadened,
-    min_domain_size,
-    max_domain_size,
-    min_angle=10.0,
-    max_angle=80.0,
-):
+if __name__ == "__main__":
 
-    broad_generator = BroadGen(
-        struc, min_domain_size, max_domain_size, min_angle, max_angle
+    parser = CifParser("/home/henrik/Dokumente/Big_Files/ICSD/cif/100.cif")
+    crystals = parser.get_structures()
+    crystal = crystals[0]
+
+    broadener = BroadGen(
+        crystal,
+        wavelength=1.207930,
+        min_domain_size=30,
+        max_domain_size=90,
+        min_angle=0,
+        max_angle=90,
     )
 
-    broadened_patterns = [
-        broad_generator.broadened_spectrum for i in range(num_broadened)
-    ]
+    diffractogram, domain_size = broadener.broadened_spectrum(N=9001)
 
-    return broadened_patterns
+    peak_positions = broadener.angles
+    peak_sizes = np.array(broadener.intensities) / np.max(broadener.intensities)
+
+    plt.plot(np.linspace(0, 90, 9001), diffractogram)
+    plt.show()

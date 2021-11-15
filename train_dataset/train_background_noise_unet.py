@@ -28,6 +28,8 @@ end_index = np.argwhere(pattern_x <= end_x)[-1][0]
 pattern_x = pattern_x[start_index : end_index + 1]
 N = len(pattern_x)
 
+print(f"Actual N of used range: {N}")
+
 # with open("unet/scaler", "rb") as file:
 #    scaler = pickle.load(file)
 

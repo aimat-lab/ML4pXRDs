@@ -3,6 +3,7 @@ import random
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import pickle
+import time
 
 N = 9018
 start_x = 0
@@ -38,6 +39,11 @@ def generate_background_and_noise():
     base_noise_level_max = 0.05
     base_noise_level_min = 0.01
     noise_level = np.random.uniform(low=base_noise_level_min, high=base_noise_level_max)
+
+    # TODO: here is how the probability paper generates noise:
+    # norm_signal = 100 * signal / max(signal)
+    # noise = np.random.normal(0, 0.25, 4501)
+
     ys += np.random.normal(size=N) * noise_level
 
     ys -= np.min(ys)
@@ -123,14 +129,26 @@ def generate_background_and_noise_paper():
     return diffractogram
 
 
-def convert_to_discrete(peak_positions, peak_sizes):
+def convert_to_discrete(peak_positions, peak_sizes, N=N, do_print=False):
     peak_info_disc = np.zeros(N)
     peak_size_disc = np.zeros(N)
 
     for i, peak_pos in enumerate(peak_positions):
-        index = np.argwhere(pattern_x < peak_pos)[-1]
-        peak_info_disc[index] += 1
-        peak_size_disc[index] += peak_sizes[i]
+        index = np.argwhere(pattern_x < peak_pos)[-1][0]
+
+        while True:
+
+            if peak_info_disc[index] == 0:
+
+                peak_info_disc[index] += 1
+                peak_size_disc[index] += peak_sizes[i]
+                break
+
+            else:
+
+                if do_print:
+                    print("Two or more peaks in the same spot!")
+                index += 1  # move peak to the right
 
     return peak_info_disc, peak_size_disc
 
@@ -139,6 +157,8 @@ def generate_samples(N=128, mode="removal", do_plot=False, do_print=False, scale
 
     xs_all = []
     ys_all = []
+
+    total_time_discretizing = 0
 
     for i in range(0, N):
 
@@ -200,19 +220,24 @@ def generate_samples(N=128, mode="removal", do_plot=False, do_print=False, scale
 
         elif mode == "info":
 
+            start = time.time()
             peak_info_disc, peak_size_disc = convert_to_discrete(
-                peak_positions, peak_sizes
+                peak_positions, peak_sizes, do_print=False
             )
+            end = time.time()
+            total_time_discretizing += end - start
 
             xs_all.append(ys_altered)
             ys_all.append(peak_info_disc)
+
+    print(f"Total time spent discretizing: {total_time_discretizing}")
 
     return np.array(xs_all), np.array(ys_all)
 
 
 if __name__ == "__main__":
     x, y = generate_samples(
-        N=100, mode="removal", do_print=False, do_plot=True
+        N=1000, mode="info", do_print=True, do_plot=False
     )  # mode doesn't matter here, since we are only interested in the input
 
     """

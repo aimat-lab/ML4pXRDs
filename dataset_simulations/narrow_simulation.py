@@ -2,9 +2,7 @@ import sys
 import os
 
 sys.path.append("../")
-
 from dataset_simulations.simulation import Simulation
-import xrayutilities as xu
 
 # Use a very narrow selection of ICSD entries
 
@@ -36,25 +34,22 @@ class NarrowSimulation(Simulation):
 
             if self.icsd_structure_types[i] == "Fluorite#CaF2":
                 label = 0
-                counter_0 += 1
             elif self.icsd_structure_types[i] == "Bixbyite#(MnFe)O3":
                 label = 1
-                counter_1 += 1
             elif self.icsd_structure_types[i] == "UCl3":
                 label = 2
-                counter_2 += 1
             else:
                 continue
 
-            crystal = xu.materials.Crystal.fromCIF(path)
+            result = self.add_crystal_to_be_simulated(path, [label], [self.icsd_ids[i]])
 
-            self.sim_crystals.append(crystal)
-            self.sim_labels.append([label])
-            self.sim_metas.append([self.icsd_ids[i]])
-
-            self.sim_patterns.append([])
-            self.sim_variations.append([])
-            self.sim_lines_list.append([])  # this will also be filled by the simulation
+            if result == 1:
+                if self.icsd_structure_types[i] == "Fluorite#CaF2":
+                    counter_0 += 1
+                elif self.icsd_structure_types[i] == "Bixbyite#(MnFe)O3":
+                    counter_1 += 1
+                elif self.icsd_structure_types[i] == "UCl3":
+                    counter_2 += 1
 
         print(f"Loaded {len(self.sim_crystals)} crystals")
         print(f"Fluorite#CaF2: {counter_0}")
@@ -81,6 +76,10 @@ if __name__ == "__main__":
     else:
         simulation.generate_structures()
 
-    simulation.simulate_all(start_from_scratch=True)
+    if False:
 
-    # simulation.plot(together=5)
+        simulation.simulate_all(start_from_scratch=False)
+
+        simulation.load()
+
+    simulation.plot(together=5)

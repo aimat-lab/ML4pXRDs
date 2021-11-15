@@ -1,7 +1,5 @@
 from simulation import Simulation
-import xrayutilities as xu
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 
 
@@ -9,19 +7,12 @@ class ComparisonSimulation(Simulation):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
-        self.output_dir = "patterns/comparison/"
+        self.output_dir = "patterns/comparison_xrayutilities/"
 
     def generate_structures(self):
 
         path = self.icsd_paths[self.icsd_ids.index(238381)]
-        crystal = xu.materials.Crystal.fromCIF(path)
-
-        self.sim_crystals.append(crystal)
-        self.sim_labels.append([0])
-        self.sim_metas.append([238381])
-
-        self.sim_patterns.append([])
-        self.sim_variations.append([])
+        self.add_crystal_to_be_simulated(path, [0], [238381])
 
 
 if __name__ == "__main__":
@@ -35,13 +26,12 @@ if __name__ == "__main__":
         simulation.load()
     else:
         simulation.generate_structures()
-        simulation.save()
-
-    simulation.simulate_all(test_crystallite_sizes=True)
+        simulation.simulate_all(test_crystallite_sizes=True)
+        simulation.load()
 
     data = np.array(simulation.sim_patterns[0])
 
-    xs_simulated = np.linspace(0, 90, 9001)
+    xs_simulated = np.linspace(0, 90, 9018)
 
     ys_simulated1 = data[0, :]
     ys_simulated2 = data[1, :]
@@ -50,12 +40,9 @@ if __name__ == "__main__":
     ys_simulated5 = data[4, :]
     ys_simulated6 = data[5, :]
 
-    # plt.plot(
-    #    xs_simulated, ys_simulated1 / np.max(ys_simulated1), label="gauss_max, lor_0"
-    # )
-    plt.plot(xs_simulated, ys_simulated1, label="gauss_max, lor_0")
-
-    """
+    plt.plot(
+        xs_simulated, ys_simulated1 / np.max(ys_simulated1), label="gauss_max, lor_0"
+    )
     plt.plot(
         xs_simulated, ys_simulated2 / np.max(ys_simulated2), label="gauss_0 lor_max"
     )
@@ -75,16 +62,12 @@ if __name__ == "__main__":
     data_compare_to = np.genfromtxt("comparison_Ce_O2.csv", autostrip=True)
     xs_compare_to = data_compare_to[:, 0]
     ys_compare_to = data_compare_to[:, 1]
-
     plt.plot(
         np.array(xs_compare_to) - 0.2,
         ys_compare_to / np.max(ys_compare_to),
         label="exp. Ce O2",
     )
-    
-    """
 
     plt.legend()
 
     plt.show()
-

@@ -27,7 +27,7 @@ additional_tag = (
 current_data_source = "narrow"
 
 
-number_of_values_initial = 9001
+number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 
 # only use a restricted range of the simulated patterns
@@ -37,7 +37,7 @@ step = 1
 start_index = np.argwhere(simulated_range >= start_x)[0][0]
 end_index = np.argwhere(simulated_range <= end_x)[-1][0]
 used_range = simulated_range[start_index : end_index + 1 : step]
-number_of_values = len(simulated_range)
+number_of_values = len(used_range)
 
 scale_features = True
 

@@ -5,9 +5,11 @@ from scipy import interpolate as ip
 from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 
+mode = "info"  # possible: info and removal
 
-def load_experimental_data(mode="classification"):
-    if mode == "classification":
+
+def load_experimental_data(loading_mode="classification"):
+    if loading_mode == "classification":
 
         path = "exp_data/XRDdata_classification.csv"
         data = pd.read_csv(path, delimiter=",", skiprows=1)
@@ -16,7 +18,7 @@ def load_experimental_data(mode="classification"):
 
         return (xs, ys)
 
-    elif mode == "texture":  # TODO: watch out: these have a different range
+    elif loading_mode == "texture":  # TODO: watch out: these have a different range
 
         data_file_path = "exp_data/XRD_6_component_systems_repeat.csv"
         df = pd.read_csv(data_file_path, sep=";")
@@ -34,7 +36,7 @@ def load_experimental_data(mode="classification"):
 
 if __name__ == "__main__":
 
-    xs_exp, ys_exp = load_experimental_data(mode="classification")
+    xs_exp, ys_exp = load_experimental_data(loading_mode="classification")
 
     N = 9018
     pattern_x = np.linspace(0, 90, N)
@@ -46,7 +48,12 @@ if __name__ == "__main__":
     pattern_x = pattern_x[start_index : end_index + 1]
     N = len(pattern_x)
 
-    model = keras.models.load_model("unet/" + "removal" + "_final")
+    model_pre = keras.models.load_model("unet/" + mode + "_final")
+
+    if mode == "removal":
+        model = model_pre
+    else:
+        model = keras.Sequential([model_pre, keras.layers.Activation("sigmoid")])
 
     """
     with open("unet/removal_cps/scaler", "rb") as file:
@@ -78,15 +85,27 @@ if __name__ == "__main__":
         # ys = np.expand_dims(sc.transform([ys]), axis=2)
         ys = np.expand_dims([ys], axis=2)
 
-        corrected = model.predict(ys)
+        if mode == "removal":
 
-        plt.plot(
-            pattern_x, corrected[0, :, 0], label="Corrected via U-Net",
-        )
+            corrected = model.predict(ys)
 
-        plt.plot(
-            pattern_x, ys[0, :, 0] - corrected[0, :, 0], label="Background and noise"
-        )
+            plt.plot(
+                pattern_x, corrected[0, :, 0], label="Corrected via U-Net",
+            )
+
+            plt.plot(
+                pattern_x,
+                ys[0, :, 0] - corrected[0, :, 0],
+                label="Background and noise",
+            )
+
+        else:
+
+            corrected = model.predict(ys)
+
+            plt.scatter(
+                pattern_x, corrected[0, :, 0], label="Peak detection", s=3,
+            )
 
         plt.legend()
         plt.show()

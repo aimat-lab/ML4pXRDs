@@ -12,15 +12,17 @@ from math import ceil
 import subprocess
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
+import xrayutilities as xu
+from pymatgen.io.cif import CifParser
 
 num_files = 16
 num_processes = 8
 
-simulation_software = "xrayutilities"  # also possible: pymatgen
+simulation_software = "pymatgen"  # possible: pymatgen and xrayutilities
 
 angle_min = 0
 angle_max = 90
-angle_n = 9001
+angle_n = 9018
 
 
 class Simulation:
@@ -45,7 +47,9 @@ class Simulation:
             []
         )  # for each crystal, the simulated patterns; this can be multiple, depending on sim_variations
         self.sim_variations = []  # things like crystallite size, etc.
-        self.sim_lines_list = []
+        self.sim_angles = []
+        self.sim_intensities = []
+
         self.crystal_files = []
         self.crystal_files_Ns = []
 
@@ -108,7 +112,7 @@ class Simulation:
                     simulation_software,
                     *files_of_process,
                 ],
-                stdout=open(log_file, "w"),
+                stdout=open(log_file, "a"),
                 stderr=subprocess.STDOUT,
             )
             handles.append(p)
@@ -143,15 +147,14 @@ class Simulation:
             print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
             total = 0
             for i, status_file in enumerate(status_files):
-                with open(status_file, "r") as file:
-
-                    content = file.readline()
-
-                    try:
+                try:
+                    with open(status_file, "r") as file:
+                        content = file.readline()
                         N = int(content)
-                    except:
-                        N = 0
-                        print(f"Was not able to access status file of worker {i}")
+
+                except:
+                    N = 0
+                    print(f"Was not able to access status file of worker {i}")
 
                 total += N
                 print(f"Worker {i}: {N} of {crystals_per_process[i]}")
@@ -295,22 +298,43 @@ class Simulation:
 
         self.crystal_files_Ns.append(end - start)
 
-        np.save(
-            self.sim_crystals[start:end], os.path.join(data_dir, f"crystals_{i}.npy")
+        sim_crystals = np.empty(
+            shape=(
+                len(
+                    self.sim_crystals[start:end],
+                )
+            ),
+            dtype=object,
         )
-        np.save(self.sim_labels[start:end], os.path.join(data_dir, f"labels_{i}.npy"))
-        np.save(self.sim_metas[start:end], os.path.join(data_dir, f"metas_{i}.npy"))
+
+        # force crystals to be written as python objects
+        for j, crystal in enumerate(self.sim_crystals[start:end]):
+            sim_crystals[j] = crystal
+        np.save(os.path.join(data_dir, f"crystals_{i}.npy"), sim_crystals)
+
         np.save(
-            self.sim_patterns[start:end], os.path.join(data_dir, f"patterns_{i}.npy")
+            os.path.join(data_dir, f"labels_{i}.npy"),
+            np.array(self.sim_labels[start:end]),
         )
         np.save(
-            self.sim_variations[start:end],
+            os.path.join(data_dir, f"metas_{i}.npy"),
+            np.array(self.sim_metas[start:end]),
+        )
+
+        np.save(
+            os.path.join(data_dir, f"patterns_{i}.npy"),
+            np.array(self.sim_patterns[start:end], dtype=object),
+        )
+        np.save(
             os.path.join(data_dir, f"variations_{i}.npy"),
+            np.array(self.sim_variations[start:end], dtype=object),
         )
-        np.save(
-            self.sim_lines_list[start:end],
-            os.path.join(data_dir, f"lines_list_{i}.npy"),
-        )
+
+        with open(os.path.join(data_dir, f"angles_{i}.npy"), "wb") as pickle_file:
+            pickle.dump(self.sim_angles[start:end], pickle_file)
+
+        with open(os.path.join(data_dir, f"intensities_{i}.npy"), "wb") as pickle_file:
+            pickle.dump(self.sim_intensities[start:end], pickle_file)
 
     def load(self):
 
@@ -358,31 +382,44 @@ class Simulation:
             ),
         )
 
-        lines_list_files = glob(os.path.join(data_dir, "lines_list_*.npy"))
-        lines_list_files = sorted(
-            lines_list_files,
+        angles_files = glob(os.path.join(data_dir, "angles_*.npy"))
+        angles_files = sorted(
+            angles_files,
             key=lambda x: int(
-                os.path.basename(x).replace("lines_list_", "").replace(".npy", "")
+                os.path.basename(x).replace("angles_", "").replace(".npy", "")
+            ),
+        )
+
+        intensities_files = glob(os.path.join(data_dir, "intensities_*.npy"))
+        intensities_files = sorted(
+            intensities_files,
+            key=lambda x: int(
+                os.path.basename(x).replace("intensities_", "").replace(".npy", "")
             ),
         )
 
         for file in crystals_files:
-            self.sim_crystals.extend(np.load(file))
+            self.sim_crystals.extend(np.load(file, allow_pickle=True))
 
         for file in labels_files:
-            self.sim_labels.extend(np.load(file))
+            self.sim_labels.extend(np.load(file, allow_pickle=True))
 
         for file in metas_files:
-            self.sim_metas.extend(np.load(file))
+            self.sim_metas.extend(np.load(file, allow_pickle=True))
 
         for file in patterns_files:
-            self.sim_patterns.extend(np.load(file))
+            self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
         for file in variations_files:
-            self.sim_variations.extend(np.load(file))
+            self.sim_variations.extend(np.load(file, allow_pickle=True))
 
-        for file in lines_list_files:
-            self.sim_lines_list.extend(np.load(file))
+        for file in angles_files:
+            with open(file, "rb") as pickle_file:
+                self.sim_angles.extend(pickle.load(pickle_file))
+
+        for file in intensities_files:
+            with open(file, "rb") as pickle_file:
+                self.sim_intensities.extend(pickle.load(pickle_file))
 
     def get_space_group_number(self, id):
 
@@ -498,28 +535,70 @@ class Simulation:
 
         return None
 
-    def plot(self, indices=None, together=1):
+    def plot(self, together=1):
 
         xs = np.linspace(angle_min, angle_max, angle_n)
 
-        if indices is None:
-            patterns = self.sim_patterns
-        else:
-            patterns = [self.sim_patterns[index] for index in indices]
+        patterns = self.sim_patterns
 
         counter = 0
         for i, pattern in enumerate(patterns):
             for j, variation in enumerate(pattern):
-                if variation is not None:
-                    plt.plot(xs, variation, label=self.sim_variations[i][j])
-                    lines = np.array(self.sim_lines_list[i][j])[:, 0] * 2
-                    lines = lines[lines < 90]
-                    plt.vlines(
-                        lines, 0.8, 1, lw=0.1,
+                if variation[0] is not np.nan:
+
+                    # plt.plot(xs, variation, label=repr(self.sim_variations[i][j]))
+                    plt.plot(
+                        xs,
+                        variation,
+                        label=repr(self.sim_variations[i][j]),
+                        rasterized=False,
                     )
+
+                    lines = np.array(self.sim_angles[i])
+
+                    plt.vlines(
+                        lines,
+                        1.05,
+                        1.15,
+                        lw=0.15,
+                    )
+
+                    # plt.xlim((0, 90))
 
                     counter += 1
 
                     if (counter % together) == 0:
                         plt.legend()
                         plt.show()
+
+    def add_crystal_to_be_simulated(self, path_to_crystal, labels, metas):
+
+        try:
+
+            if simulation_software == "xrayutilities":
+                crystal = xu.materials.Crystal.fromCIF(path_to_crystal)
+            else:
+                parser = CifParser(path_to_crystal)
+                crystals = parser.get_structures()
+                crystal = crystals[0]
+
+        except Exception as error:
+
+            print(
+                "Error encountered adding cif with id {}, skipping structure:".format(
+                    metas[0]
+                )
+            )
+            print(error)
+            return None
+
+        self.sim_crystals.append(crystal)
+        self.sim_labels.append(labels)
+        self.sim_metas.append(metas)
+
+        self.sim_patterns.append(None)
+        self.sim_variations.append(None)
+        self.sim_angles.append(None)
+        self.sim_intensities.append(None)
+
+        return 1
