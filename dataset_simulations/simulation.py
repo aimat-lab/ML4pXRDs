@@ -15,8 +15,8 @@ from sklearn.utils import shuffle
 import xrayutilities as xu
 from pymatgen.io.cif import CifParser
 
-num_files = 12
-num_processes = 12
+num_files = 16
+num_processes = 8
 
 simulation_software = "pymatgen"  # possible: pymatgen and xrayutilities
 
@@ -112,7 +112,7 @@ class Simulation:
                     simulation_software,
                     *files_of_process,
                 ],
-                stdout=open(log_file, "w"),
+                stdout=open(log_file, "a"),
                 stderr=subprocess.STDOUT,
             )
             handles.append(p)
@@ -329,14 +329,12 @@ class Simulation:
             os.path.join(data_dir, f"variations_{i}.npy"),
             np.array(self.sim_variations[start:end], dtype=object),
         )
-        np.save(
-            os.path.join(data_dir, f"angles_{i}.npy"),
-            np.array(self.sim_angles[start:end], dtype=object),
-        )
-        np.save(
-            os.path.join(data_dir, f"intensities_{i}.npy"),
-            np.array(self.sim_intensities[start:end], dtype=object),
-        )
+
+        with open(os.path.join(data_dir, f"angles_{i}.npy"), "wb") as pickle_file:
+            pickle.dump(self.sim_angles[start:end], pickle_file)
+
+        with open(os.path.join(data_dir, f"intensities_{i}.npy"), "wb") as pickle_file:
+            pickle.dump(self.sim_intensities[start:end], pickle_file)
 
     def load(self):
 
@@ -416,10 +414,12 @@ class Simulation:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
         for file in angles_files:
-            self.sim_angles.extend(np.load(file, allow_pickle=True))
+            with open(file, "rb") as pickle_file:
+                self.sim_angles.extend(pickle.load(pickle_file))
 
         for file in intensities_files:
-            self.sim_intensities.extend(np.load(file, allow_pickle=True))
+            with open(file, "rb") as pickle_file:
+                self.sim_intensities.extend(pickle.load(pickle_file))
 
     def get_space_group_number(self, id):
 

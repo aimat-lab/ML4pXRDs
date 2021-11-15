@@ -71,7 +71,7 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    if False:  # toggle
+    if True:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()

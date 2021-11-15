@@ -8,6 +8,7 @@ import numpy as np
 import gc
 import functools
 import os
+import pickle
 
 sys.path.append("../")
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
@@ -292,13 +293,15 @@ if __name__ == "__main__":
             os.path.dirname(file),
             "angles_" + id_str + ".npy",
         )
-        sim_angles = np.load(sim_angles_filepath, allow_pickle=True)
+        with open(sim_angles_filepath, "rb") as pickle_file:
+            sim_angles = pickle.load(pickle_file)
 
         sim_intensities_filepath = os.path.join(
             os.path.dirname(file),
             "intensities_" + id_str + ".npy",
         )
-        sim_intensities = np.load(sim_intensities_filepath, allow_pickle=True)
+        with open(sim_intensities_filepath, "rb") as pickle_file:
+            sim_intensities = pickle.load(pickle_file)
 
         save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10) + 1)
 
@@ -334,17 +337,19 @@ if __name__ == "__main__":
             if i in save_points:
                 np.save(sim_patterns_filepath, np.array(sim_patterns, dtype=object))
                 np.save(sim_variations_filepath, np.array(sim_variations, dtype=object))
-                np.save(sim_angles_filepath, np.array(sim_angles, dtype=object))
-                np.save(
-                    sim_intensities_filepath, np.array(sim_intensities, dtype=object)
-                )
+
+                # these have variable dimensions, so cannot save them as a numpy array
+                with open(sim_angles_filepath, "wb") as pickle_file:
+                    pickle.dump(sim_angles, pickle_file)
+                with open(sim_intensities_filepath, "wb") as pickle_file:
+                    pickle.dump(sim_intensities, pickle_file)
 
             gc.collect()
 
         # in the end save it as a proper numpy array
         np.save(sim_patterns_filepath, np.array(sim_patterns.tolist(), dtype=float))
         np.save(sim_variations_filepath, np.array(sim_variations.tolist(), dtype=float))
-        np.save(sim_angles_filepath, np.array(sim_angles.tolist(), dtype=float))
-        np.save(
-            sim_intensities_filepath, np.array(sim_intensities.tolist(), dtype=float)
-        )
+        with open(sim_angles_filepath, "wb") as pickle_file:
+            pickle.dump(sim_angles, pickle_file)
+        with open(sim_intensities_filepath, "wb") as pickle_file:
+            pickle.dump(sim_intensities, pickle_file)
