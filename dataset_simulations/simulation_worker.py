@@ -263,9 +263,6 @@ if __name__ == "__main__":
     simulation_software = sys.argv[4]
     files_to_process = sys.argv[5:]
 
-    with open(status_file, "w") as file:
-        file.write("0")
-
     counter = 0
 
     for file in files_to_process:
@@ -345,3 +342,11 @@ if __name__ == "__main__":
                 )
 
             gc.collect()
+
+        # in the end save it as a proper numpy array
+        np.save(sim_patterns_filepath, np.array(sim_patterns.tolist(), dtype=float))
+        np.save(sim_variations_filepath, np.array(sim_variations.tolist(), dtype=float))
+        np.save(sim_angles_filepath, np.array(sim_angles.tolist(), dtype=float))
+        np.save(
+            sim_intensities_filepath, np.array(sim_intensities.tolist(), dtype=float)
+        )

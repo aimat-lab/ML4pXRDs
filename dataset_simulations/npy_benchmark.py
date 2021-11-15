@@ -1,7 +1,7 @@
 import numpy as np
 import time
 
-current = 3
+current = 2
 
 if current == 0:
 
