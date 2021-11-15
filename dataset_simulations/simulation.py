@@ -147,15 +147,14 @@ class Simulation:
             print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
             total = 0
             for i, status_file in enumerate(status_files):
-                with open(status_file, "r") as file:
-
-                    content = file.readline()
-
-                    try:
+                try:
+                    with open(status_file, "r") as file:
+                        content = file.readline()
                         N = int(content)
-                    except:
-                        N = 0
-                        print(f"Was not able to access status file of worker {i}")
+
+                except:
+                    N = 0
+                    print(f"Was not able to access status file of worker {i}")
 
                 total += N
                 print(f"Worker {i}: {N} of {crystals_per_process[i]}")
@@ -299,18 +298,29 @@ class Simulation:
 
         self.crystal_files_Ns.append(end - start)
 
-        np.save(
-            os.path.join(data_dir, f"crystals_{i}.npy"),
-            np.array(self.sim_crystals[start:end], dtype=object),
+        sim_crystals = np.empty(
+            shape=(
+                len(
+                    self.sim_crystals[start:end],
+                )
+            ),
+            dtype=object,
         )
+
+        # force crystals to be written as python objects
+        for i, crystal in enumerate(self.sim_crystals[start:end]):
+            sim_crystals[i] = crystal
+        np.save(os.path.join(data_dir, f"crystals_{i}.npy"), sim_crystals)
+
         np.save(
             os.path.join(data_dir, f"labels_{i}.npy"),
-            np.array(self.sim_labels[start:end], dtype=object),
+            np.array(self.sim_labels[start:end]),
         )
         np.save(
             os.path.join(data_dir, f"metas_{i}.npy"),
-            np.array(self.sim_metas[start:end], dtype=object),
+            np.array(self.sim_metas[start:end]),
         )
+
         np.save(
             os.path.join(data_dir, f"patterns_{i}.npy"),
             np.array(self.sim_patterns[start:end], dtype=object),
