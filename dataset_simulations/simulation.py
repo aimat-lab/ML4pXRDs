@@ -535,28 +535,35 @@ class Simulation:
 
         return None
 
-    def plot(self, indices=None, together=1):
+    def plot(self, together=1):
 
         xs = np.linspace(angle_min, angle_max, angle_n)
 
-        if indices is None:
-            patterns = self.sim_patterns
-        else:
-            patterns = [self.sim_patterns[index] for index in indices]
+        patterns = self.sim_patterns
 
         counter = 0
         for i, pattern in enumerate(patterns):
             for j, variation in enumerate(pattern):
-                if variation is not None:
-                    plt.plot(xs, variation, label=self.sim_variations[i][j])
-                    lines = np.array(self.sim_lines_lists[i][j])[:, 0] * 2
-                    lines = lines[lines < 90]
+                if variation[0] is not np.nan:
+
+                    # plt.plot(xs, variation, label=repr(self.sim_variations[i][j]))
+                    plt.plot(
+                        xs,
+                        variation,
+                        label=repr(self.sim_variations[i][j]),
+                        rasterized=False,
+                    )
+
+                    lines = np.array(self.sim_angles[i])
+
                     plt.vlines(
                         lines,
-                        0.8,
-                        1,
-                        lw=0.1,
+                        1.05,
+                        1.15,
+                        lw=0.15,
                     )
+
+                    # plt.xlim((0, 90))
 
                     counter += 1
 
