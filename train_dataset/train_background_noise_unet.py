@@ -8,7 +8,7 @@ import sys
 sys.path.append("../")
 import generate_background_noise_utils
 
-mode = "removal"  # possible: "info", "removal"
+mode = "info"  # possible: "info", "removal"
 training_mode = "train"  # possible: train and test
 
 N = 9018
@@ -16,7 +16,7 @@ pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 500
+number_of_epochs = 100
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
 
