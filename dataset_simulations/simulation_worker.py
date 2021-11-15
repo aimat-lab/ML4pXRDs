@@ -233,18 +233,18 @@ def simulate_crystal(
         print(f"Encountered error for cif id {id}.")
         print(ex)
 
-        diffractograms = [None] * (
+        diffractograms = [[np.nan] * angle_n] * (
             5
             if not test_crystallite_sizes
             else (6 if simulation_software == "xrayutilities" else 2)
         )
-        variations = [None] * (
-            5
-            if not test_crystallite_sizes
-            else (6 if simulation_software == "xrayutilities" else 2)
-        )
-        angles = None
-        intensities = None
+        if simulation_software == "xrayutilities":
+            variations = [[np.nan, np.nan]] * 5 if not test_crystallite_sizes else 6
+        else:
+            variations = [[np.nan]] * 5 if not test_crystallite_sizes else 2
+
+        angles = [np.nan] * angle_n
+        intensities = [np.nan] * angle_n
 
     return (diffractograms, variations, angles, intensities)
 
