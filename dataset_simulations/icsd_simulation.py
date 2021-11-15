@@ -1,7 +1,5 @@
 from simulation import Simulation
-import xrayutilities as xu
 import functools
-import multiprocessing
 import os
 
 
@@ -18,33 +16,31 @@ class ICSDSimulation(Simulation):
         counter = 0
 
         for i, path in enumerate(self.icsd_paths):
-            # print(path)
 
-            # if (i % 1000) == 0:
+            if i == 2500:
+                break
+
             print(f"Generated {i} structures.", flush=True)
 
             if path is None:
                 counter += 1
                 continue
 
-            try:
-                crystal = xu.materials.Crystal.fromCIF(path)
+            space_group_number = self.get_space_group_number(self.icsd_ids[i])
 
-            except Exception as ex:
+            if space_group_number is not None:
+                result = self.add_crystal_to_be_simulated(
+                    path,
+                    [space_group_number],
+                    [self.icsd_ids[i]],
+                )
+
+                if result is None:
+                    counter += 1
+                    continue
+            else:
                 counter += 1
                 continue
-
-            self.sim_crystals.append(crystal)
-            self.sim_labels.append([self.get_space_group_number(self.icsd_ids[i])])
-            self.sim_metas.append([self.icsd_ids[i]])
-            self.sim_variations.append(
-                []
-            )  # this will later be filled by the simulation, e.g. different corn sizes
-            self.sim_patterns.append([])  # this will also be filled by the simulation
-            self.sim_lines_list.append([])  # this will also be filled by the simulation
-
-            if i == 999:
-                break
 
         print(f"Skipped {counter} structures due to errors or missing path.")
 
@@ -52,11 +48,6 @@ class ICSDSimulation(Simulation):
 if __name__ == "__main__":
     # make print statement always flush
     print = functools.partial(print, flush=True)
-
-    try:
-        multiprocessing.set_start_method("spawn")
-    except RuntimeError:
-        pass
 
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
@@ -75,9 +66,10 @@ if __name__ == "__main__":
     else:
         simulation.generate_structures()
 
-    # simulation.save()
-    # os.system("cp -r " + simulation.output_dir[:-1] + " patterns/icsd_copy")
+    if True:
 
-    simulation.simulate_all(start_from_scratch=True)
+        simulation.simulate_all(start_from_scratch=False)
+
+        # simulation.load()
 
     # simulation.plot(together=5)

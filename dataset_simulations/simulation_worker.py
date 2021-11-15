@@ -303,7 +303,7 @@ if __name__ == "__main__":
         with open(sim_intensities_filepath, "rb") as pickle_file:
             sim_intensities = pickle.load(pickle_file)
 
-        save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 10) + 1)
+        save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 20) + 1)
 
         for i, pattern in enumerate(sim_patterns):
 
@@ -329,10 +329,9 @@ if __name__ == "__main__":
             sim_angles[i] = angles
             sim_intensities[i] = intensities
 
-            if (i % 5) == 0:
-                if os.path.exists(os.path.join(os.path.dirname(status_file), "STOP")):
-                    print("Simulation stopped by user.")
-                    exit()
+            if os.path.exists(os.path.join(os.path.dirname(status_file), "STOP")):
+                print("Simulation stopped by user.")
+                exit()
 
             if i in save_points:
                 np.save(sim_patterns_filepath, np.array(sim_patterns, dtype=object))
