@@ -15,10 +15,10 @@ from sklearn.utils import shuffle
 import xrayutilities as xu
 from pymatgen.io.cif import CifParser
 
-num_files = 16
-num_processes = 8
+num_files = 12
+num_processes = 12
 
-simulation_software = "xrayutilities"  # possible: pymatgen and xrayutilities
+simulation_software = "pymatgen"  # possible: pymatgen and xrayutilities
 
 angle_min = 0
 angle_max = 90
@@ -308,8 +308,8 @@ class Simulation:
         )
 
         # force crystals to be written as python objects
-        for i, crystal in enumerate(self.sim_crystals[start:end]):
-            sim_crystals[i] = crystal
+        for j, crystal in enumerate(self.sim_crystals[start:end]):
+            sim_crystals[j] = crystal
         np.save(os.path.join(data_dir, f"crystals_{i}.npy"), sim_crystals)
 
         np.save(
