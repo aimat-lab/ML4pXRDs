@@ -13,6 +13,8 @@ from pymatgen.analysis.diffraction import xrd
 from scipy.ndimage import gaussian_filter1d
 import random
 import numpy as np
+from pymatgen.io.cif import CifParser
+import matplotlib.pyplot as plt
 
 
 class BroadGen(object):
@@ -24,6 +26,7 @@ class BroadGen(object):
     def __init__(
         self,
         struc,
+        wavelength=1.207930,
         min_domain_size=1,
         max_domain_size=100,
         min_angle=10.0,
@@ -37,7 +40,7 @@ class BroadGen(object):
             max_domain_size: largest domain size (in nm) to be sampled,
                 leading to the most narrow peaks
         """
-        self.calculator = xrd.XRDCalculator()
+        self.calculator = xrd.XRDCalculator(wavelength=wavelength)
         self.struc = struc
 
         self.min_domain_size = min_domain_size
@@ -80,7 +83,6 @@ class BroadGen(object):
         sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
         return sigma ** 2
 
-    @property
     def broadened_spectrum(self, domain_size=None, N=4008):
 
         angles = self.angles
@@ -117,3 +119,27 @@ class BroadGen(object):
         norm_signal = signal / max(signal)
 
         return norm_signal, domain_size
+
+
+if __name__ == "__main__":
+
+    parser = CifParser("/home/henrik/Dokumente/Big_Files/ICSD/cif/100.cif")
+    crystals = parser.get_structures()
+    crystal = crystals[0]
+
+    broadener = BroadGen(
+        crystal,
+        wavelength=1.207930,
+        min_domain_size=30,
+        max_domain_size=90,
+        min_angle=0,
+        max_angle=90,
+    )
+
+    diffractogram, domain_size = broadener.broadened_spectrum(N=9001)
+
+    peak_positions = broadener.angles
+    peak_sizes = np.array(broadener.intensities) / np.max(broadener.intensities)
+
+    plt.plot(np.linspace(0, 90, 9001), diffractogram)
+    plt.show()
