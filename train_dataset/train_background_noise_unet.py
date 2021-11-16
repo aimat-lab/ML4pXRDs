@@ -8,15 +8,15 @@ import sys
 sys.path.append("../")
 import generate_background_noise_utils
 
-mode = "info"  # possible: "info", "removal"
+mode = "removal"  # possible: "info", "removal"
 training_mode = "train"  # possible: train and test
 
 N = 9018
 pattern_x = np.linspace(0, 90, N)
 
-batch_size = 128
-number_of_batches = 500
-number_of_epochs = 100
+batch_size = 1000
+number_of_batches = 100
+number_of_epochs = 10
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
 
@@ -47,8 +47,8 @@ if training_mode == "train":
             return self.number_of_batches
 
         def __getitem__(self, idx):
-            batch = generate_background_noise_utils.generate_samples(
-                N=self.batch_size, mode=self.mode
+            batch = generate_background_noise_utils.generate_samples_gp(
+                n_samples=self.batch_size, mode=self.mode
             )
 
             # xs = scaler.transform(batch[0])
@@ -86,7 +86,7 @@ if training_mode == "train":
     model.fit(
         x=CustomSequence(batch_size, number_of_batches, mode, start_index, end_index),
         epochs=number_of_epochs,
-        verbose=2,
+        verbose=1,
         max_queue_size=20,
         workers=6,
         use_multiprocessing=True,

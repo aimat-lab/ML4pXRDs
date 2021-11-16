@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-import time
 
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
@@ -10,93 +9,20 @@ from scipy import interpolate as ip
 
 
 N = 9018
+n_angles_gp = 1000
 start_x = 0
 end_x = 90
-pattern_x = np.linspace(0, 90, N)
+pattern_x = np.linspace(start_x, end_x, N)
 
 max_peaks_per_sample = 50  # max number of peaks per sample
-polynomial_degree = 6
-polymomial_parameters_range = 1.0
-
 min_peak_height = 0.01
 
+# GP parameters:
+scaling = 1.0
+variance = 30.0
 
-def theta_rel(theta):
-    return (theta - start_x) / (end_x - start_x)
-
-
-def f_step_up(theta, h, alpha, theta_rel_step):
-    return h * (1 / (1 + np.exp(alpha * (theta_rel(theta) - theta_rel_step))))
-
-
-def f_step_down(theta, h, alpha, theta_rel_step):
-    return h * (1 - (1 / (1 + np.exp(alpha * (theta_rel(theta) - theta_rel_step)))))
-
-
-def f_polynomial(theta, n_max, alpha_n):
-    return np.abs(
-        np.sum([alpha_n[i] * theta_rel(theta) ** i for i in range(0, n_max + 1)])
-    )
-
-
-def f_bump(theta, h, n):
-    return h * (n * theta_rel(theta)) ** 2 * np.exp(-1 * n * theta_rel(theta))
-
-
-def trunc_normal(min, max, mean, std):
-    while True:
-        value = np.random.normal(mean, std)
-
-        if value > min and value < max:
-            return value
-        else:
-            continue
-
-
-def generate_background_and_noise_paper():
-
-    diffractogram = np.zeros(N)
-
-    # TODO: find potentially better way of handling noise
-    # patterns go from 0 to 1
-    # diffractogram += np.random.uniform(0.0002, 0.002, N)
-
-    choices = [1 if x < 0.5 else 0 for x in np.random.uniform(size=4)]
-    T = 0.1 / np.sum(choices)
-
-    if choices[0]:
-        diffractogram += f_step_up(
-            pattern_x,
-            trunc_normal(0, T, T / 3, T / 7),
-            np.random.uniform(10, 60),
-            np.random.uniform(0, 1 / 7),
-        )
-
-    if choices[1]:
-        diffractogram += f_step_down(
-            pattern_x,
-            trunc_normal(0, T, T / 3, T / 7),
-            np.random.uniform(10, 60),
-            np.random.uniform(1 - 1 / 7, 1),
-        )
-
-    if choices[2]:
-        n_max = np.random.randint(0, 5)
-        alpha_n = np.zeros(n_max + 1)
-        for i, alpha in enumerate(alpha_n):
-            if np.random.uniform() < 0.5:
-                alpha_n[i] = 3 * T / (2 * (n_max + 1)) * np.random.uniform(-1, 1)
-
-        diffractogram += f_polynomial(pattern_x, n_max, alpha_n)
-
-    if choices[3]:
-        diffractogram += f_bump(
-            pattern_x,
-            trunc_normal(0, 3 * T / 5, 2 * T / 5, 3 * T / 35),
-            np.random.uniform(40, 70),
-        )
-
-    return diffractogram
+# for background to peaks ratio:
+scaling_max = 2.0
 
 
 def convert_to_discrete(peak_positions, peak_sizes, N=N, do_print=False):
@@ -123,96 +49,61 @@ def convert_to_discrete(peak_positions, peak_sizes, N=N, do_print=False):
     return peak_info_disc, peak_size_disc
 
 
-def generate_bg_functions_gp(
-    n_samples, n_angles_gp, n_angles_output, scaling=2.0, variance=5.0, rnd_seed=None
+def generate_samples_gp(
+    n_samples,
+    n_angles_gp=n_angles_gp,
+    n_angles_output=N,
+    scaling=scaling,
+    variance=variance,
+    random_seed=None,
+    mode="removal",
+    do_plot=False,
 ):
 
-    xs_output = np.linspace(1, 90, n_angles_output)
+    # first, generate enough random functions using a gaussian process
+    xs_pattern = np.linspace(0, 90, n_angles_output)
 
     kernel = C(scaling, constant_value_bounds="fixed") * RBF(
         variance, length_scale_bounds="fixed"
     )
     gp = GaussianProcessRegressor(kernel=kernel)
 
-    xs_drawn = np.atleast_3d(np.linspace(0, 90, n_angles_gp)).T
+    xs_gp = np.atleast_2d(np.linspace(0, 90, n_angles_gp)).T
 
-    # ys_drawn = gp.sample_y(
-    #    xs_drawn, random_state=random.randint(1, 10000), n_samples=n_samples
-    # )
-
-    ys_drawn = gp.sample_y(
-        xs_drawn,
-        random_state=rnd_seed,
-        n_samples=n_samples,
-    )
-
-    # interpolate using cubic splines
-    ys_drawn_output = []
-
-    for i in range(1, ys_drawn.shape[1]):
-        if n_angles_output != n_angles_gp:
-            f = ip.CubicSpline(xs_drawn[:, 1], ys_drawn[:, i], bc_type="natural")
-            ys = f(xs_output)
-        else:
-            ys = ys_drawn[:, i]
-        ys = ys - np.min(ys)
-        ys = ys / np.max(ys)
-        ys_drawn_output.append(ys)
-    return np.array(ys_drawn_output)
-
-
-def generate_background_and_noise():
-
-    xs = np.linspace(-1.0, 1.0, N)
-    coefficients = [
-        random.uniform(-polymomial_parameters_range, polymomial_parameters_range)
-        for _ in range(0, polynomial_degree)
-    ]
-
-    ys = sum(coefficient * xs ** (n + 1) for n, coefficient in enumerate(coefficients))
-
-    ys -= np.min(ys)
-
-    # fluct_noise_level_max = 1.0
-    # ys *= np.random.normal(N) * fluct_noise_level_max
-
-    weight_background = np.sum(ys)
-
-    base_noise_level_max = 0.05
-    base_noise_level_min = 0.01
-    noise_level = np.random.uniform(low=base_noise_level_min, high=base_noise_level_max)
-
-    # TODO: here is how the probability paper generates noise:
-    # norm_signal = 100 * signal / max(signal)
-    # noise = np.random.normal(0, 0.25, 4501)
-
-    ys += np.random.normal(size=N) * noise_level
-
-    ys -= np.min(ys)
-
-    return ys, weight_background
-
-
-def generate_samples(N=128, mode="removal", do_plot=False, do_print=False):
+    ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
 
     xs_all = []
     ys_all = []
 
-    total_time_discretizing = 0
+    for i in range(0, n_samples):
 
-    for i in range(0, N):
+        if n_angles_output != n_angles_gp:
+            f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
+            background = f(xs_pattern)
+        else:
+            background = ys_gp[:, i]
 
-        if do_print and (i % 1000) == 0:
-            print(f"Generated {i} samples.")
+        background = background - np.min(background)
+        background = background / np.max(background)
+        weight_background = np.sum(background)
 
-        background_noise, weight_background = generate_background_and_noise()
-        # ys_altered = generate_background_and_noise_paper()
+        base_noise_level_max = 0.05
+        base_noise_level_min = 0.01
+        noise_level = np.random.uniform(
+            low=base_noise_level_min, high=base_noise_level_max
+        )
+        noise_scale = 1.0
 
-        ys_unaltered = np.zeros(len(pattern_x))
+        background_noise = (
+            background + np.random.normal(size=N, scale=noise_scale) * noise_level
+        )
+        background_noise -= np.min(background_noise)
 
-        sigma = random.uniform(0.1, 0.5)
+        sigma_peaks = random.uniform(0.1, 0.5)
         peak_positions = []
         peak_sizes = []
+
+        ys_unaltered = np.zeros(n_angles_output)
 
         for j in range(0, random.randint(1, max_peaks_per_sample)):
 
@@ -223,8 +114,8 @@ def generate_samples(N=128, mode="removal", do_plot=False, do_print=False):
             peak_size = random.uniform(min_peak_height, 1)
             peak = (
                 1
-                / (sigma * np.sqrt(2 * np.pi))
-                * np.exp(-1 / (2 * sigma ** 2) * (pattern_x - mean) ** 2)
+                / (sigma_peaks * np.sqrt(2 * np.pi))
+                * np.exp(-1 / (2 * sigma_peaks ** 2) * (pattern_x - mean) ** 2)
             ) * peak_size
 
             peak_sizes.append(peak_size)
@@ -233,10 +124,8 @@ def generate_samples(N=128, mode="removal", do_plot=False, do_print=False):
 
         weight_peaks = np.sum(ys_unaltered)
 
-        # scaling = random.uniform(0, 2.0)
-        # print(scaling)
+        scaling = random.uniform(0, scaling_max)
 
-        scaling = 2
         ys_altered = (
             background_noise / weight_background * weight_peaks * scaling + ys_unaltered
         )
@@ -249,7 +138,7 @@ def generate_samples(N=128, mode="removal", do_plot=False, do_print=False):
             plt.plot(pattern_x, ys_altered)
             plt.plot(pattern_x, ys_unaltered)
 
-            plt.xlim(10, 50)
+            # plt.xlim(10, 50)
             plt.show()
 
         if mode == "removal":
@@ -260,66 +149,22 @@ def generate_samples(N=128, mode="removal", do_plot=False, do_print=False):
 
         elif mode == "info":
 
-            start = time.time()
             peak_info_disc, peak_size_disc = convert_to_discrete(
                 peak_positions, peak_sizes, do_print=False
             )
-            end = time.time()
-            total_time_discretizing += end - start
 
             xs_all.append(ys_altered)
             ys_all.append(peak_info_disc)
-
-    print(f"Total time spent discretizing: {total_time_discretizing}")
 
     return np.array(xs_all), np.array(ys_all)
 
 
 if __name__ == "__main__":
-    x, y = generate_samples(
-        N=1000, mode="info", do_print=True, do_plot=False
-    )  # mode doesn't matter here, since we are only interested in the input
 
-    """
-  
-    # This code calculates the standard scaler for 100k samples, which is a good estimate for
-    # the overall distribution
+    test = generate_samples_gp(100, do_plot=True)
 
-    n_samples = 50000
-    path = "unet/scaler"
-
-    x, y = generate_samples(
-        N=n_samples, mode="removal", plot=False, do_print=True
-    )  # mode doesn't matter here, since we are only interested in the input
-
-    # scale features
-    sc = StandardScaler()
-    x_test = sc.fit_transform(x)
-
-    print(sc.mean_)
-    print(sc.var_)
-    print(sc.scale_)
-
-    # plt.plot(sc.var_)
-    # plt.show()
-
-    # Create new scaler where all means and stds are the same
-    # new_scaler = StandardScaler()
-    # new_scaler.mean_ = np.repeat(np.mean(sc.mean_), len(sc.mean_))
-    # new_scaler.var_ = np.repeat(np.mean(sc.var_), len(sc.var_))
-    # new_scaler.scale_ = np.repeat(np.mean(sc.scale_), len(sc.scale_))
-
-    with open(path, "wb") as file:
-        pickle.dump(sc, file)
-
-    """
-
-    """
-    test = generate_bg_functions_gp(11, 1000, 9018, scaling=1.0, variance=60)
-
-    for i in range(1, test.shape[0]):
-        plt.plot(np.linspace(1, 90, 9018), test[i, :], label="1000")
-
-    plt.ylim((1, 2.0))
-    plt.show()
-    """
+    for i in range(0, test[0].shape[0]):
+        plt.plot(pattern_x, test[0][i, :])
+        plt.plot(pattern_x, test[1][i, :])
+        plt.xlim((10, 50))
+        plt.show()
