@@ -602,3 +602,21 @@ class Simulation:
         self.sim_intensities.append(None)
 
         return 1
+
+    def plot_most_complicated_diffractogram(self):
+
+        indices = []
+        counts = []
+
+        for i, pattern in enumerate(self.sim_patterns):
+            if pattern is not None:
+                for j, variation in enumerate(pattern):
+                    if variation[0] is not np.nan:
+                        counts.append(len(self.sim_angles[i]))
+                        indices.append(i)
+
+        max_index = indices[int(np.argmax(counts))]
+        print(counts[int(np.argmax(counts))])
+
+        plt.plot(np.linspace(0, 90, 9018), self.sim_patterns[max_index][0])
+        plt.show()

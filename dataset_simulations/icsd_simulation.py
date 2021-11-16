@@ -1,6 +1,8 @@
 from simulation import Simulation
 import functools
 import os
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class ICSDSimulation(Simulation):
@@ -61,14 +63,14 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    if False:  # toggle
+    if True:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
 
-    if True:
+    if False:
 
-        simulation.simulate_all(start_from_scratch=False)
+        simulation.simulate_all(start_from_scratch=True)
 
         # simulation.load()
 

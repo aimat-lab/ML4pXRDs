@@ -71,15 +71,15 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    if True:  # toggle
+    if False:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
 
-    if False:
+    if True:
 
-        simulation.simulate_all(start_from_scratch=False)
+        simulation.simulate_all(start_from_scratch=True)
 
         simulation.load()
 
-    simulation.plot(together=5)
+    # simulation.plot(together=5)

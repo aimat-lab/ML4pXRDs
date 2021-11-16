@@ -9,6 +9,7 @@ import gc
 import functools
 import os
 import pickle
+from numba import jit
 
 sys.path.append("../")
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
