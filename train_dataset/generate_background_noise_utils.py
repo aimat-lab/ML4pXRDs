@@ -1,9 +1,13 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
-import pickle
 import time
+
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+
+from scipy import interpolate as ip
+
 
 N = 9018
 start_x = 0
@@ -15,40 +19,6 @@ polynomial_degree = 6
 polymomial_parameters_range = 1.0
 
 min_peak_height = 0.01
-
-
-def generate_background_and_noise():
-
-    xs = np.linspace(-1.0, 1.0, N)
-    coefficients = [
-        random.uniform(-polymomial_parameters_range, polymomial_parameters_range)
-        for _ in range(0, polynomial_degree)
-    ]
-
-    ys = sum(coefficient * xs ** (n + 1) for n, coefficient in enumerate(coefficients))
-
-    ys -= np.min(ys)
-
-    # fluct_noise_level_max = 1.0
-    # ys *= np.random.normal(N) * fluct_noise_level_max
-
-    # TODO: Implement signal-to-noise ratio as in paper
-
-    weight_background = np.sum(ys)
-
-    base_noise_level_max = 0.05
-    base_noise_level_min = 0.01
-    noise_level = np.random.uniform(low=base_noise_level_min, high=base_noise_level_max)
-
-    # TODO: here is how the probability paper generates noise:
-    # norm_signal = 100 * signal / max(signal)
-    # noise = np.random.normal(0, 0.25, 4501)
-
-    ys += np.random.normal(size=N) * noise_level
-
-    ys -= np.min(ys)
-
-    return ys, weight_background
 
 
 def theta_rel(theta):
@@ -153,7 +123,77 @@ def convert_to_discrete(peak_positions, peak_sizes, N=N, do_print=False):
     return peak_info_disc, peak_size_disc
 
 
-def generate_samples(N=128, mode="removal", do_plot=False, do_print=False, scaler=None):
+def generate_bg_functions_gp(
+    n_samples, n_angles_gp, n_angles_output, scaling=2.0, variance=5.0, rnd_seed=None
+):
+
+    xs_output = np.linspace(1, 90, n_angles_output)
+
+    kernel = C(scaling, constant_value_bounds="fixed") * RBF(
+        variance, length_scale_bounds="fixed"
+    )
+    gp = GaussianProcessRegressor(kernel=kernel)
+
+    xs_drawn = np.atleast_3d(np.linspace(0, 90, n_angles_gp)).T
+
+    # ys_drawn = gp.sample_y(
+    #    xs_drawn, random_state=random.randint(1, 10000), n_samples=n_samples
+    # )
+
+    ys_drawn = gp.sample_y(
+        xs_drawn,
+        random_state=rnd_seed,
+        n_samples=n_samples,
+    )
+
+    # interpolate using cubic splines
+    ys_drawn_output = []
+
+    for i in range(1, ys_drawn.shape[1]):
+        if n_angles_output != n_angles_gp:
+            f = ip.CubicSpline(xs_drawn[:, 1], ys_drawn[:, i], bc_type="natural")
+            ys = f(xs_output)
+        else:
+            ys = ys_drawn[:, i]
+        ys = ys - np.min(ys)
+        ys = ys / np.max(ys)
+        ys_drawn_output.append(ys)
+    return np.array(ys_drawn_output)
+
+
+def generate_background_and_noise():
+
+    xs = np.linspace(-1.0, 1.0, N)
+    coefficients = [
+        random.uniform(-polymomial_parameters_range, polymomial_parameters_range)
+        for _ in range(0, polynomial_degree)
+    ]
+
+    ys = sum(coefficient * xs ** (n + 1) for n, coefficient in enumerate(coefficients))
+
+    ys -= np.min(ys)
+
+    # fluct_noise_level_max = 1.0
+    # ys *= np.random.normal(N) * fluct_noise_level_max
+
+    weight_background = np.sum(ys)
+
+    base_noise_level_max = 0.05
+    base_noise_level_min = 0.01
+    noise_level = np.random.uniform(low=base_noise_level_min, high=base_noise_level_max)
+
+    # TODO: here is how the probability paper generates noise:
+    # norm_signal = 100 * signal / max(signal)
+    # noise = np.random.normal(0, 0.25, 4501)
+
+    ys += np.random.normal(size=N) * noise_level
+
+    ys -= np.min(ys)
+
+    return ys, weight_background
+
+
+def generate_samples(N=128, mode="removal", do_plot=False, do_print=False):
 
     xs_all = []
     ys_all = []
@@ -192,18 +232,18 @@ def generate_samples(N=128, mode="removal", do_plot=False, do_print=False, scale
             ys_unaltered += peak
 
         weight_peaks = np.sum(ys_unaltered)
-        # scaling = random.uniform(0, 1.0)
+
+        # scaling = random.uniform(0, 2.0)
         # print(scaling)
 
         scaling = 2
-
         ys_altered = (
             background_noise / weight_background * weight_peaks * scaling + ys_unaltered
         )
 
-        scaler = np.max(ys_altered)
-        ys_altered /= scaler
-        ys_unaltered /= scaler
+        normalizer = np.max(ys_altered)
+        ys_altered /= normalizer
+        ys_unaltered /= normalizer
 
         if do_plot:
             plt.plot(pattern_x, ys_altered)
@@ -272,4 +312,14 @@ if __name__ == "__main__":
     with open(path, "wb") as file:
         pickle.dump(sc, file)
 
+    """
+
+    """
+    test = generate_bg_functions_gp(11, 1000, 9018, scaling=1.0, variance=60)
+
+    for i in range(1, test.shape[0]):
+        plt.plot(np.linspace(1, 90, 9018), test[i, :], label="1000")
+
+    plt.ylim((1, 2.0))
+    plt.show()
     """

@@ -80,6 +80,6 @@ if __name__ == "__main__":
 
         simulation.simulate_all(start_from_scratch=True)
 
-        simulation.load()
+        # simulation.load()
 
     # simulation.plot(together=5)

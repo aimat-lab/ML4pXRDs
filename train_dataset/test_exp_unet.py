@@ -5,7 +5,7 @@ from scipy import interpolate as ip
 from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 
-mode = "info"  # possible: info and removal
+mode = "removal"  # possible: info and removal
 
 
 def load_experimental_data(loading_mode="classification"):
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
         plt.plot(pattern_x, np.zeros(len(pattern_x)))
 
-        plt.plot(pattern_x, ys, label="Experimental rescaled")
+        plt.plot(pattern_x, ys, label="Experimental rescaled", zorder=2)
 
         # with open("unet/scaler", "rb") as file:
         #    scaler = pickle.load(file)
@@ -90,13 +90,13 @@ if __name__ == "__main__":
             corrected = model.predict(ys)
 
             plt.plot(
-                pattern_x, corrected[0, :, 0], label="Corrected via U-Net",
-            )
-
-            plt.plot(
                 pattern_x,
                 ys[0, :, 0] - corrected[0, :, 0],
                 label="Background and noise",
+                zorder=1,
+            )
+            plt.plot(
+                pattern_x, corrected[0, :, 0], label="Corrected via U-Net", zorder=3
             )
 
         else:
