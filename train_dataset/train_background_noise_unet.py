@@ -16,15 +16,15 @@ import generate_background_noise_utils
 # import generate_nackground_noise_utils_old
 
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
 N = 9018
 pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 20
-cache_multiplier = 100
+number_of_epochs = 50
+# cache_multiplier = 100
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
 
@@ -53,12 +53,16 @@ if training_mode == "train":
 
             self.data = None
             self.counter = 0
-            self.cache_multiplier = cache_multiplier
+            # self.cache_multiplier = cache_multiplier
 
         def __len__(self):
             return self.number_of_batches
 
         def __getitem__(self, idx):
+            """
+            # print()
+            # print(self.counter)
+            # print()
 
             # cache patterns to make it faster
             if self.data is None or self.counter == self.cache_multiplier:
@@ -67,6 +71,12 @@ if training_mode == "train":
                     mode=self.mode,
                     do_plot=False,
                 )
+                print()
+                print()
+                print("New data")
+                print()
+                print()
+
                 # self.data = generate_nackground_noise_utils_old.generate_samples(
                 #    N=self.cache_multiplier * self.batch_size
                 # )
@@ -75,18 +85,28 @@ if training_mode == "train":
 
             # xs = scaler.transform(batch[0])
 
+            # print(self.counter)
+
+            """
+
+            data = generate_background_noise_utils.generate_samples_gp(
+                n_samples=self.batch_size, mode=self.mode, do_plot=False,
+            )
+
+            """
             xs = self.data[0][
                 self.counter * self.batch_size : (self.counter + 1) * self.batch_size, :
             ]
             ys = self.data[1][
                 self.counter * self.batch_size : (self.counter + 1) * self.batch_size, :
             ]
+            """
 
-            self.counter += 1
+            # self.counter += 1
 
             return (
-                xs[:, self.start_index : self.end_index + 1],
-                ys[:, self.start_index : self.end_index + 1],
+                data[0][:, self.start_index : self.end_index + 1],
+                data[1][:, self.start_index : self.end_index + 1],
             )
 
     my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
@@ -117,8 +137,8 @@ if training_mode == "train":
         x=CustomSequence(batch_size, number_of_batches, mode, start_index, end_index),
         epochs=number_of_epochs,
         verbose=1,
-        max_queue_size=20,
-        workers=6,
+        max_queue_size=500,
+        workers=8,
         use_multiprocessing=True,
         callbacks=[
             cp_callback,

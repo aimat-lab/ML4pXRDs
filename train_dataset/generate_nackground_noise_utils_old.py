@@ -238,7 +238,7 @@ def generate_samples(N=128, mode="removal", do_plot=False, do_print=False, scale
 if __name__ == "__main__":
     start = time.time()
     x, y = generate_samples(
-        N=128, mode="removal", do_print=False, do_plot=True
+        N=128, mode="removal", do_print=False, do_plot=False
     )  # mode doesn't matter here, since we are only interested in the input
     end = time.time()
     print(f"Took {end-start} s")

@@ -12,7 +12,7 @@ import time
 
 
 N = 9018
-n_angles_gp = 1000
+n_angles_gp = 100
 start_x = 0
 end_x = 90
 pattern_x = np.linspace(start_x, end_x, N)
@@ -22,8 +22,9 @@ min_peak_height = 0.01
 
 # GP parameters:
 scaling = 1.0
-# variance = 30.0
-variance = 100.0
+# variance = 30.0 # this was my original estimate
+# variance = 100.0
+variance = 50
 
 # for background to peaks ratio:
 scaling_max = 2.0
@@ -94,6 +95,8 @@ def generate_samples_gp(
 
         background = background - np.min(background)
         background = background / np.max(background)
+
+        # plt.plot(xs_pattern, background)
         weight_background = np.sum(background)
 
         base_noise_level_max = 0.05
@@ -172,9 +175,14 @@ def generate_samples_gp(
 
 if __name__ == "__main__":
 
+    generate_samples_gp(1, n_angles_gp=100, random_seed=123, do_plot=False)
+    generate_samples_gp(1, n_angles_gp=1000, random_seed=123, do_plot=False)
+    plt.show()
+    exit()
+
     start = time.time()
 
-    test = generate_samples_gp(100, do_plot=True)
+    test = generate_samples_gp(128, do_plot=False)
 
     end = time.time()
     print(f"Took {end-start} s")
