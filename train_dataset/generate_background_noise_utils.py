@@ -24,7 +24,9 @@ min_peak_height = 0.01
 scaling = 1.0
 # variance = 30.0 # this was my original estimate
 # variance = 100.0
-variance = 50
+# variance = 50
+
+variance = 30.0
 
 # for background to peaks ratio:
 scaling_max = 2.0
@@ -63,6 +65,8 @@ def generate_samples_gp(
     random_seed=None,
     mode="removal",
     do_plot=False,
+    start_index=None,  # for proper scaling to 1.0
+    end_index=None,  # inclusive
 ):
 
     # start = time.time()
@@ -144,7 +148,11 @@ def generate_samples_gp(
             + ys_unaltered
         )
 
-        normalizer = np.max(ys_altered)
+        if start_index is None or end_index is None:
+            normalizer = np.max(ys_altered)
+        else:
+            normalizer = np.max(ys_altered[start_index : end_index + 1])
+
         ys_altered /= normalizer
         ys_unaltered /= normalizer
 

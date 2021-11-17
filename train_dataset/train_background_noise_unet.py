@@ -19,7 +19,9 @@ from datetime import datetime
 
 tag = "test"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
+
+to_test = "removal_17-11-2021_15:45:39_test"
 
 N = 9018
 pattern_x = np.linspace(0, 90, N)
@@ -104,7 +106,11 @@ if training_mode == "train":
             """
 
             data = generate_background_noise_utils.generate_samples_gp(
-                n_samples=self.batch_size, mode=self.mode, do_plot=False,
+                n_samples=self.batch_size,
+                mode=self.mode,
+                do_plot=False,
+                start_index=start_index,
+                end_index=end_index,
             )
 
             """
@@ -162,10 +168,10 @@ if training_mode == "train":
 
 else:
 
-    model = keras.models.load_model(out_base + "_final")
+    model = keras.models.load_model("unet/" + to_test + "/final")
 
     test_batch = generate_background_noise_utils.generate_samples_gp(
-        n_samples=100, mode=mode
+        n_samples=100, mode=mode, start_index=start_index, end_index=end_index
     )
 
     # test_batch = generate_nackground_noise_utils_old.generate_samples(N=100, mode=mode)
