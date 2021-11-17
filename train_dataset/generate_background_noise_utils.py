@@ -1,4 +1,5 @@
 import numpy as np
+
 import random
 import matplotlib.pyplot as plt
 
@@ -6,6 +7,8 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
 from scipy import interpolate as ip
+
+import time
 
 
 N = 9018
@@ -19,7 +22,8 @@ min_peak_height = 0.01
 
 # GP parameters:
 scaling = 1.0
-variance = 30.0
+# variance = 30.0
+variance = 100.0
 
 # for background to peaks ratio:
 scaling_max = 2.0
@@ -60,6 +64,8 @@ def generate_samples_gp(
     do_plot=False,
 ):
 
+    # start = time.time()
+
     # first, generate enough random functions using a gaussian process
     xs_pattern = np.linspace(0, 90, n_angles_output)
 
@@ -71,6 +77,9 @@ def generate_samples_gp(
     xs_gp = np.atleast_2d(np.linspace(0, 90, n_angles_gp)).T
 
     ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
+
+    # stop = time.time()
+    # print(f"GP took {stop-start} s")
 
     xs_all = []
     ys_all = []
@@ -94,10 +103,8 @@ def generate_samples_gp(
         )
         noise_scale = 1.0
 
-        background_noise = (
-            background + np.random.normal(size=N, scale=noise_scale) * noise_level
-        )
-        background_noise -= np.min(background_noise)
+        background += np.random.normal(size=N, scale=noise_scale) * noise_level
+        background -= np.min(background)
 
         sigma_peaks = random.uniform(0.1, 0.5)
         peak_positions = []
@@ -105,7 +112,7 @@ def generate_samples_gp(
 
         ys_unaltered = np.zeros(n_angles_output)
 
-        for j in range(0, random.randint(1, max_peaks_per_sample)):
+        for j in range(0, random.randint(0, max_peaks_per_sample)):
 
             mean = random.uniform(0, 90)
 
@@ -127,7 +134,11 @@ def generate_samples_gp(
         scaling = random.uniform(0, scaling_max)
 
         ys_altered = (
-            background_noise / weight_background * weight_peaks * scaling + ys_unaltered
+            background
+            / weight_background
+            * (weight_peaks if weight_peaks != 0 else 1)
+            * scaling
+            + ys_unaltered
         )
 
         normalizer = np.max(ys_altered)
@@ -161,10 +172,17 @@ def generate_samples_gp(
 
 if __name__ == "__main__":
 
+    start = time.time()
+
     test = generate_samples_gp(100, do_plot=True)
 
+    end = time.time()
+    print(f"Took {end-start} s")
+
+    """
     for i in range(0, test[0].shape[0]):
         plt.plot(pattern_x, test[0][i, :])
         plt.plot(pattern_x, test[1][i, :])
         plt.xlim((10, 50))
         plt.show()
+    """
