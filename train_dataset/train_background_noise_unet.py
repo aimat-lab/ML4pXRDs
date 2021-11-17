@@ -15,15 +15,19 @@ import generate_background_noise_utils
 
 # import generate_nackground_noise_utils_old
 
+from datetime import datetime
+
+tag = "test"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
 N = 9018
 pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 50
+number_of_epochs = 1
+
 # cache_multiplier = 100
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
@@ -37,6 +41,16 @@ pattern_x = pattern_x[start_index : end_index + 1]
 N = len(pattern_x)
 
 print(f"Actual N of used range: {N}")
+
+out_base = (
+    "unet/"
+    + mode
+    + "_"
+    + datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+    + "_"
+    + tag
+    + "/"
+)
 
 # with open("unet/scaler", "rb") as file:
 #    scaler = pickle.load(file)
@@ -128,7 +142,7 @@ if training_mode == "train":
         raise Exception("Mode not supported.")
 
     cp_callback = keras.callbacks.ModelCheckpoint(
-        filepath="unet/" + mode + "_cps" + "/weights{epoch}",
+        filepath=out_base + "cps" + "/weights{epoch}",
         save_weights_only=True,
         verbose=1,
     )
@@ -140,18 +154,15 @@ if training_mode == "train":
         max_queue_size=500,
         workers=8,
         use_multiprocessing=True,
-        callbacks=[
-            cp_callback,
-            keras.callbacks.TensorBoard(log_dir="unet/" + mode + "_tb"),
-        ],
+        callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
         steps_per_epoch=number_of_batches,
     )
 
-    model.save("unet/" + mode + "_final")
+    model.save(out_base + "final")
 
 else:
 
-    model = keras.models.load_model("unet/" + mode + "_final")
+    model = keras.models.load_model(out_base + "_final")
 
     test_batch = generate_background_noise_utils.generate_samples_gp(
         n_samples=100, mode=mode
@@ -195,7 +206,7 @@ else:
 
             plt.legend()
 
-            plt.savefig(f"predictions/prediction_{i}.pdf")
+            # plt.savefig(f"predictions/prediction_{i}.pdf")
 
             plt.show()
             plt.figure()
@@ -204,7 +215,7 @@ else:
             plt.scatter(pattern_x, y_test[i], s=3)
 
             plt.plot(pattern_x, x_test[i])
-            plt.savefig(f"predictions/prediction_{i}.pdf")
+            # plt.savefig(f"predictions/prediction_{i}.pdf")
             plt.show()
             plt.figure()
         else:
