@@ -9,8 +9,9 @@ from scipy import interpolate as ip
 import tensorflow.keras as keras
 
 remove_background = True
-unet_model_path = "unet/removal_cps/weights50"
-model_path = "unet/removal_cps/weights50"  # classifier model
+
+unet_model = ""
+classifier_model = ""
 
 if __name__ == "__main__":
 
@@ -26,12 +27,13 @@ if __name__ == "__main__":
     pattern_x = pattern_x[start_index : end_index + 1]
     N = len(pattern_x)
 
-    my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
-    unet_model = my_unet.UNet()
-    unet_model.load_weights()
+    classifier_model_name = ""
+    unet_model_name = ""
 
-    classifier_N = 4000  # TODO: Update this
-    classifier_model = keras.models.load_model(model_path)
+    classifier_model = keras.models.load_model(
+        "classifier/" + classifier_model_name + "/final"
+    )
+    unet_model = keras.models.load_model("unet/" + +unet_model_name + "/final")
 
     for i in range(0, xs.shape[1]):
 
@@ -40,6 +42,7 @@ if __name__ == "__main__":
 
         if remove_background:
 
+            # Scale experimental pattern to the right dimension
             f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
             ys = f(pattern_x)
             ys -= np.min(ys)
@@ -59,6 +62,9 @@ if __name__ == "__main__":
 
             plt.plot(pattern_x, ys - corrected[0, :, 0], label="Background and noise")
 
-            label = classifier_model.predict(ys)
+            probability_model = keras.Sequential(
+                [classifier_model, keras.layers.Activation("sigmoid")]
+            )
+            label = probability_model.predict(ys)
 
             print(f"Predicted label: {label}")
