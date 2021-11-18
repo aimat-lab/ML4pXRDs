@@ -6,8 +6,13 @@ import numpy as np
 import random
 from pymatgen.core.periodic_table import Element
 from pyxtal.symmetry import Group
+import time
+from ase.visualize import view
+from pymatgen.vis.structure_vtk import StructureVis
 
-max_NO_atoms = 5
+max_NO_atoms = 10
+# 10 atoms per unit cell should probably be already enough.
+
 # max_volume = 30
 
 # from pyxtal element.py:
@@ -158,7 +163,6 @@ def generate_structures(spacegroup_number, N):
 
                 chosen_index = random.randint(0, len(number_of_atoms) - 1)
 
-                # TODO: Does this even happen?
                 if dofs[chosen_index] == 0 and int(number_of_atoms[chosen_index]) == 1:
                     counter_collisions += 1
                     print(f"{counter_collisions} collisions.")
@@ -184,7 +188,7 @@ def generate_structures(spacegroup_number, N):
             chosen_elements_counts.append(np.sum(np.array(chosen_elements) == element))
         """
 
-        # TODO: Output how many worked.
+        # TODO: Do proper error handling
 
         my_crystal = pyxtal()
 
@@ -199,56 +203,26 @@ def generate_structures(spacegroup_number, N):
         if not my_crystal.valid:
             continue
 
-        my_crystal.show()
+        # TODO: If it fails, retry with next, so N is actually correct
 
         plt.show()
 
         crystal = my_crystal.to_pymatgen()
 
+        # vis = StructureVis()
+        # vis.set_structure(crystal)
+        # vis.show()
+
         output_crystals.append(crystal)
 
-    # TODO: Fix visualizing, why does it not work?
+    print(f"Generated {len(output_crystals)} of {N} requested crystals")
 
     return output_crystals
 
 
 if __name__ == "__main__":
+    start = time.time()
     generate_structures(125, 20)
+    stop = time.time()
 
-"""
-calculator = XRDCalculator()
-pattern = calculator.get_pattern(crystal, scaled=True)
-
-xs = np.linspace(0, 90, 1001)
-
-
-def smeared_peaks(xs):
-
-    output = np.zeros(len(xs))
-
-    for x, y in zip(pattern.x, pattern.y):
-
-        sigma = 0.1
-        mean = x
-
-        ys = (
-            1
-            / (sigma * np.sqrt(2 * np.pi))
-            * np.exp(-1 / (2 * sigma ** 2) * (xs - mean) ** 2)
-        )
-
-        delta_x = xs[1] - xs[0]
-        volume = delta_x * np.sum(ys)
-
-        ys = y * ys / volume
-
-        output += ys
-
-    return output
-
-
-ys = smeared_peaks(xs)
-
-plt.plot(xs, ys)
-plt.show()
-"""
+    print(f"Took {stop-start} s")
