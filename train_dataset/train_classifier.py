@@ -1,4 +1,3 @@
-from re import S
 import sys
 
 sys.path.append("../")
@@ -10,7 +9,6 @@ from tensorflow.python.keras import regularizers
 import datetime
 import os
 from keras_tuner import BayesianOptimization
-from keras_tuner import Hyperband
 from glob import glob
 import matplotlib.pyplot as plt
 import os
@@ -20,6 +18,8 @@ import tensorflow.keras as keras
 from sklearn.preprocessing import StandardScaler
 from dataset_simulations.narrow_simulation import NarrowSimulation
 from sklearn.utils import class_weight
+import random
+import math
 
 tag = ""  # additional tag that will be added to the tuner folder and training folder
 mode = "narrow"
@@ -40,10 +40,13 @@ number_of_values = len(used_range)
 scale_features = True
 
 model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
-tune_hyperparameters = False
+tune_hyperparameters = True
 
 tuner_epochs = 4
 tuner_batch_size = 128
+
+train_epochs = 10
+train_batch_size = 128
 
 out_base = (
     "classifier/"
@@ -55,7 +58,23 @@ out_base = (
     + "/"
 )
 
-# read data
+# Each mode / model needs to define (x_train and y_train) or only x_train if it is a Sequence object (then leave y_train as None)
+# Each mode / model needs to define x_val, y_val and x_test and y_test
+
+x_train = None
+y_train = None  # can stay None
+
+x_val = None
+y_val = None
+
+x_test = None
+y_test = None
+
+n_classes = None
+
+class_weights = None  # can stay None
+
+# read and preprocess the data
 if mode == "narrow":
 
     path_to_patterns = "../dataset_simulations/patterns/narrow/"
@@ -72,23 +91,44 @@ if mode == "narrow":
 
     patterns = sim.sim_patterns
     labels = sim.sim_labels
+    variations = sim.sim_variations
 
     for i in reversed(range(0, len(patterns))):
-        if any(x is None for x in patterns[i]):
+        if any(x[0] is np.nan for x in patterns[i]):
             del patterns[i]
             del labels[i]
 
     patterns = np.array(patterns)
-    print(patterns.shape)
 
     y = []
     for label in labels:
         y.extend([label[0]] * n_patterns_per_crystal)
 
     x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
+    variations = variations.reshape(
+        (variations.shape[0] * variations.shape[1], variations.shape[2])
+    )
     x = x[:, start_index : end_index + 1 : step]
     y = np.array(y)
 
+    print(f"Shape of x: {x.shape}")
+    print(f"Shape of y: {y.shape}")
+
+    assert not np.any(np.isnan(x))
+    assert not np.any(np.isnan(y))
+    assert len(x) == len(y)
+
+    n_classes = len(np.unique(y))
+
+    print("##### Loaded {} training points".format(len(x)))
+
+    # Split into train, validation, test set + shuffle
+    x, y, variations = shuffle(x, y, variations, random_state=1234)
+
+    __x_train, x_test, __y_train, y_test = train_test_split(x, y, test_size=0.3)
+    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
+
+    # compute proper class weights
     class_weights = {}
     classes = np.unique(y)
     class_weight_array = class_weight.compute_class_weight(
@@ -100,39 +140,86 @@ if mode == "narrow":
     print("Class weights:")
     print(class_weight)
 
-    n_classes = len(np.unique(y))
+    if scale_features:
+        sc = StandardScaler()
+        sc.fit(__x_train)
+
+        x_test = sc.transform(x_test)
+        x_val = sc.transform(x_val)
+
+    # when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
+    if "conv" in model_str:
+        x = np.expand_dims(x, axis=2)
+        __x_train = np.expand_dims(__x_train, axis=2)
+        x_test = np.expand_dims(x_test, axis=2)
+        x_val = np.expand_dims(x_val, axis=2)
+
+    class CustomSequence(keras.utils.Sequence):
+        def __init__(self, x_train, y_train, variations, batch_size):
+
+            self.x_train = x_train
+            self.y_train = y_train
+
+            self.variations = variations
+
+            self.batch_size = batch_size
+
+            self.number_of_batches = math.ceil(len(x_train) / batch_size)
+
+        def __len__(self):
+            return self.number_of_batches
+
+        def __getitem__(self, idx):
+
+            end_index = (idx + 1) * self.batch_size
+            current_x = self.x_train[
+                idx * self.batch_size : end_index
+                if end_index < len(self.x_train)
+                else len(self.x_train)
+            ]
+            current_y = self.y_train[
+                idx * self.batch_size : end_index
+                if end_index < len(self.x_train)
+                else len(self.x_train)
+            ]
+
+            min_peak_height = 0.01
+
+            for i, item in enumerate(current_x):
+                if random.random() < 0.5:  # in 50% of the samples, add additional peaks
+
+                    sigma_peaks = self.variations[idx * self.batch_size + i]
+
+                    for j in range(0, random.randint(0, 5)):
+                        mean = random.uniform(start_x, end_x)
+                        peak_size = random.uniform(min_peak_height, 1)
+                        peak = (
+                            1
+                            / (sigma_peaks * np.sqrt(2 * np.pi))
+                            * np.exp(
+                                -1 / (2 * sigma_peaks ** 2) * (used_range - mean) ** 2
+                            )
+                        ) * peak_size
+                        current_x[i, :, 0] += peak
+
+            if scale_features:
+                current_x = sc.fit_transform(current_x)
+
+            return current_x, current_y
+
+    x_train = CustomSequence(
+        __x_train,
+        __y_train,
+        variations,
+        tuner_batch_size if tune_hyperparameters else train_batch_size,
+    )
 
 else:
     raise Exception("Data source not recognized.")
 
 # print available devices:
-print(device_lib.list_local_devices())
+# print(device_lib.list_local_devices())
 
-assert not np.any(np.isnan(x))
-assert not np.any(np.isnan(y))
-assert len(x) == len(y)
-
-print("##### Loaded {} training points".format(len(x)))
-
-# Split into train, validation, test set + shuffle
-x, y = shuffle(x, y, random_state=1234)
-
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
-x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
-
-# scale features
-if scale_features:
-    sc = StandardScaler()
-    x_train = sc.fit_transform(x_train)
-    x_test = sc.transform(x_test)
-    x_val = sc.transform(x_val)
-
-# when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
-if "conv" in model_str:
-    x = np.expand_dims(x, axis=2)
-    x_train = np.expand_dims(x_train, axis=2)
-    x_test = np.expand_dims(x_test, axis=2)
-    x_val = np.expand_dims(x_val, axis=2)
 
 if model_str == "conv":
 
@@ -498,7 +585,7 @@ tuner = MyTuner(
     max_trials=1000,
     executions_per_trial=1,
     overwrite=False,
-    project_name="bayesian_opt_" + model_str + (("_" + tag) if tag != "" else ""),
+    project_name=out_base,
     directory="tuner",
     num_initial_points=3 * 9,
 )
@@ -511,16 +598,12 @@ if tune_hyperparameters:
         y_train,
         validation_data=(x_val, y_val),
         verbose=2,
-        callbacks=[
-            keras.callbacks.TensorBoard(
-                "tuner/"
-                + ("hyperband_opt_" if tuner_str == "hyperband" else "bayesian_opt_")
-                + model_str
-                + (("_" + tag) if tag != "" else "")
-                + "/tf"
-            )
-        ],
-        class_weight=class_weights,  # TODO: Is it actually using these class weights?
+        callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
+        class_weight=class_weights,
+        steps_per_epoch=x_train.number_of_batches if y_train is None else None,
+        workers=1,
+        max_queue_size=20,
+        use_multiprocessing=True,
     )
 
 else:  # build model from best set of hyperparameters
@@ -562,11 +645,16 @@ else:  # build model from best set of hyperparameters
     model.fit(
         x_train,
         y_train,
-        epochs=40,
-        batch_size=100,
+        epochs=train_epochs,
+        batch_size=train_batch_size,
         validation_data=(x_val, y_val),
         callbacks=[tensorboard_callback, cp_callback],
         verbose=2,
+        workers=1,
+        max_queue_size=20,
+        use_multiprocessing=True,
+        steps_per_epoch=x_train.number_of_batches if y_train is None else None,
+        class_weight=class_weights,
     )
 
     print("\nOn test dataset:")
