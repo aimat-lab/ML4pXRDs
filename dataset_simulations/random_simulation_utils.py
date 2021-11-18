@@ -8,7 +8,116 @@ from pymatgen.core.periodic_table import Element
 from pyxtal.symmetry import Group
 
 max_NO_atoms = 5
-max_volume = 30
+# max_volume = 30
+
+# from pyxtal element.py:
+all_elements = [
+    "H",
+    "He",
+    "Li",
+    "Be",
+    "B",
+    "C",
+    "N",
+    "O",
+    "F",
+    "Ne",
+    "Na",
+    "Mg",
+    "Al",
+    "Si",
+    "P",
+    "S",
+    "Cl",
+    "Ar",
+    "K",
+    "Ca",
+    "Sc",
+    "Ti",
+    "V",
+    "Cr",
+    "Mn",
+    "Fe",
+    "Co",
+    "Ni",
+    "Cu",
+    "Zn",
+    "Ga",
+    "Ge",
+    "As",
+    "Se",
+    "Br",
+    "Kr",
+    "Rb",
+    "Sr",
+    "Y",
+    "Zr",
+    "Nb",
+    "Mo",
+    "Tc",
+    "Ru",
+    "Rh",
+    "Pd",
+    "Ag",
+    "Cd",
+    "In",
+    "Sn",
+    "Sb",
+    "Te",
+    "I",
+    "Xe",
+    "Cs",
+    "Ba",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Pm",
+    "Sm",
+    "Eu",
+    "Gd",
+    "Tb",
+    "Dy",
+    "Ho",
+    "Er",
+    "Tm",
+    "Yb",
+    "Lu",
+    "Hf",
+    "Ta",
+    "W",
+    "Re",
+    "Os",
+    "Ir",
+    "Pt",
+    "Au",
+    "Hg",
+    "Tl",
+    "Pb",
+    "Bi",
+    "Po",
+    "At",
+    "Rn",
+    "Fr",
+    "Ra",
+    "Ac",
+    "Th",
+    "Pa",
+    "U",
+    "Np",
+    "Pu",
+    "Am",
+    "Cm",
+    "Bk",
+    "Cf",
+    "Es",
+    "Fm",
+    "Md",
+    "No",
+    "Lr",
+    "Rf",
+    "Db",
+][0:94]
 
 
 def generate_structures(spacegroup_number, N):
@@ -19,12 +128,13 @@ def generate_structures(spacegroup_number, N):
     names = [(str(x.multiplicity) + x.letter) for x in group]
     dofs = group.get_site_dof(names)
 
-    all_elements = list(Element.__members__.keys())
+    # all_elements = list(Element.__members__.keys())
 
     output_crystals = []
 
     for i in range(0, N):
 
+        print(f"Crystal {i}")
         # TODO: maybe use slightly random volume factors later
 
         number_of_atoms = np.zeros(len(names))
@@ -33,8 +143,11 @@ def generate_structures(spacegroup_number, N):
 
         chosen_elements = []
         chosen_numbers = []
+        chosen_wyckoff_positions = []
 
         counter_collisions = 0
+
+        # TODO: Always choose the general wyckoff position
 
         for i in range(0, NO_atoms):
             while True:
@@ -55,6 +168,7 @@ def generate_structures(spacegroup_number, N):
 
                 chosen_elements.append(random.choice(all_elements))
                 chosen_numbers.append(multiplicities[chosen_index])
+                chosen_wyckoff_positions.append([names[chosen_index]])
 
                 break
 
@@ -70,6 +184,8 @@ def generate_structures(spacegroup_number, N):
             chosen_elements_counts.append(np.sum(np.array(chosen_elements) == element))
         """
 
+        # TODO: Output how many worked.
+
         my_crystal = pyxtal()
 
         my_crystal.from_random(
@@ -77,6 +193,7 @@ def generate_structures(spacegroup_number, N):
             group=spacegroup_number,
             species=chosen_elements,
             numIons=chosen_numbers,
+            # sites=chosen_wyckoff_positions,
         )
 
         if not my_crystal.valid:
@@ -90,11 +207,13 @@ def generate_structures(spacegroup_number, N):
 
         output_crystals.append(crystal)
 
+    # TODO: Fix visualizing, why does it not work?
+
     return output_crystals
 
 
 if __name__ == "__main__":
-    generate_structures(125, 100)
+    generate_structures(125, 20)
 
 """
 calculator = XRDCalculator()
