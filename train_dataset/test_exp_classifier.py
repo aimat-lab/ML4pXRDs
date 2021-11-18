@@ -54,17 +54,20 @@ if __name__ == "__main__":
 
             corrected = unet_model.predict(ys)
 
-            plt.plot(
-                pattern_x, corrected[0, :, 0], label="Corrected via U-Net",
-            )
-
-            plt.plot(pattern_x, np.zeros(len(pattern_x)))
-
-            plt.plot(pattern_x, ys - corrected[0, :, 0], label="Background and noise")
-
             probability_model = keras.Sequential(
                 [classifier_model, keras.layers.Activation("sigmoid")]
             )
             label = probability_model.predict(ys)
 
             print(f"Predicted label: {label}")
+
+            plt.plot(
+                pattern_x,
+                corrected[0, :, 0],
+                label=f"Corrected via U-Net; predicted label: {label}",
+            )
+
+            plt.plot(pattern_x, np.zeros(len(pattern_x)))
+
+            plt.plot(pattern_x, ys - corrected[0, :, 0], label="Background and noise")
+

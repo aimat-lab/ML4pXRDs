@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import regularizers
-import datetime
+from datetime import datetime
 import os
 from keras_tuner import BayesianOptimization
 from glob import glob
@@ -21,7 +21,9 @@ from sklearn.utils import class_weight
 import random
 import math
 
-tag = ""  # additional tag that will be added to the tuner folder and training folder
+tag = (
+    "test"  # additional tag that will be added to the tuner folder and training folder
+)
 mode = "narrow"
 
 
@@ -94,9 +96,10 @@ if mode == "narrow":
     variations = sim.sim_variations
 
     for i in reversed(range(0, len(patterns))):
-        if any(x[0] is np.nan for x in patterns[i]):
+        if np.any(np.isnan(variations[i][0])):
             del patterns[i]
             del labels[i]
+            del variations[i]
 
     patterns = np.array(patterns)
 
@@ -105,6 +108,7 @@ if mode == "narrow":
         y.extend([label[0]] * n_patterns_per_crystal)
 
     x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
+    variations = np.array(variations)
     variations = variations.reshape(
         (variations.shape[0] * variations.shape[1], variations.shape[2])
     )
@@ -138,7 +142,7 @@ if mode == "narrow":
         class_weights[classes[i]] = weight
 
     print("Class weights:")
-    print(class_weight)
+    print(class_weights)
 
     if scale_features:
         sc = StandardScaler()
