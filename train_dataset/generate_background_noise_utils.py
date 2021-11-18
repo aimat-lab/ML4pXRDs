@@ -24,7 +24,7 @@ min_peak_height = 0.01
 scaling = 1.0
 # variance = 30.0 # this was my original estimate
 # variance = 100.0
-# variance = 50
+# variance = 50Thursday:
 
 variance = 30.0
 
@@ -91,16 +91,19 @@ def generate_samples_gp(
 
     for i in range(0, n_samples):
 
+        # plt.scatter(xs_gp[:, 0], ys_gp[:, i], s=1)
+
         if n_angles_output != n_angles_gp:
             f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
             background = f(xs_pattern)
         else:
             background = ys_gp[:, i]
 
+        # plt.plot(xs_pattern, background)
+
         background = background - np.min(background)
         background = background / np.max(background)
 
-        # plt.plot(xs_pattern, background)
         weight_background = np.sum(background)
 
         base_noise_level_max = 0.05
@@ -183,8 +186,9 @@ def generate_samples_gp(
 
 if __name__ == "__main__":
 
-    generate_samples_gp(1, n_angles_gp=100, random_seed=123, do_plot=False)
-    generate_samples_gp(1, n_angles_gp=1000, random_seed=123, do_plot=False)
+    generate_samples_gp(1, n_angles_gp=100, random_seed=1234, do_plot=False)
+    generate_samples_gp(1, n_angles_gp=1000, random_seed=1234, do_plot=False)
+    generate_samples_gp(1, n_angles_gp=2000, random_seed=1234, do_plot=False)
     plt.show()
     exit()
 

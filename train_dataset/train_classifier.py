@@ -21,10 +21,8 @@ from sklearn.preprocessing import StandardScaler
 from dataset_simulations.narrow_simulation import NarrowSimulation
 from sklearn.utils import class_weight
 
-additional_tag = (
-    ""  # additional tag that will be added to the tuner folder and training folder
-)
-current_data_source = "narrow"
+tag = ""  # additional tag that will be added to the tuner folder and training folder
+mode = "narrow"
 
 
 number_of_values_initial = 9018
@@ -42,14 +40,23 @@ number_of_values = len(used_range)
 scale_features = True
 
 model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
-tuner_str = "bayesian"  # possible: hyperband and bayesian
-tune_hyperparameters = True
+tune_hyperparameters = False
 
 tuner_epochs = 4
 tuner_batch_size = 128
 
+out_base = (
+    "classifier/"
+    + mode
+    + "_"
+    + datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+    + "_"
+    + tag
+    + "/"
+)
+
 # read data
-if current_data_source == "narrow":
+if mode == "narrow":
 
     path_to_patterns = "../dataset_simulations/patterns/narrow/"
 
@@ -214,7 +221,7 @@ if model_str == "conv":
         return model
 
 
-if model_str == "conv_narrow":
+elif model_str == "conv_narrow":
 
     def build_model(hp):  # define model with hyperparameters
 
@@ -466,57 +473,35 @@ else:
 
     raise Exception("Model not recognized.")
 
-if tuner_str == "bayesian":
 
-    class MyTuner(BayesianOptimization):
-        def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = tuner_batch_size
-            kwargs["epochs"] = tuner_epochs
-            super(MyTuner, self).run_trial(trial, *args, **kwargs)
+class MyTuner(BayesianOptimization):
+    def run_trial(self, trial, *args, **kwargs):
+        kwargs["batch_size"] = tuner_batch_size
+        kwargs["epochs"] = tuner_epochs
+        super(MyTuner, self).run_trial(trial, *args, **kwargs)
 
-        def on_epoch_end(trial, model, epoch, *args, **kwargs):
+    def on_epoch_end(trial, model, epoch, *args, **kwargs):
 
-            checkpoint_files = glob(
-                "tuner/bayesian_opt_"
-                + model_str
-                + "/trial_*/checkpoints/epoch_*/checkpoint*"
-            )
+        checkpoint_files = glob(
+            "tuner/bayesian_opt_"
+            + model_str
+            + "/trial_*/checkpoints/epoch_*/checkpoint*"
+        )
 
-            for file in checkpoint_files:
-                os.system("rm " + file)
+        for file in checkpoint_files:
+            os.system("rm " + file)
 
-    tuner = MyTuner(
-        build_model,
-        objective="val_accuracy",
-        max_trials=1000,
-        executions_per_trial=1,
-        overwrite=False,
-        project_name="bayesian_opt_"
-        + model_str
-        + (("_" + additional_tag) if additional_tag != "" else ""),
-        directory="tuner",
-        num_initial_points=3 * 9,
-    )
 
-elif tuner_str == "hyperband":
-
-    class MyTuner(Hyperband):
-        def run_trial(self, trial, *args, **kwargs):
-            kwargs["batch_size"] = tuner_batch_size
-            kwargs["epochs"] = tuner_epochs
-            super(MyTuner, self).run_trial(trial, *args, **kwargs)
-
-    tuner = MyTuner(
-        build_model,
-        objective="val_accuracy",
-        max_epochs=tuner_epochs,
-        overwrite=False,
-        directory="tuner",
-        project_name="hyperband_opt_"
-        + model_str
-        + (("_" + additional_tag) if additional_tag != "" else ""),
-        hyperband_iterations=10000,
-    )
+tuner = MyTuner(
+    build_model,
+    objective="val_accuracy",
+    max_trials=1000,
+    executions_per_trial=1,
+    overwrite=False,
+    project_name="bayesian_opt_" + model_str + (("_" + tag) if tag != "" else ""),
+    directory="tuner",
+    num_initial_points=3 * 9,
+)
 
 if tune_hyperparameters:
 
@@ -531,7 +516,7 @@ if tune_hyperparameters:
                 "tuner/"
                 + ("hyperband_opt_" if tuner_str == "hyperband" else "bayesian_opt_")
                 + model_str
-                + (("_" + additional_tag) if additional_tag != "" else "")
+                + (("_" + tag) if tag != "" else "")
                 + "/tf"
             )
         ],
@@ -563,15 +548,13 @@ else:  # build model from best set of hyperparameters
         model = build_model(None)
 
     # use tensorboard to inspect the graph, write log file periodically:
-    out_dir = training_outdir + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_dir = out_dir + "/log"
+    log_dir = out_base + "tb"
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=log_dir, histogram_freq=1
     )
 
     # periodically save the weights to a checkpoint file:
-    checkpoint_path = out_dir + "/cp.ckpt"
-    checkpoint_dir = os.path.dirname(checkpoint_path)
+    checkpoint_path = out_base + "cps" + "/weights{epoch}"
     cp_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_path, verbose=1, save_weights_only=True
     )
@@ -590,4 +573,4 @@ else:  # build model from best set of hyperparameters
     model.evaluate(x_test, y_test, verbose=2)
     print()
 
-    model.save(out_dir + "/model")
+    model.save(out_base + "final")

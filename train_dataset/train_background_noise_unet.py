@@ -21,7 +21,7 @@ tag = "test"
 mode = "removal"  # possible: "info", "removal"
 training_mode = "test"  # possible: train and test
 
-to_test = "removal_17-11-2021_15:45:39_test"
+to_test = "removal_17-11-2021_16-03-57_variance_30"
 
 N = 9018
 pattern_x = np.linspace(0, 90, N)
