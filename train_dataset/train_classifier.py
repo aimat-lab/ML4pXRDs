@@ -20,6 +20,7 @@ from dataset_simulations.narrow_simulation import NarrowSimulation
 from sklearn.utils import class_weight
 import random
 import math
+import pickle
 
 tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
@@ -42,7 +43,9 @@ number_of_values = len(used_range)
 scale_features = True
 
 model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
-tune_hyperparameters = True
+
+tune_hyperparameters = False
+current_dir = "narrow_19-11-2021_08:12:29_test"
 
 tuner_epochs = 4
 tuner_batch_size = 128
@@ -151,6 +154,9 @@ if mode == "narrow":
         x_test = sc.transform(x_test)
         x_val = sc.transform(x_val)
 
+        with open("classifier/scaler", "wb") as file:
+            pickle.dump(sc, file)
+
     # when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
     if "conv" in model_str:
         x = np.expand_dims(x, axis=2)
@@ -165,9 +171,7 @@ if mode == "narrow":
             self.y_train = y_train
 
             self.variations = variations
-
             self.batch_size = batch_size
-
             self.number_of_batches = math.ceil(len(x_train) / batch_size)
 
         def __len__(self):
@@ -207,7 +211,7 @@ if mode == "narrow":
                         current_x[i, :, 0] += peak
 
             if scale_features:
-                current_x = sc.fit_transform(current_x)
+                current_x[:, :, 0] = sc.fit_transform(current_x[:, :, 0])
 
             return current_x, current_y
 
@@ -589,8 +593,8 @@ tuner = MyTuner(
     max_trials=1000,
     executions_per_trial=1,
     overwrite=False,
-    project_name=out_base,
-    directory="tuner",
+    project_name="tuner",
+    directory=out_base if tune_hyperparameters else ("classifier/" + current_dir),
     num_initial_points=3 * 9,
 )
 
@@ -601,7 +605,7 @@ if tune_hyperparameters:
         x_train,
         y_train,
         validation_data=(x_val, y_val),
-        verbose=2,
+        verbose=1,
         callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
         class_weight=class_weights,
         steps_per_epoch=x_train.number_of_batches if y_train is None else None,
@@ -611,8 +615,6 @@ if tune_hyperparameters:
     )
 
 else:  # build model from best set of hyperparameters
-
-    training_outdir = "trainings/" + model_str + "/"
 
     if not model_str == "Lee":
 
@@ -653,7 +655,7 @@ else:  # build model from best set of hyperparameters
         batch_size=train_batch_size,
         validation_data=(x_val, y_val),
         callbacks=[tensorboard_callback, cp_callback],
-        verbose=2,
+        verbose=1,
         workers=1,
         max_queue_size=20,
         use_multiprocessing=True,
