@@ -29,6 +29,7 @@ pattern_x = np.linspace(0, 90, N)
 batch_size = 128
 number_of_batches = 500
 number_of_epochs = 100
+NO_workers = 16
 
 # cache_multiplier = 100
 
@@ -158,7 +159,7 @@ if training_mode == "train":
         epochs=number_of_epochs,
         verbose=1,
         max_queue_size=500,
-        workers=8,
+        workers=NO_workers,
         use_multiprocessing=True,
         callbacks=[
             cp_callback,
