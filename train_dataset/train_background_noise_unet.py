@@ -17,9 +17,9 @@ import generate_background_noise_utils
 
 from datetime import datetime
 
-tag = "test"
+tag = "new_test"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
 to_test = "removal_17-11-2021_16-03-57_variance_30"
 
@@ -28,7 +28,7 @@ pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 1
+number_of_epochs = 100
 
 # cache_multiplier = 100
 
@@ -160,7 +160,10 @@ if training_mode == "train":
         max_queue_size=500,
         workers=8,
         use_multiprocessing=True,
-        callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+        callbacks=[
+            cp_callback,
+            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
+        ],
         steps_per_epoch=number_of_batches,
     )
 
@@ -226,4 +229,3 @@ else:
             plt.figure()
         else:
             raise Exception("Mode not recognized.")
-
