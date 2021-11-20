@@ -9,7 +9,9 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from scipy import interpolate as ip
 
 import time
+import pandas as pd
 
+from scipy.stats import truncnorm
 
 N = 9018
 n_angles_gp = 100
@@ -17,19 +19,22 @@ start_x = 0
 end_x = 90
 pattern_x = np.linspace(start_x, end_x, N)
 
-max_peaks_per_sample = 50  # max number of peaks per sample
-min_peak_height = 0.01
+max_peaks_per_sample = 30  # max number of peaks per sample
+min_peak_height = 0.02
 
 # GP parameters:
 scaling = 1.0
 # variance = 30.0 # this was my original estimate
 # variance = 100.0
-# variance = 50Thursday:
+# variance = 50
 
-variance = 30.0
+variance = 10.0
 
 # for background to peaks ratio:
 scaling_max = 2.0
+
+base_noise_level_max = 0.007
+base_noise_level_min = 0.0015
 
 
 def convert_to_discrete(peak_positions, peak_sizes, N=N, do_print=False):
@@ -67,6 +72,8 @@ def generate_samples_gp(
     do_plot=False,
     start_index=None,  # for proper scaling to 1.0
     end_index=None,  # inclusive
+    compare_to_exp=False,
+    plot_whole_range=False,
 ):
 
     # start = time.time()
@@ -81,7 +88,11 @@ def generate_samples_gp(
 
     xs_gp = np.atleast_2d(np.linspace(0, 90, n_angles_gp)).T
 
-    ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
+    ys_gp = gp.sample_y(
+        xs_gp,
+        random_state=random_seed,
+        n_samples=n_samples,
+    )
 
     # stop = time.time()
     # print(f"GP took {stop-start} s")
@@ -91,30 +102,16 @@ def generate_samples_gp(
 
     for i in range(0, n_samples):
 
-        # plt.scatter(xs_gp[:, 0], ys_gp[:, i], s=1)
-
+        # scale the output of the gp to the desired length
         if n_angles_output != n_angles_gp:
             f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
             background = f(xs_pattern)
         else:
             background = ys_gp[:, i]
 
-        # plt.plot(xs_pattern, background)
-
         background = background - np.min(background)
-        background = background / np.max(background)
 
         weight_background = np.sum(background)
-
-        base_noise_level_max = 0.05
-        base_noise_level_min = 0.01
-        noise_level = np.random.uniform(
-            low=base_noise_level_min, high=base_noise_level_max
-        )
-        noise_scale = 1.0
-
-        background += np.random.normal(size=N, scale=noise_scale) * noise_level
-        background -= np.min(background)
 
         sigma_peaks = random.uniform(0.1, 0.5)
         peak_positions = []
@@ -126,9 +123,28 @@ def generate_samples_gp(
 
             mean = random.uniform(0, 90)
 
+            # change
+            # if j == 0:
+            #    mean = 45
+            # if j == 1:
+            #    mean = 40
+
             peak_positions.append(mean)
 
+            # TODO: Probably better to use real examples!
             peak_size = random.uniform(min_peak_height, 1)
+            # loc = 0.1
+            # scale = 0.3
+            # peak_size = truncnorm.rvs(
+            #    (min_peak_height - loc) / scale, (1 - loc) / scale, loc, scale
+            # )
+
+            ## change
+            # if j == 0:
+            #    peak_size = min_peak_height
+            # elif j == 1:
+            #    peak_size = 1.0
+
             peak = (
                 1
                 / (sigma_peaks * np.sqrt(2 * np.pi))
@@ -151,17 +167,45 @@ def generate_samples_gp(
             + ys_unaltered
         )
 
+        noise_level = np.random.uniform(
+            low=base_noise_level_min, high=base_noise_level_max
+        )
+        ys_altered += np.random.normal(size=N, scale=noise_level) * np.max(
+            ys_altered[start_index : end_index + 1]
+            if start_index is not None
+            else ys_altered
+        )
+        ys_altered -= np.min(ys_altered)
+
         if start_index is None or end_index is None:
             normalizer = np.max(ys_altered)
         else:
             normalizer = np.max(ys_altered[start_index : end_index + 1])
-
         ys_altered /= normalizer
         ys_unaltered /= normalizer
 
         if do_plot:
-            plt.plot(pattern_x, ys_altered)
-            plt.plot(pattern_x, ys_unaltered)
+            if not plot_whole_range:
+                plt.plot(
+                    pattern_x[start_index : end_index + 1],
+                    ys_altered[start_index : end_index + 1],
+                )
+                plt.plot(
+                    pattern_x[start_index : end_index + 1],
+                    ys_unaltered[start_index : end_index + 1],
+                )
+            else:
+                plt.plot(pattern_x, ys_altered)
+                plt.plot(pattern_x, ys_unaltered)
+
+            if compare_to_exp:
+                path = "exp_data/XRDdata_classification.csv"
+                data = pd.read_csv(path, delimiter=",", skiprows=1)
+                xs = np.array(data.iloc[:, list(range(0, len(data.columns.values), 2))])
+                ys = np.array(data.iloc[:, list(range(1, len(data.columns.values), 2))])
+                ys[:, 0] = ys[:, 0] - np.min(ys[:, 0])
+                ys[:, 0] = ys[:, 0] / np.max(ys[:, 0])
+                plt.plot(xs[:, 0], ys[:, 0])
 
             # plt.xlim(10, 50)
             plt.show()
@@ -186,10 +230,18 @@ def generate_samples_gp(
 
 if __name__ == "__main__":
 
-    generate_samples_gp(1, n_angles_gp=100, random_seed=1234, do_plot=False)
-    generate_samples_gp(1, n_angles_gp=1000, random_seed=1234, do_plot=False)
-    generate_samples_gp(1, n_angles_gp=2000, random_seed=1234, do_plot=False)
-    plt.show()
+    generate_samples_gp(
+        100,
+        n_angles_gp=100,
+        do_plot=True,
+        start_index=1002,
+        end_index=5009,
+        compare_to_exp=True,
+        plot_whole_range=False,
+    )
+    # generate_samples_gp(1, n_angles_gp=1000, random_seed=1234, do_plot=False)
+    # generate_samples_gp(1, n_angles_gp=2000, random_seed=1234, do_plot=False)
+    # plt.show()
     exit()
 
     start = time.time()
