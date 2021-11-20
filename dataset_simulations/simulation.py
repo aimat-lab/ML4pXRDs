@@ -571,7 +571,7 @@ class Simulation:
                         plt.legend()
                         plt.show()
 
-    def add_crystal_to_be_simulated(self, path_to_crystal, labels, metas):
+    def add_path_to_be_simulated(self, path_to_crystal, labels, metas):
 
         try:
 
@@ -602,6 +602,17 @@ class Simulation:
         self.sim_intensities.append(None)
 
         return 1
+
+    def add_crystal_to_be_simulated(self, crystal, labels, metas):
+
+        self.sim_crystals.append(crystal)
+        self.sim_labels.append(labels)
+        self.sim_metas.append(metas)
+
+        self.sim_patterns.append(None)
+        self.sim_variations.append(None)
+        self.sim_angles.append(None)
+        self.sim_intensities.append(None)
 
     def plot_most_complicated_diffractogram(self):
 

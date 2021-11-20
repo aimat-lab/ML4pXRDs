@@ -41,7 +41,7 @@ class NarrowSimulation(Simulation):
             else:
                 continue
 
-            result = self.add_crystal_to_be_simulated(path, [label], [self.icsd_ids[i]])
+            result = self.add_path_to_be_simulated(path, [label], [self.icsd_ids[i]])
 
             if result == 1:
                 if self.icsd_structure_types[i] == "Fluorite#CaF2":

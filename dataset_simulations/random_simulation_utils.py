@@ -187,9 +187,8 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
             )
         print(output_str)
         print(second_output_str)
-        """
-
         # forceWyckPos Mg        = a
+        """
 
         # TODO: Maybe bring unique entries of chosen_elements together to form one?
         # probably not needed / additional overhead

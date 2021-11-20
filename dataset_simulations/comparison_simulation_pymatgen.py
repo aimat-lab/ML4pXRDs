@@ -12,7 +12,7 @@ class ComparisonSimulation(Simulation):
     def generate_structures(self):
 
         path = self.icsd_paths[self.icsd_ids.index(238381)]
-        self.add_crystal_to_be_simulated(path, [0], [238381])
+        self.add_path_to_be_simulated(path, [0], [238381])
 
 
 if __name__ == "__main__":

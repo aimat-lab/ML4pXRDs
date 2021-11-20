@@ -31,8 +31,10 @@ class ICSDSimulation(Simulation):
             space_group_number = self.get_space_group_number(self.icsd_ids[i])
 
             if space_group_number is not None:
-                result = self.add_crystal_to_be_simulated(
-                    path, [space_group_number], [self.icsd_ids[i]],
+                result = self.add_path_to_be_simulated(
+                    path,
+                    [space_group_number],
+                    [self.icsd_ids[i]],
                 )
 
                 if result is None:
