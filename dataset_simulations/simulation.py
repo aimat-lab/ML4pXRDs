@@ -523,6 +523,9 @@ class Simulation:
 
         cif_path = self.icsd_paths[self.icsd_ids.index(id)]
 
+        if cif_path is None:
+            return None
+
         # read space group number directly from the cif file
         with open(cif_path, "r") as file:
             for line in file:
