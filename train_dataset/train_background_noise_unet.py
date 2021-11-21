@@ -17,7 +17,7 @@ import generate_background_noise_utils
 
 from datetime import datetime
 
-tag = "new_test"
+tag = "new_test_changed_height"
 mode = "removal"  # possible: "info", "removal"
 training_mode = "train"  # possible: train and test
 
@@ -157,7 +157,7 @@ if training_mode == "train":
 
     model = my_unet.UNet()
 
-    keras.utils.plot_model(model, show_shapes=True)
+    #keras.utils.plot_model(model, show_shapes=True)
 
     model.summary()
 
