@@ -49,7 +49,7 @@ out_base = (
     "unet/"
     + mode
     + "_"
-    + datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+    + datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     + "_"
     + tag
     + "/"
