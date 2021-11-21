@@ -21,9 +21,10 @@ tag = "new_test"
 mode = "removal"  # possible: "info", "removal"
 training_mode = "train"  # possible: train and test
 
-to_test = "removal_17-11-2021_16-03-57_variance_30"
+to_test = "removal_20-11-2021_16-03-59_new_test"
 
-N = 9018
+# N = 9018
+N = 9036
 pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
@@ -130,10 +131,33 @@ if training_mode == "train":
                 data[1][:, self.start_index : self.end_index + 1],
             )
 
-    my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
+    # my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
+    my_unet = UNet(
+        length=N,
+        model_depth=4,  # height
+        num_channel=1,  # input
+        model_width=5,  # first conv number of channels, danach immer verdoppeln
+        kernel_size=64,
+        output_nums=1,
+        problem_type="Regression",
+    )
+
+    # length: Input Signal Length
+    # model_depth: Depth of the Model
+    # model_width: Width of the Input Layer of the Model
+    # num_channel: Number of Channels allowed by the Model
+    # kernel_size: Kernel or Filter Size of the Convolutional Layers
+    # problem_type: Classification (Binary or Multiclass) or Regression
+    # output_nums: Output Classes (Classification Mode) or Features (Regression Mode)
+    # ds: Checks where Deep Supervision is active or not, either 0 or 1 [Default value set as 0]
+    # ae: Enables or diables the AutoEncoder Mode, either 0 or 1 [Default value set as 0]
+    # alpha: This Parameter is only for MultiResUNet, default value is 1
+    # feature_number: Number of Features or Embeddings to be extracted from the AutoEncoder in the A_E Mode
+    # is_transconv: (TRUE - Transposed Convolution, FALSE - UpSampling) in the Encoder Layer
+
     model = my_unet.UNet()
 
-    # keras.utils.plot_model(model, show_shapes=True)
+    keras.utils.plot_model(model, show_shapes=True)
 
     model.summary()
 
@@ -161,10 +185,7 @@ if training_mode == "train":
         max_queue_size=500,
         workers=NO_workers,
         use_multiprocessing=True,
-        callbacks=[
-            cp_callback,
-            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
-        ],
+        callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
         steps_per_epoch=number_of_batches,
     )
 

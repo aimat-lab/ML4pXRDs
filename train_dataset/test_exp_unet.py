@@ -6,7 +6,7 @@ from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 
 mode = "removal"  # possible: info and removal
-to_test = "removal_17-11-2021_16-03-57_variance_30"
+to_test = "removal_20-11-2021_16-03-59_new_test"
 
 
 def load_experimental_data(loading_mode="classification"):
