@@ -158,10 +158,22 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
                     print("More than 100 collisions.")
                     break
 
+                chosen_index = random.randint(0, len(number_of_atoms) - 1)
+                """
                 # always first choose the general Wyckoff site:
                 chosen_index = (
                     random.randint(0, len(number_of_atoms) - 1) if i > 0 else 0
                 )
+                """
+                # TODO: Think about this again!
+                """ See this from the documentation
+                PyXtal starts with the largest available WP, which is the general position of the space group. 
+                If the number of atoms required is equal to or greater than the size of the general position, 
+                the algorithm proceeds. If fewer atoms are needed, the next largest WP (or set of WP’s) is 
+                chosen, in order of descending multiplicity. This is done to ensure that larger positions are 
+                preferred over smaller ones; this reflects the greater prevalence of larger multiplicities 
+                both statistically and in nature.
+                """
 
                 if dofs[chosen_index] == 0 and int(number_of_atoms[chosen_index]) == 1:
                     counter_collisions += 1
@@ -177,7 +189,7 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
 
                 break
 
-        """
+        """ For spg C++ program
         output_str = ""
         second_output_str = ""
         for i, element in enumerate(chosen_elements):
@@ -220,7 +232,10 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
 
 def generate_structures(spacegroup_number, N):
 
-    set_start_method("spawn")
+    try:
+        set_start_method("spawn")
+    except:
+        pass
 
     group = Group(spacegroup_number, dim=3)
     multiplicities = [x.multiplicity for x in group]
