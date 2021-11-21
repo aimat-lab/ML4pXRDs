@@ -167,11 +167,11 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
                 """
                 # TODO: Think about this again!
                 """ See this from the documentation
-                PyXtal starts with the largest available WP, which is the general position of the space group. 
-                If the number of atoms required is equal to or greater than the size of the general position, 
-                the algorithm proceeds. If fewer atoms are needed, the next largest WP (or set of WP’s) is 
-                chosen, in order of descending multiplicity. This is done to ensure that larger positions are 
-                preferred over smaller ones; this reflects the greater prevalence of larger multiplicities 
+                PyXtal starts with the largest available WP, which is the general position of the space group.
+                If the number of atoms required is equal to or greater than the size of the general position,
+                the algorithm proceeds. If fewer atoms are needed, the next largest WP (or set of WP’s) is
+                chosen, in order of descending multiplicity. This is done to ensure that larger positions are
+                preferred over smaller ones; this reflects the greater prevalence of larger multiplicities
                 both statistically and in nature.
                 """
 
@@ -252,7 +252,7 @@ def generate_structures(spacegroup_number, N):
     exit()
     """
 
-    pool = multiprocessing.Pool(processes=8)
+    pool = multiprocessing.Pool(processes=80)
 
     handle = pool.map_async(
         partial(
