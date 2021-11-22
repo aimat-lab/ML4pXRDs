@@ -86,18 +86,31 @@ if __name__ == "__main__":
     exit()
     """
 
-    if False:  # toggle
+    """
+    lengths = []
+    for i, id in enumerate(simulation.icsd_formulas):
+        lengths.append(len(id.split(" ")))
+
+    plt.hist(lengths, bins=np.arange(0, np.max(lengths)))
+    plt.show()
+    """
+
+    if True:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
 
-    simulation.save()
+    # simulation.save()
 
     if True:
         pass
 
-        # simulation.simulate_all(start_from_scratch=True)
+    # simulation.plot(together=10)
 
-        # simulation.load()
+    print()
+
+    # simulation.simulate_all(start_from_scratch=True)
+
+    # simulation.load()
 
     # simulation.plot(together=5)
