@@ -32,7 +32,7 @@ tag = (
 mode = "random"  # possible: narrow and random
 model_str = "Lee"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park
 
-number_of_values_initial = 9036
+number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 
 
@@ -75,10 +75,12 @@ elif mode == "random":
     current_dir = "narrow_19-11-2021_08:12:29_test"
 
     tuner_epochs = 4
-    tuner_batch_size = 500
+    # tuner_batch_size = 500
+    tuner_batch_size = 64
 
     train_epochs = 10
-    train_batch_size = 500
+    # train_batch_size = 500
+    train_batch_size = 64
 
 
 out_base = (
@@ -274,9 +276,10 @@ elif mode == "random":
 
     n_patterns_per_crystal = len(sim.sim_patterns[0])
 
-    patterns = sim.sim_patterns
-    labels = sim.sim_labels
-    variations = sim.sim_variations
+    # TODO: Change!
+    patterns = sim.sim_patterns[::4]
+    labels = sim.sim_labels[::4]
+    variations = sim.sim_variations[::4]
 
     for i in reversed(range(0, len(patterns))):
         if np.any(np.isnan(variations[i][0])):
@@ -284,9 +287,10 @@ elif mode == "random":
             del labels[i]
             del variations[i]
 
+    ys_unique = [14, 104]
     y = []
     for label in labels:
-        y.extend([label[0]] * n_patterns_per_crystal)
+        y.extend([ys_unique.index(label[0])] * n_patterns_per_crystal)
 
     x_1 = []
     for pattern in patterns:
