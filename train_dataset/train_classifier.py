@@ -8,6 +8,9 @@ from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import regularizers
 from datetime import datetime
 import os
+
+sys.path.append("../dataset_simulations/")
+
 from keras_tuner import BayesianOptimization
 from glob import glob
 import matplotlib.pyplot as plt
@@ -16,32 +19,33 @@ from sklearn.utils import shuffle
 from tensorflow.python.client import device_lib
 import tensorflow.keras as keras
 from sklearn.preprocessing import StandardScaler
-from dataset_simulations.narrow_simulation import NarrowSimulation
-from dataset_simulations.random_simulation import RandomSimulation
+from dataset_simulations.random_simulation import Simulation
 from sklearn.utils import class_weight
 import random
 import math
 import pickle
+import gc
 
 tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
 )
 mode = "random"  # possible: narrow and random
-model_str = "Park"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park
+model_str = "Lee"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park
 
 number_of_values_initial = 9036
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 
-# only use a restricted range of the simulated patterns
-start_x = 10
-end_x = 50
-step = 1
-start_index = np.argwhere(simulated_range >= start_x)[0][0]
-end_index = np.argwhere(simulated_range <= end_x)[-1][0]
-used_range = simulated_range[start_index : end_index + 1 : step]
-number_of_values = len(used_range)
 
 if mode == "narrow":
+
+    # only use a restricted range of the simulated patterns
+    start_x = 10
+    end_x = 50
+    step = 1
+    start_index = np.argwhere(simulated_range >= start_x)[0][0]
+    end_index = np.argwhere(simulated_range <= end_x)[-1][0]
+    used_range = simulated_range[start_index : end_index + 1 : step]
+    number_of_values = len(used_range)
 
     scale_features = True
 
@@ -55,6 +59,15 @@ if mode == "narrow":
     train_batch_size = 128
 
 elif mode == "random":
+
+    # only use a restricted range of the simulated patterns
+    start_x = 10
+    end_x = 90  # different from above
+    step = 1
+    start_index = np.argwhere(simulated_range >= start_x)[0][0]
+    end_index = np.argwhere(simulated_range <= end_x)[-1][0]
+    used_range = simulated_range[start_index : end_index + 1 : step]
+    number_of_values = len(used_range)
 
     scale_features = True
 
@@ -78,7 +91,7 @@ out_base = (
     + "/"
 )
 if not os.path.exists(out_base):
-    os.system("mkdir " + out_base)
+    os.system("mkdir -p" + out_base)
 
 # Each mode / model needs to define (x_train and y_train) or only x_train if it is a Sequence object (then leave y_train as None)
 # Each mode / model needs to define x_val, y_val and x_test and y_test
@@ -101,11 +114,11 @@ if mode == "narrow":
 
     path_to_patterns = "../dataset_simulations/patterns/narrow/"
 
-    sim = NarrowSimulation(
+    sim = Simulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-        output_dir="../dataset_simulations/patterns/narrow/",
     )
+    sim.output_dir = "../dataset_simulations/patterns/narrow/"
 
     sim.load()
 
@@ -245,17 +258,17 @@ elif mode == "random":
 
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
-        sim = RandomSimulation(
+        sim = Simulation(
             "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
             "/home/kit/iti/la2559/Databases/ICSD/cif/",
-            output_dir="../dataset_simulations/patterns/random/",
         )
+        sim.output_dir = "../dataset_simulations/patterns/random/"
     else:
-        sim = RandomSimulation(
+        sim = Simulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-            output_dir="../dataset_simulations/patterns/random/",
         )
+        sim.output_dir = "../dataset_simulations/patterns/random/"
 
     sim.load()
 
@@ -271,52 +284,67 @@ elif mode == "random":
             del labels[i]
             del variations[i]
 
-    patterns = np.array(patterns)
-
     y = []
     for label in labels:
         y.extend([label[0]] * n_patterns_per_crystal)
 
-    x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
+    x_1 = []
+    for pattern in patterns:
+        for sub_pattern in pattern:
+            x_1.append(sub_pattern[start_index : end_index + 1 : step])
+
     variations = np.array(variations)
     variations = variations.reshape(
         (variations.shape[0] * variations.shape[1], variations.shape[2])
     )
-    x = x[:, start_index : end_index + 1 : step]
     y = np.array(y)
 
-    print(f"Shape of x: {x.shape}")
-    print(f"Shape of y: {y.shape}")
+    # print(f"Shape of x: {x_1.shape}")
+    # print(f"Shape of y: {y.shape}")
 
-    assert not np.any(np.isnan(x))
+    assert not np.any(np.isnan(x_1))
     assert not np.any(np.isnan(y))
-    assert len(x) == len(y)
+    assert len(x_1) == len(y)
 
     n_classes = len(np.unique(y))
 
-    print("##### Loaded {} training points with {} classes".format(len(x), n_classes))
+    print("##### Loaded {} training points with {} classes".format(len(x_1), n_classes))
 
     # Split into train, validation, test set + shuffle
-    x, y, variations = shuffle(x, y, variations, random_state=1234)
+    x_2, y, variations = shuffle(x_1, y, variations, random_state=1234)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
-    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
+    x_train_3, x_test_3, y_train, y_test = train_test_split(x_2, y, test_size=0.3)
+    x_test_4, x_val_4, y_test, y_val = train_test_split(x_test_3, y_test, test_size=0.5)
 
     if scale_features:
         sc = StandardScaler()
-        sc.fit(x_train)
 
-        x_test = sc.transform(x_test)
-        x_val = sc.transform(x_val)
+        x_train_transformed = sc.fit_transform(x_train_3)
+        x_test_transformed = sc.transform(x_test_4)
+        x_val_transformed = sc.transform(x_val_4)
 
-        with open(os.path.join(out_base, "scaler"), "wb") as file:
-            pickle.dump(sc, file)
+        del x_train_3[:]
+        del x_train_3
+        del x_test_4[:]
+        del x_test_4
+        del x_val_4[:]
+        del x_val_4
+        gc.collect()
 
-    if "conv" in model_str:
-        x = np.expand_dims(x, axis=2)
-        x_train = np.expand_dims(x_train, axis=2)
-        x_test = np.expand_dims(x_test, axis=2)
-        x_val = np.expand_dims(x_val, axis=2)
+        # with open(os.path.join(out_base, "scaler"), "wb") as file:
+        #    pickle.dump(sc, file)
+
+    if "conv" in model_str or model_str == "Park" or model_str == "Lee":
+        x_train = np.expand_dims(x_train_transformed, axis=2)
+        x_test = np.expand_dims(x_test_transformed, axis=2)
+        x_val = np.expand_dims(x_val_transformed, axis=2)
+        # TODO: Does this happen inplace?
+
+        del x_train_transformed
+        del x_test_transformed
+        del x_val_transformed
+        gc.collect()
+
 
 else:
     raise Exception("Data source not recognized.")

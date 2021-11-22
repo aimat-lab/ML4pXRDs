@@ -1,12 +1,13 @@
 import sys
 import os
-import random_simulation_utils
 import time
 import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.append("../")
+
 from dataset_simulations.simulation import Simulation
+import random_simulation_utils
 
 space_groups = [14, 104]
 N_per_space_group = 10000
