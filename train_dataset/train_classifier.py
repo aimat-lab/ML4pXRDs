@@ -26,10 +26,10 @@ import pickle
 tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
 )
-mode = "narrow"  # possible: narrow and random
-model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
+mode = "random"  # possible: narrow and random
+model_str = "Park"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park
 
-number_of_values_initial = 9018
+number_of_values_initial = 9036
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 
 # only use a restricted range of the simulated patterns
@@ -41,16 +41,32 @@ end_index = np.argwhere(simulated_range <= end_x)[-1][0]
 used_range = simulated_range[start_index : end_index + 1 : step]
 number_of_values = len(used_range)
 
-scale_features = True
+if mode == "narrow":
 
-tune_hyperparameters = False
-current_dir = "narrow_19-11-2021_08:12:29_test"
+    scale_features = True
 
-tuner_epochs = 4
-tuner_batch_size = 128
+    tune_hyperparameters = False
+    current_dir = "narrow_19-11-2021_08:12:29_test"
 
-train_epochs = 10
-train_batch_size = 128
+    tuner_epochs = 4
+    tuner_batch_size = 128
+
+    train_epochs = 10
+    train_batch_size = 128
+
+elif mode == "random":
+
+    scale_features = True
+
+    tune_hyperparameters = False
+    current_dir = "narrow_19-11-2021_08:12:29_test"
+
+    tuner_epochs = 4
+    tuner_batch_size = 500
+
+    train_epochs = 10
+    train_batch_size = 500
+
 
 out_base = (
     "classifier/"
@@ -644,6 +660,61 @@ elif model_str == "Lee":
         return model
 
 
+elif model_str == "Park":
+
+    def build_model(hp=None):
+
+        # this is the 7-label version
+
+        model = keras.models.Sequential()
+        model.add(
+            keras.layers.Convolution1D(
+                80,
+                100,
+                subsample_length=5,
+                border_mode="same",
+                input_shape=(number_of_values, 1),
+            )
+        )  # add convolution layer
+        model.add(keras.layers.Activation("relu"))  # activation
+        model.add(keras.layers.Dropout(0.3))
+        model.add(
+            keras.layers.AveragePooling1D(pool_length=3, stride=2)
+        )  # pooling layer
+        model.add(
+            keras.layers.Convolution1D(80, 50, subsample_length=5, border_mode="same")
+        )
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.3))
+        model.add(keras.layers.AveragePooling1D(pool_length=3, stride=None))
+        model.add(
+            keras.layers.Convolution1D(80, 25, subsample_length=2, border_mode="same")
+        )
+        model.add(keras.layers.Activation("relu"))
+
+        model.add(keras.layers.Dropout(0.3))
+
+        model.add(keras.layers.AveragePooling1D(pool_length=3, stride=None))
+        model.add(keras.layers.Flatten())
+        model.add(keras.layers.Dense(700))
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(70))
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(7))
+
+        optimizer = keras.optimizers.Adam()
+        model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=["accuracy"],
+        )
+        # they actually train for 5000 epochs and batch size 500
+
+        return model
+
+
 else:
 
     raise Exception("Model not recognized.")
@@ -696,7 +767,7 @@ if tune_hyperparameters:
 
 else:  # build model from best set of hyperparameters
 
-    if not model_str == "Lee":
+    if not model_str == "Lee" and not mode == "narrow":
 
         best_hp = tuner.get_best_hyperparameters()[0]
 
