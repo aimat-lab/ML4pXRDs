@@ -31,9 +31,9 @@ scaling = 1.0
 variance = 10.0
 
 # for background to peaks ratio:
-scaling_max = 2.0
+scaling_max = 3.0
 
-base_noise_level_max = 0.007
+base_noise_level_max = 0.017
 base_noise_level_min = 0.0015
 
 
@@ -88,11 +88,7 @@ def generate_samples_gp(
 
     xs_gp = np.atleast_2d(np.linspace(0, 90, n_angles_gp)).T
 
-    ys_gp = gp.sample_y(
-        xs_gp,
-        random_state=random_seed,
-        n_samples=n_samples,
-    )
+    ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
 
     # stop = time.time()
     # print(f"GP took {stop-start} s")
@@ -199,13 +195,21 @@ def generate_samples_gp(
                 plt.plot(pattern_x, ys_unaltered)
 
             if compare_to_exp:
-                path = "exp_data/XRDdata_classification.csv"
-                data = pd.read_csv(path, delimiter=",", skiprows=1)
-                xs = np.array(data.iloc[:, list(range(0, len(data.columns.values), 2))])
-                ys = np.array(data.iloc[:, list(range(1, len(data.columns.values), 2))])
-                ys[:, 0] = ys[:, 0] - np.min(ys[:, 0])
-                ys[:, 0] = ys[:, 0] / np.max(ys[:, 0])
-                plt.plot(xs[:, 0], ys[:, 0])
+
+                for i in range(6, 7):
+                    index = i
+                    path = "exp_data/XRDdata_classification.csv"
+                    data = pd.read_csv(path, delimiter=",", skiprows=1)
+                    xs = np.array(
+                        data.iloc[:, list(range(0, len(data.columns.values), 2))]
+                    )
+                    ys = np.array(
+                        data.iloc[:, list(range(1, len(data.columns.values), 2))]
+                    )
+                    ys[:, index] = ys[:, index] - np.min(ys[:, index])
+                    ys[:, index] = ys[:, index] / np.max(ys[:, index])
+                    plt.plot(xs[:, index], ys[:, index], label=str(index))
+                plt.legend()
 
             # plt.xlim(10, 50)
             plt.show()

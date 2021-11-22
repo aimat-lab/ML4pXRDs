@@ -6,7 +6,7 @@ from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 
 mode = "removal"  # possible: info and removal
-to_test = "removal_20-11-2021_16-03-59_new_test"
+to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
 
 
 def load_experimental_data(loading_mode="classification"):
@@ -39,7 +39,8 @@ if __name__ == "__main__":
 
     xs_exp, ys_exp = load_experimental_data(loading_mode="classification")
 
-    N = 9018
+    # N = 9018
+    N = 9036
     pattern_x = np.linspace(0, 90, N)
 
     start_x = 10
