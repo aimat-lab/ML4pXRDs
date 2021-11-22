@@ -17,6 +17,7 @@ from tensorflow.python.client import device_lib
 import tensorflow.keras as keras
 from sklearn.preprocessing import StandardScaler
 from dataset_simulations.narrow_simulation import NarrowSimulation
+from dataset_simulations.random_simulation import RandomSimulation
 from sklearn.utils import class_weight
 import random
 import math
@@ -25,8 +26,8 @@ import pickle
 tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
 )
-mode = "narrow"
-
+mode = "narrow"  # possible: narrow and random
+model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
 
 number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
@@ -41,8 +42,6 @@ used_range = simulated_range[start_index : end_index + 1 : step]
 number_of_values = len(used_range)
 
 scale_features = True
-
-model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
 
 tune_hyperparameters = False
 current_dir = "narrow_19-11-2021_08:12:29_test"
@@ -62,6 +61,8 @@ out_base = (
     + tag
     + "/"
 )
+if not os.path.exists(out_base):
+    os.system("mkdir " + out_base)
 
 # Each mode / model needs to define (x_train and y_train) or only x_train if it is a Sequence object (then leave y_train as None)
 # Each mode / model needs to define x_val, y_val and x_test and y_test
@@ -154,7 +155,7 @@ if mode == "narrow":
         x_test = sc.transform(x_test)
         x_val = sc.transform(x_val)
 
-        with open("classifier/scaler", "wb") as file:
+        with open(os.path.join(out_base, "scaler"), "wb") as file:
             pickle.dump(sc, file)
 
     # when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
@@ -164,7 +165,7 @@ if mode == "narrow":
         x_test = np.expand_dims(x_test, axis=2)
         x_val = np.expand_dims(x_val, axis=2)
 
-    class CustomSequence(keras.utils.Sequence):
+    class NarrowSequence(keras.utils.Sequence):
         def __init__(self, x_train, y_train, variations, batch_size):
 
             self.x_train = x_train
@@ -215,12 +216,91 @@ if mode == "narrow":
 
             return current_x, current_y
 
-    x_train = CustomSequence(
+    x_train = NarrowSequence(
         __x_train,
         __y_train,
         variations,
         tuner_batch_size if tune_hyperparameters else train_batch_size,
     )
+
+elif mode == "random":
+
+    path_to_patterns = "../dataset_simulations/patterns/random/"
+
+    jobid = os.getenv("SLURM_JOB_ID")
+    if jobid is not None and jobid != "":
+        sim = RandomSimulation(
+            "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
+            "/home/kit/iti/la2559/Databases/ICSD/cif/",
+            output_dir="../dataset_simulations/patterns/random/",
+        )
+    else:
+        sim = RandomSimulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+            output_dir="../dataset_simulations/patterns/random/",
+        )
+
+    sim.load()
+
+    n_patterns_per_crystal = len(sim.sim_patterns[0])
+
+    patterns = sim.sim_patterns
+    labels = sim.sim_labels
+    variations = sim.sim_variations
+
+    for i in reversed(range(0, len(patterns))):
+        if np.any(np.isnan(variations[i][0])):
+            del patterns[i]
+            del labels[i]
+            del variations[i]
+
+    patterns = np.array(patterns)
+
+    y = []
+    for label in labels:
+        y.extend([label[0]] * n_patterns_per_crystal)
+
+    x = patterns.reshape((patterns.shape[0] * patterns.shape[1], patterns.shape[2]))
+    variations = np.array(variations)
+    variations = variations.reshape(
+        (variations.shape[0] * variations.shape[1], variations.shape[2])
+    )
+    x = x[:, start_index : end_index + 1 : step]
+    y = np.array(y)
+
+    print(f"Shape of x: {x.shape}")
+    print(f"Shape of y: {y.shape}")
+
+    assert not np.any(np.isnan(x))
+    assert not np.any(np.isnan(y))
+    assert len(x) == len(y)
+
+    n_classes = len(np.unique(y))
+
+    print("##### Loaded {} training points with {} classes".format(len(x), n_classes))
+
+    # Split into train, validation, test set + shuffle
+    x, y, variations = shuffle(x, y, variations, random_state=1234)
+
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
+    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
+
+    if scale_features:
+        sc = StandardScaler()
+        sc.fit(x_train)
+
+        x_test = sc.transform(x_test)
+        x_val = sc.transform(x_val)
+
+        with open(os.path.join(out_base, "scaler"), "wb") as file:
+            pickle.dump(sc, file)
+
+    if "conv" in model_str:
+        x = np.expand_dims(x, axis=2)
+        x_train = np.expand_dims(x_train, axis=2)
+        x_test = np.expand_dims(x_test, axis=2)
+        x_val = np.expand_dims(x_val, axis=2)
 
 else:
     raise Exception("Data source not recognized.")
