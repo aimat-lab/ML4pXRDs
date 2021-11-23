@@ -11,7 +11,7 @@ import numpy as np
 import pickle
 import gc
 
-classifier_model_name = "random_23-11-2021_09:42:23_test"
+classifier_model_name = "random_23-11-2021_10:57:12_test"
 classifier_model = keras.models.load_model(
     "classifier/" + classifier_model_name + "/final"
 )
