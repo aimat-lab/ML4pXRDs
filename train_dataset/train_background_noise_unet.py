@@ -21,7 +21,9 @@ tag = "new_test_changed_max_scaling_max_noise_more_epochs"
 mode = "removal"  # possible: "info", "removal"
 training_mode = "test"  # possible: train and test
 
-to_test = "removal_22-11-2021_10-03-00_new_test_changed_max_scaling_max_noise"
+to_test = (
+    "removal_22-11-2021_15-58-00_new_test_changed_max_scaling_max_noise_more_epochs"
+)
 
 # N = 9018
 N = 9036
