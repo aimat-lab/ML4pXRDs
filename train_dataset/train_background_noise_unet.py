@@ -17,9 +17,9 @@ import generate_background_noise_utils
 
 from datetime import datetime
 
-tag = "new_test_changed_max_scaling_max_noise_more_epochs"
+tag = "next_version"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
 to_test = (
     "removal_22-11-2021_15-58-00_new_test_changed_max_scaling_max_noise_more_epochs"
@@ -31,7 +31,7 @@ pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 500
+number_of_epochs = 200
 NO_workers = 16
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
