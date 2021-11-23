@@ -1,0 +1,141 @@
+
+#(C) 2021 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_5331-ICSD
+_database_code_ICSD 5331
+_audit_creation_date 2015-08-01
+_chemical_name_common
+
+;
+Strontium lanthanum lead sodium uranium cerium yttrium iron titanium chromium
+oxide *
+;
+_chemical_formula_structural
+
+;
+(Sr.31 Pb.25 Na.019 Ca.014 La.001) (U.86 Y.07 Ce.021 Mn.005) Fe1.70 Zn.30
+(Ti12.07 Fe4.99 V.37 La.009) O38
+;
+_chemical_formula_sum
+
+;
+Ca0.014 Ce0.021 Fe6.69 La0.01 Mn0.005 Na0.019 O38 Pb0.25 Sr0.31 Ti12.07 U0.86
+V0.37 Y0.07 Zn0.3
+;
+_chemical_name_mineral Mapiquiroite
+_exptl_crystal_density_diffrn 4.83
+_citation_title
+
+;
+Mapiquiroite, (Sr,Pb)(U,Y)Fe2(Ti,Fe3+)18O38, a new member of the crichtonite
+group from the Apuan Alps, Tuscany, Italy
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'European Journal of Mineralogy' 2014 26 427 437 EJMIER
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Biagioni, c.'
+primary 'Orlandi, P.'
+primary 'Pasero, M.'
+primary 'Nestola, F.'
+primary 'Bindi, L.'
+_cell_length_a 10.3854(3)
+_cell_length_b 10.3854(3)
+_cell_length_c 20.8942(6)
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 120.
+_cell_volume 1951.65
+_cell_formula_units_Z 3
+_space_group_name_H-M_alt 'R -3 H'
+_space_group_IT_number 148
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x-y, x, -z'
+2 'y, -x+y, -z'
+3 '-x, -y, -z'
+4 '-x+y, -x, z'
+5 '-y, x-y, z'
+6 'x, y, z'
+7 'x-y+2/3, x+1/3, -z+1/3'
+8 'y+2/3, -x+y+1/3, -z+1/3'
+9 '-x+2/3, -y+1/3, -z+1/3'
+10 '-x+y+2/3, -x+1/3, z+1/3'
+11 '-y+2/3, x-y+1/3, z+1/3'
+12 'x+2/3, y+1/3, z+1/3'
+13 'x-y+1/3, x+2/3, -z+2/3'
+14 'y+1/3, -x+y+2/3, -z+2/3'
+15 '-x+1/3, -y+2/3, -z+2/3'
+16 '-x+y+1/3, -x+2/3, z+2/3'
+17 '-y+1/3, x-y+2/3, z+2/3'
+18 'x+1/3, y+2/3, z+2/3'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Sr2+ 2
+Pb4+ 4
+Na1+ 1
+U6+ 6
+Y3+ 3
+Fe2+ 2.9
+Zn2+ 2
+Ti4+ 4
+Fe2+ 2.9
+V5+ 5
+Ti4+ 4
+Fe2+ 2.9
+V5+ 5
+Ti4+ 4
+Fe2+ 2.9
+V5+ 5
+Ca2+ 2
+La3+ 3
+Ce3+ 3
+Mn2+ 2
+O2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_occupancy
+Sr1 Sr2+ 3 a 0 0 0 .0252 0.312
+Pb1 Pb4+ 3 a 0 0 0 .0252 0.248
+Na1 Na1+ 3 a 0 0 0 .0252 0.019
+U1 U6+ 3 b 0 0 0.5 .006 0.858
+Y1 Y3+ 3 b 0 0 0.5 .006 0.07
+Fe1 Fe2+ 6 c 0 0 0.30915 .007 .848
+Zn1 Zn2+ 6 c 0 0 0.30915 .007 .152
+Ti1 Ti4+ 18 f 0.18392 0.03759 0.16506 .0088 .671
+Fe2 Fe2+ 18 f 0.18392 0.03759 0.16506 .0088 .277
+V1 V5+ 18 f 0.18392 0.03759 0.16506 .0088 .021
+Ti2 Ti4+ 18 f 0.0829 0.33044 0.60845 .0091 .671
+Fe3 Fe2+ 18 f 0.0829 0.33044 0.60845 .0091 .277
+V2 V5+ 18 f 0.0829 0.33044 0.60845 .0091 .021
+Ti3 Ti4+ 18 f 0.07605 0.32015 0.39893 .0081 .671
+Fe4 Fe2+ 18 f 0.07605 0.32015 0.39893 .0081 .277
+V3 V5+ 18 f 0.07605 0.32015 0.39893 .0081 .021
+Ca1 Ca2+ 3 a 0 0 0 .0252 0.014
+La1 La3+ 3 a 0 0 0 .0252 0.009
+Ce1 Ce3+ 3 b 0 0 0.5 .006 0.021
+Mn1 Mn2+ 3 b 0 0 0.5 .006 0.005
+O1 O2- 18 f 0.1314 0.1878 0.5619 .0111 1.
+O2 O2- 18 f 0.7111 0.2059 0.4436 .0106 1.
+O3 O2- 18 f 0.3594 0.1017 0.5594 .0094 1.
+O4 O2- 18 f 0.5917 0.0318 0.55 .0108 1.
+O5 O2- 18 f 0.0511 0.8569 0.3355 .0078 1.
+O6 O2- 18 f 0.3654 0.0985 0.3397 .0086 1.
+O7 O2- 6 c 0 0 0.2163 .0072 1.
+#End of TTdata_5331-ICSD
