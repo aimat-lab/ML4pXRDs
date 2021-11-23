@@ -220,8 +220,11 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
 
         if not my_crystal.valid:
             continue
-
-        crystal = my_crystal.to_pymatgen()
+        
+        try:
+            crystal = my_crystal.to_pymatgen()
+        except:
+            continue
 
         # vis = StructureVis()
         # vis.set_structure(crystal)

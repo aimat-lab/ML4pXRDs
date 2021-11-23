@@ -94,9 +94,7 @@ if __name__ == "__main__":
     simulation.save()
 
     if True:
-        pass
-
-        # simulation.simulate_all(start_from_scratch=True)
+        simulation.simulate_all(start_from_scratch=True)
 
         # simulation.load()
 

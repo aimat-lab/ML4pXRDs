@@ -15,8 +15,8 @@ from sklearn.utils import shuffle
 import xrayutilities as xu
 from pymatgen.io.cif import CifParser
 
-num_files = 16
-num_processes = 8
+num_files = 160
+num_processes = 80
 
 simulation_software = "pymatgen"  # possible: pymatgen and xrayutilities
 
