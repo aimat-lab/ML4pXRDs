@@ -30,7 +30,9 @@ tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
 )
 mode = "random"  # possible: narrow and random
-model_str = "Lee"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park
+model_str = (
+    "random"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
+)
 
 number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
@@ -80,7 +82,7 @@ elif mode == "random":
 
     train_epochs = 10
     # train_batch_size = 500
-    train_batch_size = 64
+    train_batch_size = 128
 
 
 out_base = (
@@ -292,6 +294,13 @@ elif mode == "random":
     for label in labels:
         y.extend([ys_unique.index(label[0])] * n_patterns_per_crystal)
 
+    y = np.array(y)
+
+    # print(np.sum(y == 0))
+    # print(np.sum(y == 1))
+    # plt.hist(y)
+    # plt.show()
+
     x_1 = []
     for pattern in patterns:
         for sub_pattern in pattern:
@@ -301,7 +310,6 @@ elif mode == "random":
     variations = variations.reshape(
         (variations.shape[0] * variations.shape[1], variations.shape[2])
     )
-    y = np.array(y)
 
     # print(f"Shape of x: {x_1.shape}")
     # print(f"Shape of y: {y.shape}")
@@ -349,6 +357,11 @@ elif mode == "random":
         del x_val_transformed
         gc.collect()
 
+    else:
+
+        x_train = x_train_transformed
+        x_test = x_test_transformed
+        x_val = x_val_transformed
 
 else:
     raise Exception("Data source not recognized.")
@@ -747,6 +760,33 @@ elif model_str == "Park":
         return model
 
 
+elif model_str == "random":
+
+    def build_model(hp=None):
+
+        model = keras.models.Sequential()
+
+        model.add(
+            keras.layers.Dense(
+                1024, activation="relu", input_shape=(number_of_values,),
+            )
+        )
+
+        model.add(keras.layers.Dense(1024, activation="relu",))
+
+        model.add(keras.layers.Dense(1))
+
+        optimizer = keras.optimizers.Adam()
+
+        model.compile(
+            optimizer=optimizer,
+            loss=keras.losses.BinaryCrossentropy(from_logits=True),
+            metrics=["accuracy"],
+        )
+
+        return model
+
+
 else:
 
     raise Exception("Model not recognized.")
@@ -799,7 +839,7 @@ if tune_hyperparameters:
 
 else:  # build model from best set of hyperparameters
 
-    if not model_str == "Lee" and not mode == "narrow":
+    if not model_str == "Lee" and not mode == "narrow" and not model_str == "random":
 
         best_hp = tuner.get_best_hyperparameters()[0]
 
