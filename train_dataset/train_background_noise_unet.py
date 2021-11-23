@@ -17,11 +17,11 @@ import generate_background_noise_utils
 
 from datetime import datetime
 
-tag = "new_test_changed_height"
+tag = "new_test_changed_max_scaling_max_noise_more_epochs"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
-to_test = "removal_20-11-2021_16-03-59_new_test"
+to_test = "removal_22-11-2021_10-03-00_new_test_changed_max_scaling_max_noise"
 
 # N = 9018
 N = 9036
@@ -29,10 +29,8 @@ pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 100
+number_of_epochs = 500
 NO_workers = 16
-
-# cache_multiplier = 100
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
 
@@ -157,7 +155,7 @@ if training_mode == "train":
 
     model = my_unet.UNet()
 
-    #keras.utils.plot_model(model, show_shapes=True)
+    # keras.utils.plot_model(model, show_shapes=True)
 
     model.summary()
 

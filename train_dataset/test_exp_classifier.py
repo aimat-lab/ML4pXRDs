@@ -34,7 +34,7 @@ if __name__ == "__main__":
     )
     unet_model = keras.models.load_model("unet/" + unet_model_name + "/final")
     probability_model = keras.Sequential(
-        [classifier_model, keras.layers.Activation("sigmoid")]
+        [classifier_model, keras.layers.Activation("softmax")]
     )
 
     data_true_labels = pd.read_csv(

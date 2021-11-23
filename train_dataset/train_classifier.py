@@ -8,6 +8,9 @@ from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import regularizers
 from datetime import datetime
 import os
+
+sys.path.append("../dataset_simulations/")
+
 from keras_tuner import BayesianOptimization
 from glob import glob
 import matplotlib.pyplot as plt
@@ -16,42 +19,71 @@ from sklearn.utils import shuffle
 from tensorflow.python.client import device_lib
 import tensorflow.keras as keras
 from sklearn.preprocessing import StandardScaler
-from dataset_simulations.narrow_simulation import NarrowSimulation
+from dataset_simulations.random_simulation import Simulation
 from sklearn.utils import class_weight
 import random
 import math
 import pickle
+import gc
 
 tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
 )
-mode = "narrow"
-
+mode = "random"  # possible: narrow and random
+model_str = (
+    "random"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
+)
 
 number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 
-# only use a restricted range of the simulated patterns
-start_x = 10
-end_x = 50
-step = 1
-start_index = np.argwhere(simulated_range >= start_x)[0][0]
-end_index = np.argwhere(simulated_range <= end_x)[-1][0]
-used_range = simulated_range[start_index : end_index + 1 : step]
-number_of_values = len(used_range)
 
-scale_features = True
+if mode == "narrow":
 
-model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow
+    # only use a restricted range of the simulated patterns
+    start_x = 10
+    end_x = 50
+    step = 1
+    start_index = np.argwhere(simulated_range >= start_x)[0][0]
+    end_index = np.argwhere(simulated_range <= end_x)[-1][0]
+    used_range = simulated_range[start_index : end_index + 1 : step]
+    number_of_values = len(used_range)
 
-tune_hyperparameters = False
-current_dir = "narrow_19-11-2021_08:12:29_test"
+    scale_features = True
 
-tuner_epochs = 4
-tuner_batch_size = 128
+    tune_hyperparameters = False
+    current_dir = "narrow_19-11-2021_08:12:29_test"
 
-train_epochs = 10
-train_batch_size = 128
+    tuner_epochs = 4
+    tuner_batch_size = 128
+
+    train_epochs = 10
+    train_batch_size = 128
+
+elif mode == "random":
+
+    # only use a restricted range of the simulated patterns
+    start_x = 10
+    end_x = 90  # different from above
+    step = 1
+    start_index = np.argwhere(simulated_range >= start_x)[0][0]
+    end_index = np.argwhere(simulated_range <= end_x)[-1][0]
+    used_range = simulated_range[start_index : end_index + 1 : step]
+    number_of_values = len(used_range)
+
+    scale_features = True
+
+    tune_hyperparameters = False
+    current_dir = "narrow_19-11-2021_08:12:29_test"
+
+    tuner_epochs = 4
+    # tuner_batch_size = 500
+    tuner_batch_size = 64
+
+    train_epochs = 20
+    # train_batch_size = 500
+    train_batch_size = 128
+
 
 out_base = (
     "classifier/"
@@ -62,6 +94,8 @@ out_base = (
     + tag
     + "/"
 )
+if not os.path.exists(out_base):
+    os.system("mkdir -p " + out_base)
 
 # Each mode / model needs to define (x_train and y_train) or only x_train if it is a Sequence object (then leave y_train as None)
 # Each mode / model needs to define x_val, y_val and x_test and y_test
@@ -84,11 +118,11 @@ if mode == "narrow":
 
     path_to_patterns = "../dataset_simulations/patterns/narrow/"
 
-    sim = NarrowSimulation(
+    sim = Simulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-        output_dir="../dataset_simulations/patterns/narrow/",
     )
+    sim.output_dir = "../dataset_simulations/patterns/narrow/"
 
     sim.load()
 
@@ -154,7 +188,7 @@ if mode == "narrow":
         x_test = sc.transform(x_test)
         x_val = sc.transform(x_val)
 
-        with open("classifier/scaler", "wb") as file:
+        with open(os.path.join(out_base, "scaler"), "wb") as file:
             pickle.dump(sc, file)
 
     # when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
@@ -164,7 +198,7 @@ if mode == "narrow":
         x_test = np.expand_dims(x_test, axis=2)
         x_val = np.expand_dims(x_val, axis=2)
 
-    class CustomSequence(keras.utils.Sequence):
+    class NarrowSequence(keras.utils.Sequence):
         def __init__(self, x_train, y_train, variations, batch_size):
 
             self.x_train = x_train
@@ -215,12 +249,118 @@ if mode == "narrow":
 
             return current_x, current_y
 
-    x_train = CustomSequence(
+    x_train = NarrowSequence(
         __x_train,
         __y_train,
         variations,
         tuner_batch_size if tune_hyperparameters else train_batch_size,
     )
+
+elif mode == "random":
+
+    path_to_patterns = "../dataset_simulations/patterns/random/"
+
+    jobid = os.getenv("SLURM_JOB_ID")
+    if jobid is not None and jobid != "":
+        sim = Simulation(
+            "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
+            "/home/kit/iti/la2559/Databases/ICSD/cif/",
+        )
+        sim.output_dir = "../dataset_simulations/patterns/random/"
+    else:
+        sim = Simulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
+        sim.output_dir = "../dataset_simulations/patterns/random/"
+
+    sim.load()
+
+    n_patterns_per_crystal = len(sim.sim_patterns[0])
+
+    patterns = sim.sim_patterns
+    labels = sim.sim_labels
+    variations = sim.sim_variations
+
+    for i in reversed(range(0, len(patterns))):
+        if np.any(np.isnan(variations[i][0])):
+            del patterns[i]
+            del labels[i]
+            del variations[i]
+
+    ys_unique = [14, 104]
+    y = []
+    for label in labels:
+        y.extend([ys_unique.index(label[0])] * n_patterns_per_crystal)
+
+    y = np.array(y)
+
+    # print(np.sum(y == 0))
+    # print(np.sum(y == 1))
+    # plt.hist(y)
+    # plt.show()
+
+    x_1 = []
+    for pattern in patterns:
+        for sub_pattern in pattern:
+            x_1.append(sub_pattern[start_index : end_index + 1 : step])
+
+    variations = np.array(variations)
+    variations = variations.reshape(
+        (variations.shape[0] * variations.shape[1], variations.shape[2])
+    )
+
+    # print(f"Shape of x: {x_1.shape}")
+    # print(f"Shape of y: {y.shape}")
+
+    assert not np.any(np.isnan(x_1))
+    assert not np.any(np.isnan(y))
+    assert len(x_1) == len(y)
+
+    n_classes = len(np.unique(y))
+
+    print("##### Loaded {} training points with {} classes".format(len(x_1), n_classes))
+
+    # Split into train, validation, test set + shuffle
+    x_2, y, variations = shuffle(x_1, y, variations, random_state=1234)
+
+    x_train_3, x_test_3, y_train, y_test = train_test_split(x_2, y, test_size=0.3)
+    x_test_4, x_val_4, y_test, y_val = train_test_split(x_test_3, y_test, test_size=0.5)
+
+    if scale_features:
+        sc = StandardScaler()
+
+        x_train_transformed = sc.fit_transform(x_train_3)
+        x_test_transformed = sc.transform(x_test_4)
+        x_val_transformed = sc.transform(x_val_4)
+
+        del x_train_3[:]
+        del x_train_3
+        del x_test_4[:]
+        del x_test_4
+        del x_val_4[:]
+        del x_val_4
+        gc.collect()
+
+        with open(os.path.join(out_base, "scaler"), "wb") as file:
+            pickle.dump(sc, file)
+
+    if "conv" in model_str or model_str == "Park" or model_str == "Lee":
+        x_train = np.expand_dims(x_train_transformed, axis=2)
+        x_test = np.expand_dims(x_test_transformed, axis=2)
+        x_val = np.expand_dims(x_val_transformed, axis=2)
+        # TODO: Does this happen inplace?
+
+        del x_train_transformed
+        del x_test_transformed
+        del x_val_transformed
+        gc.collect()
+
+    else:
+
+        x_train = x_train_transformed
+        x_test = x_test_transformed
+        x_val = x_val_transformed
 
 else:
     raise Exception("Data source not recognized.")
@@ -308,7 +448,7 @@ if model_str == "conv":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
 
         model.summary()
@@ -391,7 +531,7 @@ elif model_str == "conv_narrow":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
 
         model.summary()
@@ -461,7 +601,7 @@ elif model_str == "fully_connected":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
 
         return model
@@ -556,10 +696,92 @@ elif model_str == "Lee":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
 
         model.summary()
+
+        return model
+
+
+elif model_str == "Park":
+
+    def build_model(hp=None):
+
+        # this is the 7-label version
+
+        model = keras.models.Sequential()
+        model.add(
+            keras.layers.Convolution1D(
+                80,
+                100,
+                subsample_length=5,
+                border_mode="same",
+                input_shape=(number_of_values, 1),
+            )
+        )  # add convolution layer
+        model.add(keras.layers.Activation("relu"))  # activation
+        model.add(keras.layers.Dropout(0.3))
+        model.add(
+            keras.layers.AveragePooling1D(pool_length=3, stride=2)
+        )  # pooling layer
+        model.add(
+            keras.layers.Convolution1D(80, 50, subsample_length=5, border_mode="same")
+        )
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.3))
+        model.add(keras.layers.AveragePooling1D(pool_length=3, stride=None))
+        model.add(
+            keras.layers.Convolution1D(80, 25, subsample_length=2, border_mode="same")
+        )
+        model.add(keras.layers.Activation("relu"))
+
+        model.add(keras.layers.Dropout(0.3))
+
+        model.add(keras.layers.AveragePooling1D(pool_length=3, stride=None))
+        model.add(keras.layers.Flatten())
+        model.add(keras.layers.Dense(700))
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(70))
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(7))
+
+        optimizer = keras.optimizers.Adam()
+        model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=["SparseCategoricalAccuracy"],
+        )
+        # they actually train for 5000 epochs and batch size 500
+
+        return model
+
+
+elif model_str == "random":
+
+    def build_model(hp=None):
+
+        model = keras.models.Sequential()
+
+        model.add(
+            keras.layers.Dense(
+                1024, activation="relu", input_shape=(number_of_values,),
+            )
+        )
+
+        model.add(keras.layers.Dense(1024, activation="relu",))
+
+        model.add(keras.layers.Dense(1))
+
+        optimizer = keras.optimizers.Adam()
+
+        model.compile(
+            optimizer=optimizer,
+            loss=keras.losses.BinaryCrossentropy(from_logits=True),
+            metrics=["BinaryAccuracy"],
+        )
 
         return model
 
@@ -616,7 +838,7 @@ if tune_hyperparameters:
 
 else:  # build model from best set of hyperparameters
 
-    if not model_str == "Lee":
+    if not model_str == "Lee" and not mode == "narrow" and not model_str == "random":
 
         best_hp = tuner.get_best_hyperparameters()[0]
 
