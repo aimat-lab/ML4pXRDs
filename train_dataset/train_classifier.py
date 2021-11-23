@@ -80,7 +80,7 @@ elif mode == "random":
     # tuner_batch_size = 500
     tuner_batch_size = 64
 
-    train_epochs = 10
+    train_epochs = 100
     # train_batch_size = 500
     train_batch_size = 128
 
@@ -449,7 +449,7 @@ if model_str == "conv":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
 
         model.summary()
@@ -532,7 +532,7 @@ elif model_str == "conv_narrow":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
 
         model.summary()
@@ -602,7 +602,7 @@ elif model_str == "fully_connected":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
 
         return model
@@ -697,7 +697,7 @@ elif model_str == "Lee":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
 
         model.summary()
@@ -753,7 +753,7 @@ elif model_str == "Park":
         model.compile(
             optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["SparseCategoricalAccuracy"],
         )
         # they actually train for 5000 epochs and batch size 500
 
@@ -781,7 +781,7 @@ elif model_str == "random":
         model.compile(
             optimizer=optimizer,
             loss=keras.losses.BinaryCrossentropy(from_logits=True),
-            metrics=["accuracy"],
+            metrics=["BinaryAccuracy"],
         )
 
         return model
