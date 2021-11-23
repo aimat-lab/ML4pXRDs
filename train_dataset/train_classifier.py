@@ -80,7 +80,7 @@ elif mode == "random":
     # tuner_batch_size = 500
     tuner_batch_size = 64
 
-    train_epochs = 100
+    train_epochs = 20
     # train_batch_size = 500
     train_batch_size = 128
 
@@ -95,7 +95,7 @@ out_base = (
     + "/"
 )
 if not os.path.exists(out_base):
-    os.system("mkdir -p" + out_base)
+    os.system("mkdir -p " + out_base)
 
 # Each mode / model needs to define (x_train and y_train) or only x_train if it is a Sequence object (then leave y_train as None)
 # Each mode / model needs to define x_val, y_val and x_test and y_test
@@ -278,10 +278,9 @@ elif mode == "random":
 
     n_patterns_per_crystal = len(sim.sim_patterns[0])
 
-    # TODO: Change!
-    patterns = sim.sim_patterns[::4]
-    labels = sim.sim_labels[::4]
-    variations = sim.sim_variations[::4]
+    patterns = sim.sim_patterns
+    labels = sim.sim_labels
+    variations = sim.sim_variations
 
     for i in reversed(range(0, len(patterns))):
         if np.any(np.isnan(variations[i][0])):
@@ -343,8 +342,8 @@ elif mode == "random":
         del x_val_4
         gc.collect()
 
-        # with open(os.path.join(out_base, "scaler"), "wb") as file:
-        #    pickle.dump(sc, file)
+        with open(os.path.join(out_base, "scaler"), "wb") as file:
+            pickle.dump(sc, file)
 
     if "conv" in model_str or model_str == "Park" or model_str == "Lee":
         x_train = np.expand_dims(x_train_transformed, axis=2)

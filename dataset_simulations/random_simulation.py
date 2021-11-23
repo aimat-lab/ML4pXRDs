@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.append("../")
+sys.path.append("./")
 
 from dataset_simulations.simulation import Simulation
 import random_simulation_utils
