@@ -80,9 +80,9 @@ elif mode == "random":
     # tuner_batch_size = 500
     tuner_batch_size = 64
 
-    train_epochs = 20
+    train_epochs = 200
     # train_batch_size = 500
-    train_batch_size = 128
+    train_batch_size = 500
 
 
 out_base = (
@@ -278,9 +278,9 @@ elif mode == "random":
 
     n_patterns_per_crystal = len(sim.sim_patterns[0])
 
-    patterns = sim.sim_patterns
-    labels = sim.sim_labels
-    variations = sim.sim_variations
+    patterns = sim.sim_patterns[::4]
+    labels = sim.sim_labels[::4]
+    variations = sim.sim_variations[::4]
 
     for i in reversed(range(0, len(patterns))):
         if np.any(np.isnan(variations[i][0])):
@@ -345,7 +345,7 @@ elif mode == "random":
         with open(os.path.join(out_base, "scaler"), "wb") as file:
             pickle.dump(sc, file)
 
-    if "conv" in model_str or model_str == "Park" or model_str == "Lee":
+    if model_str != "fully_connected":
         x_train = np.expand_dims(x_train_transformed, axis=2)
         x_test = np.expand_dims(x_test_transformed, axis=2)
         x_val = np.expand_dims(x_val_transformed, axis=2)
@@ -763,6 +763,7 @@ elif model_str == "random":
 
     def build_model(hp=None):
 
+        """
         model = keras.models.Sequential()
 
         model.add(
@@ -782,6 +783,48 @@ elif model_str == "random":
             loss=keras.losses.BinaryCrossentropy(from_logits=True),
             metrics=["BinaryAccuracy"],
         )
+
+        return model
+        """
+
+        # From Park:
+        model = keras.models.Sequential()
+        model.add(
+            keras.layers.Convolution1D(
+                80, 100, strides=5, padding="same", input_shape=(number_of_values, 1),
+            )
+        )  # add convolution layer
+        model.add(keras.layers.Activation("relu"))  # activation
+        model.add(keras.layers.Dropout(0.3))
+        model.add(
+            keras.layers.AveragePooling1D(pool_size=3, strides=2)
+        )  # pooling layer
+        model.add(keras.layers.Convolution1D(80, 50, strides=5, padding="same"))
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.3))
+        model.add(keras.layers.AveragePooling1D(pool_size=3, strides=None))
+        model.add(keras.layers.Convolution1D(80, 25, strides=2, padding="same"))
+        model.add(keras.layers.Activation("relu"))
+
+        model.add(keras.layers.Dropout(0.3))
+
+        model.add(keras.layers.AveragePooling1D(pool_size=3, strides=None))
+        model.add(keras.layers.Flatten())
+        model.add(keras.layers.Dense(700))
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(70))
+        model.add(keras.layers.Activation("relu"))
+        model.add(keras.layers.Dropout(0.5))
+        model.add(keras.layers.Dense(1))
+
+        optimizer = keras.optimizers.Adam()
+        model.compile(
+            optimizer=optimizer,
+            loss=keras.losses.BinaryCrossentropy(from_logits=True),
+            metrics=["BinaryAccuracy"],
+        )
+        # they actually train for 5000 epochs and batch size 500
 
         return model
 

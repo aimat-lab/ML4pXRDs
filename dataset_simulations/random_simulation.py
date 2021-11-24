@@ -11,7 +11,7 @@ from dataset_simulations.simulation import Simulation
 import random_simulation_utils
 
 space_groups = [14, 104]
-N_per_space_group = 10000
+N_per_space_group = 100000
 
 
 class RandomSimulation(Simulation):
@@ -60,6 +60,7 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
+    # TODO: Add these to simulation class
     """
     spg_numbers = []
     for i, id in enumerate(simulation.icsd_ids):
@@ -97,21 +98,12 @@ if __name__ == "__main__":
     plt.show()
     """
 
-    if True:  # toggle
+    if False:  # toggle
         simulation.load()
     else:
         simulation.generate_structures()
 
-    # simulation.save()
-
-    if True:
-        pass
-
-    # simulation.plot(together=10)
-
-    print()
-
-    # simulation.simulate_all(start_from_scratch=True)
+    simulation.simulate_all(start_from_scratch=True)
 
     # simulation.load()
 
