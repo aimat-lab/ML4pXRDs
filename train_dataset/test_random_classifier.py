@@ -64,9 +64,12 @@ for i in reversed(range(0, len(patterns))):
         del labels[i]
         del variations[i]
 
+counter = [0,0]
+
 y = []
 for label in labels:
     y.extend([ys_unique.index(label[0])] * n_patterns_per_crystal)
+    counter[ys_unique.index(label[0])] += 1
 y = np.array(y)
 
 x_unscaled = []
@@ -97,10 +100,18 @@ if is_conv_model:
 score, acc = classifier_model.evaluate(
     x, y, batch_size=128
 )  # score is the value of the loss function
+
 print("Test score:", score)
 print("Test accuracy:", acc)
 
 predicted_y = np.array(classifier_model.predict(x))
+
+print()
+
+print("Distribution of the test set:")
+print(counter)
+
+print()
 
 print(predicted_y.shape)
 print(y.shape)
