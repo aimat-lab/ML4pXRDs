@@ -14,13 +14,17 @@ min_peak_height = 0.010
 
 # GP parameters:
 scaling = 1.0
-variance = 10.0
+# variance = 10.0
+variance = 5.0
 
 # for background to peaks ratio:
 scaling_max = 120.0
 
 base_noise_level_max = 0.03
 base_noise_level_min = 0.003
+
+sigma_min = 0.1
+sigma_max = 0.5
 
 
 def convert_to_discrete(
@@ -52,7 +56,6 @@ def convert_to_discrete(
     return peak_info_disc, peak_size_disc
 
 
-# TODO: Add bump
 def theta_rel(theta, min_x, max_x):
     return (theta - min_x) / (max_x - min_x)
 
@@ -91,6 +94,13 @@ def generate_samples_gp(
     xs_gp = np.atleast_2d(np.linspace(min_x, max_x, n_angles_gp)).T
 
     ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
+    # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
+    # ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
+    # ys_gp = ys_gp[:, 0, :]
+
+    # for i in range(0, 10):
+    #    plt.plot(xs_gp[:, 0], ys_gp[:, i])
+    # plt.show()
 
     xs_all = []
     ys_all = []
@@ -115,7 +125,7 @@ def generate_samples_gp(
         scaling = random.uniform(0, scaling_max)
         background = background / weight_background * 10 * scaling
 
-        sigma_peaks = random.uniform(0.1, 0.5)
+        sigma_peaks = random.uniform(sigma_min, sigma_max)
         peak_positions = []
         peak_sizes = []
 
@@ -174,7 +184,7 @@ def generate_samples_gp(
             plt.plot(pattern_xs, ys_unaltered)
 
             if compare_to_exp:
-                for i in range(5, 7):
+                for i in range(0, 5):
                     index = i
                     path = "exp_data/XRDdata_classification.csv"
                     data = pd.read_csv(path, delimiter=",", skiprows=1)
@@ -210,9 +220,9 @@ def generate_samples_gp(
 
 if __name__ == "__main__":
 
-    pattern_xs = np.linspace(10, 50, 4016)
+    # pattern_xs = np.linspace(10, 50, 4016)
 
-    plt.plot(f_bump(pattern_xs, 1, 10, 10, 50))
-    plt.show()
-    # generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=True)
+    # plt.plot(pattern_xs, f_bump(pattern_xs, 2, 13, 10, 50))
+    # plt.show()
+    generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=True)
 
