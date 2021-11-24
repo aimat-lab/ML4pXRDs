@@ -99,3 +99,19 @@ score, acc = classifier_model.evaluate(
 )  # score is the value of the loss function
 print("Test score:", score)
 print("Test accuracy:", acc)
+
+predicted_y = np.array(classifier_model.predict(x))
+
+print(predicted_y.shape)
+print(y.shape)
+
+print()
+print("Predicted as spg 14:")
+print(np.sum(predicted_y == 0))
+
+print("Predicted as spg 104:")
+print(np.sum(predicted_y == 1))
+
+print(
+    f"Correctly classified: {np.sum(predicted_y == y)} ({np.sum(predicted_y == y) / len(y)} %)"
+)
