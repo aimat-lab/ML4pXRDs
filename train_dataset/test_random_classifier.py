@@ -104,8 +104,6 @@ score, acc = classifier_model.evaluate(
 print("Test score:", score)
 print("Test accuracy:", acc)
 
-predicted_y = np.array(classifier_model.predict(x))
-
 print()
 
 print("Distribution of the test set:")
@@ -113,10 +111,11 @@ print(counter)
 
 print()
 
+prob_model = keras.Sequential([classifier_model, keras.layers.Activation("sigmoid")])
+predicted_y = np.array(prob_model.predict(x))
 predicted_y = predicted_y[:, 0]
 
-print(predicted_y.shape)
-print(y.shape)
+predicted_y = np.where(predicted_y > 0.5, 1,0)
 
 print()
 print("Predicted as spg 14:")
