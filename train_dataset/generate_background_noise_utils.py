@@ -1,47 +1,36 @@
 import numpy as np
-
 import random
 import matplotlib.pyplot as plt
-
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-
 from scipy import interpolate as ip
-
-import time
 import pandas as pd
-
 from scipy.stats import truncnorm
-import scipy.stats as st
 
 
-N = 9018
-n_angles_gp = 100
-start_x = 0
-end_x = 90
-pattern_x = np.linspace(start_x, end_x, N)
-
-max_peaks_per_sample = 40  # max number of peaks per sample
-min_peak_height = 0.02
+n_angles_gp = 60
+max_peaks_per_sample = 22  # max number of peaks per sample
+min_peak_height = 0.010
 
 # GP parameters:
 scaling = 1.0
-# variance = 30.0 # this was my original estimate
-# variance = 100.0
-# variance = 50
-
 variance = 10.0
 
 # for background to peaks ratio:
-scaling_max = 4.0
+scaling_max = 120.0
 
-base_noise_level_max = 0.017
-base_noise_level_min = 0.0015
+base_noise_level_max = 0.03
+base_noise_level_min = 0.003
 
 
-def convert_to_discrete(peak_positions, peak_sizes, N=N, do_print=False):
-    peak_info_disc = np.zeros(N)
-    peak_size_disc = np.zeros(N)
+def convert_to_discrete(
+    x_range, peak_positions, peak_sizes, n_angles=4016, do_print=False
+):
+
+    pattern_x = np.linspace(x_range[0], x_range[1], n_angles)
+
+    peak_info_disc = np.zeros(n_angles)
+    peak_size_disc = np.zeros(n_angles)
 
     for i, peak_pos in enumerate(peak_positions):
         index = np.argwhere(pattern_x < peak_pos)[-1][0]
@@ -63,37 +52,45 @@ def convert_to_discrete(peak_positions, peak_sizes, N=N, do_print=False):
     return peak_info_disc, peak_size_disc
 
 
+# TODO: Add bump
+def theta_rel(theta, min_x, max_x):
+    return (theta - min_x) / (max_x - min_x)
+
+
+def f_bump(theta, h, n, min_x, max_x):
+    return (
+        h
+        * (n * theta_rel(theta, min_x, max_x)) ** 2
+        * np.exp(-1 * n * theta_rel(theta, min_x, max_x))
+    )
+
+
 def generate_samples_gp(
     n_samples,
+    x_range,
     n_angles_gp=n_angles_gp,
-    n_angles_output=N,
+    n_angles_output=4016,
     scaling=scaling,
     variance=variance,
     random_seed=None,
     mode="removal",
     do_plot=False,
-    start_index=None,  # for proper scaling to 1.0
-    end_index=None,  # inclusive
     compare_to_exp=False,
-    plot_whole_range=False,
 ):
 
-    # start = time.time()
+    min_x, max_x = x_range
 
     # first, generate enough random functions using a gaussian process
-    xs_pattern = np.linspace(0, 90, n_angles_output)
+    pattern_xs = np.linspace(min_x, max_x, n_angles_output)
 
     kernel = C(scaling, constant_value_bounds="fixed") * RBF(
         variance, length_scale_bounds="fixed"
     )
     gp = GaussianProcessRegressor(kernel=kernel)
 
-    xs_gp = np.atleast_2d(np.linspace(0, 90, n_angles_gp)).T
+    xs_gp = np.atleast_2d(np.linspace(min_x, max_x, n_angles_gp)).T
 
     ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
-
-    # stop = time.time()
-    # print(f"GP took {stop-start} s")
 
     xs_all = []
     ys_all = []
@@ -108,13 +105,15 @@ def generate_samples_gp(
         # scale the output of the gp to the desired length
         if n_angles_output != n_angles_gp:
             f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
-            background = f(xs_pattern)
+            background = f(pattern_xs)
         else:
             background = ys_gp[:, i]
 
         background = background - np.min(background)
-
         weight_background = np.sum(background)
+
+        scaling = random.uniform(0, scaling_max)
+        background = background / weight_background * 10 * scaling
 
         sigma_peaks = random.uniform(0.1, 0.5)
         peak_positions = []
@@ -122,9 +121,9 @@ def generate_samples_gp(
 
         ys_unaltered = np.zeros(n_angles_output)
 
-        for j in range(0, random.randint(0, max_peaks_per_sample)):
+        for j in range(0, random.randint(1, max_peaks_per_sample)):
 
-            mean = random.uniform(0, 90)
+            mean = random.uniform(min_x, max_x)
 
             peak_positions.append(mean)
 
@@ -146,65 +145,36 @@ def generate_samples_gp(
             else:
 
                 peak_size = trunc.rvs()
-                peak_size = min_peak_height  # TODO: Change
 
             peak = (
                 1
                 / (sigma_peaks * np.sqrt(2 * np.pi))
-                * np.exp(-1 / (2 * sigma_peaks ** 2) * (pattern_x - mean) ** 2)
+                * np.exp(-1 / (2 * sigma_peaks ** 2) * (pattern_xs - mean) ** 2)
             ) * peak_size
 
             peak_sizes.append(peak_size)
 
             ys_unaltered += peak
 
-        # print(peak_sizes)
-        weight_peaks = np.sum(ys_unaltered)
-
-        scaling = random.uniform(0, scaling_max)
-
-        ys_altered = (
-            background
-            / weight_background
-            * (weight_peaks if weight_peaks != 0 else 1)
-            * scaling
-            + ys_unaltered
-        )
+        ys_altered = background + ys_unaltered
 
         noise_level = np.random.uniform(
             low=base_noise_level_min, high=base_noise_level_max
         )
-        ys_altered += np.random.normal(size=N, scale=noise_level) * np.max(
-            ys_altered[start_index : end_index + 1]
-            if start_index is not None
-            else ys_altered
-        )
+        ys_altered += np.random.normal(size=n_angles_output, scale=noise_level)
         ys_altered -= np.min(ys_altered)
 
-        if start_index is None or end_index is None:
-            normalizer = np.max(ys_altered)
-        else:
-            normalizer = np.max(ys_altered[start_index : end_index + 1])
+        normalizer = np.max(ys_altered)
+
         ys_altered /= normalizer
         ys_unaltered /= normalizer
 
         if do_plot:
-            if not plot_whole_range:
-                plt.plot(
-                    pattern_x[start_index : end_index + 1],
-                    ys_altered[start_index : end_index + 1],
-                )
-                plt.plot(
-                    pattern_x[start_index : end_index + 1],
-                    ys_unaltered[start_index : end_index + 1],
-                )
-            else:
-                plt.plot(pattern_x, ys_altered)
-                plt.plot(pattern_x, ys_unaltered)
+            plt.plot(pattern_xs, ys_altered)
+            plt.plot(pattern_xs, ys_unaltered)
 
             if compare_to_exp:
-
-                for i in range(6, 7):
+                for i in range(5, 7):
                     index = i
                     path = "exp_data/XRDdata_classification.csv"
                     data = pd.read_csv(path, delimiter=",", skiprows=1)
@@ -217,9 +187,7 @@ def generate_samples_gp(
                     ys[:, index] = ys[:, index] - np.min(ys[:, index])
                     ys[:, index] = ys[:, index] / np.max(ys[:, index])
                     plt.plot(xs[:, index], ys[:, index], label=str(index))
-                plt.legend()
 
-            # plt.xlim(10, 50)
             plt.show()
 
         if mode == "removal":
@@ -242,31 +210,5 @@ def generate_samples_gp(
 
 if __name__ == "__main__":
 
-    generate_samples_gp(
-        100,
-        n_angles_gp=100,
-        do_plot=True,
-        start_index=1002,
-        end_index=5009,
-        compare_to_exp=True,
-        plot_whole_range=False,
-    )
-    # generate_samples_gp(1, n_angles_gp=1000, random_seed=1234, do_plot=False)
-    # generate_samples_gp(1, n_angles_gp=2000, random_seed=1234, do_plot=False)
-    # plt.show()
-    exit()
+    generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=True)
 
-    start = time.time()
-
-    test = generate_samples_gp(128, do_plot=False)
-
-    end = time.time()
-    print(f"Took {end-start} s")
-
-    """
-    for i in range(0, test[0].shape[0]):
-        plt.plot(pattern_x, test[0][i, :])
-        plt.plot(pattern_x, test[1][i, :])
-        plt.xlim((10, 50))
-        plt.show()
-    """

@@ -17,9 +17,9 @@ import generate_background_noise_utils
 
 from datetime import datetime
 
-tag = "next_version"
+tag = "new_generation_method"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
 to_test = "removal_23-11-2021_14-48-09_next_version"
 
@@ -29,7 +29,7 @@ pattern_x = np.linspace(0, 90, N)
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 200
+number_of_epochs = 100
 NO_workers = 16
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
@@ -106,11 +106,7 @@ if training_mode == "train":
             """
 
             data = generate_background_noise_utils.generate_samples_gp(
-                n_samples=self.batch_size,
-                mode=self.mode,
-                do_plot=False,
-                start_index=start_index,
-                end_index=end_index,
+                self.batch_size, (start_x, end_x), n_angles_output=N
             )
 
             """
@@ -125,8 +121,8 @@ if training_mode == "train":
             # self.counter += 1
 
             return (
-                data[0][:, self.start_index : self.end_index + 1],
-                data[1][:, self.start_index : self.end_index + 1],
+                data[0],
+                data[1],
             )
 
     # my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
