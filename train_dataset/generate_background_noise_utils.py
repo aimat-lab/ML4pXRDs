@@ -210,5 +210,9 @@ def generate_samples_gp(
 
 if __name__ == "__main__":
 
-    generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=True)
+    pattern_xs = np.linspace(10, 50, 4016)
+
+    plt.plot(f_bump(pattern_xs, 1, 10, 10, 50))
+    plt.show()
+    # generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=True)
 

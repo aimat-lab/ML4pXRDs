@@ -19,9 +19,9 @@ from datetime import datetime
 
 tag = "new_generation_method"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
-to_test = "removal_23-11-2021_14-48-09_next_version"
+to_test = "removal_24-11-2021_12-20-18_new_generation_method"
 
 # N = 9018
 N = 9036
@@ -190,7 +190,7 @@ else:
     model = keras.models.load_model("unet/" + to_test + "/final")
 
     test_batch = generate_background_noise_utils.generate_samples_gp(
-        n_samples=100, mode=mode, start_index=start_index, end_index=end_index
+        100, (start_x, end_x)
     )
 
     # test_batch = generate_nackground_noise_utils_old.generate_samples(N=100, mode=mode)
@@ -198,10 +198,7 @@ else:
     # test_xs = scaler.transform(test_batch[0])
     test_xs = test_batch[0]
 
-    x_test, y_test = (
-        test_xs[:, start_index : end_index + 1],
-        test_batch[1][:, start_index : end_index + 1],
-    )
+    x_test, y_test = test_batch[0], test_batch[1]
 
     if mode == "removal":
         predictions = model.predict(x_test)
@@ -218,15 +215,11 @@ else:
             plt.plot(pattern_x, prediction, label="Prediction")
 
             plt.plot(
-                pattern_x,
-                test_batch[0][:, start_index : end_index + 1][i],
-                label="Input pattern",
+                pattern_x, test_batch[0][:][i], label="Input pattern",
             )
 
             plt.plot(
-                pattern_x,
-                test_batch[1][:, start_index : end_index + 1][i],
-                label="Target",
+                pattern_x, test_batch[1][:][i], label="Target",
             )
 
             plt.legend()

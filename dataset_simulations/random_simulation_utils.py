@@ -8,6 +8,12 @@ from pymatgen.vis.structure_vtk import StructureVis
 import multiprocessing
 from functools import partial
 from multiprocessing import set_start_method
+import warnings
+
+with warnings.catch_warnings():
+    warnings.simplefilter("error")
+
+N_workers = 8
 
 max_NO_atoms = 5
 # 10 atoms per unit cell should probably be already enough, at least in the beginning.
@@ -155,7 +161,7 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
             while True:
 
                 if counter_collisions > 100:
-                    print("More than 100 collisions.")
+                    print("More than 100 collisions.", flush=True)
                     break
 
                 chosen_index = random.randint(0, len(number_of_atoms) - 1)
@@ -177,7 +183,7 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
 
                 if dofs[chosen_index] == 0 and int(number_of_atoms[chosen_index]) == 1:
                     counter_collisions += 1
-                    print(f"{counter_collisions} collisions.")
+                    print(f"{counter_collisions} collisions.", flush=True)
                     continue
 
                 number_of_atoms[chosen_index] += 1
@@ -215,16 +221,26 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
                 numIons=chosen_numbers,
                 # sites=chosen_wyckoff_positions,
             )
-        except:
-            continue
+        except Exception as ex:
+            print()
+            print(ex)
+            print(spacegroup_number)
+            print(chosen_elements)
+            print(chosen_numbers)
+            print()
 
         if not my_crystal.valid:
             continue
-        
+
         try:
             crystal = my_crystal.to_pymatgen()
-        except:
-            continue
+        except Exception as ex:
+            print()
+            print(ex)
+            print(spacegroup_number)
+            print(chosen_elements)
+            print(chosen_numbers)
+            print()
 
         # vis = StructureVis()
         # vis.set_structure(crystal)
@@ -255,7 +271,7 @@ def generate_structures(spacegroup_number, N):
     exit()
     """
 
-    pool = multiprocessing.Pool(processes=80)
+    pool = multiprocessing.Pool(processes=N_workers)
 
     handle = pool.map_async(
         partial(
@@ -273,7 +289,7 @@ def generate_structures(spacegroup_number, N):
 
     result = handle.get()
 
-    print(f"Generated {len(result)} of {N} requested crystals")
+    print(f"Generated {len(result)} of {N} requested crystals", flush=True)
 
     return result
 
@@ -282,8 +298,8 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    generate_structures(166, 80)
+    generate_structures(166, 1000)
 
     stop = time.time()
 
-    print(f"Total job took {stop-start} s")
+    print(f"Total job took {stop-start} s", flush=True)
