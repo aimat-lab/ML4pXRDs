@@ -64,7 +64,7 @@ for i in reversed(range(0, len(patterns))):
         del labels[i]
         del variations[i]
 
-counter = [0,0]
+counter = [0, 0]
 
 y = []
 for label in labels:
@@ -112,6 +112,8 @@ print("Distribution of the test set:")
 print(counter)
 
 print()
+
+predicted_y = predicted_y[:, 0]
 
 print(predicted_y.shape)
 print(y.shape)

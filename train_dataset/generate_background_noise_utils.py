@@ -98,23 +98,10 @@ def generate_samples_gp(
     xs_all = []
     ys_all = []
 
-    """
-    class my_pdf(st.rv_continuous):
-        def _pdf(self, x):
-            if x < 0 or x > 1:
-                return 0
-            else:
-                # return ((x - 0.5) ** 2 + 0.1) * 60 / 11
-                # return (x - 1.0) ** 2 * 3
-                return 1 / x ** 0.9 / 10
-
-    my_cv = my_pdf(a=0, b=1, name="my_pdf")
-    """
-
     def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
         return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
 
-    trunc = get_truncated_normal(0, sd=0.3, low=0, upp=1)
+    trunc = get_truncated_normal(0, sd=0.3, low=min_peak_height, upp=1)
 
     for i in range(0, n_samples):
 
@@ -139,32 +126,27 @@ def generate_samples_gp(
 
             mean = random.uniform(0, 90)
 
-            # change
-            # if j == 0:
-            #    mean = 45
-            # if j == 1:
-            #    mean = 40
-
             peak_positions.append(mean)
 
             if j == 0:
                 peak_size = 1.0
-            elif random.random() < 0.3:
-                peak_size = random.uniform(min_peak_height, 1)
-                # loc = 0.1
-                # scale = 0.3
-                # peak_size = truncnorm.rvs(
-                #    (min_peak_height - loc) / scale, (1 - loc) / scale, loc, scale
-                # )
+            # elif random.random() < 0.3:
+            #    peak_size = random.uniform(min_peak_height, 1)
+            # loc = 0.1
+            # scale = 0.3
+            # peak_size = truncnorm.rvs(
+            #    (min_peak_height - loc) / scale, (1 - loc) / scale, loc, scale
+            # )
 
-                ## change
-                # if j == 0:
-                #    peak_size = min_peak_height
-                # elif j == 1:
-                #    peak_size = 1.0
+            ## change
+            # if j == 0:
+            #    peak_size = min_peak_height
+            # elif j == 1:
+            #    peak_size = 1.0
             else:
 
                 peak_size = trunc.rvs()
+                peak_size = min_peak_height  # TODO: Change
 
             peak = (
                 1
@@ -176,7 +158,7 @@ def generate_samples_gp(
 
             ys_unaltered += peak
 
-        print(peak_sizes)
+        # print(peak_sizes)
         weight_peaks = np.sum(ys_unaltered)
 
         scaling = random.uniform(0, scaling_max)

@@ -19,11 +19,9 @@ from datetime import datetime
 
 tag = "next_version"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
-to_test = (
-    "removal_22-11-2021_15-58-00_new_test_changed_max_scaling_max_noise_more_epochs"
-)
+to_test = "removal_23-11-2021_14-48-09_next_version"
 
 # N = 9018
 N = 9036
@@ -181,7 +179,7 @@ if training_mode == "train":
     model.fit(
         x=CustomSequence(batch_size, number_of_batches, mode, start_index, end_index),
         epochs=number_of_epochs,
-        verbose=1,
+        verbose=2,
         max_queue_size=500,
         workers=NO_workers,
         use_multiprocessing=True,
