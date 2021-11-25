@@ -27,9 +27,7 @@ import pickle
 import gc
 from sklearn.metrics import classification_report
 
-tag = (
-    "test"  # additional tag that will be added to the tuner folder and training folder
-)
+tag = "test"  # additional tag that will be added to the tuner folder and training folder  # TODO: Change
 mode = "random"  # possible: narrow and random
 model_str = (
     "random"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
@@ -58,7 +56,7 @@ if mode == "narrow":
     tuner_epochs = 4
     tuner_batch_size = 128
 
-    train_epochs = 10
+    train_epochs = 2
     train_batch_size = 128
 
 elif mode == "random":
@@ -887,7 +885,7 @@ if tune_hyperparameters:
 
 else:  # build model from best set of hyperparameters
 
-    if not model_str == "Lee" and not mode == "narrow" and not model_str == "random":
+    if not model_str == "Lee" and not model_str == "random":
 
         best_hp = tuner.get_best_hyperparameters()[0]
 
@@ -946,7 +944,7 @@ else:  # build model from best set of hyperparameters
     else:
         prob_model = keras.Sequential([model, keras.layers.Activation("softmax")])
         predicted_y = np.array(prob_model.predict(x_test))
-        predicted_y = np.argmax(predicted_y, axis=1)  # TODO: Debug shape of this thing
+        predicted_y = np.argmax(predicted_y, axis=1)
 
     print()
     print("Classification report:")
