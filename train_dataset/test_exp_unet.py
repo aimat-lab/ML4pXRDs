@@ -36,6 +36,10 @@ def load_experimental_data(loading_mode="classification"):
         raise Exception("Mode for loading experimental data not supported.")
 
 
+def plot_heuristic_fits(xs, ys, show_sliders=False):
+    pass
+
+
 if __name__ == "__main__":
 
     xs_exp, ys_exp = load_experimental_data(loading_mode="classification")
@@ -110,6 +114,8 @@ if __name__ == "__main__":
                 pattern_x, corrected[0, :, 0], label="Peak detection", s=3,
             )
 
+        plot_heuristic_fits(pattern_x, ys[0, :, 0], show_sliders=(i == 0))
+
         plt.legend()
         plt.show()
 
@@ -127,3 +133,4 @@ if __name__ == "__main__":
             n_xs=5000,
         )
         """
+

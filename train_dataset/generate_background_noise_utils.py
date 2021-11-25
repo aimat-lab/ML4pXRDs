@@ -15,10 +15,10 @@ min_peak_height = 0.010
 # GP parameters:
 scaling = 1.0
 # variance = 10.0
-variance = 5.0
+variance = 4.0
 
 # for background to peaks ratio:
-scaling_max = 120.0
+scaling_max = 150.0
 
 base_noise_level_max = 0.03
 base_noise_level_min = 0.003
@@ -224,5 +224,5 @@ if __name__ == "__main__":
 
     # plt.plot(pattern_xs, f_bump(pattern_xs, 2, 13, 10, 50))
     # plt.show()
-    generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=True)
+    generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=False)
 
