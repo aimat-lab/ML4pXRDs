@@ -64,6 +64,8 @@ if mode == "narrow":
 elif mode == "random":
 
     # only use a restricted range of the simulated patterns
+
+    # TODO: Maybe make this 0?
     start_x = 10
     end_x = 90  # different from above
     step = 1

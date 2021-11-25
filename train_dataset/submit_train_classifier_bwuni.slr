@@ -2,10 +2,10 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 #SBATCH --time=48:00:00
-#SBATCH --mem=80000mb
+#SBATCH --mem=180000mb
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=tf
-#SBATCH --partition=gpu_4
+#SBATCH --partition=gpu_8
 
 # --time=30
 # --time=48:00:00

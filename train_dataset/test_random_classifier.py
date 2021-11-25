@@ -16,7 +16,7 @@ classifier_model_name = "random_25-11-2021_12:09:51_test"
 classifier_model = keras.models.load_model(
     "classifier/" + classifier_model_name + "/final"
 )
-is_conv_model = False
+is_conv_model = True
 
 number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
@@ -89,7 +89,7 @@ if scale_features:
     with open("classifier/" + classifier_model_name + "/scaler", "rb") as file:
         sc = pickle.load(file)
 
-    x = sc.fit_transform(x_unscaled)
+    x = sc.transform(x_unscaled)
 
     del x_unscaled[:]
     del x_unscaled

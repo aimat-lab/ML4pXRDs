@@ -142,6 +142,9 @@ class Simulation:
                     print("Simulation stopped by user.")
 
                 print("One or more of the workers terminated.")
+                print("Polls of workers:")
+                print(polls)
+
                 break
 
             print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
@@ -299,12 +302,7 @@ class Simulation:
         self.crystal_files_Ns.append(end - start)
 
         sim_crystals = np.empty(
-            shape=(
-                len(
-                    self.sim_crystals[start:end],
-                )
-            ),
-            dtype=object,
+            shape=(len(self.sim_crystals[start:end],)), dtype=object,
         )
 
         # force crystals to be written as python objects
@@ -560,10 +558,7 @@ class Simulation:
                     lines = np.array(self.sim_angles[i])
 
                     plt.vlines(
-                        lines,
-                        1.05,
-                        1.15,
-                        lw=0.15,
+                        lines, 1.05, 1.15, lw=0.15,
                     )
 
                     # plt.xlim((0, 90))
