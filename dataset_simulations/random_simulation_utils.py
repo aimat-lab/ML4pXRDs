@@ -291,10 +291,22 @@ def generate_structures(spacegroup_number, N):
         ),
         [None] * N,
     )
-
     track_job(handle)
-
     result = handle.get()
+
+    """
+    result = [
+        generate_structure(
+            None,
+            spacegroup_number=spacegroup_number,
+            multiplicities=multiplicities,
+            names=names,
+            letters=letters,
+            dofs=dofs,
+        )
+        for i in range(0, N)
+    ]
+    """
 
     print(f"Generated {len(result)} of {N} requested crystals", flush=True)
 
@@ -305,8 +317,25 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    generate_structures(166, 16)
+    generate_structures(14, 10000)
 
     stop = time.time()
 
     print(f"Total job took {stop-start} s", flush=True)
+
+    """
+    14
+    ['He']
+    [4] 
+    my_crystal = pyxtal()
+
+    for i in range(0, 100):
+        my_crystal.from_random(
+            dim=3,
+            group=14,
+            species=["He"],
+            numIons=[4],
+            # sites=chosen_wyckoff_positions,
+        )
+
+    """
