@@ -7,7 +7,7 @@ import tensorflow.keras as keras
 
 mode = "removal"  # possible: info and removal
 # to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
-to_test = "removal_24-11-2021_12-20-18_new_generation_method"
+to_test = "removal_24-11-2021_16-50-18_new_generation_method"
 
 
 def load_experimental_data(loading_mode="classification"):

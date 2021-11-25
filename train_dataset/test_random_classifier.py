@@ -10,8 +10,9 @@ from dataset_simulations.random_simulation import Simulation
 import numpy as np
 import pickle
 import gc
+from sklearn.metrics import classification_report
 
-classifier_model_name = "random_23-11-2021_10:57:12_test"
+classifier_model_name = "random_25-11-2021_12:09:51_test"
 classifier_model = keras.models.load_model(
     "classifier/" + classifier_model_name + "/final"
 )
@@ -115,7 +116,7 @@ prob_model = keras.Sequential([classifier_model, keras.layers.Activation("sigmoi
 predicted_y = np.array(prob_model.predict(x))
 predicted_y = predicted_y[:, 0]
 
-predicted_y = np.where(predicted_y > 0.5, 1,0)
+predicted_y = np.where(predicted_y > 0.5, 1, 0)
 
 print()
 print("Predicted as spg 14:")
@@ -127,3 +128,7 @@ print(np.sum(predicted_y == 1))
 print(
     f"Correctly classified: {np.sum(predicted_y == y)} ({np.sum(predicted_y == y) / len(y)} %)"
 )
+
+print()
+print("Classification report:")
+print(classification_report(y, predicted_y))

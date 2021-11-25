@@ -134,7 +134,8 @@ def track_job(job, update_interval=5):
         print(
             "Tasks remaining: {0} (chunk size {1})".format(
                 job._number_left * job._chunksize, job._chunksize
-            )
+            ),
+            flush=True,
         )
         time.sleep(update_interval)
 
@@ -183,7 +184,7 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
 
                 if dofs[chosen_index] == 0 and int(number_of_atoms[chosen_index]) == 1:
                     counter_collisions += 1
-                    print(f"{counter_collisions} collisions.", flush=True)
+                    # print(f"{counter_collisions} collisions.", flush=True)
                     continue
 
                 number_of_atoms[chosen_index] += 1
@@ -222,12 +223,12 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
                 # sites=chosen_wyckoff_positions,
             )
         except Exception as ex:
-            print()
-            print(ex)
-            print(spacegroup_number)
-            print(chosen_elements)
-            print(chosen_numbers)
-            print()
+            print(flush=True)
+            print(ex, flush=True)
+            print(spacegroup_number, flush=True)
+            print(chosen_elements, flush=True)
+            print(chosen_numbers, flush=True)
+            print(flush=True)
 
         if not my_crystal.valid:
             continue
@@ -235,12 +236,12 @@ def generate_structure(_, spacegroup_number, multiplicities, names, letters, dof
         try:
             crystal = my_crystal.to_pymatgen()
         except Exception as ex:
-            print()
-            print(ex)
-            print(spacegroup_number)
-            print(chosen_elements)
-            print(chosen_numbers)
-            print()
+            print(flush=True)
+            print(ex, flush=True)
+            print(spacegroup_number, flush=True)
+            print(chosen_elements, flush=True)
+            print(chosen_numbers, flush=True)
+            print(flush=True)
 
         # vis = StructureVis()
         # vis.set_structure(crystal)
@@ -261,6 +262,12 @@ def generate_structures(spacegroup_number, N):
     names = [(str(x.multiplicity) + x.letter) for x in group]
     dofs = group.get_site_dof(names)
     letters = [x.letter for x in group]
+
+    print(flush=True)
+    print(f"Current group: {spacegroup_number}", flush=True)
+    print(names, flush=True)
+    print(multiplicities, flush=True)
+    print(flush=True)
 
     """
     for i in range(0, N):
@@ -298,7 +305,7 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    generate_structures(166, 1000)
+    generate_structures(166, 16)
 
     stop = time.time()
 

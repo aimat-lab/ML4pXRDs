@@ -25,6 +25,7 @@ import random
 import math
 import pickle
 import gc
+from sklearn.metrics import classification_report
 
 tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
@@ -33,10 +34,10 @@ mode = "random"  # possible: narrow and random
 model_str = (
     "random"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
 )
+model_is_binary = True
 
 number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
-
 
 if mode == "narrow":
 
@@ -80,7 +81,7 @@ elif mode == "random":
     # tuner_batch_size = 500
     tuner_batch_size = 64
 
-    train_epochs = 200
+    train_epochs = 1000
     # train_batch_size = 500
     train_batch_size = 500
 
@@ -278,9 +279,9 @@ elif mode == "random":
 
     n_patterns_per_crystal = len(sim.sim_patterns[0])
 
-    patterns = sim.sim_patterns[::4]
-    labels = sim.sim_labels[::4]
-    variations = sim.sim_variations[::4]
+    patterns = sim.sim_patterns
+    labels = sim.sim_labels
+    variations = sim.sim_variations
 
     for i in reversed(range(0, len(patterns))):
         if np.any(np.isnan(variations[i][0])):
@@ -349,7 +350,6 @@ elif mode == "random":
         x_train = np.expand_dims(x_train_transformed, axis=2)
         x_test = np.expand_dims(x_test_transformed, axis=2)
         x_val = np.expand_dims(x_val_transformed, axis=2)
-        # TODO: Does this happen inplace?
 
         del x_train_transformed
         del x_test_transformed
@@ -819,12 +819,16 @@ elif model_str == "random":
         model.add(keras.layers.Dense(1))
 
         optimizer = keras.optimizers.Adam()
-        model.compile(
-            optimizer=optimizer,
-            loss=keras.losses.BinaryCrossentropy(from_logits=True),
-            metrics=["BinaryAccuracy"],
-        )
-        # they actually train for 5000 epochs and batch size 500
+
+        if model_is_binary:
+            model.compile(
+                optimizer=optimizer,
+                loss=keras.losses.BinaryCrossentropy(from_logits=True),
+                metrics=["BinaryAccuracy"],
+            )
+            # they actually train for 5000 epochs and batch size 500
+        else:
+            raise Exception("Non-binary classification not supported here.")
 
         return model
 
@@ -931,5 +935,19 @@ else:  # build model from best set of hyperparameters
     print("\nOn test dataset:")
     model.evaluate(x_test, y_test, verbose=2)
     print()
+
+    if model_is_binary:
+        prob_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
+        predicted_y = np.array(prob_model.predict(x_test))
+        predicted_y = predicted_y[:, 0]
+        predicted_y = np.where(predicted_y > 0.5, 1, 0)
+    else:
+        prob_model = keras.Sequential([model, keras.layers.Activation("softmax")])
+        predicted_y = np.array(prob_model.predict(x_test))
+        predicted_y = np.argmax(predicted_y, axis=1)  # TODO: Debug shape of this thing
+
+    print()
+    print("Classification report:")
+    print(classification_report(y_test, predicted_y))
 
     model.save(out_base + "final")
