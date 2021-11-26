@@ -325,9 +325,9 @@ elif mode == "random":
     # print(f"Shape of x: {x_1.shape}")
     # print(f"Shape of y: {y.shape}")
 
-    assert not np.any(np.isnan(x_1))
-    assert not np.any(np.isnan(y))
-    assert len(x_1) == len(y)
+    #assert not np.any(np.isnan(x_1))
+    #assert not np.any(np.isnan(y))
+    #assert len(x_1) == len(y)
 
     n_classes = len(np.unique(y))
 
