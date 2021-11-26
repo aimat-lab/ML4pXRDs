@@ -16,4 +16,5 @@ source ~/mambaforge/etc/profile.d/conda.sh
 
 conda activate tf
 
+export CURRENT_CLUSTER="nano"
 python train_classifier.py
