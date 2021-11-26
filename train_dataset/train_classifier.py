@@ -27,7 +27,7 @@ import pickle
 import gc
 from sklearn.metrics import classification_report
 
-tag = "test"  # additional tag that will be added to the tuner folder and training folder  # TODO: Change
+tag = "test"  # additional tag that will be added to the tuner folder and training folder
 mode = "random"  # possible: narrow and random
 model_str = (
     "random"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
