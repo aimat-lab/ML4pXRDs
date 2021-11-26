@@ -19,9 +19,9 @@ from datetime import datetime
 
 tag = "new_generation_method"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
-to_test = "removal_24-11-2021_16-50-18_new_generation_method"
+to_test = "removal_25-11-2021_16-41-44_new_generation_method"
 
 # N = 9018
 N = 9036
