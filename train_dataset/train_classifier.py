@@ -27,7 +27,7 @@ import pickle
 import gc
 from sklearn.metrics import classification_report
 
-tag = "test"  # additional tag that will be added to the tuner folder and training folder  # TODO: Change
+tag = "test"  # additional tag that will be added to the tuner folder and training folder
 mode = "random"  # possible: narrow and random
 model_str = (
     "random"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
@@ -261,19 +261,30 @@ elif mode == "random":
 
     path_to_patterns = "../dataset_simulations/patterns/random/"
 
-    jobid = os.getenv("SLURM_JOB_ID")
-    if jobid is not None and jobid != "":
+    cluster = os.getenv("CURRENT_CLUSTER")
+    if cluster is None:
+        raise Exception("Environment variable CURRENT_CLUSTER not set.")
+
+    if cluster == "bwuni":
         sim = Simulation(
             "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
             "/home/kit/iti/la2559/Databases/ICSD/cif/",
         )
-        sim.output_dir = "../dataset_simulations/patterns/random/"
-    else:
+        sim.output_dir = path_to_patterns
+
+    elif cluster == "local":
         sim = Simulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
-        sim.output_dir = "../dataset_simulations/patterns/random/"
+        sim.output_dir = path_to_patterns
+
+    elif cluster == "nano":
+        sim = Simulation(
+            "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
+            "/home/ws/uvgnh/Databases/ICSD/cif/",
+        )
+        sim.output_dir = path_to_patterns
 
     sim.load()
 
@@ -314,9 +325,9 @@ elif mode == "random":
     # print(f"Shape of x: {x_1.shape}")
     # print(f"Shape of y: {y.shape}")
 
-    assert not np.any(np.isnan(x_1))
-    assert not np.any(np.isnan(y))
-    assert len(x_1) == len(y)
+    #assert not np.any(np.isnan(x_1))
+    #assert not np.any(np.isnan(y))
+    #assert len(x_1) == len(y)
 
     n_classes = len(np.unique(y))
 
