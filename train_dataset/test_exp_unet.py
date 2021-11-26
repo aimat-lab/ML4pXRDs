@@ -18,7 +18,7 @@ from matplotlib.patches import Ellipse
 
 mode = "removal"  # possible: info and removal
 # to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
-to_test = "removal_24-11-2021_16-50-18_new_generation_method"
+to_test = "removal_25-11-2021_16-41-44_new_generation_method"
 
 
 def load_experimental_data(loading_mode="classification"):
@@ -212,20 +212,10 @@ def plot_heuristic_fit(xs, ys, method, show_sliders=False):
     )  # slider dimensions # left, bottom, width, height
 
     slider_1 = Slider(
-        axwave1,
-        "Event No. 1",
-        min_1,
-        max_1,
-        valinit=valinit_1,
-        valfmt=valfmt,
+        axwave1, "Event No. 1", min_1, max_1, valinit=valinit_1, valfmt=valfmt,
     )  # 1
     slider_2 = Slider(
-        axwave2,
-        "Event No. 2",
-        min_2,
-        max_2,
-        valinit=valinit_2,
-        valfmt=valfmt,
+        axwave2, "Event No. 2", min_2, max_2, valinit=valinit_2, valfmt=valfmt,
     )  # 2
 
     def update_wave(val):
@@ -340,12 +330,10 @@ if __name__ == "__main__":
             corrected = model.predict(ys)
 
             plt.scatter(
-                pattern_x,
-                corrected[0, :, 0],
-                label="Peak detection",
-                s=3,
+                pattern_x, corrected[0, :, 0], label="Peak detection", s=3,
             )
 
+        """
         plot_heuristic_fit(
             pattern_x, ys[0, :, 0], method="rolling_ball", show_sliders=(i == 0)
         )
@@ -355,6 +343,7 @@ if __name__ == "__main__":
         plot_heuristic_fit(
             pattern_x, ys[0, :, 0], method="wavelet", show_sliders=(i == 0)
         )
+        """
 
         plt.legend()
         plt.show()

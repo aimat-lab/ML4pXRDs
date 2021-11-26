@@ -8,10 +8,11 @@ from pymatgen.vis.structure_vtk import StructureVis
 import multiprocessing
 from functools import partial
 from multiprocessing import set_start_method
-import warnings
 
-with warnings.catch_warnings():
-    warnings.simplefilter("error")
+# import warnings
+# with warnings.catch_warnings():
+#    warnings.simplefilter("error")
+
 
 N_workers = 8
 
@@ -140,7 +141,12 @@ def track_job(job, update_interval=5):
         time.sleep(update_interval)
 
 
-def generate_structure(_, spacegroup_number, multiplicities, names, letters, dofs):
+def generate_structure(
+    _, spacegroup_number, multiplicities, names, letters, dofs, i=None
+):
+
+    if i is not None:
+        print(i)
 
     # TODO: maybe use slightly random volume factors later
 
@@ -303,6 +309,7 @@ def generate_structures(spacegroup_number, N):
             names=names,
             letters=letters,
             dofs=dofs,
+            i=i,
         )
         for i in range(0, N)
     ]
@@ -317,25 +324,40 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    generate_structures(14, 10000)
+    generate_structures(14, 1000)
 
     stop = time.time()
 
     print(f"Total job took {stop-start} s", flush=True)
 
-    """
-    14
-    ['He']
-    [4] 
-    my_crystal = pyxtal()
+    # 14
+    # ["He"]
+    # [4]
+
+    exit()
 
     for i in range(0, 100):
-        my_crystal.from_random(
-            dim=3,
-            group=14,
-            species=["He"],
-            numIons=[4],
-            # sites=chosen_wyckoff_positions,
-        )
+        my_crystal = pyxtal()
+        try:
+            my_crystal.from_random(3, 14, ["He"], [4])
+        except:
+            pass
+        print(i, my_crystal.valid)
 
-    """
+    pass
+
+    exit()
+
+    for i in range(0, 100):
+        my_crystal = pyxtal()
+        try:
+            my_crystal.from_random(
+                dim=3,
+                group=14,
+                species=["He"],
+                numIons=[4],
+                # sites=chosen_wyckoff_positions,
+            )
+        except:
+            pass
+        print(i, my_crystal.valid)
