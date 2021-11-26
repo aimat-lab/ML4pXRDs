@@ -17,6 +17,7 @@ from scipy.signal import find_peaks, filtfilt
 from skimage import data, restoration, util
 from matplotlib.patches import Ellipse
 from functools import partial
+import pybaselines
 
 mode = "removal"  # possible: info and removal
 # to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
@@ -205,6 +206,11 @@ def update_wave(
         n_xs=len(xs),
     )
     ax.plot(xs, background, label="Rolling ball", c="k")
+
+    # TODO: Continue on this
+    # baseline_wavelet = pybaselines.classification.cwt_br(ys)
+    # ax.plot(xs, baseline_wavelet[0], label="Wavelet transform", c="m")
+
     ax.legend()
 
     fig.canvas.draw_idle()
