@@ -172,15 +172,15 @@ def generate_samples_gp(
             low=base_noise_level_min, high=base_noise_level_max
         )
         # TODO: Change this back
-        base_noise_level = 0
+        # base_noise_level = 0
         ys_altered += np.random.normal(size=n_angles_output, scale=base_noise_level)
 
         # TODO: Think about this again
         # TODO: Does having a multiplication of 1.0 make sense? Scaling + stdeviation? look at wikipedia
-        fluct_noise_level = 0.01
-        ys_altered *= np.random.normal(
-            size=n_angles_output, scale=fluct_noise_level, loc=1.0
-        )
+        # fluct_noise_level = 0.02
+        # ys_altered *= np.random.normal(
+        #    size=n_angles_output, scale=fluct_noise_level, loc=1.0
+        # )
 
         ys_altered -= np.min(ys_altered)
 
