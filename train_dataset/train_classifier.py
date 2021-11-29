@@ -177,14 +177,14 @@ if mode == "narrow":
     # compute proper class weights
     # class_weights = {}
     classes = np.unique(y)
-    class_weights = class_weight.compute_class_weight(
+    class_weights_narrow = class_weight.compute_class_weight(
         class_weight="balanced", classes=classes, y=y
     )
     # for i, weight in enumerate(class_weight_array):
     #    class_weights[classes[i]] = weight
 
     print("Class weights:")
-    print(class_weights)
+    print(class_weights_narrow)
 
     if scale_features:
         sc = StandardScaler()
@@ -514,8 +514,8 @@ elif model_str == "conv_narrow":
                 hp.Float("dropout", 0, 0.5, step=0.1, default=0.5)
             )(x_nn)
 
-        outputs_softmax = keras.layers.Dense(n_classes)(x_nn)
-        output_sigmoid = keras.layers.Dense(1)(x_nn)
+        outputs_softmax = keras.layers.Dense(n_classes, name="outputs_softmax")(x_nn)
+        output_sigmoid = keras.layers.Dense(1, name="output_sigmoid")(x_nn)
 
         optimizer = keras.optimizers.Adam(
             hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
@@ -525,13 +525,16 @@ elif model_str == "conv_narrow":
 
         model.compile(
             optimizer=optimizer,
-            loss=[
-                CustomSmoothedWeightedCCE(
-                    from_logits=True, class_weights=class_weights
+            loss={
+                "outputs_softmax": CustomSmoothedWeightedCCE(
+                    from_logits=True, class_weights=class_weights_narrow
                 ),
-                BinaryCrossentropy(from_logits=True),
-            ],
-            metrics=[["SparseCategoricalAccuracy"], ["BinaryAccuracy"]],
+                "output_sigmoid": BinaryCrossentropy(from_logits=True),
+            },
+            metrics={
+                "outputs_softmax": "CategoricalAccuracy",
+                "output_sigmoid": "BinaryAccuracy",
+            },
         )
 
         model.summary()
@@ -873,10 +876,10 @@ if tune_hyperparameters:
     tuner.search(
         x_train,
         y_train,
-        validation_data=(x_val, y_val),
+        # validation_data=(x_val, y_val),
         verbose=2,
         callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
-        class_weight=(class_weights if model_str != "conv_narrow" else None),
+        class_weight=class_weights,
         steps_per_epoch=x_train.number_of_batches if y_train is None else None,
         workers=1,
         max_queue_size=20,
@@ -922,14 +925,14 @@ else:  # build model from best set of hyperparameters
         y_train,
         epochs=train_epochs,
         batch_size=train_batch_size,
-        validation_data=(x_val, y_val),
+        # validation_data=(x_val, y_val),
         callbacks=[tensorboard_callback, cp_callback],
         verbose=2,
         workers=1,
         max_queue_size=20,
         use_multiprocessing=True,
         steps_per_epoch=x_train.number_of_batches if y_train is None else None,
-        class_weight=(class_weights if model_str != "conv_narrow" else None),
+        class_weight=class_weights,
     )
 
     print("\nOn test dataset:")
