@@ -241,7 +241,7 @@ if mode == "narrow":
         sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
         return sigma
 
-    def alter_dataset(current_x, current_y, variations, do_plot=True):
+    def alter_dataset(current_x, current_y, variations, do_plot=False):
 
         min_peak_height = 0.01
 
@@ -315,7 +315,7 @@ if mode == "narrow":
                 else len(self.x_train)
             ]
 
-            return alter_dataset(current_x, current_y, variations, repeat=1)
+            return alter_dataset(current_x, current_y, variations)
 
     __y_train = np.array(tf.one_hot(__y_train, 3))
 
@@ -326,9 +326,8 @@ if mode == "narrow":
         tuner_batch_size if tune_hyperparameters else train_batch_size,
     )
 
-    x_test, y_test = alter_dataset(__x_test, __y_test, variations_test, do_plot=True)
-    x_val, y_val = alter_dataset(__x_val, __y_val, variations_val, do_plot=True)
-    exit()
+    x_test, y_test = alter_dataset(__x_test, __y_test, variations_test)
+    x_val, y_val = alter_dataset(__x_val, __y_val, variations_val)
 
 elif mode == "random":
 
@@ -1002,6 +1001,8 @@ else:  # build model from best set of hyperparameters
     # model.evaluate(x_test, y_test, verbose=2)
     # print()
 
+    model.save(out_base + "final")
+
     if model_is_binary:
 
         prob_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
@@ -1036,7 +1037,7 @@ else:  # build model from best set of hyperparameters
 
         print()
         print("Classification report softmax:")
-        print(classification_report(y_test[:, 0], prediction_softmax))
+        print(classification_report(y_test[0], prediction_softmax))
 
         sigmoid_activation = keras.layers.Activation("sigmoid")(
             model.get_layer("output_sigmoid").output
@@ -1050,6 +1051,4 @@ else:  # build model from best set of hyperparameters
 
         print()
         print("Classification report sigmoid:")
-        print(classification_report(y_test[:, 1], prediction_sigmoid))
-
-    model.save(out_base + "final")
+        print(classification_report(y_test[1], prediction_sigmoid))
