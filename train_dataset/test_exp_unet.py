@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core.numeric import roll
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import interpolate as ip
@@ -15,6 +16,8 @@ from scipy import interpolate as ip
 from scipy.signal import find_peaks, filtfilt
 from skimage import data, restoration, util
 from matplotlib.patches import Ellipse
+from functools import partial
+import pybaselines
 
 mode = "removal"  # possible: info and removal
 # to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
@@ -157,106 +160,169 @@ def rolling_ball(
     return yb
 
 
-# TODO: Reuse the current values for the next plots, too
-# TODO: Implement wavelet transform
-# TODO: Think about how to handle ranges properly.
-def plot_heuristic_fit(xs, ys, method, show_sliders=False):
+def update_wave(
+    val,
+    slider_1_rb,
+    slider_2_rb,
+    slider_1_arPLS,
+    slider_2_arPLS,
+    xs,
+    ys,
+    ax,
+    fig,
+    do_remove,
+):
+
+    global current_lambda_exponent
+    global current_ratio_exponent
+    global rolling_ball_sphere_x
+    global rolling_ball_sphere_y
+
+    current_ratio_exponent = slider_1_arPLS.val
+    current_lambda_exponent = slider_2_arPLS.val
+    rolling_ball_sphere_x = slider_1_rb.val
+    rolling_ball_sphere_y = slider_2_rb.val
+
+    if do_remove:
+        ax.lines[-1].remove()
+        ax.lines[-1].remove()
+
+    value1 = 10 ** slider_1_arPLS.val
+    slider_1_arPLS.valtext.set_text(f"{value1:.3E} {slider_1_arPLS.val:.3f}")
+    value2 = 10 ** slider_2_arPLS.val
+    slider_2_arPLS.valtext.set_text(f"{value2:.3E} {slider_2_arPLS.val:.3f}")
+
+    baseline = baseline_arPLS(ys, value1, value2)
+    ax.plot(xs, baseline, label="arPLS", c="b")
+
+    background = rolling_ball(
+        xs,
+        ys,
+        sphere_x=slider_1_rb.val,
+        sphere_y=slider_2_rb.val,
+        min_x=10,
+        max_x=50,
+        ax=ax,
+        n_xs=len(xs),
+    )
+    ax.plot(xs, background, label="Rolling ball", c="k")
+
+    # TODO: Continue on this
+    # baseline_wavelet = pybaselines.classification.cwt_br(ys)
+    # ax.plot(xs, baseline_wavelet[0], label="Wavelet transform", c="m")
+
+    ax.legend()
+
+    fig.canvas.draw_idle()
+
+
+def plot_heuristic_fit(xs, ys, show_sliders=False):
 
     fig = plt.gcf()
     ax = plt.gca()
-    fig.subplots_adjust(
-        left=0.05, bottom=0.5, right=0.95, top=0.98, wspace=0.05, hspace=0.05
+
+    sliders = []
+    for method in ["rolling_ball", "arPLS"]:
+
+        fig.subplots_adjust(
+            left=0.05, bottom=0.5, right=0.95, top=0.98, wspace=0.05, hspace=0.05
+        )
+
+        if method == "rolling_ball":
+            bottom_1 = 0.30
+            min_1 = 0
+            max_1 = 100
+            valinit_1 = rolling_ball_sphere_x
+
+            bottom_2 = 0.24
+            min_2 = 0
+            max_2 = 3
+            valinit_2 = rolling_ball_sphere_y
+
+            valfmt = "%1.3f"
+
+        elif method == "arPLS":
+            bottom_1 = 0.18
+            min_1 = -3
+            max_1 = -1
+            valinit_1 = current_ratio_exponent
+
+            bottom_2 = 0.12
+            min_2 = 2
+            max_2 = 9
+            valinit_2 = current_lambda_exponent
+
+            valfmt = "%E"
+
+        elif method == "wavelet":
+
+            return
+
+            bottom_1 = 0.06
+            min_1 = 0
+            max_1 = 0
+
+            bottom_2 = 0.00
+            min_2 = 0
+            max_2 = 0
+        else:
+            raise Exception()
+
+        axwave1 = plt.axes([0.17, bottom_1, 0.65, 0.03])  # slider dimensions
+        axwave2 = plt.axes(
+            [0.17, bottom_2, 0.65, 0.03]
+        )  # slider dimensions # left, bottom, width, height
+
+        slider_1 = Slider(
+            axwave1,
+            "Event No. 1",
+            min_1,
+            max_1,
+            valinit=valinit_1,
+            valfmt=valfmt,
+        )  # 1
+        slider_2 = Slider(
+            axwave2,
+            "Event No. 2",
+            min_2,
+            max_2,
+            valinit=valinit_2,
+            valfmt=valfmt,
+        )  # 2
+
+        sliders.append(slider_1)
+        sliders.append(slider_2)
+
+    update_wave(
+        None,
+        sliders[0],
+        sliders[1],
+        sliders[2],
+        sliders[3],
+        xs,
+        ys,
+        ax,
+        fig,
+        do_remove=False,
     )
 
-    if method == "rolling_ball":
-        bottom_1 = 0.30
-        min_1 = 0
-        max_1 = 100
-        valinit_1 = rolling_ball_sphere_x
-
-        bottom_2 = 0.24
-        min_2 = 0
-        max_2 = 3
-        valinit_2 = rolling_ball_sphere_y
-
-        valfmt = "%1.3f"
-
-    elif method == "arPLS":
-        bottom_1 = 0.18
-        min_1 = -3
-        max_1 = -1
-        valinit_1 = current_ratio_exponent
-
-        bottom_2 = 0.12
-        min_2 = 2
-        max_2 = 9
-        valinit_2 = current_lambda_exponent
-
-        valfmt = "%E"
-
-    elif method == "wavelet":
-
-        return
-
-        bottom_1 = 0.06
-        min_1 = 0
-        max_1 = 0
-
-        bottom_2 = 0.00
-        min_2 = 0
-        max_2 = 0
-
-    axwave1 = plt.axes([0.17, bottom_1, 0.65, 0.03])  # slider dimensions
-    axwave2 = plt.axes(
-        [0.17, bottom_2, 0.65, 0.03]
-    )  # slider dimensions # left, bottom, width, height
-
-    slider_1 = Slider(
-        axwave1, "Event No. 1", min_1, max_1, valinit=valinit_1, valfmt=valfmt,
-    )  # 1
-    slider_2 = Slider(
-        axwave2, "Event No. 2", min_2, max_2, valinit=valinit_2, valfmt=valfmt,
-    )  # 2
-
-    def update_wave(val):
-        if val is not None:
-            ax.cla()
-
-        if method == "arPLS":
-
-            value1 = 10 ** slider_1.val
-            slider_1.valtext.set_text(f"{value1:.5E} {slider_1.val}")
-            value2 = 10 ** slider_2.val
-            slider_2.valtext.set_text(f"{value2:.5E} {slider_2.val}")
-
-            baseline = baseline_arPLS(ys, value1, value2)
-            ax.plot(xs, baseline)
-
-        elif method == "rolling_ball":
-
-            background = rolling_ball(
-                xs,
-                ys,
-                sphere_x=slider_1.val,
-                sphere_y=slider_2.val,
-                min_x=10,
-                max_x=50,
+    for slider in sliders:
+        slider.on_changed(
+            partial(
+                update_wave,
+                slider_1_rb=sliders[0],
+                slider_2_rb=sliders[1],
+                slider_1_arPLS=sliders[2],
+                slider_2_arPLS=sliders[3],
+                xs=xs,
+                ys=ys,
                 ax=ax,
-                n_xs=len(xs),
+                fig=fig,
+                do_remove=True,
             )
-            ax.plot(xs, background)
+        )
 
-            fig.canvas.draw_idle()
-
-        fig.canvas.draw_idle()
-
-    update_wave(None)
-
-    slider_1.on_changed(update_wave)
-    slider_2.on_changed(update_wave)
-
-    current_lambda = slider_1.val
-    current_ratio = slider_2.val
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -330,35 +396,10 @@ if __name__ == "__main__":
             corrected = model.predict(ys)
 
             plt.scatter(
-                pattern_x, corrected[0, :, 0], label="Peak detection", s=3,
+                pattern_x,
+                corrected[0, :, 0],
+                label="Peak detection",
+                s=3,
             )
 
-        """
-        plot_heuristic_fit(
-            pattern_x, ys[0, :, 0], method="rolling_ball", show_sliders=(i == 0)
-        )
-        plot_heuristic_fit(
-            pattern_x, ys[0, :, 0], method="arPLS", show_sliders=(i == 0)
-        )
-        plot_heuristic_fit(
-            pattern_x, ys[0, :, 0], method="wavelet", show_sliders=(i == 0)
-        )
-        """
-
-        plt.legend()
-        plt.show()
-
-        """
-        baseline_arPLS = baseline_arPLS(current_ys)
-        current_ys_arPLS = current_ys - baseline_arPLS
-
-        current_ys_rolling_ball = rolling_ball(
-            xs[:, i],
-            ys[:, i],
-            sphere_x=rolling_ball_sphere_x,
-            sphere_y=rolling_ball_sphere_y,
-            min_x=10,
-            max_x=50,
-            n_xs=5000,
-        )
-        """
+        plot_heuristic_fit(pattern_x, ys[0, :, 0], show_sliders=(i == 0))

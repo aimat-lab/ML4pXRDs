@@ -1,5 +1,7 @@
 import sys
 
+from tensorflow.python.keras.losses import BinaryCrossentropy
+
 sys.path.append("../")
 
 import numpy as np
@@ -26,12 +28,14 @@ import math
 import pickle
 import gc
 from sklearn.metrics import classification_report
+from custom_loss import CustomSmoothedWeightedCCE
+from sklearn import preprocessing
 
-tag = "test"  # additional tag that will be added to the tuner folder and training folder
-mode = "random"  # possible: narrow and random
-model_str = (
-    "random"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
+tag = (
+    "test"  # additional tag that will be added to the tuner folder and training folder
 )
+mode = "narrow"  # possible: narrow and random
+model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
 model_is_binary = True
 
 number_of_values_initial = 9018
@@ -171,13 +175,13 @@ if mode == "narrow":
     x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
 
     # compute proper class weights
-    class_weights = {}
+    # class_weights = {}
     classes = np.unique(y)
-    class_weight_array = class_weight.compute_class_weight(
+    class_weights = class_weight.compute_class_weight(
         class_weight="balanced", classes=classes, y=y
     )
-    for i, weight in enumerate(class_weight_array):
-        class_weights[classes[i]] = weight
+    # for i, weight in enumerate(class_weight_array):
+    #    class_weights[classes[i]] = weight
 
     print("Class weights:")
     print(class_weights)
@@ -228,8 +232,10 @@ if mode == "narrow":
 
             min_peak_height = 0.01
 
+            is_pures = []
             for i, item in enumerate(current_x):
                 if random.random() < 0.5:  # in 50% of the samples, add additional peaks
+                    is_pures.append(0)
 
                     sigma_peaks = self.variations[idx * self.batch_size + i]
 
@@ -244,11 +250,15 @@ if mode == "narrow":
                             )
                         ) * peak_size
                         current_x[i, :, 0] += peak
+                else:
+                    is_pures.append(1)
 
             if scale_features:
                 current_x[:, :, 0] = sc.fit_transform(current_x[:, :, 0])
 
-            return current_x, current_y
+            return current_x, [current_y, np.array(is_pures)]
+
+    __y_train = np.array(tf.one_hot(__y_train, 3))
 
     x_train = NarrowSequence(
         __x_train,
@@ -325,9 +335,9 @@ elif mode == "random":
     # print(f"Shape of x: {x_1.shape}")
     # print(f"Shape of y: {y.shape}")
 
-    #assert not np.any(np.isnan(x_1))
-    #assert not np.any(np.isnan(y))
-    #assert len(x_1) == len(y)
+    # assert not np.any(np.isnan(x_1))
+    # assert not np.any(np.isnan(y))
+    # assert len(x_1) == len(y)
 
     n_classes = len(np.unique(y))
 
@@ -471,78 +481,57 @@ elif model_str == "conv_narrow":
 
     def build_model(hp):  # define model with hyperparameters
 
-        model = tf.keras.models.Sequential()
+        inputs = keras.layers.Input(shape=(number_of_values, 1))
+        x_nn = inputs
 
         for i in range(0, hp.Int("number_of_conv_layers", min_value=1, max_value=2)):
 
-            if i == 0:
-                model.add(
-                    tf.keras.layers.Conv1D(
-                        hp.Int(
-                            "number_of_filters", min_value=10, max_value=210, step=20
-                        ),
-                        # int(starting_filter_size * (3 / 4) ** i),
-                        hp.Int(
-                            "filter_size_" + str(i),
-                            min_value=10,
-                            max_value=510,
-                            step=20,
-                        ),
-                        input_shape=(number_of_values, 1),
-                        activation="relu",
-                    )
-                )
-            else:
-                model.add(
-                    tf.keras.layers.Conv1D(
-                        hp.Int(
-                            "number_of_filters", min_value=10, max_value=200, step=20
-                        ),
-                        # int(starting_filter_size * (3 / 4) ** i),
-                        hp.Int(
-                            "filter_size_" + str(i),
-                            min_value=10,
-                            max_value=510,
-                            step=20,
-                        ),
-                        activation="relu",
-                    )
-                )
+            x_nn = keras.layers.Conv1D(
+                hp.Int("number_of_filters", min_value=10, max_value=210, step=20),
+                # int(starting_filter_size * (3 / 4) ** i),
+                hp.Int("filter_size_" + str(i), min_value=10, max_value=510, step=20,),
+                input_shape=(number_of_values, 1),
+                activation="relu",
+            )(x_nn)
 
-            model.add(tf.keras.layers.BatchNormalization())
-            model.add(tf.keras.layers.MaxPooling1D(pool_size=2, strides=2))
+            x_nn = keras.layers.BatchNormalization()(x_nn)
+            x_nn = keras.layers.MaxPooling1D(pool_size=2, strides=2)(x_nn)
 
-        model.add(tf.keras.layers.Flatten())
+        x_nn = keras.layers.Flatten()(x_nn)
 
         for i in range(0, hp.Int("number_of_dense_layers", min_value=1, max_value=2)):
 
-            model.add(
-                tf.keras.layers.Dense(
-                    hp.Int(
-                        "number_of_dense_units_" + str(i),
-                        min_value=32,
-                        max_value=2080,
-                        step=128,
-                    ),
-                    activation="relu",
-                )
-            )
-            model.add(
-                tf.keras.layers.Dropout(
-                    hp.Float("dropout", 0, 0.5, step=0.1, default=0.5)
-                )
-            )
+            x_nn = keras.layers.Dense(
+                hp.Int(
+                    "number_of_dense_units_" + str(i),
+                    min_value=32,
+                    max_value=2080,
+                    step=128,
+                ),
+                activation="relu",
+            )(x_nn)
+            x_nn = keras.layers.Dropout(
+                hp.Float("dropout", 0, 0.5, step=0.1, default=0.5)
+            )(x_nn)
 
-        model.add(tf.keras.layers.Dense(n_classes))
+        outputs_softmax = keras.layers.Dense(n_classes)(x_nn)
+        output_sigmoid = keras.layers.Dense(1)(x_nn)
 
-        optimizer = tf.keras.optimizers.Adam(
+        optimizer = keras.optimizers.Adam(
             hp.Choice("learning_rate", values=[1e-1, 1e-2, 1e-3, 1e-4])
         )
 
+        model = keras.Model(inputs=inputs, outputs=[outputs_softmax, output_sigmoid])
+
         model.compile(
             optimizer=optimizer,
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=["SparseCategoricalAccuracy"],
+            loss=[
+                CustomSmoothedWeightedCCE(
+                    from_logits=True, class_weights=class_weights
+                ),
+                BinaryCrossentropy(from_logits=True),
+            ],
+            metrics=[["SparseCategoricalAccuracy"], ["BinaryAccuracy"]],
         )
 
         model.summary()
@@ -887,7 +876,7 @@ if tune_hyperparameters:
         validation_data=(x_val, y_val),
         verbose=2,
         callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
-        class_weight=class_weights,
+        class_weight=(class_weights if model_str != "conv_narrow" else None),
         steps_per_epoch=x_train.number_of_batches if y_train is None else None,
         workers=1,
         max_queue_size=20,
@@ -940,13 +929,14 @@ else:  # build model from best set of hyperparameters
         max_queue_size=20,
         use_multiprocessing=True,
         steps_per_epoch=x_train.number_of_batches if y_train is None else None,
-        class_weight=class_weights,
+        class_weight=(class_weights if model_str != "conv_narrow" else None),
     )
 
     print("\nOn test dataset:")
     model.evaluate(x_test, y_test, verbose=2)
     print()
 
+    # TODO: Implement this for narrow classifier
     if model_is_binary:
         prob_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
         predicted_y = np.array(prob_model.predict(x_test))
