@@ -17,4 +17,5 @@ source /home/kit/iti/la2559/mambaforge/etc/profile.d/conda.sh
 
 conda activate tf
 
+export CURRENT_CLUSTER="bwuni"
 python train_classifier.py

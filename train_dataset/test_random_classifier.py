@@ -12,7 +12,8 @@ import pickle
 import gc
 from sklearn.metrics import classification_report
 
-classifier_model_name = "random_25-11-2021_12:09:51_test"
+#classifier_model_name = "random_25-11-2021_12:09:51_test"
+classifier_model_name = "random_27-11-2021_09:12:22_test"
 classifier_model = keras.models.load_model(
     "classifier/" + classifier_model_name + "/final"
 )
@@ -107,7 +108,7 @@ print("Test accuracy:", acc)
 
 print()
 
-print("Distribution of the test set:")
+print("Distribution of the test set (14, 104):")
 print(counter)
 
 print()
@@ -125,6 +126,13 @@ print(np.sum(predicted_y == 0))
 print("Predicted as spg 104:")
 print(np.sum(predicted_y == 1))
 
+print()
+print("Correctly predicted as spg 14:")
+print(np.sum((predicted_y == 0) & (predicted_y == y)))
+print("Correctly predicted as spg 104:")
+print(np.sum((predicted_y == 1) & (predicted_y == y)))
+
+print()
 print(
     f"Correctly classified: {np.sum(predicted_y == y)} ({np.sum(predicted_y == y) / len(y)} %)"
 )
