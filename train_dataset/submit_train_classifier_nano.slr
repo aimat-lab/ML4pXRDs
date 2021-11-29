@@ -2,7 +2,7 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
 #SBATCH --time=10-48:00:00
-#SBATCH --mem=128000mb
+#SBATCH --mem=256000mb
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=tf_unet
 
