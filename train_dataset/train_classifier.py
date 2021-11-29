@@ -38,6 +38,8 @@ mode = "narrow"  # possible: narrow and random
 model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
 model_is_binary = True
 
+train_on_this = None  # supply a model_str that contains a hyperparameter optimization to train on (using best parameters)
+
 number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 
@@ -89,16 +91,19 @@ elif mode == "random":
     # train_batch_size = 500
     train_batch_size = 500
 
+if train_on_this is None:
+    out_base = (
+        "classifier/"
+        + mode
+        + "_"
+        + datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+        + "_"
+        + tag
+        + "/"
+    )
+else:
+    out_base = "classifier/" + train_on_this + "/"
 
-out_base = (
-    "classifier/"
-    + mode
-    + "_"
-    + datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
-    + "_"
-    + tag
-    + "/"
-)
 if not os.path.exists(out_base):
     os.system("mkdir -p " + out_base)
 
