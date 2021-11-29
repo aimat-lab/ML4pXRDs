@@ -29,19 +29,21 @@ import pickle
 import gc
 from sklearn.metrics import classification_report
 from custom_loss import CustomSmoothedWeightedCCE
-from sklearn import preprocessing
 
 tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
 )
 mode = "narrow"  # possible: narrow and random
 model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
-model_is_binary = True
+model_is_binary = False
 
 train_on_this = None  # supply a model_str that contains a hyperparameter optimization to train on (using best parameters)
 
 number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
+
+NO_workers = 1
+queue_size = 20
 
 if mode == "narrow":
 
@@ -62,7 +64,7 @@ if mode == "narrow":
     tuner_epochs = 4
     tuner_batch_size = 128
 
-    train_epochs = 2
+    train_epochs = 1
     train_batch_size = 128
 
 elif mode == "random":
@@ -142,6 +144,9 @@ if mode == "narrow":
     labels = sim.sim_labels
     variations = sim.sim_variations
 
+    # plt.plot(patterns[124][3])
+    # plt.show()
+
     for i in reversed(range(0, len(patterns))):
         if np.any(np.isnan(variations[i][0])):
             del patterns[i]
@@ -176,17 +181,30 @@ if mode == "narrow":
     # Split into train, validation, test set + shuffle
     x, y, variations = shuffle(x, y, variations, random_state=1234)
 
-    __x_train, x_test, __y_train, y_test = train_test_split(x, y, test_size=0.3)
-    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5)
+    (
+        __x_train,
+        __x_test,
+        __y_train,
+        __y_test,
+        variations_train,
+        variations_test,
+    ) = train_test_split(x, y, variations, test_size=0.3)
+    (
+        __x_test,
+        __x_val,
+        __y_test,
+        __y_val,
+        variations_test,
+        variations_val,
+    ) = train_test_split(__x_test, __y_test, variations_test, test_size=0.5)
 
     # compute proper class weights
-    # class_weights = {}
-    classes = np.unique(y)
+    classes = np.unique(
+        __y_train
+    )  # only compute class weights based on the majority label
     class_weights_narrow = class_weight.compute_class_weight(
-        class_weight="balanced", classes=classes, y=y
+        class_weight="balanced", classes=classes, y=__y_train
     )
-    # for i, weight in enumerate(class_weight_array):
-    #    class_weights[classes[i]] = weight
 
     print("Class weights:")
     print(class_weights_narrow)
@@ -195,18 +213,74 @@ if mode == "narrow":
         sc = StandardScaler()
         sc.fit(__x_train)
 
-        x_test = sc.transform(x_test)
-        x_val = sc.transform(x_val)
-
         with open(os.path.join(out_base, "scaler"), "wb") as file:
             pickle.dump(sc, file)
 
     # when using conv2d layers, keras needs this format: (n_samples, height, width, channels)
     if "conv" in model_str:
-        x = np.expand_dims(x, axis=2)
         __x_train = np.expand_dims(__x_train, axis=2)
-        x_test = np.expand_dims(x_test, axis=2)
-        x_val = np.expand_dims(x_val, axis=2)
+        __x_test = np.expand_dims(__x_test, axis=2)
+        __x_val = np.expand_dims(__x_val, axis=2)
+
+    def calc_std_dev(two_theta, tau, wavelength=1.207930):
+        """
+        calculate standard deviation based on angle (two theta) and domain size (tau)
+        Args:
+            two_theta: angle in two theta space
+            tau: domain size in nm
+        Returns:
+            standard deviation for gaussian kernel
+        """
+        ## Calculate FWHM based on the Scherrer equation
+        K = 0.9  ## shape factor
+        wavelength = wavelength * 0.1  ## angstrom to nm
+        theta = np.radians(two_theta / 2.0)  ## Bragg angle in radians
+        beta = (K * wavelength) / (np.cos(theta) * tau)  # in radians
+
+        ## Convert FWHM to std deviation of gaussian
+        sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
+        return sigma
+
+    def alter_dataset(current_x, current_y, variations, do_plot=True):
+
+        min_peak_height = 0.01
+
+        is_pures = []
+        for i, item in enumerate(current_x):
+            if do_plot:
+                plt.plot(current_x[i, :, 0], label="Original")
+
+            # TODO: Change this
+            if random.random() < 1.0:  # in 50% of the samples, add additional peaks
+                is_pures.append(0)
+
+                for j in range(0, random.randint(1, 5)):
+                    mean = random.uniform(start_x, end_x)
+
+                    sigma_peak = calc_std_dev(mean, variations[i][0])
+
+                    peak_height = random.uniform(min_peak_height, 1)
+                    peak = (
+                        1
+                        / (sigma_peak * np.sqrt(2 * np.pi))
+                        * np.exp(-1 / (2 * sigma_peak ** 2) * (used_range - mean) ** 2)
+                    )
+
+                    peak = peak / np.max(peak) * peak_height
+
+                    current_x[i, :, 0] += peak
+            else:
+                is_pures.append(1)
+
+            if do_plot:
+                plt.plot(current_x[i, :, 0], label="Altered")
+                plt.legend()
+                plt.show()
+
+        if scale_features:
+            current_x[:, :, 0] = sc.transform(current_x[:, :, 0])
+
+        return current_x, [current_y, np.array(is_pures)]
 
     class NarrowSequence(keras.utils.Sequence):
         def __init__(self, x_train, y_train, variations, batch_size):
@@ -224,6 +298,7 @@ if mode == "narrow":
         def __getitem__(self, idx):
 
             end_index = (idx + 1) * self.batch_size
+
             current_x = self.x_train[
                 idx * self.batch_size : end_index
                 if end_index < len(self.x_train)
@@ -234,34 +309,13 @@ if mode == "narrow":
                 if end_index < len(self.x_train)
                 else len(self.x_train)
             ]
+            variations = self.variations[
+                idx * self.batch_size : end_index
+                if end_index < len(self.x_train)
+                else len(self.x_train)
+            ]
 
-            min_peak_height = 0.01
-
-            is_pures = []
-            for i, item in enumerate(current_x):
-                if random.random() < 0.5:  # in 50% of the samples, add additional peaks
-                    is_pures.append(0)
-
-                    sigma_peaks = self.variations[idx * self.batch_size + i]
-
-                    for j in range(0, random.randint(0, 5)):
-                        mean = random.uniform(start_x, end_x)
-                        peak_size = random.uniform(min_peak_height, 1)
-                        peak = (
-                            1
-                            / (sigma_peaks * np.sqrt(2 * np.pi))
-                            * np.exp(
-                                -1 / (2 * sigma_peaks ** 2) * (used_range - mean) ** 2
-                            )
-                        ) * peak_size
-                        current_x[i, :, 0] += peak
-                else:
-                    is_pures.append(1)
-
-            if scale_features:
-                current_x[:, :, 0] = sc.fit_transform(current_x[:, :, 0])
-
-            return current_x, [current_y, np.array(is_pures)]
+            return alter_dataset(current_x, current_y, variations, repeat=1)
 
     __y_train = np.array(tf.one_hot(__y_train, 3))
 
@@ -271,6 +325,10 @@ if mode == "narrow":
         variations,
         tuner_batch_size if tune_hyperparameters else train_batch_size,
     )
+
+    x_test, y_test = alter_dataset(__x_test, __y_test, variations_test, do_plot=True)
+    x_val, y_val = alter_dataset(__x_val, __y_val, variations_val, do_plot=True)
+    exit()
 
 elif mode == "random":
 
@@ -886,8 +944,8 @@ if tune_hyperparameters:
         callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
         class_weight=class_weights,
         steps_per_epoch=x_train.number_of_batches if y_train is None else None,
-        workers=1,
-        max_queue_size=20,
+        workers=NO_workers,
+        max_queue_size=queue_size,
         use_multiprocessing=True,
     )
 
@@ -933,30 +991,65 @@ else:  # build model from best set of hyperparameters
         # validation_data=(x_val, y_val),
         callbacks=[tensorboard_callback, cp_callback],
         verbose=2,
-        workers=1,
-        max_queue_size=20,
+        workers=NO_workers,
+        max_queue_size=queue_size,
         use_multiprocessing=True,
         steps_per_epoch=x_train.number_of_batches if y_train is None else None,
         class_weight=class_weights,
     )
 
-    print("\nOn test dataset:")
-    model.evaluate(x_test, y_test, verbose=2)
-    print()
+    # print("\nOn test dataset:")
+    # model.evaluate(x_test, y_test, verbose=2)
+    # print()
 
-    # TODO: Implement this for narrow classifier
     if model_is_binary:
+
         prob_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
         predicted_y = np.array(prob_model.predict(x_test))
         predicted_y = predicted_y[:, 0]
         predicted_y = np.where(predicted_y > 0.5, 1, 0)
-    else:
+
+        print()
+        print("Classification report:")
+        print(classification_report(y_test, predicted_y))
+
+    elif model_str != "conv_narrow":
+
         prob_model = keras.Sequential([model, keras.layers.Activation("softmax")])
         predicted_y = np.array(prob_model.predict(x_test))
         predicted_y = np.argmax(predicted_y, axis=1)
 
-    print()
-    print("Classification report:")
-    print(classification_report(y_test, predicted_y))
+        print()
+        print("Classification report:")
+        print(classification_report(y_test, predicted_y))
+
+    else:
+
+        softmax_activation = keras.layers.Activation("softmax")(
+            model.get_layer("outputs_softmax").output
+        )
+        prob_model_softmax = keras.Model(
+            inputs=model.layers[0].output, outputs=softmax_activation
+        )
+        prediction_softmax = prob_model_softmax.predict(x_test)
+        prediction_softmax = np.argmax(prediction_softmax, axis=1)
+
+        print()
+        print("Classification report softmax:")
+        print(classification_report(y_test[:, 0], prediction_softmax))
+
+        sigmoid_activation = keras.layers.Activation("sigmoid")(
+            model.get_layer("output_sigmoid").output
+        )
+        prob_model_sigmoid = keras.Model(
+            inputs=model.layers[0].output, outputs=sigmoid_activation
+        )
+        prediction_sigmoid = prob_model_sigmoid.predict(x_test)
+        prediction_sigmoid = prediction_sigmoid[:, 0]
+        prediction_sigmoid = np.where(prediction_sigmoid > 0.5, 1, 0)
+
+        print()
+        print("Classification report sigmoid:")
+        print(classification_report(y_test[:, 1], prediction_sigmoid))
 
     model.save(out_base + "final")
