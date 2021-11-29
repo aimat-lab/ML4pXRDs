@@ -21,7 +21,7 @@ import pybaselines
 
 mode = "removal"  # possible: info and removal
 # to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
-to_test = "removal_25-11-2021_16-41-44_new_generation_method"
+to_test = "removal_29-11-2021_09-42-25_changed_dimension"
 
 
 def load_experimental_data(loading_mode="classification"):
@@ -111,22 +111,15 @@ def baseline_arPLS(y, ratio=None, lam=None, niter=None, full_output=False):
         return z
 
 
-def rolling_ball(
-    x, y, sphere_x=15, sphere_y=0.3, min_x=10, max_x=50, n_xs=5000, ax=None
-):
+def rolling_ball(xs, ys, sphere_x=15, sphere_y=0.3, ax=None):
 
     if ax == None:
         ax = plt.gca()
 
-    y = y / np.max(y)
+    ys = ys - np.min(ys)
+    ys = ys / np.max(ys)
 
     # ax.plot(x, y + 3, label="Raw")
-
-    f = ip.CubicSpline(x, y, bc_type="natural")
-
-    xs = np.linspace(min_x, max_x, n_xs)
-    ys = f(xs)
-
     # ax.plot(xs, ys + 2, label="Cubic spline")
     # ax.plot(xs, ys + 1, label="Cubic spline")
 
@@ -142,14 +135,17 @@ def rolling_ball(
     # ax.plot(xs, np.array(ys) + 1, label="Noise filtered")
 
     width = sphere_x / (xs[1] - xs[0])
+    # height = sphere_y / (ys[1] - ys[0])
+    height = sphere_y
     # ax.add_patch(Ellipse(xy=(10, 0.6), width=sphere_x, height=sphere_y))
     yb = restoration.rolling_ball(
-        ys, kernel=restoration.ellipsoid_kernel((width,), sphere_y)
+        ys,
+        kernel=restoration.ellipsoid_kernel((width,), height),
     )
 
     # ax.plot(xs, yb + 1, label="Baseline")
 
-    ys = ys - yb
+    # ys = ys - yb
     # ys[ys < 0.009] = 0  # thresholding
     # ax.plot(xs, ys, label="Baseline removed")
 
@@ -200,10 +196,7 @@ def update_wave(
         ys,
         sphere_x=slider_1_rb.val,
         sphere_y=slider_2_rb.val,
-        min_x=10,
-        max_x=50,
         ax=ax,
-        n_xs=len(xs),
     )
     ax.plot(xs, background, label="Rolling ball", c="k")
 
@@ -329,17 +322,6 @@ if __name__ == "__main__":
 
     xs_exp, ys_exp = load_experimental_data(loading_mode="classification")
 
-    # N = 9018
-    N = 9036
-    pattern_x = np.linspace(0, 90, N)
-
-    start_x = 10
-    end_x = 50
-    start_index = np.argwhere(pattern_x >= start_x)[0][0]
-    end_index = np.argwhere(pattern_x <= end_x)[-1][0]
-    pattern_x = pattern_x[start_index : end_index + 1]
-    N = len(pattern_x)
-
     model_pre = keras.models.load_model("unet/" + to_test + "/final")
 
     if mode == "removal":
@@ -354,21 +336,26 @@ if __name__ == "__main__":
 
     for i in range(0, xs_exp.shape[1]):
 
-        current_xs = xs_exp[:, i]
-        current_ys = ys_exp[:, i]
+        current_xs = xs_exp[:, i][0:2672]
+        current_ys = ys_exp[:, i][0:2672]
+
+        # plt.plot(current_xs, current_ys)
+        # plt.plot(current_xs[0:2672], current_ys[0:2672])
+        # plt.show()
+        # continue
 
         # plt.plot(current_xs, current_ys)
         # plt.show()
 
-        f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
+        # f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
 
-        ys = f(pattern_x)
+        ys = current_ys
         ys -= np.min(ys)
         ys = ys / np.max(ys)
 
-        plt.plot(pattern_x, np.zeros(len(pattern_x)))
+        plt.plot(current_xs, np.zeros(len(current_xs)))
 
-        plt.plot(pattern_x, ys, label="Experimental rescaled", zorder=2)
+        plt.plot(current_xs, ys, label="Experimental rescaled", zorder=2)
 
         # with open("unet/scaler", "rb") as file:
         #    scaler = pickle.load(file)
@@ -382,13 +369,14 @@ if __name__ == "__main__":
             corrected = model.predict(ys)
 
             plt.plot(
-                pattern_x,
+                current_xs,
                 ys[0, :, 0] - corrected[0, :, 0],
                 label="Background and noise",
                 zorder=1,
+                linestyle="dotted",
             )
             plt.plot(
-                pattern_x, corrected[0, :, 0], label="Corrected via U-Net", zorder=3
+                current_xs, corrected[0, :, 0], label="Corrected via U-Net", zorder=3
             )
 
         else:
@@ -396,10 +384,10 @@ if __name__ == "__main__":
             corrected = model.predict(ys)
 
             plt.scatter(
-                pattern_x,
+                current_xs,
                 corrected[0, :, 0],
                 label="Peak detection",
                 s=3,
             )
 
-        plot_heuristic_fit(pattern_x, ys[0, :, 0], show_sliders=(i == 0))
+        plot_heuristic_fit(current_xs, ys[0, :, 0], show_sliders=(i == 0))
