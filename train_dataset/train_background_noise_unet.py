@@ -19,7 +19,7 @@ from datetime import datetime
 
 tag = "new_generation_method"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
 to_test = "removal_25-11-2021_16-41-44_new_generation_method"
 
@@ -179,10 +179,7 @@ if training_mode == "train":
         max_queue_size=500,
         workers=NO_workers,
         use_multiprocessing=True,
-        callbacks=[
-            cp_callback,
-            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
-        ],
+        callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
         steps_per_epoch=number_of_batches,
     )
 
@@ -215,18 +212,21 @@ else:
     for i, prediction in enumerate(predictions):
         if mode == "removal":
 
-            plt.plot(pattern_x, prediction, label="Prediction")
+            plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
             plt.plot(
-                pattern_x,
-                test_batch[0][:][i],
-                label="Input pattern",
+                pattern_x, test_batch[0][:][i], label="Input pattern",
+            )
+
+            plt.plot(
+                pattern_x, test_batch[1][:][i], label="Target",
             )
 
             plt.plot(
                 pattern_x,
-                test_batch[1][:][i],
-                label="Target",
+                test_batch[0][:][i] - prediction[:, 0],
+                label="Background",
+                linestyle="dotted",
             )
 
             plt.legend()
