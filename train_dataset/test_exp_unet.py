@@ -21,7 +21,7 @@ import pybaselines
 
 mode = "removal"  # possible: info and removal
 # to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
-to_test = "removal_29-11-2021_09-42-25_changed_dimension"
+to_test = "removal_29-11-2021_10-20-52_changed_dimension"
 
 
 def load_experimental_data(loading_mode="classification"):

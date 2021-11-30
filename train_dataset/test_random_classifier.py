@@ -11,8 +11,9 @@ import numpy as np
 import pickle
 import gc
 from sklearn.metrics import classification_report
+import matplotlib.pyplot as plt
 
-#classifier_model_name = "random_25-11-2021_12:09:51_test"
+# classifier_model_name = "random_25-11-2021_12:09:51_test"
 classifier_model_name = "random_27-11-2021_09:12:22_test"
 classifier_model = keras.models.load_model(
     "classifier/" + classifier_model_name + "/final"
@@ -60,11 +61,28 @@ variations = sim.sim_variations
 # the space groups to test for:
 ys_unique = [14, 104]
 
+counter_14 = 0
+counter_104 = 0
+
 for i in reversed(range(0, len(patterns))):
     if np.any(np.isnan(variations[i][0])) or labels[i][0] not in ys_unique:
         del patterns[i]
         del labels[i]
         del variations[i]
+    elif labels[i][0] == 14:
+        if counter_14 < 10:
+            plt.figure()
+            plt.plot(patterns[i][0])
+            plt.savefig(f"14_{i}.pdf")
+            counter_14 += 1
+    elif labels[i][0] == 104:
+        if counter_104 < 10:
+            plt.figure()
+            plt.plot(patterns[i][0])
+            plt.savefig(f"104_{i}.pdf")
+            counter_104 += 1
+
+exit()
 
 counter = [0, 0]
 
