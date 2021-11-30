@@ -61,28 +61,28 @@ variations = sim.sim_variations
 # the space groups to test for:
 ys_unique = [14, 104]
 
-counter_14 = 0
-counter_104 = 0
+# counter_14 = 0
+# counter_104 = 0
 
 for i in reversed(range(0, len(patterns))):
     if np.any(np.isnan(variations[i][0])) or labels[i][0] not in ys_unique:
         del patterns[i]
         del labels[i]
         del variations[i]
-    elif labels[i][0] == 14:
-        if counter_14 < 10:
-            plt.figure()
-            plt.plot(patterns[i][0])
-            plt.savefig(f"14_{i}.pdf")
-            counter_14 += 1
-    elif labels[i][0] == 104:
-        if counter_104 < 10:
-            plt.figure()
-            plt.plot(patterns[i][0])
-            plt.savefig(f"104_{i}.pdf")
-            counter_104 += 1
+#    elif labels[i][0] == 14:
+#        if counter_14 < 10:
+#            plt.figure()
+#            plt.plot(patterns[i][0])
+#            plt.savefig(f"14_{i}.pdf")
+#            counter_14 += 1
+#    elif labels[i][0] == 104:
+#        if counter_104 < 10:
+#            plt.figure()
+#            plt.plot(patterns[i][0])
+#            plt.savefig(f"104_{i}.pdf")
+#            counter_104 += 1
 
-exit()
+# exit()
 
 counter = [0, 0]
 
