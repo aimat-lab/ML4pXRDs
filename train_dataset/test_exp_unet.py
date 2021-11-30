@@ -61,6 +61,11 @@ arPLS_niter = 100
 rolling_ball_sphere_x = 6.619
 rolling_ball_sphere_y = 0.3
 
+# wavelet parameters
+# num_std=0..5, min_length=2..100
+wavelet_num_std = 1.0
+wavelet_min_length = 2.0
+
 # the following function is taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
 def baseline_arPLS(y, ratio=None, lam=None, niter=None, full_output=False):
 
@@ -162,6 +167,8 @@ def update_wave(
     slider_2_rb,
     slider_1_arPLS,
     slider_2_arPLS,
+    slider_1_wavelet,
+    slider_2_wavelet,
     xs,
     ys,
     ax,
@@ -173,13 +180,18 @@ def update_wave(
     global current_ratio_exponent
     global rolling_ball_sphere_x
     global rolling_ball_sphere_y
+    global wavelet_num_std
+    global wavelet_min_length
 
     current_ratio_exponent = slider_1_arPLS.val
     current_lambda_exponent = slider_2_arPLS.val
     rolling_ball_sphere_x = slider_1_rb.val
     rolling_ball_sphere_y = slider_2_rb.val
+    current_wavelet_num_std = slider_1_wavelet.val
+    current_wavelet_min_length = slider_2_wavelet.val
 
     if do_remove:
+        ax.lines[-1].remove()
         ax.lines[-1].remove()
         ax.lines[-1].remove()
 
@@ -200,22 +212,23 @@ def update_wave(
     )
     ax.plot(xs, background, label="Rolling ball", c="k")
 
-    # TODO: Continue on this
-    # baseline_wavelet = pybaselines.classification.cwt_br(ys)
-    # ax.plot(xs, baseline_wavelet[0], label="Wavelet transform", c="m")
+    baseline_wavelet = pybaselines.classification.cwt_br(
+        ys, num_std=current_wavelet_num_std, min_length=int(current_wavelet_min_length)
+    )
+    ax.plot(xs, baseline_wavelet[0], label="Wavelet transform", c="m")
 
     ax.legend()
 
     fig.canvas.draw_idle()
 
 
-def plot_heuristic_fit(xs, ys, show_sliders=False):
+def plot_heuristic_fit(xs, ys):
 
     fig = plt.gcf()
     ax = plt.gca()
 
     sliders = []
-    for method in ["rolling_ball", "arPLS"]:
+    for method in ["rolling_ball", "arPLS", "wavelet"]:
 
         fig.subplots_adjust(
             left=0.05, bottom=0.5, right=0.95, top=0.98, wspace=0.05, hspace=0.05
@@ -249,17 +262,21 @@ def plot_heuristic_fit(xs, ys, show_sliders=False):
 
         elif method == "wavelet":
 
-            return
-
+            # num_std=0..5, min_length=2..100
             bottom_1 = 0.06
             min_1 = 0
-            max_1 = 0
+            max_1 = 5
+            valinit_1 = wavelet_num_std
 
             bottom_2 = 0.00
-            min_2 = 0
-            max_2 = 0
+            min_2 = 2
+            max_2 = 100
+            valinit_2 = wavelet_min_length
+
+            valfmt = "%1.3f"
+
         else:
-            raise Exception()
+            raise Exception("Baseline detection method not recognized.")
 
         axwave1 = plt.axes([0.17, bottom_1, 0.65, 0.03])  # slider dimensions
         axwave2 = plt.axes(
@@ -292,6 +309,8 @@ def plot_heuristic_fit(xs, ys, show_sliders=False):
         sliders[1],
         sliders[2],
         sliders[3],
+        sliders[4],
+        sliders[5],
         xs,
         ys,
         ax,
@@ -307,6 +326,8 @@ def plot_heuristic_fit(xs, ys, show_sliders=False):
                 slider_2_rb=sliders[1],
                 slider_1_arPLS=sliders[2],
                 slider_2_arPLS=sliders[3],
+                slider_1_wavelet=sliders[4],
+                slider_2_wavelet=sliders[5],
                 xs=xs,
                 ys=ys,
                 ax=ax,
@@ -390,4 +411,4 @@ if __name__ == "__main__":
                 s=3,
             )
 
-        plot_heuristic_fit(current_xs, ys[0, :, 0], show_sliders=(i == 0))
+        plot_heuristic_fit(current_xs, ys[0, :, 0])
