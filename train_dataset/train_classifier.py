@@ -451,7 +451,6 @@ else:
 # print available devices:
 # print(device_lib.list_local_devices())
 
-
 if model_str == "conv":
 
     def build_model(hp):  # define model with hyperparameters
@@ -468,7 +467,7 @@ if model_str == "conv":
                 model.add(
                     tf.keras.layers.Conv1D(
                         hp.Int(
-                            "number_of_filters", min_value=10, max_value=210, step=20
+                            "number_of_filters", min_value=10, max_value=210, step=20,
                         ),
                         # int(starting_filter_size * (3 / 4) ** i),
                         hp.Int(
@@ -485,7 +484,7 @@ if model_str == "conv":
                 model.add(
                     tf.keras.layers.Conv1D(
                         hp.Int(
-                            "number_of_filters", min_value=10, max_value=200, step=20
+                            "number_of_filters", min_value=10, max_value=200, step=20,
                         ),
                         # int(starting_filter_size * (3 / 4) ** i),
                         hp.Int(
@@ -589,7 +588,7 @@ elif model_str == "conv_narrow":
             optimizer=optimizer,
             loss={
                 "outputs_softmax": CustomSmoothedWeightedCCE(
-                    from_logits=True, class_weights=class_weights_narrow
+                    class_weights=class_weights_narrow
                 ),
                 "output_sigmoid": BinaryCrossentropy(from_logits=True),
             },
@@ -1002,6 +1001,10 @@ else:  # build model from best set of hyperparameters
     # print()
 
     model.save(out_base + "final")
+
+    # model = keras.models.load_model(
+    #    "classifier/narrow_30-11-2021_09:42:59_test/final", compile=False
+    # )
 
     if model_is_binary:
 

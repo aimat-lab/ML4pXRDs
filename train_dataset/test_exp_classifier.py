@@ -30,7 +30,7 @@ if __name__ == "__main__":
     unet_model_name = "removal_17-11-2021_16-03-57_variance_30"
 
     classifier_model = keras.models.load_model(
-        "classifier/" + classifier_model_name + "/final"
+        "classifier/" + classifier_model_name + "/final", compile=False
     )
     unet_model = keras.models.load_model("unet/" + unet_model_name + "/final")
     probability_model = keras.Sequential(
