@@ -26,19 +26,16 @@ if __name__ == "__main__":
     pattern_x = pattern_x[start_index : end_index + 1]
     N = len(pattern_x)
 
-    classifier_model_name = "narrow_19-11-2021_08:18:39_test"
+    classifier_model_name = "narrow_30-11-2021_09:42:59_test"
     unet_model_name = "removal_17-11-2021_16-03-57_variance_30"
 
     classifier_model = keras.models.load_model(
         "classifier/" + classifier_model_name + "/final", compile=False
     )
     unet_model = keras.models.load_model("unet/" + unet_model_name + "/final")
-    probability_model = keras.Sequential(
-        [classifier_model, keras.layers.Activation("softmax")]
-    )
 
     data_true_labels = pd.read_csv(
-        "exp_data/experimental_phases.txt", delimiter=" ", skiprows=0
+        "exp_data/experimental_phases.txt", delimiter=" ", skiprows=0, header=None
     )
     labels = np.array(data_true_labels.iloc[:, 2])
 
@@ -67,16 +64,36 @@ if __name__ == "__main__":
                 )
                 ys_to_be_classified = np.expand_dims(ys_to_be_classified, axis=2)
 
-            label = probability_model.predict(ys_to_be_classified)
+            softmax_activation = keras.layers.Activation("softmax")(
+                classifier_model.get_layer("outputs_softmax").output
+            )
+            prob_model_softmax = keras.Model(
+                inputs=classifier_model.layers[0].output, outputs=softmax_activation
+            )
+            prediction_softmax = prob_model_softmax.predict(ys_to_be_classified)
+            prediction_softmax = np.argmax(prediction_softmax, axis=1)
 
-            print(f"Output of classification: {label}")
+            sigmoid_activation = keras.layers.Activation("sigmoid")(
+                classifier_model.get_layer("output_sigmoid").output
+            )
+            prob_model_sigmoid = keras.Model(
+                inputs=classifier_model.layers[0].output, outputs=sigmoid_activation
+            )
+            prediction_sigmoid = prob_model_sigmoid.predict(ys_to_be_classified)
+            prediction_sigmoid = prediction_sigmoid[:, 0]
+            prediction_sigmoid = np.where(prediction_sigmoid > 0.5, 1, 0)
 
             narrow_phases = ["Fm-3m", "Ia-3", "P63/m"]
+            purities = ["non-pure", "pure"]
+            print(
+                f"Output of phase classification: {narrow_phases[prediction_softmax[0]]}"
+            )
+            print(f"Output of pure classification: {purities[prediction_sigmoid[0]]}")
 
             plt.plot(
                 pattern_x,
                 corrected[0, :, 0],
-                label=f"Corrected via U-Net\n\nPredicted label: {narrow_phases[np.argmax(label[0])]}\nTrue label: {labels[i]}",
+                label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}, {purities[prediction_sigmoid[0]]}\nTrue label: {labels[i]}",
             )
 
             plt.plot(pattern_x, np.zeros(len(pattern_x)))
