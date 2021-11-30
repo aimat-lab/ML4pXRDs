@@ -20,8 +20,13 @@ variance = 4.0
 # for background to peaks ratio:
 scaling_max = 150.0
 
-base_noise_level_max = 0.03
-base_noise_level_min = 0.003
+# base_noise_level_min = 0.003
+# base_noise_level_max = 0.03
+base_noise_level_min = 0
+base_noise_level_max = 0.015
+
+fluct_noise_level_min = 0
+fluct_noise_level_max = 0.04
 
 sigma_min = 0.1
 sigma_max = 0.5
@@ -171,16 +176,14 @@ def generate_samples_gp(
         base_noise_level = np.random.uniform(
             low=base_noise_level_min, high=base_noise_level_max
         )
-        # TODO: Change this back
-        # base_noise_level = 0
         ys_altered += np.random.normal(size=n_angles_output, scale=base_noise_level)
 
-        # TODO: Think about this again
-        # TODO: Does having a multiplication of 1.0 make sense? Scaling + stdeviation? look at wikipedia
-        # fluct_noise_level = 0.02
-        # ys_altered *= np.random.normal(
-        #    size=n_angles_output, scale=fluct_noise_level, loc=1.0
-        # )
+        fluct_noise_level = np.random.uniform(
+            low=fluct_noise_level_min, high=fluct_noise_level_max
+        )
+        ys_altered *= np.random.normal(
+            size=n_angles_output, scale=fluct_noise_level, loc=1.0
+        )
 
         ys_altered -= np.min(ys_altered)
 
@@ -194,7 +197,7 @@ def generate_samples_gp(
             plt.plot(pattern_xs, ys_unaltered)
 
             if compare_to_exp:
-                for i in range(0, 5):
+                for i in range(1, 2):
                     index = i
                     path = "exp_data/XRDdata_classification.csv"
                     data = pd.read_csv(path, delimiter=",", skiprows=1)
@@ -234,5 +237,4 @@ if __name__ == "__main__":
 
     # plt.plot(pattern_xs, f_bump(pattern_xs, 2, 13, 10, 50))
     # plt.show()
-    generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=False)
-
+    generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=True)

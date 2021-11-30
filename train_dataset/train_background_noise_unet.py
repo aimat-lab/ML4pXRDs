@@ -11,9 +11,9 @@ sys.path.append("../")
 import generate_background_noise_utils
 from datetime import datetime
 
-tag = "changed_dimension"
+tag = "added_fluct"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
 to_test = "removal_29-11-2021_10-20-52_changed_dimension"
 
