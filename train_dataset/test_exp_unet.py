@@ -21,7 +21,7 @@ import pybaselines
 
 mode = "removal"  # possible: info and removal
 # to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
-to_test = "removal_30-11-2021_13-00-12_added_fluct"
+to_test = "removal_01-12-2021_09-37-17_added_fluct"
 
 show_comparison = False
 
@@ -146,7 +146,8 @@ def rolling_ball(xs, ys, sphere_x=15, sphere_y=0.3, ax=None):
     height = sphere_y
     # ax.add_patch(Ellipse(xy=(10, 0.6), width=sphere_x, height=sphere_y))
     yb = restoration.rolling_ball(
-        ys, kernel=restoration.ellipsoid_kernel((width,), height),
+        ys,
+        kernel=restoration.ellipsoid_kernel((width,), height),
     )
 
     # ax.plot(xs, yb + 1, label="Baseline")
@@ -205,7 +206,11 @@ def update_wave(
     ax.plot(xs, baseline, label="arPLS", c="b")
 
     background = rolling_ball(
-        xs, ys, sphere_x=slider_1_rb.val, sphere_y=slider_2_rb.val, ax=ax,
+        xs,
+        ys,
+        sphere_x=slider_1_rb.val,
+        sphere_y=slider_2_rb.val,
+        ax=ax,
     )
     ax.plot(xs, background, label="Rolling ball", c="k")
 
@@ -281,10 +286,20 @@ def plot_heuristic_fit(xs, ys):
         )  # slider dimensions # left, bottom, width, height
 
         slider_1 = Slider(
-            axwave1, "Event No. 1", min_1, max_1, valinit=valinit_1, valfmt=valfmt,
+            axwave1,
+            "Event No. 1",
+            min_1,
+            max_1,
+            valinit=valinit_1,
+            valfmt=valfmt,
         )  # 1
         slider_2 = Slider(
-            axwave2, "Event No. 2", min_2, max_2, valinit=valinit_2, valfmt=valfmt,
+            axwave2,
+            "Event No. 2",
+            min_2,
+            max_2,
+            valinit=valinit_2,
+            valfmt=valfmt,
         )  # 2
 
         sliders.append(slider_1)
@@ -392,7 +407,10 @@ if __name__ == "__main__":
             corrected = model.predict(ys)
 
             plt.scatter(
-                current_xs, corrected[0, :, 0], label="Peak detection", s=3,
+                current_xs,
+                corrected[0, :, 0],
+                label="Peak detection",
+                s=3,
             )
 
         if show_comparison:

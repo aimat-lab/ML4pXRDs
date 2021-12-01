@@ -18,8 +18,8 @@ scaling = 1.0
 # variance = 10.0
 # variance = 4.0
 
-min_variance = 10.0
-max_variance = 50.0
+min_variance = 4.0
+max_variance = 40.0
 
 # for background to peaks ratio:
 scaling_max = 150.0
@@ -117,7 +117,11 @@ def generate_samples_gp(
         )
         gp = GaussianProcessRegressor(kernel=kernel)
 
-        new_y = gp.sample_y(xs_gp, random_state=random_seed, n_samples=1,)
+        new_y = gp.sample_y(
+            xs_gp,
+            random_state=random_seed,
+            n_samples=1,
+        )
 
         ys_gp[:, i] = new_y[:, 0]
 
@@ -266,4 +270,3 @@ if __name__ == "__main__":
     )
     stop = time.time()
     print(f"Took {stop-start} s")
-

@@ -11,7 +11,7 @@ sys.path.append("../")
 import generate_background_noise_utils
 from datetime import datetime
 
-tag = "added_fluct"
+tag = "variable_variance"
 mode = "removal"  # possible: "info", "removal"
 training_mode = "train"  # possible: train and test
 
@@ -179,7 +179,10 @@ if training_mode == "train":
         max_queue_size=500,
         workers=NO_workers,
         use_multiprocessing=True,
-        callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+        callbacks=[
+            cp_callback,
+            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
+        ],
         steps_per_epoch=number_of_batches,
     )
 
@@ -215,11 +218,15 @@ else:
             plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
             plt.plot(
-                pattern_x, test_batch[0][:][i], label="Input pattern",
+                pattern_x,
+                test_batch[0][:][i],
+                label="Input pattern",
             )
 
             plt.plot(
-                pattern_x, test_batch[1][:][i], label="Target",
+                pattern_x,
+                test_batch[1][:][i],
+                label="Target",
             )
 
             plt.plot(
