@@ -65,7 +65,7 @@ if mode == "narrow":
     tuner_batch_size = 128
 
     current_dir = "narrow_19-11-2021_08:12:29_test"  # where to read the best model from
-    train_epochs = 1
+    train_epochs = 100
     train_batch_size = 128
 
 elif mode == "random":
@@ -590,9 +590,9 @@ elif model_str == "conv_narrow":
         model.compile(
             optimizer=optimizer,
             loss={
-                "outputs_softmax": CustomSmoothedWeightedCCE(
-                    class_weights=class_weights_narrow
-                ),
+                # "outputs_softmax": CustomSmoothedWeightedCCE(
+                #    class_weights=class_weights_narrow
+                # ),
                 "output_sigmoid": BinaryCrossentropy(from_logits=True),
             },
             metrics={
@@ -926,7 +926,9 @@ class MyTuner(BayesianOptimization):
 tuner = MyTuner(
     build_model,
     objective=keras_tuner.Objective(
-        "val_outputs_softmax_categorical_accuracy", direction="max"
+        # "val_outputs_softmax_categorical_accuracy", direction="max"
+        "val_output_sigmoid_binary_accuracy",
+        direction="max",
     ),  # TODO: Maybe use a combination of the softmax and sigmoid metric in the future
     max_trials=1000,
     executions_per_trial=1,
