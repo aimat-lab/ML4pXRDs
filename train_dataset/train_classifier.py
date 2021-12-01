@@ -19,7 +19,6 @@ from glob import glob
 import matplotlib.pyplot as plt
 import os
 from sklearn.utils import shuffle
-from tensorflow.python.client import device_lib
 import tensorflow.keras as keras
 from sklearn.preprocessing import StandardScaler
 from dataset_simulations.random_simulation import Simulation
@@ -35,7 +34,7 @@ tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
 )
 mode = "narrow"  # possible: narrow and random
-model_str = "conv_narrow"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random
+model_str = "conv_narrow_fixed"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random, conv_narrow_fixed
 model_is_binary = False
 
 train_on_this = None  # supply a model_str that contains a hyperparameter optimization to train on (using best parameters)
@@ -43,7 +42,7 @@ train_on_this = None  # supply a model_str that contains a hyperparameter optimi
 number_of_values_initial = 9018
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 
-NO_workers = 1
+NO_workers = 8
 queue_size = 20
 
 if mode == "narrow":
@@ -57,9 +56,9 @@ if mode == "narrow":
     used_range = simulated_range[start_index : end_index + 1 : step]
     number_of_values = len(used_range)
 
-    scale_features = True
+    scale_features = False
 
-    tune_hyperparameters = True
+    tune_hyperparameters = False
 
     tuner_epochs = 4
     tuner_batch_size = 128
@@ -70,7 +69,7 @@ if mode == "narrow":
 
 elif mode == "random":
 
-    # only use a restricted range of the simulated patterns
+    # only use a restricted range of the simulated patterns:
 
     # TODO: Maybe make this 0?
     start_x = 10
@@ -240,9 +239,11 @@ if mode == "narrow":
 
         ## Convert FWHM to std deviation of gaussian
         sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
-        return sigma
+        return sigma  # watch out!  this is not squared.
 
-    def alter_dataset(current_x, current_y, variations, do_plot=False):
+    def alter_dataset(
+        current_x, current_y, variations, do_plot=False, return_as_array=False,
+    ):
 
         min_peak_height = 0.01
 
@@ -253,6 +254,8 @@ if mode == "narrow":
 
             if random.random() < 0.5:  # in 50% of the samples, add additional peaks
                 is_pures.append(0)
+
+                plt.plot(current_x[i, :, 0])
 
                 for j in range(0, random.randint(1, 5)):
                     mean = random.uniform(start_x, end_x)
@@ -269,7 +272,14 @@ if mode == "narrow":
                     peak = peak / np.max(peak) * peak_height
 
                     current_x[i, :, 0] += peak
+
+                current_x[i, :, 0] /= np.max(current_x[i, :, 0])
+
+                # plt.plot(current_x[i, :, 0])
+                # plt.show()
+
             else:
+
                 is_pures.append(1)
 
             if do_plot:
@@ -280,7 +290,13 @@ if mode == "narrow":
         if scale_features:
             current_x[:, :, 0] = sc.transform(current_x[:, :, 0])
 
-        return current_x, [current_y, np.array(is_pures)]
+        if return_as_array:
+            return current_x, [current_y, np.array(is_pures)]
+        else:
+            return (
+                current_x,
+                {"outputs_softmax": current_y, "output_sigmoid": np.array(is_pures)},
+            )
 
     class NarrowSequence(keras.utils.Sequence):
         def __init__(self, x_train, y_train, variations, batch_size):
@@ -329,7 +345,9 @@ if mode == "narrow":
         tuner_batch_size if tune_hyperparameters else train_batch_size,
     )
 
-    x_test, y_test = alter_dataset(__x_test, __y_test, variations_test)
+    x_test, y_test = alter_dataset(
+        __x_test, __y_test, variations_test, return_as_array=True
+    )
     x_val, y_val = alter_dataset(__x_val, __y_val, variations_val)
 
 elif mode == "random":
@@ -451,14 +469,11 @@ elif mode == "random":
 else:
     raise Exception("Data source not recognized.")
 
-# print available devices:
-# print(device_lib.list_local_devices())
-
 if model_str == "conv":
 
     def build_model(hp):  # define model with hyperparameters
 
-        model = tf.keras.models.Sequential()
+        model = keras.models.Sequential()
 
         # starting_filter_size = hp.Int(
         #    "starting_filter_size", min_value=10, max_value=510, step=20
@@ -590,9 +605,53 @@ elif model_str == "conv_narrow":
         model.compile(
             optimizer=optimizer,
             loss={
-                # "outputs_softmax": CustomSmoothedWeightedCCE(
-                #    class_weights=class_weights_narrow
-                # ),
+                "outputs_softmax": CustomSmoothedWeightedCCE(
+                    class_weights=class_weights_narrow
+                ),
+                "output_sigmoid": BinaryCrossentropy(from_logits=True),
+            },
+            metrics={
+                "outputs_softmax": "CategoricalAccuracy",
+                "output_sigmoid": "BinaryAccuracy",
+            },
+        )
+
+        model.summary()
+
+        return model
+
+
+elif model_str == "conv_narrow_fixed":
+
+    def build_model(hp=None):
+
+        inputs = keras.layers.Input(shape=(number_of_values, 1))
+        x_nn = inputs
+
+        x_nn = keras.layers.Conv1D(
+            64, 40, input_shape=(number_of_values, 1), activation="relu",
+        )(x_nn)
+
+        x_nn = keras.layers.BatchNormalization()(x_nn)
+        x_nn = keras.layers.MaxPooling1D(pool_size=2, strides=2)(x_nn)
+
+        x_nn = keras.layers.Flatten()(x_nn)
+
+        x_nn = keras.layers.Dense(128, activation="relu",)(x_nn)
+        x_nn = keras.layers.Dropout(0.5)(x_nn)
+
+        outputs_softmax = keras.layers.Dense(n_classes, name="outputs_softmax")(x_nn)
+        output_sigmoid = keras.layers.Dense(1, name="output_sigmoid")(x_nn)
+
+        optimizer = keras.optimizers.Adam(0.0005)
+        model = keras.Model(inputs=inputs, outputs=[outputs_softmax, output_sigmoid])
+
+        model.compile(
+            optimizer=optimizer,
+            loss={
+                "outputs_softmax": CustomSmoothedWeightedCCE(
+                    class_weights=class_weights_narrow
+                ),
                 "output_sigmoid": BinaryCrossentropy(from_logits=True),
             },
             metrics={
@@ -818,7 +877,7 @@ elif model_str == "Park":
         optimizer = keras.optimizers.Adam()
         model.compile(
             optimizer=optimizer,
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=["SparseCategoricalAccuracy"],
         )
         # they actually train for 5000 epochs and batch size 500
@@ -956,7 +1015,11 @@ if tune_hyperparameters:
 
 else:  # build model from best set of hyperparameters
 
-    if not model_str == "Lee" and not model_str == "random":
+    if (
+        not model_str == "Lee"
+        and not model_str == "random"
+        and not model_str == "conv_narrow_fixed"
+    ):
 
         best_hp = tuner.get_best_hyperparameters()[0]
 
@@ -978,13 +1041,13 @@ else:  # build model from best set of hyperparameters
 
     # use tensorboard to inspect the graph, write log file periodically:
     log_dir = out_base + "tb"
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(
+    tensorboard_callback = keras.callbacks.TensorBoard(
         log_dir=log_dir, histogram_freq=1
     )
 
     # periodically save the weights to a checkpoint file:
     checkpoint_path = out_base + "cps" + "/weights{epoch}"
-    cp_callback = tf.keras.callbacks.ModelCheckpoint(
+    cp_callback = keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_path, verbose=1, save_weights_only=True
     )
 
@@ -1024,7 +1087,7 @@ else:  # build model from best set of hyperparameters
         print("Classification report:")
         print(classification_report(y_test, predicted_y))
 
-    elif model_str != "conv_narrow":
+    elif model_str != "conv_narrow" and model_str != "conv_narrow_fixed":
 
         prob_model = keras.Sequential([model, keras.layers.Activation("softmax")])
         predicted_y = np.array(prob_model.predict(x_test))
