@@ -10,23 +10,35 @@ from scipy.stats import truncnorm
 
 n_angles_gp = 60
 max_peaks_per_sample = 22  # max number of peaks per sample
-min_peak_height = 0.010
+# min_peak_height = 0.010
+min_peak_height = 0
 
 # GP parameters:
 scaling = 1.0
 # variance = 10.0
-variance = 4.0
+# variance = 4.0
+variance = 10.0
 
 # for background to peaks ratio:
 scaling_max = 150.0
 
-# base_noise_level_min = 0.003
-# base_noise_level_max = 0.03
-base_noise_level_min = 0
-base_noise_level_max = 0.015
+use_fluct_noise = True
 
-fluct_noise_level_min = 0
-fluct_noise_level_max = 0.04
+if not use_fluct_noise:
+
+    base_noise_level_min = 0.003
+    base_noise_level_max = 0.03
+
+    fluct_noise_level_min = 0
+    fluct_noise_level_max = 0
+
+else:
+
+    base_noise_level_min = 0
+    base_noise_level_max = 0.015
+
+    fluct_noise_level_min = 0
+    fluct_noise_level_max = 0.04
 
 sigma_min = 0.1
 sigma_max = 0.5
@@ -113,7 +125,7 @@ def generate_samples_gp(
     def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
         return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
 
-    trunc = get_truncated_normal(0, sd=0.3, low=min_peak_height, upp=1)
+    trunc = get_truncated_normal(0, sd=0.2, low=min_peak_height, upp=1)
 
     for i in range(0, n_samples):
 
@@ -197,7 +209,7 @@ def generate_samples_gp(
             plt.plot(pattern_xs, ys_unaltered)
 
             if compare_to_exp:
-                for i in range(1, 2):
+                for i in range(0, 6):
                     index = i
                     path = "exp_data/XRDdata_classification.csv"
                     data = pd.read_csv(path, delimiter=",", skiprows=1)

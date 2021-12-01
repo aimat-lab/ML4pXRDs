@@ -15,7 +15,7 @@ tag = "added_fluct"
 mode = "removal"  # possible: "info", "removal"
 training_mode = "train"  # possible: train and test
 
-to_test = "removal_29-11-2021_10-20-52_changed_dimension"
+to_test = "removal_30-11-2021_13-00-12_added_fluct"
 
 start_x = 10.015
 end_x = 50.155
