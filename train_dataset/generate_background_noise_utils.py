@@ -6,7 +6,7 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from scipy import interpolate as ip
 import pandas as pd
 from scipy.stats import truncnorm
-
+import time
 
 n_angles_gp = 60
 max_peaks_per_sample = 22  # max number of peaks per sample
@@ -17,7 +17,9 @@ min_peak_height = 0
 scaling = 1.0
 # variance = 10.0
 # variance = 4.0
-variance = 10.0
+
+min_variance = 10.0
+max_variance = 50.0
 
 # for background to peaks ratio:
 scaling_max = 150.0
@@ -91,7 +93,6 @@ def generate_samples_gp(
     n_angles_gp=n_angles_gp,
     n_angles_output=4016,
     scaling=scaling,
-    variance=variance,
     random_seed=None,
     mode="removal",
     do_plot=False,
@@ -103,14 +104,23 @@ def generate_samples_gp(
     # first, generate enough random functions using a gaussian process
     pattern_xs = np.linspace(min_x, max_x, n_angles_output)
 
-    kernel = C(scaling, constant_value_bounds="fixed") * RBF(
-        variance, length_scale_bounds="fixed"
-    )
-    gp = GaussianProcessRegressor(kernel=kernel)
-
     xs_gp = np.atleast_2d(np.linspace(min_x, max_x, n_angles_gp)).T
 
-    ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
+    ys_gp = np.zeros(shape=(n_angles_gp, n_samples))
+
+    for i in range(n_samples):
+
+        variance = random.uniform(min_variance, max_variance)
+
+        kernel = C(scaling, constant_value_bounds="fixed") * RBF(
+            variance, length_scale_bounds="fixed"
+        )
+        gp = GaussianProcessRegressor(kernel=kernel)
+
+        new_y = gp.sample_y(xs_gp, random_state=random_seed, n_samples=1,)
+
+        ys_gp[:, i] = new_y[:, 0]
+
     # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
     # ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
     # ys_gp = ys_gp[:, 0, :]
@@ -249,4 +259,11 @@ if __name__ == "__main__":
 
     # plt.plot(pattern_xs, f_bump(pattern_xs, 2, 13, 10, 50))
     # plt.show()
-    generate_samples_gp(100, (10, 50), do_plot=True, compare_to_exp=True)
+
+    start = time.time()
+    generate_samples_gp(
+        128, (10, 50), do_plot=True, compare_to_exp=False, n_angles_output=2672
+    )
+    stop = time.time()
+    print(f"Took {stop-start} s")
+
