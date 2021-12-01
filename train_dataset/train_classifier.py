@@ -14,6 +14,7 @@ import os
 sys.path.append("../dataset_simulations/")
 
 from keras_tuner import BayesianOptimization
+import keras_tuner
 from glob import glob
 import matplotlib.pyplot as plt
 import os
@@ -58,12 +59,12 @@ if mode == "narrow":
 
     scale_features = True
 
-    tune_hyperparameters = False
-    current_dir = "narrow_19-11-2021_08:12:29_test"
+    tune_hyperparameters = True
 
     tuner_epochs = 4
     tuner_batch_size = 128
 
+    current_dir = "narrow_19-11-2021_08:12:29_test"  # where to read the best model from
     train_epochs = 1
     train_batch_size = 128
 
@@ -83,12 +84,12 @@ elif mode == "random":
     scale_features = True
 
     tune_hyperparameters = False
-    current_dir = "narrow_19-11-2021_08:12:29_test"
 
     tuner_epochs = 4
     # tuner_batch_size = 500
     tuner_batch_size = 64
 
+    current_dir = "narrow_19-11-2021_08:12:29_test"
     train_epochs = 1000
     # train_batch_size = 500
     train_batch_size = 500
@@ -250,8 +251,7 @@ if mode == "narrow":
             if do_plot:
                 plt.plot(current_x[i, :, 0], label="Original")
 
-            # TODO: Change this
-            if random.random() < 1.0:  # in 50% of the samples, add additional peaks
+            if random.random() < 0.5:  # in 50% of the samples, add additional peaks
                 is_pures.append(0)
 
                 for j in range(0, random.randint(1, 5)):
@@ -317,7 +317,10 @@ if mode == "narrow":
 
             return alter_dataset(current_x, current_y, variations)
 
+    # encode train and val y as one_hot to work with the custom loss function
+    # for y_test this is not needed, since I test it by hand anyways and the custom loss is not used
     __y_train = np.array(tf.one_hot(__y_train, 3))
+    __y_val = np.array(tf.one_hot(__y_val, 3))
 
     x_train = NarrowSequence(
         __x_train,
@@ -729,7 +732,7 @@ elif model_str == "Lee":
 
         drop1 = keras.layers.Dropout(keep_prob_)(flat)
 
-        # TODO: Why do they originally not use activation functions here? Let's better use them.
+        # TODO: Why do they originally not use activation functions here? Let's better use them:
 
         dense1 = keras.layers.Dense(
             2500,
@@ -922,7 +925,9 @@ class MyTuner(BayesianOptimization):
 
 tuner = MyTuner(
     build_model,
-    objective="val_accuracy",
+    objective=keras_tuner.Objective(
+        "val_outputs_softmax_categorical_accuracy", direction="max"
+    ),  # TODO: Maybe use a combination of the softmax and sigmoid metric in the future
     max_trials=1000,
     executions_per_trial=1,
     overwrite=False,
@@ -937,7 +942,7 @@ if tune_hyperparameters:
     tuner.search(
         x_train,
         y_train,
-        # validation_data=(x_val, y_val),
+        validation_data=(x_val, y_val),
         verbose=2,
         callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
         class_weight=class_weights,
@@ -965,7 +970,7 @@ else:  # build model from best set of hyperparameters
 
         model.summary()
 
-    else:
+    else:  # models that do not have optimizable hyperparameters:
 
         model = build_model(None)
 
@@ -986,7 +991,7 @@ else:  # build model from best set of hyperparameters
         y_train,
         epochs=train_epochs,
         batch_size=train_batch_size,
-        # validation_data=(x_val, y_val),
+        validation_data=(x_val, y_val),
         callbacks=[tensorboard_callback, cp_callback],
         verbose=2,
         workers=NO_workers,
