@@ -13,9 +13,9 @@ from datetime import datetime
 
 tag = "variable_variance"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
-to_test = "removal_30-11-2021_13-00-12_added_fluct"
+to_test = "removal_01-12-2021_13-23-10_variable_variance"
 
 start_x = 10.015
 end_x = 50.155

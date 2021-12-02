@@ -22,7 +22,7 @@ xrayutil_crystallite_size_lor_min = 15 * 10 ** -9
 xrayutil_crystallite_size_lor_max = 50 * 10 ** -9
 
 # pymatgen, these are in nm
-paymatgen_crystallite_size_gauss_min = 5  # TODO: Change these ranges? Look at them.
+paymatgen_crystallite_size_gauss_min = 5
 paymatgen_crystallite_size_gauss_max = 100
 
 angle_min = 0

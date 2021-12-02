@@ -21,7 +21,7 @@ import pybaselines
 
 mode = "removal"  # possible: info and removal
 # to_test = "removal_21-11-2021_11-12-44_new_test_changed_height"
-to_test = "removal_01-12-2021_09-37-17_added_fluct"
+to_test = "removal_01-12-2021_13-23-10_variable_variance"
 
 show_comparison = False
 

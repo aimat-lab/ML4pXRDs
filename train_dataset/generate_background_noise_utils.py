@@ -42,8 +42,8 @@ else:
     fluct_noise_level_min = 0
     fluct_noise_level_max = 0.04
 
-sigma_min = 0.1
-sigma_max = 0.5
+# sigma_min = 0.1
+# sigma_max = 0.5
 
 
 def convert_to_discrete(
@@ -85,6 +85,33 @@ def f_bump(theta, h, n, min_x, max_x):
         * (n * theta_rel(theta, min_x, max_x)) ** 2
         * np.exp(-1 * n * theta_rel(theta, min_x, max_x))
     )
+
+
+crystallite_size_gauss_min = 5
+# crystallite_size_gauss_max = 100
+crystallite_size_gauss_max = (
+    30  # TODO: maybe use this altered range for the classification / simulation, too!
+)
+
+
+def calc_std_dev(two_theta, tau, wavelength=1.207930):
+    """
+    calculate standard deviation based on angle (two theta) and domain size (tau)
+    Args:
+        two_theta: angle in two theta space
+        tau: domain size in nm
+    Returns:
+        standard deviation for gaussian kernel
+    """
+    ## Calculate FWHM based on the Scherrer equation
+    K = 0.9  ## shape factor
+    wavelength = wavelength * 0.1  ## angstrom to nm
+    theta = np.radians(two_theta / 2.0)  ## Bragg angle in radians
+    beta = (K * wavelength) / (np.cos(theta) * tau)  # in radians
+
+    ## Convert FWHM to std deviation of gaussian
+    sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
+    return sigma  # watch out!  this is not squared.
 
 
 def generate_samples_gp(
@@ -156,7 +183,10 @@ def generate_samples_gp(
         scaling = random.uniform(0, scaling_max)
         background = background / weight_background * 10 * scaling
 
-        sigma_peaks = random.uniform(sigma_min, sigma_max)
+        domain_size = random.uniform(
+            crystallite_size_gauss_min, crystallite_size_gauss_max
+        )
+
         peak_positions = []
         peak_sizes = []
 
@@ -165,6 +195,8 @@ def generate_samples_gp(
         for j in range(0, random.randint(1, max_peaks_per_sample)):
 
             mean = random.uniform(min_x, max_x)
+
+            sigma_peak = calc_std_dev(mean, domain_size)
 
             peak_positions.append(mean)
 
@@ -187,10 +219,11 @@ def generate_samples_gp(
 
                 peak_size = trunc.rvs()
 
+            # TODO: Maybe!: Change this behavior: For small peaks, the diffractograms appear to have "less" noise.
             peak = (
                 1
-                / (sigma_peaks * np.sqrt(2 * np.pi))
-                * np.exp(-1 / (2 * sigma_peaks ** 2) * (pattern_xs - mean) ** 2)
+                / (sigma_peak * np.sqrt(2 * np.pi))
+                * np.exp(-1 / (2 * sigma_peak ** 2) * (pattern_xs - mean) ** 2)
             ) * peak_size
 
             peak_sizes.append(peak_size)
@@ -266,7 +299,7 @@ if __name__ == "__main__":
 
     start = time.time()
     generate_samples_gp(
-        128, (10, 50), do_plot=True, compare_to_exp=False, n_angles_output=2672
+        128, (10, 50), do_plot=True, compare_to_exp=True, n_angles_output=2672
     )
     stop = time.time()
     print(f"Took {stop-start} s")
