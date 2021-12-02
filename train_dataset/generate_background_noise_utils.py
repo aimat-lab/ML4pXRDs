@@ -126,6 +126,10 @@ def generate_samples_gp(
     compare_to_exp=False,
 ):
 
+    # x_test = np.linspace(10, 50, 1000)
+    # plt.plot(x_test, calc_std_dev(x_test, 20))
+    # plt.show()
+
     min_x, max_x = x_range
 
     # first, generate enough random functions using a gaussian process
