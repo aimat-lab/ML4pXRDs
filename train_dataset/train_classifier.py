@@ -64,7 +64,7 @@ if mode == "narrow":
     tuner_batch_size = 128
 
     current_dir = "narrow_19-11-2021_08:12:29_test"  # where to read the best model from
-    train_epochs = 100
+    train_epochs = 20
     train_batch_size = 128
 
 elif mode == "random":
@@ -1106,6 +1106,7 @@ else:  # build model from best set of hyperparameters
             inputs=model.layers[0].output, outputs=softmax_activation
         )
         prediction_softmax = prob_model_softmax.predict(x_test)
+        # print(prediction_softmax)
         prediction_softmax = np.argmax(prediction_softmax, axis=1)
 
         print()
@@ -1120,6 +1121,7 @@ else:  # build model from best set of hyperparameters
         )
         prediction_sigmoid = prob_model_sigmoid.predict(x_test)
         prediction_sigmoid = prediction_sigmoid[:, 0]
+        # print(prediction_sigmoid)
         prediction_sigmoid = np.where(prediction_sigmoid > 0.5, 1, 0)
 
         print()

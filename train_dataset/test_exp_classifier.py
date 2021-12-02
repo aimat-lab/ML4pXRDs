@@ -16,18 +16,8 @@ if __name__ == "__main__":
 
     xs_exp, ys_exp = load_experimental_data("exp_data/XRDdata_classification.csv")
 
-    N = 9018
-    pattern_x = np.linspace(0, 90, N)
-
-    start_x = 10
-    end_x = 50
-    start_index = np.argwhere(pattern_x >= start_x)[0][0]
-    end_index = np.argwhere(pattern_x <= end_x)[-1][0]
-    pattern_x = pattern_x[start_index : end_index + 1]
-    N = len(pattern_x)
-
-    classifier_model_name = "narrow_30-11-2021_09:42:59_test"
-    unet_model_name = "removal_17-11-2021_16-03-57_variance_30"
+    classifier_model_name = "narrow_02-12-2021_11:35:01_test"
+    unet_model_name = "removal_01-12-2021_13-23-10_variable_variance"
 
     classifier_model = keras.models.load_model(
         "classifier/" + classifier_model_name + "/final", compile=False
@@ -46,23 +36,36 @@ if __name__ == "__main__":
 
         if remove_background:
 
-            # Scale experimental pattern to the right dimension
-            f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
-            ys = f(pattern_x)
+            current_xs = current_xs[0:2672]
+            ys = current_ys[0:2672]
             ys -= np.min(ys)
             ys = ys / np.max(ys)
 
-            plt.plot(pattern_x, ys, label="Experimental rescaled")
+            plt.plot(current_xs, ys, label="Experimental rescaled")
 
             ys_to_be_corrected = np.expand_dims([ys], axis=2)
             corrected = unet_model.predict(ys_to_be_corrected)
 
-            with open("classifier/scaler", "rb") as file:
-                sc = pickle.load(file)
-                ys_to_be_classified = sc.transform(
-                    [corrected[0, :, 0] / np.max(corrected[0, :, 0])]
-                )
-                ys_to_be_classified = np.expand_dims(ys_to_be_classified, axis=2)
+            # with open("classifier/scaler", "rb") as file:
+            #    sc = pickle.load(file)
+            #    ys_to_be_classified = sc.transform(
+            #        [corrected[0, :, 0] / np.max(corrected[0, :, 0])]
+            #    )
+            #    ys_to_be_classified = np.expand_dims(ys_to_be_classified, axis=2)
+
+            # Scale experimental pattern to the right dimension
+            number_of_values_initial = 9018
+            simulated_range = np.linspace(0, 90, number_of_values_initial)
+            start_x = 10
+            end_x = 50
+            step = 1
+            start_index = np.argwhere(simulated_range >= start_x)[0][0]
+            end_index = np.argwhere(simulated_range <= end_x)[-1][0]
+            used_range = simulated_range[start_index : end_index + 1 : step]
+            number_of_values = len(used_range)
+            f = ip.CubicSpline(current_xs, ys, bc_type="natural")
+            ys_to_be_classified = f(used_range)
+            ys_to_be_classified = np.expand_dims([ys_to_be_classified], axis=2)
 
             softmax_activation = keras.layers.Activation("softmax")(
                 classifier_model.get_layer("outputs_softmax").output
@@ -91,14 +94,14 @@ if __name__ == "__main__":
             print(f"Output of pure classification: {purities[prediction_sigmoid[0]]}")
 
             plt.plot(
-                pattern_x,
+                current_xs,
                 corrected[0, :, 0],
                 label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}, {purities[prediction_sigmoid[0]]}\nTrue label: {labels[i]}",
             )
 
-            plt.plot(pattern_x, np.zeros(len(pattern_x)))
+            plt.plot(current_xs, np.zeros(len(current_xs)))
 
-            plt.plot(pattern_x, ys - corrected[0, :, 0], label="Background and noise")
+            plt.plot(current_xs, ys - corrected[0, :, 0], label="Background and noise")
 
             plt.legend()
 
