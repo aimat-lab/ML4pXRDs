@@ -7,6 +7,7 @@ from scipy import interpolate as ip
 import pandas as pd
 from scipy.stats import truncnorm
 import time
+import numba
 
 n_angles_gp = 60
 max_peaks_per_sample = 22  # max number of peaks per sample
@@ -36,10 +37,10 @@ if not use_fluct_noise:
 
 else:
 
-    base_noise_level_min = 0
+    base_noise_level_min = 0.0
     base_noise_level_max = 0.015
 
-    fluct_noise_level_min = 0
+    fluct_noise_level_min = 0.0
     fluct_noise_level_max = 0.04
 
 # sigma_min = 0.1
@@ -138,6 +139,8 @@ def generate_samples_gp(
 
     ys_gp = np.zeros(shape=(n_angles_gp, n_samples))
 
+    ys_backgrounds = np.zeros(shape=(n_angles_output, n_samples))
+
     for i in range(n_samples):
 
         variance = random.uniform(min_variance, max_variance)
@@ -151,6 +154,44 @@ def generate_samples_gp(
 
         ys_gp[:, i] = new_y[:, 0]
 
+        # scale the output of the gp to the desired length
+        if n_angles_output != n_angles_gp:
+            f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
+            ys_backgrounds[:, i] = f(pattern_xs)
+
+    return add_peaks(
+        n_samples,
+        n_angles_output,
+        ys_backgrounds,
+        pattern_xs,
+        min_x,
+        max_x,
+        mode,
+        do_plot,
+        compare_to_exp,
+    )
+
+
+def samples_truncnorm(loc, scale, bounds):
+    while True:
+        s = np.random.normal(loc, scale)
+        if bounds[0] <= s <= bounds[1]:
+            break
+    return s
+
+
+def add_peaks(
+    n_samples,
+    n_angles_output,
+    ys_gp,
+    pattern_xs,
+    min_x,
+    max_x,
+    mode,
+    do_plot,
+    compare_to_exp,
+):
+
     # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
     # ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
     # ys_gp = ys_gp[:, 0, :]
@@ -162,36 +203,29 @@ def generate_samples_gp(
     xs_all = []
     ys_all = []
 
-    def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
-        return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+    # def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
+    #    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
 
-    trunc = get_truncated_normal(0, sd=0.2, low=min_peak_height, upp=1)
+    # trunc = get_truncated_normal(0, sd=0.2, low=min_peak_height, upp=1)
 
     for i in range(0, n_samples):
 
-        # scale the output of the gp to the desired length
-        if n_angles_output != n_angles_gp:
-            f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
-            background = f(pattern_xs)
-        else:
-            background = ys_gp[:, i]
-
+        background = ys_gp[:, i]
         background = background - np.min(background)
         weight_background = np.sum(background)
 
-        scaling = random.uniform(0, scaling_max)
+        scaling = np.random.uniform(0, scaling_max)
         background = background / weight_background * 10 * scaling
 
-        domain_size = random.uniform(
+        domain_size = np.random.uniform(
             crystallite_size_gauss_min, crystallite_size_gauss_max
         )
 
-        peak_positions = []
         peak_sizes = []
 
         ys_unaltered = np.zeros(n_angles_output)
 
-        NO_peaks = random.randint(1, max_peaks_per_sample)
+        NO_peaks = np.random.randint(1.0, max_peaks_per_sample)
         means = np.random.uniform(min_x, max_x, NO_peaks)
         sigma_peaks = calc_std_dev(means, domain_size)
         peak_positions = means
@@ -215,7 +249,8 @@ def generate_samples_gp(
             #    peak_size = 1.0
             else:
 
-                peak_size = trunc.rvs()
+                # peak_size = trunc.rvs()
+                peak_size = samples_truncnorm(0, 0.2, [min_peak_height, 1.0])
 
             # TODO: Maybe!: Change this behavior: For small peaks, the diffractograms appear to have "less" noise.
             peak = (
@@ -230,17 +265,13 @@ def generate_samples_gp(
 
         ys_altered = background + ys_unaltered
 
-        base_noise_level = np.random.uniform(
-            low=base_noise_level_min, high=base_noise_level_max
-        )
-        ys_altered += np.random.normal(size=n_angles_output, scale=base_noise_level)
+        base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)
+        ys_altered += np.random.normal(0.0, base_noise_level, n_angles_output)
 
         fluct_noise_level = np.random.uniform(
-            low=fluct_noise_level_min, high=fluct_noise_level_max
+            fluct_noise_level_min, fluct_noise_level_max
         )
-        ys_altered *= np.random.normal(
-            size=n_angles_output, scale=fluct_noise_level, loc=1.0
-        )
+        ys_altered *= np.random.normal(1.0, fluct_noise_level, n_angles_output)
 
         ys_altered -= np.min(ys_altered)
 
@@ -285,7 +316,7 @@ def generate_samples_gp(
             xs_all.append(ys_altered)
             ys_all.append(peak_info_disc)
 
-    return np.array(xs_all), np.array(ys_all)
+    return xs_all, ys_all
 
 
 if __name__ == "__main__":
@@ -296,8 +327,9 @@ if __name__ == "__main__":
     # plt.show()
 
     start = time.time()
-    generate_samples_gp(
-        128, (10, 50), do_plot=True, compare_to_exp=False, n_angles_output=2672
-    )
+    for i in range(0, 10):
+        generate_samples_gp(
+            128, (10.0, 50.0), do_plot=True, compare_to_exp=False, n_angles_output=2672
+        )
     stop = time.time()
-    print(f"Took {stop-start} s")
+    print(f"Took {(stop-start)/10} s per iteration")
