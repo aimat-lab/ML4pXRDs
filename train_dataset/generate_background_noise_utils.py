@@ -114,7 +114,6 @@ def calc_std_dev(two_theta, tau, wavelength=1.207930):
     return sigma  # watch out!  this is not squared.
 
 
-@profile
 def generate_samples_gp(
     n_samples,
     x_range,
@@ -140,30 +139,19 @@ def generate_samples_gp(
 
     ys_gp = np.zeros(shape=(n_angles_gp, n_samples))
 
-    ys_backgrounds = np.zeros(shape=(n_angles_output, n_samples))
-
-    for i in range(n_samples):
-
-        variance = random.uniform(min_variance, max_variance)
-
-        kernel = C(scaling, constant_value_bounds="fixed") * RBF(
-            variance, length_scale_bounds="fixed"
-        )
-        gp = GaussianProcessRegressor(kernel=kernel)
-
-        new_y = gp.sample_y(xs_gp, random_state=random_seed, n_samples=1,)
-
-        ys_gp[:, i] = new_y[:, 0]
-
-        # scale the output of the gp to the desired length
-        if n_angles_output != n_angles_gp:
-            f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
-            ys_backgrounds[:, i] = f(pattern_xs)
+    # Use the same variance for each batch, this should be fine
+    variance = random.uniform(min_variance, max_variance)
+    kernel = C(scaling, constant_value_bounds="fixed") * RBF(
+        variance, length_scale_bounds="fixed"
+    )
+    gp = GaussianProcessRegressor(kernel=kernel)
+    ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples)
 
     return add_peaks(
         n_samples,
         n_angles_output,
-        ys_backgrounds,
+        xs_gp,
+        ys_gp,
         pattern_xs,
         min_x,
         max_x,
@@ -181,10 +169,10 @@ def samples_truncnorm(loc, scale, bounds):
     return s
 
 
-@profile
 def add_peaks(
     n_samples,
     n_angles_output,
+    xs_gp,
     ys_gp,
     pattern_xs,
     min_x,
@@ -212,7 +200,11 @@ def add_peaks(
 
     for i in range(0, n_samples):
 
-        background = ys_gp[:, i]
+        # scale the output of the gp to the desired length
+        if n_angles_output != n_angles_gp:
+            f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
+            background = f(pattern_xs)
+
         background = background - np.min(background)
         weight_background = np.sum(background)
 
@@ -328,11 +320,11 @@ if __name__ == "__main__":
     # plt.plot(pattern_xs, f_bump(pattern_xs, 2, 13, 10, 50))
     # plt.show()
 
-    total = 1
+    total = 100
     start = time.time()
     for i in range(0, total):
         generate_samples_gp(
-            128, (10.0, 50.0), do_plot=False, compare_to_exp=False, n_angles_output=2672
+            128, (10.0, 50.0), do_plot=True, compare_to_exp=False, n_angles_output=2672
         )
     stop = time.time()
     print(f"Took {(stop-start)/total} s per iteration")
