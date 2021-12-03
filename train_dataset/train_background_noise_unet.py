@@ -30,7 +30,7 @@ N = 2672
 batch_size = 128
 number_of_batches = 500
 number_of_epochs = 100
-NO_workers = 8  # TODO: Change back
+NO_workers = 32
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
 
@@ -167,20 +167,21 @@ if training_mode == "train":
     else:
         raise Exception("Mode not supported.")
 
-    cp_callback = keras.callbacks.ModelCheckpoint(
-        filepath=out_base + "cps" + "/weights{epoch}",
-        save_weights_only=True,
-        verbose=1,
-    )
+    # cp_callback = keras.callbacks.ModelCheckpoint(
+    #    filepath=out_base + "cps" + "/weights{epoch}",
+    #    save_weights_only=True,
+    #    verbose=1,
+    # )
 
     model.fit(
         x=CustomSequence(batch_size, number_of_batches, mode),
         epochs=number_of_epochs,
-        verbose=1,  # TODO: Change back
+        verbose=2,
         max_queue_size=500,
         workers=NO_workers,
         use_multiprocessing=True,
-        callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+        # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+        callbacks=[keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
         steps_per_epoch=number_of_batches,
     )
 

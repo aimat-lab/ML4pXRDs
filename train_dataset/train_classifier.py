@@ -1071,10 +1071,10 @@ else:  # build model from best set of hyperparameters
     )
 
     # periodically save the weights to a checkpoint file:
-    checkpoint_path = out_base + "cps" + "/weights{epoch}"
-    cp_callback = keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_path, verbose=1, save_weights_only=True
-    )
+    # checkpoint_path = out_base + "cps" + "/weights{epoch}"
+    # cp_callback = keras.callbacks.ModelCheckpoint(
+    #    filepath=checkpoint_path, verbose=1, save_weights_only=True
+    # )
 
     model.fit(
         x_train,
@@ -1082,7 +1082,8 @@ else:  # build model from best set of hyperparameters
         epochs=train_epochs,
         batch_size=train_batch_size,
         validation_data=(x_val, y_val),
-        callbacks=[tensorboard_callback, cp_callback],
+        # callbacks=[tensorboard_callback, cp_callback],
+        callbacks=[tensorboard_callback],
         verbose=2,
         workers=NO_workers,
         max_queue_size=queue_size,
