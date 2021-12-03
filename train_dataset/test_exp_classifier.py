@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     xs_exp, ys_exp = load_experimental_data("exp_data/XRDdata_classification.csv")
 
-    classifier_model_name = "narrow_02-12-2021_11:35:01_test"
+    classifier_model_name = "narrow_03-12-2021_09:57:05_test"
     unet_model_name = "removal_01-12-2021_13-23-10_variable_variance"
 
     classifier_model = keras.models.load_model(

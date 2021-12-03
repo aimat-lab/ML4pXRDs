@@ -131,8 +131,8 @@ if training_mode == "train":
         output_nums=1,
         problem_type="Regression",
     )
-    # model = my_unet.UNet()
-    model = my_unet.UNetPP()
+    model = my_unet.UNet()
+    # model = my_unet.UNetPP()
 
     # print(f"Worked {i}")
     # except:
