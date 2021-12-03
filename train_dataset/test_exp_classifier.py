@@ -16,8 +16,9 @@ if __name__ == "__main__":
 
     xs_exp, ys_exp = load_experimental_data("exp_data/XRDdata_classification.csv")
 
-    classifier_model_name = "narrow_03-12-2021_09:57:05_test"
+    classifier_model_name = "narrow_03-12-2021_11:28:55_test"
     unet_model_name = "removal_01-12-2021_13-23-10_variable_variance"
+    classify_is_pure = False
 
     classifier_model = keras.models.load_model(
         "classifier/" + classifier_model_name + "/final", compile=False
@@ -76,28 +77,41 @@ if __name__ == "__main__":
             prediction_softmax = prob_model_softmax.predict(ys_to_be_classified)
             prediction_softmax = np.argmax(prediction_softmax, axis=1)
 
-            sigmoid_activation = keras.layers.Activation("sigmoid")(
-                classifier_model.get_layer("output_sigmoid").output
-            )
-            prob_model_sigmoid = keras.Model(
-                inputs=classifier_model.layers[0].output, outputs=sigmoid_activation
-            )
-            prediction_sigmoid = prob_model_sigmoid.predict(ys_to_be_classified)
-            prediction_sigmoid = prediction_sigmoid[:, 0]
-            prediction_sigmoid = np.where(prediction_sigmoid > 0.5, 1, 0)
+            if classify_is_pure:
+                sigmoid_activation = keras.layers.Activation("sigmoid")(
+                    classifier_model.get_layer("output_sigmoid").output
+                )
+                prob_model_sigmoid = keras.Model(
+                    inputs=classifier_model.layers[0].output, outputs=sigmoid_activation
+                )
+                prediction_sigmoid = prob_model_sigmoid.predict(ys_to_be_classified)
+                prediction_sigmoid = prediction_sigmoid[:, 0]
+                prediction_sigmoid = np.where(prediction_sigmoid > 0.5, 1, 0)
 
             narrow_phases = ["Fm-3m", "Ia-3", "P63/m"]
-            purities = ["non-pure", "pure"]
             print(
                 f"Output of phase classification: {narrow_phases[prediction_softmax[0]]}"
             )
-            print(f"Output of pure classification: {purities[prediction_sigmoid[0]]}")
 
-            plt.plot(
-                current_xs,
-                corrected[0, :, 0],
-                label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}, {purities[prediction_sigmoid[0]]}\nTrue label: {labels[i]}",
-            )
+            if classify_is_pure:
+                purities = ["non-pure", "pure"]
+                print(
+                    f"Output of pure classification: {purities[prediction_sigmoid[0]]}"
+                )
+
+                plt.plot(
+                    current_xs,
+                    corrected[0, :, 0],
+                    label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}, {purities[prediction_sigmoid[0]]}\nTrue label: {labels[i]}",
+                )
+
+            else:
+
+                plt.plot(
+                    current_xs,
+                    corrected[0, :, 0],
+                    label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}\nTrue label: {labels[i]}",
+                )
 
             plt.plot(current_xs, np.zeros(len(current_xs)))
 

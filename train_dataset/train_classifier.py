@@ -60,11 +60,13 @@ if mode == "narrow":
 
     tune_hyperparameters = False
 
+    classify_is_pure = False
+
     tuner_epochs = 4
     tuner_batch_size = 128
 
     current_dir = "narrow_19-11-2021_08:12:29_test"  # where to read the best model from, not used for this model anyways
-    train_epochs = 200
+    train_epochs = 20
     train_batch_size = 128
 
 elif mode == "random":
@@ -290,13 +292,22 @@ if mode == "narrow":
         if scale_features:
             current_x[:, :, 0] = sc.transform(current_x[:, :, 0])
 
-        if return_as_array:
-            return current_x, [current_y, np.array(is_pures)]
+        if classify_is_pure:
+            if return_as_array:
+                return current_x, [current_y, np.array(is_pures)]
+            else:
+                return (
+                    current_x,
+                    {
+                        "outputs_softmax": current_y,
+                        "output_sigmoid": np.array(is_pures),
+                    },
+                )
         else:
-            return (
-                current_x,
-                {"outputs_softmax": current_y, "output_sigmoid": np.array(is_pures)},
-            )
+            if return_as_array:
+                return current_x, current_y
+            else:
+                return (current_x, {"outputs_softmax": current_y})
 
     class NarrowSequence(keras.utils.Sequence):
         def __init__(self, x_train, y_train, variations, batch_size):
@@ -644,21 +655,35 @@ elif model_str == "conv_narrow_fixed":
         output_sigmoid = keras.layers.Dense(1, name="output_sigmoid")(x_nn)
 
         optimizer = keras.optimizers.Adam(0.0005)
-        model = keras.Model(inputs=inputs, outputs=[outputs_softmax, output_sigmoid])
 
-        model.compile(
-            optimizer=optimizer,
-            loss={
-                "outputs_softmax": CustomSmoothedWeightedCCE(
-                    class_weights=class_weights_narrow
-                ),
-                "output_sigmoid": BinaryCrossentropy(from_logits=True),
-            },
-            metrics={
-                "outputs_softmax": "CategoricalAccuracy",
-                "output_sigmoid": "BinaryAccuracy",
-            },
-        )
+        if classify_is_pure:
+            model = keras.Model(
+                inputs=inputs, outputs=[outputs_softmax, output_sigmoid]
+            )
+            model.compile(
+                optimizer=optimizer,
+                loss={
+                    "outputs_softmax": CustomSmoothedWeightedCCE(
+                        class_weights=class_weights_narrow
+                    ),
+                    "output_sigmoid": BinaryCrossentropy(from_logits=True),
+                },
+                metrics={
+                    "outputs_softmax": "CategoricalAccuracy",
+                    "output_sigmoid": "BinaryAccuracy",
+                },
+            )
+        else:
+            model = keras.Model(inputs=inputs, outputs=outputs_softmax)
+            model.compile(
+                optimizer=optimizer,
+                loss={
+                    "outputs_softmax": CustomSmoothedWeightedCCE(
+                        class_weights=class_weights_narrow
+                    ),
+                },
+                metrics={"outputs_softmax": "CategoricalAccuracy",},
+            )
 
         model.summary()
 
@@ -1111,19 +1136,24 @@ else:  # build model from best set of hyperparameters
 
         print()
         print("Classification report softmax:")
-        print(classification_report(y_test[0], prediction_softmax))
-
-        sigmoid_activation = keras.layers.Activation("sigmoid")(
-            model.get_layer("output_sigmoid").output
+        print(
+            classification_report(
+                y_test[0] if classify_is_pure else y_test, prediction_softmax
+            )
         )
-        prob_model_sigmoid = keras.Model(
-            inputs=model.layers[0].output, outputs=sigmoid_activation
-        )
-        prediction_sigmoid = prob_model_sigmoid.predict(x_test)
-        prediction_sigmoid = prediction_sigmoid[:, 0]
-        # print(prediction_sigmoid)
-        prediction_sigmoid = np.where(prediction_sigmoid > 0.5, 1, 0)
 
-        print()
-        print("Classification report sigmoid:")
-        print(classification_report(y_test[1], prediction_sigmoid))
+        if classify_is_pure:
+            sigmoid_activation = keras.layers.Activation("sigmoid")(
+                model.get_layer("output_sigmoid").output
+            )
+            prob_model_sigmoid = keras.Model(
+                inputs=model.layers[0].output, outputs=sigmoid_activation
+            )
+            prediction_sigmoid = prob_model_sigmoid.predict(x_test)
+            prediction_sigmoid = prediction_sigmoid[:, 0]
+            # print(prediction_sigmoid)
+            prediction_sigmoid = np.where(prediction_sigmoid > 0.5, 1, 0)
+
+            print()
+            print("Classification report sigmoid:")
+            print(classification_report(y_test[1], prediction_sigmoid))
