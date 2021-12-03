@@ -196,13 +196,12 @@ def generate_samples_gp(
 
         ys_unaltered = np.zeros(n_angles_output)
 
-        for j in range(0, random.randint(1, max_peaks_per_sample)):
+        NO_peaks = random.randint(1, max_peaks_per_sample)
+        means = np.random.uniform(min_x, max_x, NO_peaks)
+        sigma_peaks = calc_std_dev(means, domain_size)
+        peak_positions = means
 
-            mean = random.uniform(min_x, max_x)
-
-            sigma_peak = calc_std_dev(mean, domain_size)
-
-            peak_positions.append(mean)
+        for j in range(0, NO_peaks):
 
             if j == 0:
                 peak_size = 1.0
@@ -226,8 +225,8 @@ def generate_samples_gp(
             # TODO: Maybe!: Change this behavior: For small peaks, the diffractograms appear to have "less" noise.
             peak = (
                 1
-                / (sigma_peak * np.sqrt(2 * np.pi))
-                * np.exp(-1 / (2 * sigma_peak ** 2) * (pattern_xs - mean) ** 2)
+                / (sigma_peaks[j] * np.sqrt(2 * np.pi))
+                * np.exp(-1 / (2 * sigma_peaks[j] ** 2) * (pattern_xs - means[j]) ** 2)
             ) * peak_size
 
             peak_sizes.append(peak_size)
@@ -303,7 +302,7 @@ if __name__ == "__main__":
 
     start = time.time()
     generate_samples_gp(
-        128, (10, 50), do_plot=True, compare_to_exp=True, n_angles_output=2672
+        128, (10, 50), do_plot=True, compare_to_exp=False, n_angles_output=2672
     )
     stop = time.time()
     print(f"Took {stop-start} s")

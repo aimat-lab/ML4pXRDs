@@ -13,9 +13,9 @@ from datetime import datetime
 
 tag = "scherer"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
-to_test = "removal_01-12-2021_13-23-10_variable_variance"
+to_test = "removal_02-12-2021_15-39-28_scherer"
 
 start_x = 10.015
 end_x = 50.155
