@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     xs_exp, ys_exp = load_experimental_data("exp_data/XRDdata_classification.csv")
 
-    classifier_model_name = "narrow_03-12-2021_11:28:55_test"
+    classifier_model_name = "narrow_03-12-2021_12:31:23_test"
     unet_model_name = "removal_01-12-2021_13-23-10_variable_variance"
     classify_is_pure = False
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
             end_index = np.argwhere(simulated_range <= end_x)[-1][0]
             used_range = simulated_range[start_index : end_index + 1 : step]
             number_of_values = len(used_range)
-            f = ip.CubicSpline(current_xs, ys, bc_type="natural")
+            f = ip.CubicSpline(current_xs, corrected[0, :, 0], bc_type="natural")
             ys_to_be_classified = f(used_range)
             ys_to_be_classified = np.expand_dims([ys_to_be_classified], axis=2)
 

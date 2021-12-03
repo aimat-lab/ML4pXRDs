@@ -114,6 +114,7 @@ def calc_std_dev(two_theta, tau, wavelength=1.207930):
     return sigma  # watch out!  this is not squared.
 
 
+@profile
 def generate_samples_gp(
     n_samples,
     x_range,
@@ -180,6 +181,7 @@ def samples_truncnorm(loc, scale, bounds):
     return s
 
 
+@profile
 def add_peaks(
     n_samples,
     n_angles_output,
@@ -326,10 +328,11 @@ if __name__ == "__main__":
     # plt.plot(pattern_xs, f_bump(pattern_xs, 2, 13, 10, 50))
     # plt.show()
 
+    total = 1
     start = time.time()
-    for i in range(0, 10):
+    for i in range(0, total):
         generate_samples_gp(
-            128, (10.0, 50.0), do_plot=True, compare_to_exp=False, n_angles_output=2672
+            128, (10.0, 50.0), do_plot=False, compare_to_exp=False, n_angles_output=2672
         )
     stop = time.time()
-    print(f"Took {(stop-start)/10} s per iteration")
+    print(f"Took {(stop-start)/total} s per iteration")
