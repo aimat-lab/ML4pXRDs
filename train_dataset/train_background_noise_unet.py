@@ -30,7 +30,7 @@ N = 2672
 batch_size = 128
 number_of_batches = 500
 number_of_epochs = 100
-NO_workers = 32
+NO_workers = 8  # TODO: Change back
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
 
@@ -176,7 +176,7 @@ if training_mode == "train":
     model.fit(
         x=CustomSequence(batch_size, number_of_batches, mode),
         epochs=number_of_epochs,
-        verbose=2,
+        verbose=1,  # TODO: Change back
         max_queue_size=500,
         workers=NO_workers,
         use_multiprocessing=True,

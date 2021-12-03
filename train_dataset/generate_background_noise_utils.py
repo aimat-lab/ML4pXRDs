@@ -7,7 +7,6 @@ from scipy import interpolate as ip
 import pandas as pd
 from scipy.stats import truncnorm
 import time
-import numba
 
 n_angles_gp = 60
 max_peaks_per_sample = 22  # max number of peaks per sample
@@ -310,7 +309,7 @@ def add_peaks(
             xs_all.append(ys_altered)
             ys_all.append(peak_info_disc)
 
-    return xs_all, ys_all
+    return np.array(xs_all), np.array(ys_all)
 
 
 if __name__ == "__main__":
