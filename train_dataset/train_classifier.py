@@ -63,8 +63,8 @@ if mode == "narrow":
     tuner_epochs = 4
     tuner_batch_size = 128
 
-    current_dir = "narrow_19-11-2021_08:12:29_test"  # where to read the best model from
-    train_epochs = 20
+    current_dir = "narrow_19-11-2021_08:12:29_test"  # where to read the best model from, not used for this model anyways
+    train_epochs = 200
     train_batch_size = 128
 
 elif mode == "random":

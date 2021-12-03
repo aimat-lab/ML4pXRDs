@@ -176,14 +176,11 @@ if training_mode == "train":
     model.fit(
         x=CustomSequence(batch_size, number_of_batches, mode),
         epochs=number_of_epochs,
-        verbose=1,  # TODO: Change back
+        verbose=2,
         max_queue_size=500,
         workers=NO_workers,
         use_multiprocessing=True,
-        callbacks=[
-            cp_callback,
-            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
-        ],
+        callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
         steps_per_epoch=number_of_batches,
     )
 
@@ -219,15 +216,11 @@ else:
             plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
             plt.plot(
-                pattern_x,
-                test_batch[0][:][i],
-                label="Input pattern",
+                pattern_x, test_batch[0][:][i], label="Input pattern",
             )
 
             plt.plot(
-                pattern_x,
-                test_batch[1][:][i],
-                label="Target",
+                pattern_x, test_batch[1][:][i], label="Target",
             )
 
             plt.plot(

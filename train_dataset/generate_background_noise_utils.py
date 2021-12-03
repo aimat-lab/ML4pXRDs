@@ -45,6 +45,12 @@ else:
 # sigma_min = 0.1
 # sigma_max = 0.5
 
+crystallite_size_gauss_min = 5
+# crystallite_size_gauss_max = 100
+crystallite_size_gauss_max = (
+    30  # TODO: maybe use this altered range for the classification / simulation, too!
+)
+
 
 def convert_to_discrete(
     x_range, peak_positions, peak_sizes, n_angles=4016, do_print=False
@@ -85,13 +91,6 @@ def f_bump(theta, h, n, min_x, max_x):
         * (n * theta_rel(theta, min_x, max_x)) ** 2
         * np.exp(-1 * n * theta_rel(theta, min_x, max_x))
     )
-
-
-crystallite_size_gauss_min = 5
-# crystallite_size_gauss_max = 100
-crystallite_size_gauss_max = (
-    30  # TODO: maybe use this altered range for the classification / simulation, too!
-)
 
 
 def calc_std_dev(two_theta, tau, wavelength=1.207930):
@@ -148,11 +147,7 @@ def generate_samples_gp(
         )
         gp = GaussianProcessRegressor(kernel=kernel)
 
-        new_y = gp.sample_y(
-            xs_gp,
-            random_state=random_seed,
-            n_samples=1,
-        )
+        new_y = gp.sample_y(xs_gp, random_state=random_seed, n_samples=1,)
 
         ys_gp[:, i] = new_y[:, 0]
 
