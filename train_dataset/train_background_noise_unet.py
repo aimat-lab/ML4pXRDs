@@ -11,9 +11,9 @@ sys.path.append("../")
 import generate_background_noise_utils
 from datetime import datetime
 
-tag = "scherer"
+tag = "UNetPP"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
 to_test = "removal_02-12-2021_15-39-28_scherer"
 
@@ -30,7 +30,7 @@ N = 2672
 batch_size = 128
 number_of_batches = 500
 number_of_epochs = 100
-NO_workers = 16
+NO_workers = 32
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
 
@@ -131,7 +131,8 @@ if training_mode == "train":
         output_nums=1,
         problem_type="Regression",
     )
-    model = my_unet.UNet()
+    # model = my_unet.UNet()
+    model = my_unet.UNetPP()
 
     # print(f"Worked {i}")
     # except:
@@ -175,7 +176,7 @@ if training_mode == "train":
     model.fit(
         x=CustomSequence(batch_size, number_of_batches, mode),
         epochs=number_of_epochs,
-        verbose=2,
+        verbose=1,  # TODO: Change back
         max_queue_size=500,
         workers=NO_workers,
         use_multiprocessing=True,
