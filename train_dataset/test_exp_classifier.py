@@ -17,8 +17,9 @@ if __name__ == "__main__":
     xs_exp, ys_exp = load_experimental_data("exp_data/XRDdata_classification.csv")
 
     classifier_model_name = "narrow_03-12-2021_12:31:23_test"
-    unet_model_name = "removal_01-12-2021_13-23-10_variable_variance"
+    unet_model_name = "removal_03-12-2021_16-48-30_UNetPP"
     classify_is_pure = False
+    do_plot = False
 
     classifier_model = keras.models.load_model(
         "classifier/" + classifier_model_name + "/final", compile=False
@@ -29,6 +30,13 @@ if __name__ == "__main__":
         "exp_data/experimental_phases.txt", delimiter=" ", skiprows=0, header=None
     )
     labels = np.array(data_true_labels.iloc[:, 2])
+
+    spg_labels_pd = pd.read_csv(
+        "exp_data/experimental_spgs.txt", delimiter=" ", skiprows=0, header=None
+    )
+    spg_labels = np.array(spg_labels_pd.iloc[:, 0])
+
+    correct_counter = 0
 
     for i in range(0, xs_exp.shape[1]):
 
@@ -42,7 +50,8 @@ if __name__ == "__main__":
             ys -= np.min(ys)
             ys = ys / np.max(ys)
 
-            plt.plot(current_xs, ys, label="Experimental rescaled")
+            if do_plot:
+                plt.plot(current_xs, ys, label="Experimental rescaled")
 
             ys_to_be_corrected = np.expand_dims([ys], axis=2)
             corrected = unet_model.predict(ys_to_be_corrected)
@@ -90,8 +99,14 @@ if __name__ == "__main__":
 
             narrow_phases = ["Fm-3m", "Ia-3", "P63/m"]
             print(
-                f"Output of phase classification: {narrow_phases[prediction_softmax[0]]}"
+                f"Output of phase classification: {narrow_phases[prediction_softmax[0]]} (True: {spg_labels[i]})"
             )
+
+            if narrow_phases[prediction_softmax[0]] == spg_labels[i]:
+                correct_counter += 1
+
+            if spg_labels[i] not in narrow_phases:
+                raise Exception("Found not-supported phase in csv file.")
 
             if classify_is_pure:
                 purities = ["non-pure", "pure"]
@@ -99,24 +114,30 @@ if __name__ == "__main__":
                     f"Output of pure classification: {purities[prediction_sigmoid[0]]}"
                 )
 
-                plt.plot(
-                    current_xs,
-                    corrected[0, :, 0],
-                    label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}, {purities[prediction_sigmoid[0]]}\nTrue label: {labels[i]}",
-                )
+                if do_plot:
+                    plt.plot(
+                        current_xs,
+                        corrected[0, :, 0],
+                        label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}, {purities[prediction_sigmoid[0]]}\nTrue label: {labels[i]}",
+                    )
 
             else:
 
+                if do_plot:
+                    plt.plot(
+                        current_xs,
+                        corrected[0, :, 0],
+                        label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}\nTrue label: {labels[i]}",
+                    )
+
+            if do_plot:
+                plt.plot(current_xs, np.zeros(len(current_xs)))
+
+            if do_plot:
                 plt.plot(
-                    current_xs,
-                    corrected[0, :, 0],
-                    label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}\nTrue label: {labels[i]}",
+                    current_xs, ys - corrected[0, :, 0], label="Background and noise"
                 )
+                plt.legend()
+                plt.show()
 
-            plt.plot(current_xs, np.zeros(len(current_xs)))
-
-            plt.plot(current_xs, ys - corrected[0, :, 0], label="Background and noise")
-
-            plt.legend()
-
-            plt.show()
+    print(f"{correct_counter / len(spg_labels)} prediction accurary")
