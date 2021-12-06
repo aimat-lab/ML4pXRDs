@@ -13,9 +13,9 @@ from datetime import datetime
 
 tag = "UNetPP"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
-to_test = "removal_02-12-2021_15-39-28_scherer"
+to_test = "removal_03-12-2021_16-48-30_UNetPP"
 
 start_x = 10.015
 end_x = 50.155

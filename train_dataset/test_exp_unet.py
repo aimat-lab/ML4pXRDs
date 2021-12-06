@@ -19,8 +19,8 @@ from matplotlib.patches import Ellipse
 from functools import partial
 import pybaselines
 
-mode = "removal"  # possible: info and removal
-to_test = "removal_02-12-2021_15-39-28_scherer"
+mode = "removal"  # possible: info and removal (currently only removal)
+to_test = "removal_03-12-2021_16-48-30_UNetPP"
 
 show_comparison = False
 

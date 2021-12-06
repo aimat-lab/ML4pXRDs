@@ -1,5 +1,7 @@
 # The core of the following code is taken from the pymatgen package.
 # It is altered and optimized to run using numba.
+# If performance is not a concern to you, you should use the original pymatgen code.
+
 
 import json
 import os
