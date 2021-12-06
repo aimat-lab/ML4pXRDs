@@ -19,3 +19,5 @@ checkpoint
 train_dataset/unet
 dataset_simulations/test.npy
 train_dataset/classifier
+*.nbc
+*.nbi

@@ -29,7 +29,7 @@ N = 2672
 
 batch_size = 128
 number_of_batches = 500
-number_of_epochs = 100
+number_of_epochs = 1000
 NO_workers = 32
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
@@ -181,9 +181,7 @@ if training_mode == "train":
         workers=NO_workers,
         use_multiprocessing=True,
         # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
-        callbacks=[
-            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
-        ],
+        callbacks=[keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
         steps_per_epoch=number_of_batches,
     )
 
@@ -219,15 +217,11 @@ else:
             plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
             plt.plot(
-                pattern_x,
-                test_batch[0][:][i],
-                label="Input pattern",
+                pattern_x, test_batch[0][:][i], label="Input pattern",
             )
 
             plt.plot(
-                pattern_x,
-                test_batch[1][:][i],
-                label="Target",
+                pattern_x, test_batch[1][:][i], label="Target",
             )
 
             plt.plot(

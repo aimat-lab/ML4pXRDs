@@ -8,6 +8,10 @@ import pandas as pd
 from scipy.stats import truncnorm
 import time
 
+import numba
+from interp_utils import spline_numba
+
+
 n_angles_gp = 60
 max_peaks_per_sample = 22  # max number of peaks per sample
 # min_peak_height = 0.010
@@ -94,6 +98,7 @@ def f_bump(theta, h, n, min_x, max_x):
     )
 
 
+@numba.njit
 def calc_std_dev(two_theta, tau, wavelength=1.207930):
     """
     calculate standard deviation based on angle (two theta) and domain size (tau)
@@ -121,9 +126,6 @@ def generate_samples_gp(
     n_angles_output=4016,
     scaling=scaling,
     random_seed=None,
-    mode="removal",
-    do_plot=False,
-    compare_to_exp=False,
 ):
 
     # x_test = np.linspace(10, 50, 1000)
@@ -147,20 +149,17 @@ def generate_samples_gp(
     gp = GaussianProcessRegressor(kernel=kernel)
     ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples)
 
-    return add_peaks(
-        n_samples,
-        n_angles_output,
-        xs_gp,
-        ys_gp,
-        pattern_xs,
-        min_x,
-        max_x,
-        mode,
-        do_plot,
-        compare_to_exp,
+    # start = time.time()
+    result = add_peaks(
+        n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x,
     )
+    # stop = time.time()
+    # print(f"Took {(stop-start)} for add_peaks")
+
+    return result
 
 
+@numba.njit
 def samples_truncnorm(loc, scale, bounds):
     while True:
         s = np.random.normal(loc, scale)
@@ -169,18 +168,8 @@ def samples_truncnorm(loc, scale, bounds):
     return s
 
 
-def add_peaks(
-    n_samples,
-    n_angles_output,
-    xs_gp,
-    ys_gp,
-    pattern_xs,
-    min_x,
-    max_x,
-    mode,
-    do_plot,
-    compare_to_exp,
-):
+@numba.njit
+def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x):
 
     # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
     # ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
@@ -190,26 +179,25 @@ def add_peaks(
     #    plt.plot(xs_gp[:, 0], ys_gp[:, i])
     # plt.show()
 
-    xs_all = []
-    ys_all = []
-
-    # def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
-    #    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
-
-    # trunc = get_truncated_normal(0, sd=0.2, low=min_peak_height, upp=1)
+    ys_altered_all = np.zeros(shape=(n_samples, n_angles_output))
+    ys_unaltered_all = np.zeros(shape=(n_samples, n_angles_output))
 
     for i in range(0, n_samples):
 
         # scale the output of the gp to the desired length
         if n_angles_output != n_angles_gp:
-            f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
-            background = f(pattern_xs)
+            # f = ip.CubicSpline(xs_gp[:, 0], ys_gp[:, i], bc_type="natural")
+            # ys_altered_all[i, :] = f(pattern_xs)
 
-        background = background - np.min(background)
-        weight_background = np.sum(background)
+            ys_altered_all[i, :] = spline_numba(
+                xs_gp[:, 0].copy(), ys_gp[:, i].copy(), pattern_xs
+            )
+
+        ys_altered_all[i, :] -= np.min(ys_altered_all[i, :])
+        weight_background = np.sum(ys_altered_all[i, :])
 
         scaling = np.random.uniform(0, scaling_max)
-        background = background / weight_background * 10 * scaling
+        ys_altered_all[i, :] = ys_altered_all[i, :] / weight_background * 10 * scaling
 
         domain_size = np.random.uniform(
             crystallite_size_gauss_min, crystallite_size_gauss_max
@@ -217,12 +205,10 @@ def add_peaks(
 
         peak_sizes = []
 
-        ys_unaltered = np.zeros(n_angles_output)
-
         NO_peaks = np.random.randint(1.0, max_peaks_per_sample)
         means = np.random.uniform(min_x, max_x, NO_peaks)
         sigma_peaks = calc_std_dev(means, domain_size)
-        peak_positions = means
+        # peak_positions = means
 
         for j in range(0, NO_peaks):
 
@@ -247,7 +233,7 @@ def add_peaks(
                 peak_size = samples_truncnorm(0, 0.2, [min_peak_height, 1.0])
 
             # TODO: Maybe!: Change this behavior: For small peaks, the diffractograms appear to have "less" noise.
-            peak = (
+            ys_unaltered_all[i, :] += (
                 1
                 / (sigma_peaks[j] * np.sqrt(2 * np.pi))
                 * np.exp(-1 / (2 * sigma_peaks[j] ** 2) * (pattern_xs - means[j]) ** 2)
@@ -255,30 +241,70 @@ def add_peaks(
 
             peak_sizes.append(peak_size)
 
-            ys_unaltered += peak
-
-        ys_altered = background + ys_unaltered
+        ys_altered_all[i, :] += ys_unaltered_all[i, :]
 
         base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)
-        ys_altered += np.random.normal(0.0, base_noise_level, n_angles_output)
+        ys_altered_all[i, :] += np.random.normal(0.0, base_noise_level, n_angles_output)
 
         fluct_noise_level = np.random.uniform(
             fluct_noise_level_min, fluct_noise_level_max
         )
-        ys_altered *= np.random.normal(1.0, fluct_noise_level, n_angles_output)
+        ys_altered_all[i, :] *= np.random.normal(
+            1.0, fluct_noise_level, n_angles_output
+        )
 
-        ys_altered -= np.min(ys_altered)
+        ys_altered_all[i, :] -= np.min(ys_altered_all[i, :])
 
-        normalizer = np.max(ys_altered)
+        normalizer = np.max(ys_altered_all[i, :])
 
-        ys_altered /= normalizer
-        ys_unaltered /= normalizer
+        ys_altered_all[i, :] /= normalizer
+        ys_unaltered_all[i, :] /= normalizer
 
-        if do_plot:
-            plt.plot(pattern_xs, ys_altered)
-            plt.plot(pattern_xs, ys_unaltered)
+        """ TODO: Update this for "info" mode
+        if mode == "removal":
 
-            if compare_to_exp:
+            ys_altered_all.append(ys_altered_all[i, :])
+            ys_unaltered_all.append(ys_unaltered_all[i, :])
+            # ys_all.append(background_noise / scaler)
+
+        elif mode == "info":
+
+            peak_info_disc, peak_size_disc = convert_to_discrete(
+                peak_positions, peak_sizes, do_print=False
+            )
+
+            ys_altered_all.append(ys_altered_all[i, :])
+            ys_unaltered_all.append(peak_info_disc)
+        """
+
+    return ys_altered_all, ys_unaltered_all
+
+
+if __name__ == "__main__":
+
+    do_plot = True
+    to_compare_to_exp = True
+    n_samples = 128 * 10
+    pattern_xs = np.linspace(10, 50, 2672)
+
+    generate_samples_gp(128, (10.0, 50.0), n_angles_output=2672)
+
+    total = 10
+    start = time.time()
+    for i in range(0, total):
+        ys_altered_all, ys_unaltered_all = generate_samples_gp(
+            n_samples, (10.0, 50.0), n_angles_output=2672,
+        )
+    stop = time.time()
+    print(f"Took {(stop-start)/total} s per iteration")
+
+    if do_plot:
+
+        for i in range(0, n_samples):
+            plt.plot(pattern_xs, ys_altered_all[i, :])
+            plt.plot(pattern_xs, ys_unaltered_all[i, :])
+
+            if to_compare_to_exp:
                 for i in range(0, 6):
                     index = i
                     path = "exp_data/XRDdata_classification.csv"
@@ -294,37 +320,3 @@ def add_peaks(
                     plt.plot(xs[:, index], ys[:, index], label=str(index))
 
             plt.show()
-
-        if mode == "removal":
-
-            xs_all.append(ys_altered)
-            ys_all.append(ys_unaltered)
-            # ys_all.append(background_noise / scaler)
-
-        elif mode == "info":
-
-            peak_info_disc, peak_size_disc = convert_to_discrete(
-                peak_positions, peak_sizes, do_print=False
-            )
-
-            xs_all.append(ys_altered)
-            ys_all.append(peak_info_disc)
-
-    return np.array(xs_all), np.array(ys_all)
-
-
-if __name__ == "__main__":
-
-    # pattern_xs = np.linspace(10, 50, 4016)
-
-    # plt.plot(pattern_xs, f_bump(pattern_xs, 2, 13, 10, 50))
-    # plt.show()
-
-    total = 100
-    start = time.time()
-    for i in range(0, total):
-        generate_samples_gp(
-            128, (10.0, 50.0), do_plot=True, compare_to_exp=False, n_angles_output=2672
-        )
-    stop = time.time()
-    print(f"Took {(stop-start)/total} s per iteration")
