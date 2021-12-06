@@ -22,7 +22,7 @@ import pybaselines
 mode = "removal"  # possible: info and removal (currently only removal)
 to_test = "removal_03-12-2021_16-48-30_UNetPP"
 
-show_comparison = False
+show_comparison = True
 
 
 def load_experimental_data(loading_mode="classification"):

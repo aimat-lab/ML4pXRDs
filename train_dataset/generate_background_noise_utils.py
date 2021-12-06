@@ -18,7 +18,8 @@ scaling = 1.0
 # variance = 10.0
 # variance = 4.0
 
-min_variance = 4.0
+# min_variance = 4.0
+min_variance = 7.0
 max_variance = 40.0
 
 # for background to peaks ratio:
