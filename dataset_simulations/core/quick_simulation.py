@@ -2,6 +2,44 @@
 # It is altered and optimized to run using numba.
 # If performance is not a concern to you, you should use the original pymatgen code.
 
+"""
+Computes the XRD pattern of a crystal structure.
+This code is implemented by Shyue Ping Ong as part of UCSD's NANO106 -
+Crystallography of Materials. The formalism for this code is based on
+that given in Chapters 11 and 12 of Structure of Materials by Marc De
+Graef and Michael E. McHenry. This takes into account the atomic
+scattering factors and the Lorentz polarization factor, but not
+the Debye-Waller (temperature) factor (for which data is typically not
+available). Note that the multiplicity correction is not needed since
+this code simply goes through all reciprocal points within the limiting
+sphere, which includes all symmetrically equivalent facets. The algorithm
+is as follows
+1. Calculate reciprocal lattice of structure. Find all reciprocal points
+    within the limiting sphere given by :math:`\\frac{2}{\\lambda}`.
+2. For each reciprocal point :math:`\\mathbf{g_{hkl}}` corresponding to
+    lattice plane :math:`(hkl)`, compute the Bragg condition
+    :math:`\\sin(\\theta) = \\frac{\\lambda}{2d_{hkl}}`
+3. Compute the structure factor as the sum of the atomic scattering
+    factors. The atomic scattering factors are given by
+    .. math::
+        f(s) = Z - 41.78214 \\times s^2 \\times \\sum\\limits_{i=1}^n a_i \
+        \\exp(-b_is^2)
+    where :math:`s = \\frac{\\sin(\\theta)}{\\lambda}` and :math:`a_i`
+    and :math:`b_i` are the fitted parameters for each element. The
+    structure factor is then given by
+    .. math::
+        F_{hkl} = \\sum\\limits_{j=1}^N f_j \\exp(2\\pi i \\mathbf{g_{hkl}}
+        \\cdot \\mathbf{r})
+4. The intensity is then given by the modulus square of the structure
+    factor.
+    .. math::
+        I_{hkl} = F_{hkl}F_{hkl}^*
+5. Finally, the Lorentz polarization correction factor is applied. This
+    factor is given by:
+    .. math::
+        P(\\theta) = \\frac{1 + \\cos^2(2\\theta)}
+        {\\sin^2(\\theta)\\cos(\\theta)}
+"""
 
 import json
 import os
@@ -10,6 +48,7 @@ import numpy as np
 import collections
 from pymatgen.io.cif import CifParser
 import time
+import numba
 
 SCALED_INTENSITY_TOL = 0.001
 TWO_THETA_TOL = 1e-05
@@ -20,65 +59,8 @@ with open(
     ATOMIC_SCATTERING_PARAMS = json.load(f)
 
 
-def get_unique_families(hkls):
-    """
-    Returns unique families of Miller indices. Families must be permutations
-    of each other.
-    Args:
-        hkls ([h, k, l]): List of Miller indices.
-    Returns:
-        {hkl: multiplicity}: A dict with unique hkl and multiplicity.
-    """
-
-    # TODO: Definitely can be sped up.
-    def is_perm(hkl1, hkl2):
-        h1 = np.abs(hkl1)
-        h2 = np.abs(hkl2)
-        return all(i == j for i, j in zip(sorted(h1), sorted(h2)))
-
-    unique = collections.defaultdict(list)
-    for hkl1 in hkls:
-        found = False
-        for hkl2, v2 in unique.items():
-            if is_perm(hkl1, hkl2):
-                found = True
-                v2.append(hkl1)
-                break
-        if not found:
-            unique[hkl1].append(hkl1)
-
-    pretty_unique = {}
-    for k, v in unique.items():
-        pretty_unique[sorted(v)[-1]] = len(v)
-
-    return pretty_unique
-
-
-def is_hexagonal(
-    lengths, angles, hex_angle_tol: float = 5, hex_length_tol: float = 0.01
-) -> bool:
-    """
-    :param hex_angle_tol: Angle tolerance
-    :param hex_length_tol: Length tolerance
-    :return: Whether lattice corresponds to hexagonal lattice.
-    """
-    right_angles = [i for i in range(3) if abs(angles[i] - 90) < hex_angle_tol]
-    hex_angles = [
-        i
-        for i in range(3)
-        if abs(angles[i] - 60) < hex_angle_tol or abs(angles[i] - 120) < hex_angle_tol
-    ]
-
-    return (
-        len(right_angles) == 2
-        and len(hex_angles) == 1
-        and abs(lengths[right_angles[0]] - lengths[right_angles[1]]) < hex_length_tol
-    )
-
-
-# TODO: Throw the hkls out, I don't need them for now.
-
-
+# @numba.njit(cache=True, fastmath=True, parallel=False)
+# @profile
 def __get_pattern_optimized(
     wavelength,
     zs,
@@ -86,7 +68,6 @@ def __get_pattern_optimized(
     fcoords,
     occus,
     dwfactors,
-    is_hex,
     recip_pts_sorted_0,
     recip_pts_sorted_1,
     recip_pts_sorted_2,
@@ -95,7 +76,6 @@ def __get_pattern_optimized(
     peaks = {}
     two_thetas = []
 
-    # main time spent here!
     for i in range(0, len(recip_pts_sorted_0)):
 
         hkl = recip_pts_sorted_0[i]
@@ -103,10 +83,8 @@ def __get_pattern_optimized(
         ind = recip_pts_sorted_2[i]
 
         # Force miller indices to be integers.
-        hkl = [int(round(i)) for i in hkl]
+        hkl = [round(i) for i in hkl]
         if g_hkl != 0:
-
-            d_hkl = 1 / g_hkl
 
             # Bragg condition
             theta = asin(wavelength * g_hkl / 2)
@@ -120,7 +98,9 @@ def __get_pattern_optimized(
 
             # Vectorized computation of g.r for all fractional coords and
             # hkl.
-            g_dot_r = np.dot(fcoords, np.transpose([hkl])).T[0]
+            # hkl_temp = np.array([hkl], numba.types.float64)
+            hkl_temp = np.array([hkl], float)
+            g_dot_r = np.dot(fcoords, hkl_temp.T).T[0]
 
             # Highly vectorized computation of atomic scattering factors.
             # Equivalent non-vectorized code is::
@@ -149,38 +129,35 @@ def __get_pattern_optimized(
 
             two_theta = degrees(2 * theta)
 
-            if is_hex:
-                # Use Miller-Bravais indices for hexagonal lattices.
-                hkl = (hkl[0], hkl[1], -hkl[0] - hkl[1], hkl[2])
             # Deal with floating point precision issues.
             ind = np.where(np.abs(np.subtract(two_thetas, two_theta)) < TWO_THETA_TOL)
             if len(ind[0]) > 0:
-                peaks[two_thetas[ind[0][0]]][0] += i_hkl * lorentz_factor
-                peaks[two_thetas[ind[0][0]]][1].append(tuple(hkl))
+                peaks[two_thetas[ind[0][0]]] += i_hkl * lorentz_factor
             else:
-                peaks[two_theta] = [i_hkl * lorentz_factor, [tuple(hkl)], d_hkl]
+                peaks[two_theta] = i_hkl * lorentz_factor
                 two_thetas.append(two_theta)
 
     # Scale intensities so that the max intensity is 100.
-    max_intensity = max([v[0] for v in peaks.values()])
+    max_intensity = max([v for v in peaks.values()])
     x = []
     y = []
     for k in sorted(peaks.keys()):
         v = peaks[k]
-        fam = get_unique_families(v[1])
-        if v[0] / max_intensity * 100 > SCALED_INTENSITY_TOL:
-            x.append(k)
-            y.append(v[0])
 
-    y = np.array(y) / np.max(y)
+        if v / max_intensity * 100 > SCALED_INTENSITY_TOL:
+            x.append(k)
+            y.append(v)
+
+    y = np.array(y) / max(y)
 
     return x, y
 
 
-def get_pattern_optimized(structure, wavelength, two_theta_range=(0, 90)):
+def get_pattern_optimized(
+    structure, wavelength, two_theta_range=(0, 90), do_print=True
+):
 
     latt = structure.lattice
-    is_hex = latt.is_hexagonal()
     debye_waller_factors = {}
 
     # Obtained from Bragg condition. Note that reciprocal lattice
@@ -235,18 +212,23 @@ def get_pattern_optimized(structure, wavelength, two_theta_range=(0, 90)):
     )
     recip_pts_sorted = list(map(list, zip(*recip_pts_sorted)))
 
-    return __get_pattern_optimized(
+    start = time.time()
+    result = __get_pattern_optimized(
         wavelength,
         zs,
         coeffs,
         fcoords,
         occus,
         dwfactors,
-        is_hex,
         recip_pts_sorted[0],
         recip_pts_sorted[1],
         recip_pts_sorted[2],
     )
+    stop = time.time()
+    if do_print:
+        print("Took {} s for external code".format((stop - start) / total))
+
+    return result
 
 
 ###################################### NON-OPTIMIZED #############################################
@@ -432,22 +414,28 @@ if __name__ == "__main__":
     crystals = parser.get_structures()
     crystal = crystals[0]
 
-    total = 10
+    total = 1
 
     start = time.time()
     for i in range(0, total):
-        get_pattern(
+        data_non_opt = get_pattern(
             crystal, 1.5406, (0, 90)  # for now, use Cu-K line
         )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
     stop = time.time()
+    time_non_optimized = (stop - start) / total
 
-    print("Took {} s for non-optimized version".format((stop - start) / total))
+    data_opt = get_pattern_optimized(
+        crystal, 1.5406, (0, 90), do_print=False
+    )  # for now, use Cu-K line
 
-    # start = time.time()
-    # for i in range(0, total):
-    #    get_pattern_optimized(
-    #        crystal, 1.5406, (0, 90)  # for now, use Cu-K line
-    #    )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
-    # stop = time.time()
-    # print("Took {} s for optimized version".format((stop - start) / total))
+    start = time.time()
+    for i in range(0, total):
+        data_opt = get_pattern_optimized(
+            crystal, 1.5406, (0, 90)  # for now, use Cu-K line
+        )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
+    stop = time.time()
+    time_optimized = (stop - start) / total
 
+    print("Took {} s for non-optimized version".format(time_non_optimized))
+    print("Took {} s for optimized version".format(time_optimized))
+    print(f"Optimized version is {time_non_optimized/time_optimized}x faster")
