@@ -59,8 +59,7 @@ with open(
     ATOMIC_SCATTERING_PARAMS = json.load(f)
 
 
-# @numba.njit(cache=True, fastmath=True, parallel=False)
-# @profile
+@numba.njit(cache=True, fastmath=True, parallel=False)
 def __get_pattern_optimized(
     wavelength,
     zs,
@@ -98,8 +97,8 @@ def __get_pattern_optimized(
 
             # Vectorized computation of g.r for all fractional coords and
             # hkl.
-            # hkl_temp = np.array([hkl], numba.types.float64)
-            hkl_temp = np.array([hkl], float)
+            hkl_temp = np.array([hkl], numba.types.float64)
+            # hkl_temp = np.array([hkl], float)
             g_dot_r = np.dot(fcoords, hkl_temp.T).T[0]
 
             # Highly vectorized computation of atomic scattering factors.
@@ -130,7 +129,7 @@ def __get_pattern_optimized(
             two_theta = degrees(2 * theta)
 
             # Deal with floating point precision issues.
-            ind = np.where(np.abs(np.subtract(two_thetas, two_theta)) < TWO_THETA_TOL)
+            ind = np.where(np.abs(np.array(two_thetas) - two_theta) < TWO_THETA_TOL)
             if len(ind[0]) > 0:
                 peaks[two_thetas[ind[0][0]]] += i_hkl * lorentz_factor
             else:
