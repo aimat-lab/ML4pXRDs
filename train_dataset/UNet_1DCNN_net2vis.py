@@ -107,7 +107,7 @@ def ResPath(inputs, model_depth, model_width, kernel, multiplier):
 
 
 def get_model():
-    length = 4016
+    length = 2672
     model_depth = 4  # height
     num_channel = 1  # input
     model_width = 5  # first conv number of channels, danach immer verdoppeln
@@ -120,7 +120,7 @@ def get_model():
     feature_number = 1024
     is_transconv = True
 
-    # Variable UNet Model Design
+    # Variable UNet++ Model Design
     if (
         length == 0
         or model_depth == 0
@@ -152,27 +152,70 @@ def get_model():
     conv = Conv_Block(conv, model_width, kernel_size, 2 ** model_depth)
 
     # Decoding
-    deconv = conv
     convs_list = list(convs.values())
+    if D_S == 1:
+        level = k.layers.Conv1D(1, 1, name=f"level{model_depth}")(convs_list[0])
+        levels.append(level)
 
-    for j in range(0, model_depth):
-        if D_S == 1:
-            # For Deep Supervision
-            level = k.layers.Conv1D(1, 1, name=f"level{model_depth - j}")(deconv)
-            levels.append(level)
-        if is_transconv:
-            deconv = Concat_Block(
-                trans_conv1D(deconv, model_width, 2 ** (model_depth - j - 1)),
-                convs_list[model_depth - j - 1],
-            )
-        elif not is_transconv:
-            deconv = Concat_Block(upConv_Block(deconv), convs_list[model_depth - j - 1])
-        deconv = Conv_Block(
-            deconv, model_width, kernel_size, 2 ** (model_depth - j - 1),
-        )
-        deconv = Conv_Block(
-            deconv, model_width, kernel_size, 2 ** (model_depth - j - 1),
-        )
+    deconv = []
+    deconvs = {}
+
+    for i in range(1, (model_depth + 1)):
+        for j in range(0, (model_depth - i + 1)):
+            if (i == 1) and (j == (model_depth - 1)):
+                if is_transconv:
+                    deconv = Concat_Block(
+                        convs_list[j], trans_conv1D(conv, model_width, 2 ** j)
+                    )
+                elif not is_transconv:
+                    deconv = Concat_Block(convs_list[j], upConv_Block(conv))
+                deconv = Conv_Block(deconv, model_width, kernel_size, 2 ** j)
+                deconv = Conv_Block(deconv, model_width, kernel_size, 2 ** j)
+                deconvs["deconv%s%s" % (j, i)] = deconv
+            elif (i == 1) and (j < (model_depth - 1)):
+                if is_transconv:
+                    deconv = Concat_Block(
+                        convs_list[j],
+                        trans_conv1D(convs_list[j + 1], model_width, 2 ** j),
+                    )
+                elif not is_transconv:
+                    deconv = Concat_Block(
+                        convs_list[j], upConv_Block(convs_list[j + 1])
+                    )
+                deconv = Conv_Block(deconv, model_width, kernel_size, 2 ** j)
+                deconv = Conv_Block(deconv, model_width, kernel_size, 2 ** j)
+                deconvs["deconv%s%s" % (j, i)] = deconv
+            elif i > 1:
+                deconv_tot = deconvs["deconv%s%s" % (j, 1)]
+                for ki in range(2, i):
+                    deconv_temp = deconvs["deconv%s%s" % (j, ki)]
+                    deconv_tot = Concat_Block(deconv_tot, deconv_temp)
+                if is_transconv:
+                    deconv = Concat_Block(
+                        convs_list[j],
+                        deconv_tot,
+                        trans_conv1D(
+                            deconvs["deconv%s%s" % ((j + 1), (i - 1))],
+                            model_width,
+                            2 ** j,
+                        ),
+                    )
+                elif not is_transconv:
+                    deconv = Concat_Block(
+                        convs_list[j],
+                        deconv_tot,
+                        upConv_Block(deconvs["deconv%s%s" % ((j + 1), (i - 1))]),
+                    )
+                deconv = Conv_Block(deconv, model_width, kernel_size, 2 ** j)
+                deconv = Conv_Block(deconv, model_width, kernel_size, 2 ** j)
+                deconvs["deconv%s%s" % (j, i)] = deconv
+            if (D_S == 1) and (j == 0) and (i < model_depth):
+                level = k.layers.Conv1D(1, 1, name=f"level{model_depth - i}")(
+                    deconvs["deconv%s%s" % (j, i)]
+                )
+                levels.append(level)
+
+    deconv = deconvs["deconv%s%s" % (0, model_depth)]
 
     # Output
     outputs = []
