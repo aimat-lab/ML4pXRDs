@@ -41,6 +41,10 @@ is as follows
         {\\sin^2(\\theta)\\cos(\\theta)}
 """
 
+import sys
+
+sys.path.append("../")
+
 import json
 import os
 from math import asin, cos, degrees, pi, radians, sin
@@ -49,6 +53,7 @@ import collections
 from pymatgen.io.cif import CifParser
 import time
 import numba
+import random_simulation_utils
 
 SCALED_INTENSITY_TOL = 0.001
 TWO_THETA_TOL = 1e-05
@@ -409,9 +414,12 @@ def get_pattern(structure, wavelength, two_theta_range=(0, 90)):
 
 if __name__ == "__main__":
 
-    parser = CifParser("example.cif")
-    crystals = parser.get_structures()
-    crystal = crystals[0]
+    # parser = CifParser("example.cif")
+    # crystals = parser.get_structures()
+    # crystal = crystals[0]
+
+    structures = random_simulation_utils.generate_structures(114, 1)
+    crystal = structures[0]
 
     total = 1
 
@@ -438,3 +446,14 @@ if __name__ == "__main__":
     print("Took {} s for non-optimized version".format(time_non_optimized))
     print("Took {} s for optimized version".format(time_optimized))
     print(f"Optimized version is {time_non_optimized/time_optimized}x faster")
+
+    difference_angles = np.sum(
+        np.abs(np.array(data_opt[0]) - np.array(data_non_opt[0]))
+    )
+    difference_intensities = np.sum(
+        np.abs(np.array(data_opt[1]) - np.array(data_non_opt[1]))
+    )
+
+    print("Numerical differences:")
+    print(difference_angles)
+    print(difference_intensities)

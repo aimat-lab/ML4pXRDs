@@ -22,7 +22,7 @@ import pybaselines
 mode = "removal"  # possible: info and removal (currently only removal)
 to_test = "removal_03-12-2021_16-48-30_UNetPP"
 
-show_comparison = True
+show_comparison = False
 
 
 def load_experimental_data(loading_mode="classification"):
@@ -411,6 +411,11 @@ if __name__ == "__main__":
                 label="Peak detection",
                 s=3,
             )
+
+        plt.xlabel(r"$2 \theta$")
+        plt.ylabel("Intensity")
+
+        plt.savefig(f"predictions/Exp_{i}.png")
 
         if show_comparison:
             plot_heuristic_fit(current_xs, ys[0, :, 0])

@@ -155,7 +155,7 @@ def generate_structure(
         number_of_atoms = np.zeros(len(names))
 
         NO_atoms = random.randint(1, max_NO_atoms)
-        # NO_atoms = 10
+        # NO_atoms = 5
 
         chosen_elements = []
         chosen_numbers = []
@@ -249,6 +249,9 @@ def generate_structure(
             print(chosen_numbers, flush=True)
             print(flush=True)
 
+        print(spacegroup_number)
+        print(chosen_elements)
+        print(chosen_numbers)
         # vis = StructureVis()
         # vis.set_structure(crystal)
         # vis.show()
@@ -275,15 +278,9 @@ def generate_structures(spacegroup_number, N):
     print(multiplicities, flush=True)
     print(flush=True)
 
-    """
-    for i in range(0, N):
-        print(i)
-        generate_structure(
-            None, spacegroup_number, multiplicities, names, letters, dofs
-        )
-    exit()
-    """
+    # TODO: Change back
 
+    """
     pool = multiprocessing.Pool(processes=N_workers)
 
     handle = pool.map_async(
@@ -299,7 +296,6 @@ def generate_structures(spacegroup_number, N):
     )
     track_job(handle)
     result = handle.get()
-
     """
     result = [
         generate_structure(
@@ -313,7 +309,6 @@ def generate_structures(spacegroup_number, N):
         )
         for i in range(0, N)
     ]
-    """
 
     print(f"Generated {len(result)} of {N} requested crystals", flush=True)
 

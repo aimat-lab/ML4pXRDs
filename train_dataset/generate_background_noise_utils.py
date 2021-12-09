@@ -283,7 +283,7 @@ def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x
 if __name__ == "__main__":
 
     do_plot = True
-    to_compare_to_exp = True
+    to_compare_to_exp = False
     n_samples = 128 * 10
     pattern_xs = np.linspace(10, 50, 2672)
 
@@ -302,7 +302,14 @@ if __name__ == "__main__":
 
         for i in range(0, n_samples):
             plt.plot(pattern_xs, ys_altered_all[i, :])
+            plt.xlabel(r"2 $\theta$")
+            plt.ylabel(r"Intensity")
+            # plt.figure()
             plt.plot(pattern_xs, ys_unaltered_all[i, :])
+            # plt.xlabel(r"2 $\theta$")
+            # plt.ylabel(r"Intensity")
+            # plt.show()
+            # plt.show()
 
             if to_compare_to_exp:
                 for i in range(0, 6):

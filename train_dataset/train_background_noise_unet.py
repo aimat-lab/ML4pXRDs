@@ -13,7 +13,7 @@ from datetime import datetime
 
 tag = "UNetPP"
 mode = "removal"  # possible: "info", "removal"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
 to_test = "removal_03-12-2021_16-48-30_UNetPP"
 
@@ -181,7 +181,9 @@ if training_mode == "train":
         workers=NO_workers,
         use_multiprocessing=True,
         # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
-        callbacks=[keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+        callbacks=[
+            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
+        ],
         steps_per_epoch=number_of_batches,
     )
 
@@ -214,14 +216,21 @@ else:
     for i, prediction in enumerate(predictions):
         if mode == "removal":
 
+            plt.xlabel(r"$2 \theta$")
+            plt.ylabel("Intensity")
+
             plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
             plt.plot(
-                pattern_x, test_batch[0][:][i], label="Input pattern",
+                pattern_x,
+                test_batch[0][:][i],
+                label="Input pattern",
             )
 
             plt.plot(
-                pattern_x, test_batch[1][:][i], label="Target",
+                pattern_x,
+                test_batch[1][:][i],
+                label="Target",
             )
 
             plt.plot(
@@ -233,7 +242,7 @@ else:
 
             plt.legend()
 
-            # plt.savefig(f"predictions/prediction_{i}.pdf")
+            # plt.savefig(f"predictions/prediction_{i}.png")
 
             plt.show()
             plt.figure()

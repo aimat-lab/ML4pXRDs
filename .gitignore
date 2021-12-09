@@ -22,3 +22,4 @@ train_dataset/classifier
 *.nbc
 *.nbi
 *.lprof
+train_dataset/predictions/*
