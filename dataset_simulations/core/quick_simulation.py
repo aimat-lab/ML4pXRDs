@@ -230,7 +230,7 @@ def get_pattern_optimized(
     )
     stop = time.time()
     if do_print:
-        print("Took {} s for external code".format((stop - start) / total))
+        print("Took {} s for numba portion".format((stop - start) / total))
 
     return result
 
@@ -418,7 +418,7 @@ if __name__ == "__main__":
     # crystals = parser.get_structures()
     # crystal = crystals[0]
 
-    structures = random_simulation_utils.generate_structures(114, 1)
+    structures = random_simulation_utils.generate_structures(223, 1)
     crystal = structures[0]
 
     total = 1
@@ -455,5 +455,5 @@ if __name__ == "__main__":
     )
 
     print("Numerical differences:")
-    print(difference_angles)
-    print(difference_intensities)
+    print(f"Angles: {difference_angles}")
+    print(f"Intensities: {difference_intensities}")

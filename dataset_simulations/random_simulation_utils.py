@@ -143,7 +143,7 @@ def track_job(job, update_interval=5):
 
 
 def generate_structure(
-    _, spacegroup_number, multiplicities, names, letters, dofs, index=None
+    _, spacegroup_number, group_object, multiplicities, names, letters, dofs, index=None
 ):
 
     # print()
@@ -156,7 +156,9 @@ def generate_structure(
 
     while True:
         number_of_atoms_per_site = np.zeros(len(names))
+
         NO_elements = random.randint(1, max_NO_elements)
+        # NO_elements = 10  # TODO: Change this back
 
         # print("NO_atoms:")
         # print(NO_elements)
@@ -228,21 +230,23 @@ def generate_structure(
 
         my_crystal = pyxtal()
 
-        try:
-            my_crystal.from_random(
-                dim=3,
-                group=spacegroup_number,
-                species=chosen_elements,
-                numIons=chosen_numbers,
-                # sites=chosen_wyckoff_positions,
-            )
-        except Exception as ex:
-            print(flush=True)
-            print(ex, flush=True)
-            print(spacegroup_number, flush=True)
-            print(chosen_elements, flush=True)
-            print(chosen_numbers, flush=True)
-            print(flush=True)
+        # print(number_of_atoms_per_site)
+
+        # try:
+        my_crystal.from_random(
+            dim=3,
+            group=group_object,
+            species=chosen_elements,
+            numIons=chosen_numbers,
+            # sites=chosen_wyckoff_positions,
+        )
+        # except Exception as ex:
+        #    print(flush=True)
+        #    print(ex, flush=True)
+        #    print(spacegroup_number, flush=True)
+        #    print(chosen_elements, flush=True)
+        #    print(chosen_numbers, flush=True)
+        #    print(flush=True)
 
         if not my_crystal.valid:
             continue
@@ -280,6 +284,7 @@ def generate_structures(spacegroup_number, N):
         pass
 
     group = Group(spacegroup_number, dim=3)
+
     multiplicities = [x.multiplicity for x in group]
     names = [(str(x.multiplicity) + x.letter) for x in group]
     dofs = group.get_site_dof(names)
@@ -314,6 +319,7 @@ def generate_structures(spacegroup_number, N):
         generate_structure(
             None,
             spacegroup_number=spacegroup_number,
+            group_object=group,
             multiplicities=multiplicities,
             names=names,
             letters=letters,
@@ -323,7 +329,7 @@ def generate_structures(spacegroup_number, N):
         for i in range(0, N)
     ]
 
-    with open("compare_debug", "wb") as file:
+    with open("compare_original", "wb") as file:
         coords = []
         for crystal in result:
             coords.append(crystal.cart_coords)
@@ -338,12 +344,21 @@ if __name__ == "__main__":
 
     if True:
 
-        random.seed(343555)
-        np.random.seed(343555)
+        random.seed(123)
+        np.random.seed(123)
 
+        generate_structures(13, 1)
         start = time.time()
 
-        generate_structures(223, 6)
+        # timings = []
+        # for spg in range(1, 231):
+        #    #    start_inner = time.time()
+        #    generate_structures(spg, 1)
+        #    timings.append(time.time() - start_inner)
+        # plt.scatter(list(range(0, len(timings))), timings)
+        # plt.show()
+
+        generate_structures(13, 100)
 
         stop = time.time()
 
