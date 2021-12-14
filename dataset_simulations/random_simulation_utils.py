@@ -146,17 +146,20 @@ def generate_structure(
     _, spacegroup_number, multiplicities, names, letters, dofs, index=None
 ):
 
+    # print()
+    # print(f"Index: {index}")
+
     # if i is not None:
     #    print(i)
 
     # TODO: maybe use slightly random volume factors later
 
     while True:
+        number_of_atoms_per_site = np.zeros(len(names))
+        NO_elements = random.randint(1, max_NO_elements)
 
-        number_of_elements_to_draw = np.zeros(len(names))
-
-        NO_atoms = random.randint(1, max_NO_elements)
-        # NO_atoms = 5
+        # print("NO_atoms:")
+        # print(NO_elements)
 
         chosen_elements = []
         chosen_numbers = []
@@ -165,14 +168,14 @@ def generate_structure(
 
         counter_collisions = 0
 
-        for i in range(0, NO_atoms):
+        for i in range(0, NO_elements):
             while True:
 
                 if counter_collisions > 100:
                     print("More than 100 collisions.", flush=True)
                     break
 
-                chosen_index = random.randint(0, len(number_of_elements_to_draw) - 1)
+                chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
                 """
                 # always first choose the general Wyckoff site:
                 chosen_index = (
@@ -192,13 +195,13 @@ def generate_structure(
 
                 if (
                     dofs[chosen_index] == 0
-                    and int(number_of_elements_to_draw[chosen_index]) == 1
+                    and int(number_of_atoms_per_site[chosen_index]) == 1
                 ):
                     counter_collisions += 1
                     # print(f"{counter_collisions} collisions.", flush=True)
                     continue
 
-                number_of_elements_to_draw[chosen_index] += 1
+                number_of_atoms_per_site[chosen_index] += 1
 
                 chosen_elements.append(random.choice(all_elements))
                 chosen_numbers.append(multiplicities[chosen_index])
@@ -246,12 +249,9 @@ def generate_structure(
 
         try:
 
-            # TODO: Remove this again, later
+            # TODO: Remove this again, later!
             for site in my_crystal.atom_sites:
                 site.coords = filtered_coords(site.coords)
-
-                # if index == 55:
-                #    print(site.coords)
 
             crystal = my_crystal.to_pymatgen(special=(index == 55))
         except Exception as ex:
@@ -338,12 +338,12 @@ if __name__ == "__main__":
 
     if True:
 
-        random.seed(0)
-        np.random.seed(0)
+        random.seed(343555)
+        np.random.seed(343555)
 
         start = time.time()
 
-        generate_structures(14, 1000)
+        generate_structures(223, 6)
 
         stop = time.time()
 
@@ -360,8 +360,10 @@ if __name__ == "__main__":
         for i, coor in enumerate(coords_debug):
             for j, coordinate in enumerate(coor):
                 compare_to = coords_original[i][j]
+
                 if np.sum(np.square(coordinate - compare_to)) > 10 ** (-15):
                     print("Oh oh")
 
-                    print(coords_original[i])
-                    print(coords_debug[i])
+                    if j == 0:
+                        print(coords_original[i])
+                        print(coords_debug[i])
