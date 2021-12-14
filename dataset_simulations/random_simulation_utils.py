@@ -13,10 +13,9 @@ from multiprocessing import set_start_method
 # with warnings.catch_warnings():
 #    warnings.simplefilter("error")
 
-
 N_workers = 8
 
-max_NO_atoms = 5
+max_NO_elements = 10
 # 10 atoms per unit cell should probably be already enough, at least in the beginning.
 # probably even 5 is enough, at first
 
@@ -145,16 +144,16 @@ def generate_structure(
     _, spacegroup_number, multiplicities, names, letters, dofs, i=None
 ):
 
-    if i is not None:
-        print(i)
+    # if i is not None:
+    #    print(i)
 
     # TODO: maybe use slightly random volume factors later
 
     while True:
 
-        number_of_atoms = np.zeros(len(names))
+        number_of_elements_to_draw = np.zeros(len(names))
 
-        NO_atoms = random.randint(1, max_NO_atoms)
+        NO_atoms = random.randint(1, max_NO_elements)
         # NO_atoms = 5
 
         chosen_elements = []
@@ -171,14 +170,15 @@ def generate_structure(
                     print("More than 100 collisions.", flush=True)
                     break
 
-                chosen_index = random.randint(0, len(number_of_atoms) - 1)
+                chosen_index = random.randint(0, len(number_of_elements_to_draw) - 1)
                 """
                 # always first choose the general Wyckoff site:
                 chosen_index = (
                     random.randint(0, len(number_of_atoms) - 1) if i > 0 else 0
                 )
                 """
-                # TODO: Think about this again!
+
+                # TODO: Think about this again! Is this OK?
                 """ See this from the documentation
                 PyXtal starts with the largest available WP, which is the general position of the space group.
                 If the number of atoms required is equal to or greater than the size of the general position,
@@ -188,12 +188,15 @@ def generate_structure(
                 both statistically and in nature.
                 """
 
-                if dofs[chosen_index] == 0 and int(number_of_atoms[chosen_index]) == 1:
+                if (
+                    dofs[chosen_index] == 0
+                    and int(number_of_elements_to_draw[chosen_index]) == 1
+                ):
                     counter_collisions += 1
                     # print(f"{counter_collisions} collisions.", flush=True)
                     continue
 
-                number_of_atoms[chosen_index] += 1
+                number_of_elements_to_draw[chosen_index] += 1
 
                 chosen_elements.append(random.choice(all_elements))
                 chosen_numbers.append(multiplicities[chosen_index])
@@ -249,9 +252,9 @@ def generate_structure(
             print(chosen_numbers, flush=True)
             print(flush=True)
 
-        print(spacegroup_number)
-        print(chosen_elements)
-        print(chosen_numbers)
+        # print(spacegroup_number)
+        # print(chosen_elements)
+        # print(chosen_numbers)
         # vis = StructureVis()
         # vis.set_structure(crystal)
         # vis.show()
@@ -279,7 +282,6 @@ def generate_structures(spacegroup_number, N):
     print(flush=True)
 
     # TODO: Change back
-
     """
     pool = multiprocessing.Pool(processes=N_workers)
 
@@ -297,6 +299,7 @@ def generate_structures(spacegroup_number, N):
     track_job(handle)
     result = handle.get()
     """
+
     result = [
         generate_structure(
             None,
@@ -317,42 +320,13 @@ def generate_structures(spacegroup_number, N):
 
 if __name__ == "__main__":
 
+    random.seed(0)
+    np.random.seed(0)
+
     start = time.time()
 
-    generate_structures(14, 1000)
+    generate_structures(14, 100)
 
     stop = time.time()
 
     print(f"Total job took {stop-start} s", flush=True)
-
-    # 14
-    # ["He"]
-    # [4]
-
-    exit()
-
-    for i in range(0, 100):
-        my_crystal = pyxtal()
-        try:
-            my_crystal.from_random(3, 14, ["He"], [4])
-        except:
-            pass
-        print(i, my_crystal.valid)
-
-    pass
-
-    exit()
-
-    for i in range(0, 100):
-        my_crystal = pyxtal()
-        try:
-            my_crystal.from_random(
-                dim=3,
-                group=14,
-                species=["He"],
-                numIons=[4],
-                # sites=chosen_wyckoff_positions,
-            )
-        except:
-            pass
-        print(i, my_crystal.valid)
