@@ -33,8 +33,8 @@ from custom_loss import CustomSmoothedWeightedCCE
 tag = (
     "test"  # additional tag that will be added to the tuner folder and training folder
 )
-mode = "narrow"  # possible: narrow and random
-model_str = "conv_narrow_fixed"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random, conv_narrow_fixed
+mode = "random"  # possible: narrow and random
+model_str = "random"  # possible: conv, fully_connected, Lee (CNN-3), conv_narrow, Park, random, conv_narrow_fixed
 model_is_binary = False
 
 train_on_this = None  # supply a model_str that contains a hyperparameter optimization to train on (using best parameters)
@@ -244,7 +244,11 @@ if mode == "narrow":
         return sigma  # watch out!  this is not squared.
 
     def alter_dataset(
-        current_x, current_y, variations, do_plot=False, return_as_array=False,
+        current_x,
+        current_y,
+        variations,
+        do_plot=False,
+        return_as_array=False,
     ):
 
         min_peak_height = 0.01
@@ -413,8 +417,10 @@ elif mode == "random":
 
     # print(np.sum(y == 0))
     # print(np.sum(y == 1))
-    # plt.hist(y)
-    # plt.show()
+    plt.hist(y)
+    plt.xlabel("International space group number")
+    plt.savefig("spgs_hist.png")
+    exit()
 
     x_1 = []
     for pattern in patterns:
@@ -496,7 +502,10 @@ if model_str == "conv":
                 model.add(
                     tf.keras.layers.Conv1D(
                         hp.Int(
-                            "number_of_filters", min_value=10, max_value=210, step=20,
+                            "number_of_filters",
+                            min_value=10,
+                            max_value=210,
+                            step=20,
                         ),
                         # int(starting_filter_size * (3 / 4) ** i),
                         hp.Int(
@@ -513,7 +522,10 @@ if model_str == "conv":
                 model.add(
                     tf.keras.layers.Conv1D(
                         hp.Int(
-                            "number_of_filters", min_value=10, max_value=200, step=20,
+                            "number_of_filters",
+                            min_value=10,
+                            max_value=200,
+                            step=20,
                         ),
                         # int(starting_filter_size * (3 / 4) ** i),
                         hp.Int(
@@ -566,7 +578,6 @@ if model_str == "conv":
 
         return model
 
-
 elif model_str == "conv_narrow":
 
     def build_model(hp):  # define model with hyperparameters
@@ -579,7 +590,12 @@ elif model_str == "conv_narrow":
             x_nn = keras.layers.Conv1D(
                 hp.Int("number_of_filters", min_value=10, max_value=210, step=20),
                 # int(starting_filter_size * (3 / 4) ** i),
-                hp.Int("filter_size_" + str(i), min_value=10, max_value=510, step=20,),
+                hp.Int(
+                    "filter_size_" + str(i),
+                    min_value=10,
+                    max_value=510,
+                    step=20,
+                ),
                 input_shape=(number_of_values, 1),
                 activation="relu",
             )(x_nn)
@@ -631,7 +647,6 @@ elif model_str == "conv_narrow":
 
         return model
 
-
 elif model_str == "conv_narrow_fixed":
 
     def build_model(hp=None):
@@ -640,7 +655,10 @@ elif model_str == "conv_narrow_fixed":
         x_nn = inputs
 
         x_nn = keras.layers.Conv1D(
-            64, 40, input_shape=(number_of_values, 1), activation="relu",
+            64,
+            40,
+            input_shape=(number_of_values, 1),
+            activation="relu",
         )(x_nn)
 
         x_nn = keras.layers.BatchNormalization()(x_nn)
@@ -648,7 +666,10 @@ elif model_str == "conv_narrow_fixed":
 
         x_nn = keras.layers.Flatten()(x_nn)
 
-        x_nn = keras.layers.Dense(128, activation="relu",)(x_nn)
+        x_nn = keras.layers.Dense(
+            128,
+            activation="relu",
+        )(x_nn)
         x_nn = keras.layers.Dropout(0.5)(x_nn)
 
         outputs_softmax = keras.layers.Dense(n_classes, name="outputs_softmax")(x_nn)
@@ -682,13 +703,14 @@ elif model_str == "conv_narrow_fixed":
                         class_weights=class_weights_narrow
                     ),
                 },
-                metrics={"outputs_softmax": "CategoricalAccuracy",},
+                metrics={
+                    "outputs_softmax": "CategoricalAccuracy",
+                },
             )
 
         model.summary()
 
         return model
-
 
 elif model_str == "fully_connected":
 
@@ -756,7 +778,6 @@ elif model_str == "fully_connected":
         )
 
         return model
-
 
 elif model_str == "Lee":
 
@@ -854,7 +875,6 @@ elif model_str == "Lee":
 
         return model
 
-
 elif model_str == "Park":
 
     def build_model(hp=None):
@@ -909,7 +929,6 @@ elif model_str == "Park":
 
         return model
 
-
 elif model_str == "random":
 
     def build_model(hp=None):
@@ -942,7 +961,11 @@ elif model_str == "random":
         model = keras.models.Sequential()
         model.add(
             keras.layers.Convolution1D(
-                80, 100, strides=5, padding="same", input_shape=(number_of_values, 1),
+                80,
+                100,
+                strides=5,
+                padding="same",
+                input_shape=(number_of_values, 1),
             )
         )  # add convolution layer
         model.add(keras.layers.Activation("relu"))  # activation
@@ -982,7 +1005,6 @@ elif model_str == "random":
             raise Exception("Non-binary classification not supported here.")
 
         return model
-
 
 else:
 
