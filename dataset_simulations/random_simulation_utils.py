@@ -8,6 +8,8 @@ from pymatgen.vis.structure_vtk import StructureVis
 import multiprocessing
 from functools import partial
 from multiprocessing import set_start_method
+from pyxtal.operations import filtered_coords
+import pickle
 
 # import warnings
 # with warnings.catch_warnings():
@@ -141,7 +143,7 @@ def track_job(job, update_interval=5):
 
 
 def generate_structure(
-    _, spacegroup_number, multiplicities, names, letters, dofs, i=None
+    _, spacegroup_number, multiplicities, names, letters, dofs, index=None
 ):
 
     # if i is not None:
@@ -243,7 +245,15 @@ def generate_structure(
             continue
 
         try:
-            crystal = my_crystal.to_pymatgen()
+
+            # TODO: Remove this again, later
+            for site in my_crystal.atom_sites:
+                site.coords = filtered_coords(site.coords)
+
+                # if index == 55:
+                #    print(site.coords)
+
+            crystal = my_crystal.to_pymatgen(special=(index == 55))
         except Exception as ex:
             print(flush=True)
             print(ex, flush=True)
@@ -308,10 +318,16 @@ def generate_structures(spacegroup_number, N):
             names=names,
             letters=letters,
             dofs=dofs,
-            i=i,
+            index=i,
         )
         for i in range(0, N)
     ]
+
+    with open("compare_debug", "wb") as file:
+        coords = []
+        for crystal in result:
+            coords.append(crystal.cart_coords)
+        pickle.dump(coords, file)
 
     print(f"Generated {len(result)} of {N} requested crystals", flush=True)
 
@@ -320,13 +336,32 @@ def generate_structures(spacegroup_number, N):
 
 if __name__ == "__main__":
 
-    random.seed(0)
-    np.random.seed(0)
+    if True:
 
-    start = time.time()
+        random.seed(0)
+        np.random.seed(0)
 
-    generate_structures(14, 100)
+        start = time.time()
 
-    stop = time.time()
+        generate_structures(14, 1000)
 
-    print(f"Total job took {stop-start} s", flush=True)
+        stop = time.time()
+
+        print(f"Total job took {stop-start} s", flush=True)
+
+    else:
+
+        with open("compare_debug", "rb") as file:
+            coords_debug = pickle.load(file)
+
+        with open("compare_original", "rb") as file:
+            coords_original = pickle.load(file)
+
+        for i, coor in enumerate(coords_debug):
+            for j, coordinate in enumerate(coor):
+                compare_to = coords_original[i][j]
+                if np.sum(np.square(coordinate - compare_to)) > 10 ** (-15):
+                    print("Oh oh")
+
+                    print(coords_original[i])
+                    print(coords_debug[i])

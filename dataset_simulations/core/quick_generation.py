@@ -6,6 +6,7 @@ from pyxtal import pyxtal
 import time
 import numpy as np
 import random
+from pyxtal.operations import filtered_coords
 
 # TODO:
 # Pass the group object from outside into pyxtal (reuse)
@@ -26,12 +27,14 @@ if __name__ == "__main__":
         numIons=[4, 4, 2, 8, 8],
     )
 
-    for site in my_crystal.atom_sites:
-        # print(site.coords)
-        print(site.coords)
+    with open("compare_debug.txt", "w") as file:
+        for site in my_crystal.atom_sites:
+            # print(site.coords)
+            # print(filtered_coords(site.coords))
+            file.write(repr(filtered_coords(site.coords)))
 
     stop = time.time()
-    print(f"{stop-start}")
+    print(f"Took {stop-start}s")
 
 # TODO:
 # - Compare the two versions for 100 structures properly! Up to 10! (use txt file for this)
