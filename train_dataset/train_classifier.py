@@ -417,10 +417,10 @@ elif mode == "random":
 
     # print(np.sum(y == 0))
     # print(np.sum(y == 1))
-    plt.hist(y)
-    plt.xlabel("International space group number")
-    plt.savefig("spgs_hist.png")
-    exit()
+    # plt.hist(y)
+    # plt.xlabel("International space group number")
+    # plt.savefig("spgs_hist.png")
+    # exit()
 
     x_1 = []
     for pattern in patterns:

@@ -347,7 +347,8 @@ if __name__ == "__main__":
         random.seed(123)
         np.random.seed(123)
 
-        generate_structures(13, 1)
+        generate_structures(13, 100)
+
         start = time.time()
 
         # timings = []
