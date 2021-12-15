@@ -396,26 +396,27 @@ class Simulation:
             ),
         )
 
-        for file in crystals_files:
+        # TODO: Change back!!!
+        for file in crystals_files[0:6]:
             self.sim_crystals.extend(np.load(file, allow_pickle=True))
 
-        for file in labels_files:
+        for file in labels_files[0:6]:
             self.sim_labels.extend(np.load(file, allow_pickle=True))
 
-        for file in metas_files:
+        for file in metas_files[0:6]:
             self.sim_metas.extend(np.load(file, allow_pickle=True))
 
-        for file in patterns_files:
+        for file in patterns_files[0:6]:
             self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
-        for file in variations_files:
+        for file in variations_files[0:6]:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
-        for file in angles_files:
+        for file in angles_files[0:6]:
             with open(file, "rb") as pickle_file:
                 self.sim_angles.extend(pickle.load(pickle_file))
 
-        for file in intensities_files:
+        for file in intensities_files[0:6]:
             with open(file, "rb") as pickle_file:
                 self.sim_intensities.extend(pickle.load(pickle_file))
 
