@@ -348,19 +348,19 @@ if __name__ == "__main__":
         random.seed(123)
         np.random.seed(123)
 
-        # generate_structures(13, 100)
+        generate_structures(13, 100)
 
         start = time.time()
 
-        timings = []
-        for spg in range(1, 231):
-            start_inner = time.time()
-            generate_structures(spg, 1)
-            timings.append(time.time() - start_inner)
-        plt.scatter(list(range(0, len(timings))), timings)
-        plt.show()
+        # timings = []
+        # for spg in range(1, 231):
+        #    start_inner = time.time()
+        #    generate_structures(spg, 1)
+        #    timings.append(time.time() - start_inner)
+        # plt.scatter(list(range(0, len(timings))), timings)
+        # plt.show()
 
-        # generate_structures(13, 100)
+        generate_structures(13, 100)
 
         stop = time.time()
 
