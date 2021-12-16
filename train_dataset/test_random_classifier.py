@@ -58,6 +58,31 @@ patterns = sim.sim_patterns
 labels = sim.sim_labels
 variations = sim.sim_variations
 
+"""
+########## Plotting the histogram of spgs in icsd
+
+spgs = [label[0] for label in labels]
+# spgs_compare = [sim.get_space_group_number(meta[0]) for meta in sim.sim_metas]
+
+plt.figure()
+plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
+plt.xlabel("International space group number")
+plt.savefig("distribution_spgs.png")
+# plt.show()
+
+########## Plotting the histogram number of elements in icsd
+
+lengths = []
+for i, id in enumerate(sim.icsd_sumformulas):
+    lengths.append(len(id.split(" ")))
+
+plt.figure()
+plt.hist(lengths, bins=np.arange(0, np.max(lengths)) + 0.5)
+plt.xlabel("Number of elements")
+plt.savefig("distribution_NO_elements.png")
+# plt.show()
+"""
+
 # the space groups to test for:
 ys_unique = [14, 104]
 
@@ -65,7 +90,15 @@ ys_unique = [14, 104]
 # counter_104 = 0
 
 for i in reversed(range(0, len(patterns))):
-    if np.any(np.isnan(variations[i][0])) or labels[i][0] not in ys_unique:
+
+    index = sim.icsd_ids.index(sim.sim_metas[i][0])
+    NO_elements = len(sim.icsd_sumformulas[index].split(" "))
+
+    if (
+        np.any(np.isnan(variations[i][0]))
+        or labels[i][0] not in ys_unique
+        or NO_elements > 5
+    ):
         del patterns[i]
         del labels[i]
         del variations[i]

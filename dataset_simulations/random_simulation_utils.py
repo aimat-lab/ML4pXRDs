@@ -344,15 +344,17 @@ if __name__ == "__main__":
 
     if True:
 
+        # TODO: Change the seed on this!
         random.seed(123)
         np.random.seed(123)
 
-        generate_structures(13, 1)
+        generate_structures(13, 100)
+
         start = time.time()
 
         # timings = []
         # for spg in range(1, 231):
-        #    #    start_inner = time.time()
+        #    start_inner = time.time()
         #    generate_structures(spg, 1)
         #    timings.append(time.time() - start_inner)
         # plt.scatter(list(range(0, len(timings))), timings)
