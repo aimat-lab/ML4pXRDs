@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
-#SBATCH --time=48:00:00
+#SBATCH --time=30
 #SBATCH --mem=180000mb
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=tf
-#SBATCH --partition=gpu_8
+#SBATCH --partition=dev_gpu_4
 
 # --time=30
 # --time=48:00:00
