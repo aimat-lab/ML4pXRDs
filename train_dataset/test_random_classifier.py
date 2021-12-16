@@ -97,7 +97,7 @@ for i in reversed(range(0, len(patterns))):
     if (
         np.any(np.isnan(variations[i][0]))
         or labels[i][0] not in ys_unique
-        # or NO_elements > 3
+        or NO_elements > 5
     ):
         del patterns[i]
         del labels[i]
