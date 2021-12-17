@@ -35,10 +35,3 @@ if __name__ == "__main__":
 
     stop = time.time()
     print(f"Took {stop-start}s")
-
-# TODO:
-# - Compare the two versions for 100 structures properly! Up to 10! (use txt file for this)
-# - Benchmark the two versions
-# - Make a final commit before porting to numba
-# - One-by-one repr the input of the functions and port them to numba using the same input
-# - In the end, run the whole thing as one and pray
