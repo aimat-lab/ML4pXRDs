@@ -20,12 +20,14 @@ from functools import partial
 import pybaselines
 
 mode = "removal"  # possible: info and removal (currently only removal)
-to_test = "removal_03-12-2021_16-48-30_UNetPP"
+to_test = "removal_03-12-2021_16-48-30_UNetPP"  # pretty damn good (variance 4)
+# to_test = "removal_06-12-2021_10-06-13_UNetPP" # also quite good (variance 7), maybe a little less artifacts, but more errors on the right side
 
 show_comparison = False
 
 
 def load_experimental_data(loading_mode="classification"):
+
     if loading_mode == "classification":
 
         path = "exp_data/XRDdata_classification.csv"
@@ -374,6 +376,8 @@ if __name__ == "__main__":
         ys = current_ys
         ys -= np.min(ys)
         ys = ys / np.max(ys)
+
+        plt.figure(f"Sample {i}")
 
         plt.plot(current_xs, np.zeros(len(current_xs)))
 

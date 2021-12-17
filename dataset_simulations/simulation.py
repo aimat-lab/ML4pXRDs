@@ -396,26 +396,27 @@ class Simulation:
             ),
         )
 
-        for file in crystals_files:
+        # TODO: Change this back!
+        for file in crystals_files[0:6]:
             self.sim_crystals.extend(np.load(file, allow_pickle=True))
 
-        for file in labels_files:
+        for file in labels_files[0:6]:
             self.sim_labels.extend(np.load(file, allow_pickle=True))
 
-        for file in metas_files:
+        for file in metas_files[0:6]:
             self.sim_metas.extend(np.load(file, allow_pickle=True))
 
-        for file in patterns_files:
+        for file in patterns_files[0:6]:
             self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
-        for file in variations_files:
+        for file in variations_files[0:6]:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
-        for file in angles_files:
+        for file in angles_files[0:6]:
             with open(file, "rb") as pickle_file:
                 self.sim_angles.extend(pickle.load(pickle_file))
 
-        for file in intensities_files:
+        for file in intensities_files[0:6]:
             with open(file, "rb") as pickle_file:
                 self.sim_intensities.extend(pickle.load(pickle_file))
 
@@ -535,6 +536,51 @@ class Simulation:
                     return space_group_number
 
         return None
+
+    def get_wyckoff_info(self, id):
+        # return: is_pure_occupancy, number_of_placements
+
+        cif_path = self.icsd_paths[self.icsd_ids.index(id)]
+
+        if cif_path is None:
+            return None
+
+        # read number of wyckoff placements directly from the cif file
+        with open(cif_path, "r") as file:
+            counter = 0
+            counting = False
+            is_pure = True
+
+            for line in file:
+                """ Example entry
+                _atom_site_occupancy
+                Fe1 Fe0+ 4 f 0.33333 0.66667 0.17175(3) . 1.
+                O1 O2- 6 h 0.3310(7) 0.0895(5) 0.25 . 1.
+                O2 O2- 12 i 0.3441(5) 0.2817(5) 0.0747(1) . 1.
+                C1 C2+ 6 h 0.3320(8) 0.9098(7) 0.25 . 1.
+                C2 C2+ 12 i 0.3380(6) 0.4243(5) 0.1133(2) . 1.
+                loop_
+                _atom_site_aniso_label
+                """
+
+                if counting:
+                    columns = line.strip().split()
+                    NO_columns = len(columns)
+
+                    if NO_columns == 9:
+                        occ = float(columns[-1])
+
+                        # if abs((occ - 1.0)) > 0.02:
+                        #    is_pure = False
+                        if occ != 1.0:
+                            is_pure = False
+
+                        counter += 1
+                    else:
+                        return is_pure, counter
+
+                if "_atom_site_occupancy" in line or "_atom_site_occupance" in line:
+                    counting = True
 
     def plot(self, together=1):
 

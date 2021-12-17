@@ -91,13 +91,17 @@ ys_unique = [14, 104]
 
 for i in reversed(range(0, len(patterns))):
 
-    index = sim.icsd_ids.index(sim.sim_metas[i][0])
-    NO_elements = len(sim.icsd_sumformulas[index].split(" "))
+    # index = sim.icsd_ids.index(sim.sim_metas[i][0])
+    # NO_elements = len(sim.icsd_sumformulas[index].split(" "))
+
+    is_pure, NO_wyckoffs = sim.get_wyckoff_info(sim.sim_metas[i][0])
+    # print(NO_wyckoffs)
 
     if (
         np.any(np.isnan(variations[i][0]))
         or labels[i][0] not in ys_unique
-        or NO_elements > 5
+        or NO_wyckoffs > 5
+        or not is_pure
     ):
         del patterns[i]
         del labels[i]
