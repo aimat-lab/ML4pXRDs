@@ -15,11 +15,20 @@ if __name__ == "__main__":
 
     np.random.seed(3)
     random.seed(3)
+    my_crystal = pyxtal()
+    my_crystal.from_random(
+        dim=3,
+        group=114,
+        species=["Os", "Br", "Hg", "La", "P"],
+        numIons=[4, 4, 2, 8, 8],
+    )
+
+    np.random.seed(3)
+    random.seed(3)
 
     start = time.time()
 
     my_crystal = pyxtal()
-
     my_crystal.from_random(
         dim=3,
         group=114,
