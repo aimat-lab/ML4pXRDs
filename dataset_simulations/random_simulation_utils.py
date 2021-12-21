@@ -10,6 +10,9 @@ from functools import partial
 from multiprocessing import set_start_method
 from pyxtal.operations import filtered_coords
 import pickle
+import os
+
+# os.environ["NUMBA_DISABLE_JIT"] = "1"
 
 # import warnings
 # with warnings.catch_warnings():
@@ -143,9 +146,16 @@ def track_job(job, update_interval=5):
 
 
 def generate_structure(
-    _, spacegroup_number, group_object, multiplicities, names, letters, dofs, index=None
+    _,
+    spacegroup_number,
+    group_object,
+    multiplicities,
+    names,
+    letters,
+    dofs,
+    index=None,
+    seed=-1,
 ):
-
     # print()
     # print(f"Index: {index}")
 
@@ -155,6 +165,11 @@ def generate_structure(
     # TODO: maybe use slightly random volume factors later
 
     while True:
+
+        if seed != -1:
+            np.random.seed(seed)
+            random.seed(seed)
+
         number_of_atoms_per_site = np.zeros(len(names))
 
         NO_elements = random.randint(1, max_NO_elements)
@@ -232,6 +247,7 @@ def generate_structure(
 
         # print(number_of_atoms_per_site)
 
+        # TODO: Change this back
         # try:
         my_crystal.from_random(
             dim=3,
@@ -239,6 +255,7 @@ def generate_structure(
             species=chosen_elements,
             numIons=chosen_numbers,
             # sites=chosen_wyckoff_positions,
+            my_seed=seed,
         )
         # except Exception as ex:
         #    print(flush=True)
@@ -249,22 +266,25 @@ def generate_structure(
         #    print(flush=True)
 
         if not my_crystal.valid:
-            continue
+            # TODO: Change this back!
+            # continue
+            raise Exception("Ohoh")
 
-        try:
+        # try: # TODO: Change this back
 
-            # TODO: Remove this again, later!
-            for site in my_crystal.atom_sites:
-                site.coords = filtered_coords(site.coords)
+        # TODO: Remove this again, later!
+        for site in my_crystal.atom_sites:
+            site.coords = filtered_coords(site.coords)
 
-            crystal = my_crystal.to_pymatgen(special=(index == 55))
-        except Exception as ex:
-            print(flush=True)
-            print(ex, flush=True)
-            print(spacegroup_number, flush=True)
-            print(chosen_elements, flush=True)
-            print(chosen_numbers, flush=True)
-            print(flush=True)
+        crystal = my_crystal.to_pymatgen(special=(index == 55))
+
+        # except Exception as ex:
+        #    print(flush=True)
+        #    print(ex, flush=True)
+        #    print(spacegroup_number, flush=True)
+        #    print(chosen_elements, flush=True)
+        #    print(chosen_numbers, flush=True)
+        #    print(flush=True)
 
         # print(spacegroup_number)
         # print(chosen_elements)
@@ -276,7 +296,7 @@ def generate_structure(
         return crystal
 
 
-def generate_structures(spacegroup_number, N):
+def generate_structures(spacegroup_number, N, seed=-1):
 
     try:
         set_start_method("spawn")
@@ -325,15 +345,10 @@ def generate_structures(spacegroup_number, N):
             letters=letters,
             dofs=dofs,
             index=i,
+            seed=seed,
         )
         for i in range(0, N)
     ]
-
-    with open("compare_original", "wb") as file:
-        coords = []
-        for crystal in result:
-            coords.append(crystal.cart_coords)
-        pickle.dump(coords, file)
 
     print(f"Generated {len(result)} of {N} requested crystals", flush=True)
 
@@ -344,23 +359,45 @@ if __name__ == "__main__":
 
     if True:
 
-        # TODO: Change the seed on this!
-        random.seed(123)
-        np.random.seed(123)
+        seed = 532
+        number_per_spg = 1
 
-        generate_structures(13, 100)
+        low = 2
+        high = 5
+
+        np.random.seed(seed)
+        random.seed(seed)
+
+        structure_seeds = np.random.randint(0, 10000, 230 * number_per_spg)
+
+        # generate_structures(13, 100, seed=seed)
+
+        # To pre-compile functions:
+        for spg in range(low, high):
+            generate_structures(spg, number_per_spg, seed=int(structure_seeds[spg - 1]))
 
         start = time.time()
 
-        # timings = []
-        # for spg in range(1, 231):
-        #    start_inner = time.time()
-        #    generate_structures(spg, 1)
-        #    timings.append(time.time() - start_inner)
+        results = []
+        timings = []
+        for spg in range(low, high):
+            start_inner = time.time()
+            results.extend(
+                generate_structures(
+                    spg, number_per_spg, seed=int(structure_seeds[spg - 1])
+                )
+            )
+            timings.append(time.time() - start_inner)
         # plt.scatter(list(range(0, len(timings))), timings)
         # plt.show()
 
-        generate_structures(13, 100)
+        # generate_structures(13, 100, seed=seed)
+
+        with open("compare_original", "wb") as file:
+            coords = []
+            for crystal in results:
+                coords.append(crystal.cart_coords)
+            pickle.dump(coords, file)
 
         stop = time.time()
 
@@ -378,9 +415,9 @@ if __name__ == "__main__":
             for j, coordinate in enumerate(coor):
                 compare_to = coords_original[i][j]
 
-                if np.sum(np.square(coordinate - compare_to)) > 10 ** (-15):
-                    print("Oh oh")
+                if np.sum(np.square(coordinate - compare_to)) > 10 ** (-10):
+                    print(f"Oh oh {i} {j}")
 
-                    if j == 0:
-                        print(coords_original[i])
-                        print(coords_debug[i])
+                    # if j == 0:
+                    #    print(coords_original[i])
+                    #    print(coords_debug[i])
