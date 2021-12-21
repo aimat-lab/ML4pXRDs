@@ -272,7 +272,7 @@ def generate_structure(
 
         # try: # TODO: Change this back
 
-        # TODO: Remove this again, later!
+        # TODO: Remove this again, later! (when only using the debug code)
         for site in my_crystal.atom_sites:
             site.coords = filtered_coords(site.coords)
 
@@ -357,13 +357,13 @@ def generate_structures(spacegroup_number, N, seed=-1):
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
 
         seed = 532
         number_per_spg = 1
 
-        low = 2
-        high = 5
+        low = 1
+        high = 90
 
         np.random.seed(seed)
         random.seed(seed)
@@ -393,7 +393,7 @@ if __name__ == "__main__":
 
         # generate_structures(13, 100, seed=seed)
 
-        with open("compare_original", "wb") as file:
+        with open("compare_debug", "wb") as file:
             coords = []
             for crystal in results:
                 coords.append(crystal.cart_coords)

@@ -21,6 +21,7 @@ if __name__ == "__main__":
         group=114,
         species=["Os", "Br", "Hg", "La", "P"],
         numIons=[4, 4, 2, 8, 8],
+        my_seed=3,
     )
 
     np.random.seed(3)
@@ -34,9 +35,10 @@ if __name__ == "__main__":
         group=114,
         species=["Os", "Br", "Hg", "La", "P"],
         numIons=[4, 4, 2, 8, 8],
+        my_seed=3,
     )
 
-    with open("compare_debug.txt", "w") as file:
+    with open("compare_original.txt", "w") as file:
         for site in my_crystal.atom_sites:
             # print(site.coords)
             # print(filtered_coords(site.coords))
