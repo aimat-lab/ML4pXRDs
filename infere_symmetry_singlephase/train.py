@@ -22,7 +22,7 @@ print(device_lib.list_local_devices())
 csv_filenames = glob(r"databases/icsd/*.csv")
 
 number_of_values_initial = 9001
-n_classes = 14  # TODO: read this directly from the csv
+n_classes = 14
 simulated_range = np.linspace(0, 90, number_of_values_initial)
 step = 2  # only use every step'th point in pattern
 starting_angle = 5  # where to start using the simulated pattern
@@ -250,7 +250,6 @@ if model_str == "conv":
 
         return model
 
-
 elif model_str == "fully_connected":
 
     def build_model(hp):
@@ -317,7 +316,6 @@ elif model_str == "fully_connected":
         )
 
         return model
-
 
 elif model_str == "Lee":
 
@@ -413,7 +411,6 @@ elif model_str == "Lee":
         model.summary()
 
         return model
-
 
 else:
 

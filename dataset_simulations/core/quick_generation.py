@@ -8,9 +8,6 @@ import numpy as np
 import random
 from pyxtal.operations import filtered_coords
 
-# TODO:
-# Pass the group object from outside into pyxtal (reuse)
-
 if __name__ == "__main__":
 
     np.random.seed(3)

@@ -218,7 +218,6 @@ def get_unique_families_non_opt(hkls):
         {hkl: multiplicity}: A dict with unique hkl and multiplicity.
     """
 
-    # TODO: Definitely can be sped up.
     def is_perm(hkl1, hkl2):
         h1 = np.abs(hkl1)
         h2 = np.abs(hkl2)

@@ -302,7 +302,12 @@ class Simulation:
         self.crystal_files_Ns.append(end - start)
 
         sim_crystals = np.empty(
-            shape=(len(self.sim_crystals[start:end],)), dtype=object,
+            shape=(
+                len(
+                    self.sim_crystals[start:end],
+                )
+            ),
+            dtype=object,
         )
 
         # force crystals to be written as python objects
@@ -396,27 +401,26 @@ class Simulation:
             ),
         )
 
-        # TODO: Change this back!
-        for file in crystals_files[0:6]:
+        for file in crystals_files:
             self.sim_crystals.extend(np.load(file, allow_pickle=True))
 
-        for file in labels_files[0:6]:
+        for file in labels_files:
             self.sim_labels.extend(np.load(file, allow_pickle=True))
 
-        for file in metas_files[0:6]:
+        for file in metas_files:
             self.sim_metas.extend(np.load(file, allow_pickle=True))
 
-        for file in patterns_files[0:6]:
+        for file in patterns_files:
             self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
-        for file in variations_files[0:6]:
+        for file in variations_files:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
-        for file in angles_files[0:6]:
+        for file in angles_files:
             with open(file, "rb") as pickle_file:
                 self.sim_angles.extend(pickle.load(pickle_file))
 
-        for file in intensities_files[0:6]:
+        for file in intensities_files:
             with open(file, "rb") as pickle_file:
                 self.sim_intensities.extend(pickle.load(pickle_file))
 
@@ -552,7 +556,7 @@ class Simulation:
             is_pure = True
 
             for line in file:
-                """ Example entry
+                """Example entry
                 _atom_site_occupancy
                 Fe1 Fe0+ 4 f 0.33333 0.66667 0.17175(3) . 1.
                 O1 O2- 6 h 0.3310(7) 0.0895(5) 0.25 . 1.
@@ -604,7 +608,10 @@ class Simulation:
                     lines = np.array(self.sim_angles[i])
 
                     plt.vlines(
-                        lines, 1.05, 1.15, lw=0.15,
+                        lines,
+                        1.05,
+                        1.15,
+                        lw=0.15,
                     )
 
                     # plt.xlim((0, 90))

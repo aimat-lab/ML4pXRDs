@@ -60,7 +60,6 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    # TODO: Add these to simulation class
     """
     spg_numbers = []
     for i, id in enumerate(simulation.icsd_ids):
