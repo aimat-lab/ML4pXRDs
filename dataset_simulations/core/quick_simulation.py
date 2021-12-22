@@ -2,49 +2,12 @@
 # It is altered and optimized to run using numba.
 # If performance is not a concern to you, you should use the original pymatgen code.
 
-"""
-Computes the XRD pattern of a crystal structure.
-This code is implemented by Shyue Ping Ong as part of UCSD's NANO106 -
-Crystallography of Materials. The formalism for this code is based on
-that given in Chapters 11 and 12 of Structure of Materials by Marc De
-Graef and Michael E. McHenry. This takes into account the atomic
-scattering factors and the Lorentz polarization factor, but not
-the Debye-Waller (temperature) factor (for which data is typically not
-available). Note that the multiplicity correction is not needed since
-this code simply goes through all reciprocal points within the limiting
-sphere, which includes all symmetrically equivalent facets. The algorithm
-is as follows
-1. Calculate reciprocal lattice of structure. Find all reciprocal points
-    within the limiting sphere given by :math:`\\frac{2}{\\lambda}`.
-2. For each reciprocal point :math:`\\mathbf{g_{hkl}}` corresponding to
-    lattice plane :math:`(hkl)`, compute the Bragg condition
-    :math:`\\sin(\\theta) = \\frac{\\lambda}{2d_{hkl}}`
-3. Compute the structure factor as the sum of the atomic scattering
-    factors. The atomic scattering factors are given by
-    .. math::
-        f(s) = Z - 41.78214 \\times s^2 \\times \\sum\\limits_{i=1}^n a_i \
-        \\exp(-b_is^2)
-    where :math:`s = \\frac{\\sin(\\theta)}{\\lambda}` and :math:`a_i`
-    and :math:`b_i` are the fitted parameters for each element. The
-    structure factor is then given by
-    .. math::
-        F_{hkl} = \\sum\\limits_{j=1}^N f_j \\exp(2\\pi i \\mathbf{g_{hkl}}
-        \\cdot \\mathbf{r})
-4. The intensity is then given by the modulus square of the structure
-    factor.
-    .. math::
-        I_{hkl} = F_{hkl}F_{hkl}^*
-5. Finally, the Lorentz polarization correction factor is applied. This
-    factor is given by:
-    .. math::
-        P(\\theta) = \\frac{1 + \\cos^2(2\\theta)}
-        {\\sin^2(\\theta)\\cos(\\theta)}
-"""
-
 import sys
 
 sys.path.append("../")
+sys.path.append("./")
 
+from random_simulation_utils import generate_structures
 import json
 import os
 from math import asin, cos, degrees, pi, radians, sin
@@ -412,48 +375,144 @@ def get_pattern(structure, wavelength, two_theta_range=(0, 90)):
     return x, y
 
 
+#######################################################################################################
+
+
+def calc_std_dev(two_theta, tau, wavelength):
+    """
+    calculate standard deviation based on angle (two theta) and domain size (tau)
+    Args:
+        two_theta: angle in two theta space
+        tau: domain size in nm
+    Returns:
+        standard deviation for gaussian kernel
+    """
+    ## Calculate FWHM based on the Scherrer equation
+    K = 0.9  ## shape factor
+    wavelength = wavelength * 0.1  ## angstrom to nm
+    theta = np.radians(two_theta / 2.0)  ## Bragg angle in radians
+    beta = (K * wavelength) / (np.cos(theta) * tau)  # in radians
+
+    ## Convert FWHM to std deviation of gaussian
+    sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
+    return sigma
+
+
+def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, wavelength):
+
+    ys = np.zeros(len(xs))
+
+    for twotheta, intensity in zip(pattern_angles, pattern_intensities):
+
+        sigma = calc_std_dev(twotheta, domain_size, wavelength)
+
+        peak = (
+            intensity
+            / (sigma * np.sqrt(2 * np.pi))
+            * np.exp(-1 / (2 * sigma ** 2) * (xs - twotheta) ** 2)
+        )
+
+        # delta_x = xs[1] - xs[0]
+        # volume = delta_x * np.sum(ys)
+        # ys = y * ys / volume
+
+        ys += peak
+
+    return ys
+
+
+def get_xy_pattern(
+    structure, wavelength, N, domain_size, two_theta_range=(0, 90), do_print=True
+):
+
+    angles, intensities = get_pattern_optimized(
+        structure, wavelength, two_theta_range, do_print
+    )
+    xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
+    return smeared_peaks(xs, angles, intensities, domain_size, wavelength)
+
+
+def get_random_xy_patterns(
+    spgs,
+    structures_per_spg,
+    wavelength,
+    N,
+    two_theta_range=(0, 90),
+    max_NO_elements=10,
+):
+
+    result_patterns_y = []
+    labels = []
+
+    for spg in spgs:
+        structures = generate_structures(spg, structures_per_spg, max_NO_elements)
+
+        for structure in structures:
+
+            # pymatgen, these are in nm
+            # TODO: Maybe rather use the range from UNet pattern generation
+            pymatgen_crystallite_size_gauss_min = 5
+            pymatgen_crystallite_size_gauss_max = 100
+
+            pattern_xy = get_xy_pattern(
+                structure,
+                wavelength,
+                N,
+            )
+
+            labels.append(spg)
+
+    return patterns, labels, xs
+
+
 if __name__ == "__main__":
 
-    # parser = CifParser("example.cif")
-    # crystals = parser.get_structures()
-    # crystal = crystals[0]
+    if False:
+        # parser = CifParser("example.cif")
+        # crystals = parser.get_structures()
+        # crystal = crystals[0]
 
-    structures = random_simulation_utils.generate_structures(223, 1)
-    crystal = structures[0]
+        structures = random_simulation_utils.generate_structures(223, 1)
+        crystal = structures[0]
 
-    total = 1
+        total = 1
 
-    start = time.time()
-    for i in range(0, total):
-        data_non_opt = get_pattern(
-            crystal, 1.5406, (0, 90)  # for now, use Cu-K line
-        )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
-    stop = time.time()
-    time_non_optimized = (stop - start) / total
+        start = time.time()
+        for i in range(0, total):
+            data_non_opt = get_pattern(
+                crystal, 1.5406, (0, 90)  # for now, use Cu-K line
+            )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
+        stop = time.time()
+        time_non_optimized = (stop - start) / total
 
-    data_opt = get_pattern_optimized(
-        crystal, 1.5406, (0, 90), do_print=False
-    )  # for now, use Cu-K line
-
-    start = time.time()
-    for i in range(0, total):
         data_opt = get_pattern_optimized(
-            crystal, 1.5406, (0, 90)  # for now, use Cu-K line
-        )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
-    stop = time.time()
-    time_optimized = (stop - start) / total
+            crystal, 1.5406, (0, 90), do_print=False
+        )  # for now, use Cu-K line
 
-    print("Took {} s for non-optimized version".format(time_non_optimized))
-    print("Took {} s for optimized version".format(time_optimized))
-    print(f"Optimized version is {time_non_optimized/time_optimized}x faster")
+        start = time.time()
+        for i in range(0, total):
+            data_opt = get_pattern_optimized(
+                crystal, 1.5406, (0, 90)  # for now, use Cu-K line
+            )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
+        stop = time.time()
+        time_optimized = (stop - start) / total
 
-    difference_angles = np.sum(
-        np.abs(np.array(data_opt[0]) - np.array(data_non_opt[0]))
-    )
-    difference_intensities = np.sum(
-        np.abs(np.array(data_opt[1]) - np.array(data_non_opt[1]))
-    )
+        print("Took {} s for non-optimized version".format(time_non_optimized))
+        print("Took {} s for optimized version".format(time_optimized))
+        print(f"Optimized version is {time_non_optimized/time_optimized}x faster")
 
-    print("Numerical differences:")
-    print(f"Angles: {difference_angles}")
-    print(f"Intensities: {difference_intensities}")
+        difference_angles = np.sum(
+            np.abs(np.array(data_opt[0]) - np.array(data_non_opt[0]))
+        )
+        difference_intensities = np.sum(
+            np.abs(np.array(data_opt[1]) - np.array(data_non_opt[1]))
+        )
+
+        print("Numerical differences:")
+        print(f"Angles: {difference_angles}")
+        print(f"Intensities: {difference_intensities}")
+
+    else:
+
+        structures = random_simulation_utils.generate_structures(223, 1)
+        xs, ys = get_xy_pattern(structures[0], 1.5, 9000, 100)

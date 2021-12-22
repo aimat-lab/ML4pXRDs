@@ -12,17 +12,9 @@ from pyxtal.operations import filtered_coords
 import pickle
 import os
 
-# os.environ["NUMBA_DISABLE_JIT"] = "1"
-
 # import warnings
 # with warnings.catch_warnings():
 #    warnings.simplefilter("error")
-
-N_workers = 8
-
-max_NO_elements = 10
-# 10 atoms per unit cell should probably be already enough, at least in the beginning.
-# probably even 5 is enough, at first
 
 # extracted from pyxtal element.py:
 all_elements = [
@@ -147,21 +139,14 @@ def track_job(job, update_interval=5):
 
 def generate_structure(
     _,
-    spacegroup_number,
     group_object,
     multiplicities,
     names,
     letters,
     dofs,
-    index=None,
+    max_NO_elements=10,
     seed=-1,
 ):
-    # print()
-    # print(f"Index: {index}")
-
-    # if i is not None:
-    #    print(i)
-
     # TODO: maybe use slightly random volume factors later
 
     while True:
@@ -173,10 +158,6 @@ def generate_structure(
         number_of_atoms_per_site = np.zeros(len(names))
 
         NO_elements = random.randint(1, max_NO_elements)
-        # NO_elements = 10  # TODO: Change this back
-
-        # print("NO_atoms:")
-        # print(NO_elements)
 
         chosen_elements = []
         chosen_numbers = []
@@ -227,27 +208,11 @@ def generate_structure(
 
                 break
 
-        """ For spg C++ program
-        output_str = ""
-        second_output_str = ""
-        for i, element in enumerate(chosen_elements):
-            output_str += element + str(chosen_numbers[i])
-            second_output_str += (
-                f"forceWyckPos {element}        = {chosen_wyckoff_letters[i][0]}\n"
-            )
-        print(output_str)
-        print(second_output_str)
-        # forceWyckPos Mg        = a
-        """
-
         # TODO: Maybe bring unique entries of chosen_elements together to form one?
         # probably not needed / additional overhead
 
         my_crystal = pyxtal()
 
-        # print(number_of_atoms_per_site)
-
-        # TODO: Change this back
         # try:
         my_crystal.from_random(
             dim=3,
@@ -268,15 +233,15 @@ def generate_structure(
         if not my_crystal.valid:
             # TODO: Change this back!
             # continue
-            raise Exception("Ohoh")
+            raise Exception("Generated a non-valid crystal. Something went wrong.")
 
-        # try: # TODO: Change this back
+        # try:
 
-        # TODO: Remove this again, later! (when only using the debug code)
-        for site in my_crystal.atom_sites:
-            site.coords = filtered_coords(site.coords)
+        # Only for comparing the debug code with the original code:
+        # for site in my_crystal.atom_sites:
+        #    site.coords = filtered_coords(site.coords)
 
-        crystal = my_crystal.to_pymatgen(special=(index == 55))
+        crystal = my_crystal.to_pymatgen()
 
         # except Exception as ex:
         #    print(flush=True)
@@ -296,12 +261,7 @@ def generate_structure(
         return crystal
 
 
-def generate_structures(spacegroup_number, N, seed=-1):
-
-    try:
-        set_start_method("spawn")
-    except:
-        pass
+def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1):
 
     group = Group(spacegroup_number, dim=3)
 
@@ -310,60 +270,40 @@ def generate_structures(spacegroup_number, N, seed=-1):
     dofs = group.get_site_dof(names)
     letters = [x.letter for x in group]
 
-    print(flush=True)
-    print(f"Current group: {spacegroup_number}", flush=True)
-    print(names, flush=True)
-    print(multiplicities, flush=True)
-    print(flush=True)
-
-    # TODO: Change back
-    """
-    pool = multiprocessing.Pool(processes=N_workers)
-
-    handle = pool.map_async(
-        partial(
-            generate_structure,
-            spacegroup_number=spacegroup_number,
-            multiplicities=multiplicities,
-            names=names,
-            letters=letters,
-            dofs=dofs,
-        ),
-        [None] * N,
-    )
-    track_job(handle)
-    result = handle.get()
-    """
+    # print(flush=True)
+    # print(f"Current group: {spacegroup_number}", flush=True)
+    # print(names, flush=True)
+    # print(multiplicities, flush=True)
+    # print(flush=True)
 
     result = [
         generate_structure(
             None,
-            spacegroup_number=spacegroup_number,
             group_object=group,
             multiplicities=multiplicities,
             names=names,
             letters=letters,
             dofs=dofs,
-            index=i,
+            max_NO_elements=max_NO_elements,
             seed=seed,
         )
         for i in range(0, N)
     ]
 
-    print(f"Generated {len(result)} of {N} requested crystals", flush=True)
+    # print(f"Generated {len(result)} of {N} requested crystals", flush=True)
 
     return result
 
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
 
-        seed = 532
+        seed = 5215
         number_per_spg = 1
 
         low = 1
-        high = 90
+        high = 231
 
         np.random.seed(seed)
         random.seed(seed)
@@ -373,8 +313,8 @@ if __name__ == "__main__":
         # generate_structures(13, 100, seed=seed)
 
         # To pre-compile functions:
-        for spg in range(low, high):
-            generate_structures(spg, number_per_spg, seed=int(structure_seeds[spg - 1]))
+        # for spg in range(low, high):
+        #    generate_structures(spg, number_per_spg, seed=int(structure_seeds[spg - 1]))
 
         start = time.time()
 
@@ -393,7 +333,7 @@ if __name__ == "__main__":
 
         # generate_structures(13, 100, seed=seed)
 
-        with open("compare_debug", "wb") as file:
+        with open("compare_original", "wb") as file:
             coords = []
             for crystal in results:
                 coords.append(crystal.cart_coords)
