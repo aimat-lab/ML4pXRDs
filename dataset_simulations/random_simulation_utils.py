@@ -5,9 +5,6 @@ import random
 from pyxtal.symmetry import Group
 import time
 from pymatgen.vis.structure_vtk import StructureVis
-import multiprocessing
-from functools import partial
-from multiprocessing import set_start_method
 from pyxtal.operations import filtered_coords
 import pickle
 import os
@@ -213,43 +210,51 @@ def generate_structure(
 
         my_crystal = pyxtal()
 
-        # try:
-        my_crystal.from_random(
-            dim=3,
-            group=group_object,
-            species=chosen_elements,
-            numIons=chosen_numbers,
-            # sites=chosen_wyckoff_positions,
-            my_seed=seed,
-        )
-        # except Exception as ex:
-        #    print(flush=True)
-        #    print(ex, flush=True)
-        #    print(spacegroup_number, flush=True)
-        #    print(chosen_elements, flush=True)
-        #    print(chosen_numbers, flush=True)
-        #    print(flush=True)
+        try:
+
+            my_crystal.from_random(
+                dim=3,
+                group=group_object,
+                species=chosen_elements,
+                numIons=chosen_numbers,
+                # sites=chosen_wyckoff_positions,
+                my_seed=seed,
+            )
+
+        except Exception as ex:
+            print(flush=True)
+            print(ex, flush=True)
+            print(group_object.number, flush=True)
+            print(chosen_elements, flush=True)
+            print(chosen_numbers, flush=True)
+            print(flush=True)
+            continue
 
         if not my_crystal.valid:
-            # TODO: Change this back!
-            # continue
-            raise Exception("Generated a non-valid crystal. Something went wrong.")
+            print(flush=True)
+            print("Generated a non-valid crystal. Something went wrong.", flush=True)
+            print(group_object.number, flush=True)
+            print(chosen_elements, flush=True)
+            print(chosen_numbers, flush=True)
+            print(flush=True)
+            continue
 
-        # try:
+        try:
 
-        # Only for comparing the debug code with the original code:
-        for site in my_crystal.atom_sites:
-            site.coords = filtered_coords(site.coords)
+            # Only for comparing the debug code with the original code:
+            # for site in my_crystal.atom_sites:
+            #    site.coords = filtered_coords(site.coords)
 
-        crystal = my_crystal.to_pymatgen()
+            crystal = my_crystal.to_pymatgen()
 
-        # except Exception as ex:
-        #    print(flush=True)
-        #    print(ex, flush=True)
-        #    print(spacegroup_number, flush=True)
-        #    print(chosen_elements, flush=True)
-        #    print(chosen_numbers, flush=True)
-        #    print(flush=True)
+        except Exception as ex:
+            print(flush=True)
+            print(ex, flush=True)
+            print(group_object.number, flush=True)
+            print(chosen_elements, flush=True)
+            print(chosen_numbers, flush=True)
+            print(flush=True)
+            continue
 
         # print(spacegroup_number)
         # print(chosen_elements)
@@ -297,7 +302,7 @@ def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1):
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
 
         seed = 5215
         number_per_spg = 1

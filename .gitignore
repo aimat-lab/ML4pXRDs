@@ -25,3 +25,4 @@ train_dataset/classifier
 train_dataset/predictions/*
 compare_debug
 compare_original
+*.py.prof

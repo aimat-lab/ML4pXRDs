@@ -5,6 +5,7 @@
 import sys
 
 sys.path.append("../")
+sys.path.append("../../")
 sys.path.append("./")
 
 from random_simulation_utils import generate_structures
@@ -17,9 +18,15 @@ from pymatgen.io.cif import CifParser
 import time
 import numba
 import random_simulation_utils
+import matplotlib.pyplot as plt
+from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 
 SCALED_INTENSITY_TOL = 0.001
 TWO_THETA_TOL = 1e-05
+
+# TODO: Maybe rather use the range from UNet pattern generation
+pymatgen_crystallite_size_gauss_min = 5
+pymatgen_crystallite_size_gauss_max = 100
 
 with open(
     os.path.join(os.path.dirname(__file__), "atomic_scattering_params.json")
@@ -121,7 +128,7 @@ def __get_pattern_optimized(
 
 
 def get_pattern_optimized(
-    structure, wavelength, two_theta_range=(0, 90), do_print=True
+    structure, wavelength, two_theta_range=(0, 90), do_print=False
 ):
 
     latt = structure.lattice
@@ -193,7 +200,7 @@ def get_pattern_optimized(
     )
     stop = time.time()
     if do_print:
-        print("Took {} s for numba portion".format((stop - start) / total))
+        print("Took {} s for numba portion.".format(stop - start))
 
     return result
 
@@ -378,6 +385,7 @@ def get_pattern(structure, wavelength, two_theta_range=(0, 90)):
 #######################################################################################################
 
 
+@numba.njit
 def calc_std_dev(two_theta, tau, wavelength):
     """
     calculate standard deviation based on angle (two theta) and domain size (tau)
@@ -398,6 +406,7 @@ def calc_std_dev(two_theta, tau, wavelength):
     return sigma
 
 
+@numba.njit
 def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, wavelength):
 
     ys = np.zeros(len(xs))
@@ -418,18 +427,34 @@ def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, waveleng
 
         ys += peak
 
-    return ys
+    return ys / np.max(ys)
+
+
+# timings:
+timings_simulation_pattern = []
+timings_simulation_smeared = []
+timings_generation = []
 
 
 def get_xy_pattern(
-    structure, wavelength, N, domain_size, two_theta_range=(0, 90), do_print=True
+    structure, wavelength, xs, domain_size, two_theta_range=(0, 90), do_print=False
 ):
 
+    if do_print:
+        start = time.time()
     angles, intensities = get_pattern_optimized(
-        structure, wavelength, two_theta_range, do_print
+        structure, wavelength, two_theta_range, False
     )
-    xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
-    return smeared_peaks(xs, angles, intensities, domain_size, wavelength)
+    if do_print:
+        timings_simulation_pattern.append(time.time() - start)
+
+    if do_print:
+        start = time.time()
+    smeared = smeared_peaks(xs, angles, intensities, domain_size, wavelength)
+    if do_print:
+        timings_simulation_smeared.append(time.time() - start)
+
+    return smeared
 
 
 def get_random_xy_patterns(
@@ -439,30 +464,41 @@ def get_random_xy_patterns(
     N,
     two_theta_range=(0, 90),
     max_NO_elements=10,
+    do_print=False,
 ):
 
     result_patterns_y = []
     labels = []
 
+    xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
+
+    # TODO: Maybe make multiple patterns (grain sizes) for each structure => save time
+
     for spg in spgs:
+        if do_print:
+            start = time.time()
         structures = generate_structures(spg, structures_per_spg, max_NO_elements)
+        if do_print:
+            timings_generation.append(time.time() - start)
 
         for structure in structures:
 
-            # pymatgen, these are in nm
-            # TODO: Maybe rather use the range from UNet pattern generation
-            pymatgen_crystallite_size_gauss_min = 5
-            pymatgen_crystallite_size_gauss_max = 100
-
-            pattern_xy = get_xy_pattern(
+            pattern_ys = get_xy_pattern(
                 structure,
                 wavelength,
-                N,
+                xs,
+                np.random.uniform(
+                    pymatgen_crystallite_size_gauss_min,
+                    pymatgen_crystallite_size_gauss_max,
+                ),
+                two_theta_range,
+                do_print=do_print,
             )
 
             labels.append(spg)
+            result_patterns_y.append(pattern_ys)
 
-    return patterns, labels, xs
+    return result_patterns_y, labels
 
 
 if __name__ == "__main__":
@@ -512,7 +548,53 @@ if __name__ == "__main__":
         print(f"Angles: {difference_angles}")
         print(f"Intensities: {difference_intensities}")
 
-    else:
+    if False:
 
         structures = random_simulation_utils.generate_structures(223, 1)
-        xs, ys = get_xy_pattern(structures[0], 1.5, 9000, 100)
+        xs = np.linspace(10, 90, 8016)
+
+        ys = get_xy_pattern(structures[0], 1.5, xs, 100, (10, 90))
+        plt.plot(xs, ys, label="Optimized")
+
+        broadener = BroadGen(
+            structures[0],
+            min_domain_size=pymatgen_crystallite_size_gauss_min,
+            max_domain_size=pymatgen_crystallite_size_gauss_max,
+            min_angle=10,
+            max_angle=90,
+            wavelength=1.5,
+        )
+        diffractogram, domain_size = broadener.broadened_spectrum(
+            domain_size=100, N=8016
+        )
+        plt.plot(xs, diffractogram)
+        plt.show()
+
+    if True:
+
+        repeat = 10
+
+        patterns = get_random_xy_patterns(
+            range(1, 30), 1, 1.5406, 8016, (10, 90), max_NO_elements=10
+        )
+
+        start = time.time()
+
+        for i in range(0, repeat):
+            print(i)
+            patterns = get_random_xy_patterns(
+                range(1, 231),
+                1,
+                1.5406,
+                8016,
+                (10, 90),
+                max_NO_elements=10,
+                do_print=True,
+            )
+
+        stop = time.time()
+        print(f"{(stop-start)/repeat}s per swipe")
+
+        print(f"Timings generation: {np.mean(timings_generation)}")
+        print(f"Timings simulation pattern: {np.mean(timings_simulation_pattern)}")
+        print(f"Timings simulation smeared: {np.mean(timings_simulation_smeared)}")
