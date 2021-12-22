@@ -23,3 +23,5 @@ train_dataset/classifier
 *.nbi
 *.lprof
 train_dataset/predictions/*
+compare_debug
+compare_original

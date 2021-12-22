@@ -238,8 +238,8 @@ def generate_structure(
         # try:
 
         # Only for comparing the debug code with the original code:
-        # for site in my_crystal.atom_sites:
-        #    site.coords = filtered_coords(site.coords)
+        for site in my_crystal.atom_sites:
+            site.coords = filtered_coords(site.coords)
 
         crystal = my_crystal.to_pymatgen()
 
@@ -297,13 +297,13 @@ def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1):
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
 
         seed = 5215
         number_per_spg = 1
 
         low = 1
-        high = 231
+        high = 13
 
         np.random.seed(seed)
         random.seed(seed)
@@ -313,8 +313,8 @@ if __name__ == "__main__":
         # generate_structures(13, 100, seed=seed)
 
         # To pre-compile functions:
-        # for spg in range(low, high):
-        #    generate_structures(spg, number_per_spg, seed=int(structure_seeds[spg - 1]))
+        for spg in range(low, high):
+            generate_structures(spg, number_per_spg, seed=int(structure_seeds[spg - 1]))
 
         start = time.time()
 
@@ -328,12 +328,8 @@ if __name__ == "__main__":
                 )
             )
             timings.append(time.time() - start_inner)
-        # plt.scatter(list(range(0, len(timings))), timings)
-        # plt.show()
 
-        # generate_structures(13, 100, seed=seed)
-
-        with open("compare_original", "wb") as file:
+        with open("compare_debug", "wb") as file:
             coords = []
             for crystal in results:
                 coords.append(crystal.cart_coords)
