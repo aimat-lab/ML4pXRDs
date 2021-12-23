@@ -58,8 +58,18 @@ patterns = sim.sim_patterns
 labels = sim.sim_labels
 variations = sim.sim_variations
 
+########## Plotting the histogram of spgs in the ICSD
+
+spgs = [sim.get_space_group_number(id) for id in sim.icsd_ids]
+
+plt.figure()
+plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
+plt.xlabel("International space group number")
+plt.savefig("distribution_spgs.png")
+# plt.show()
+
 """
-########## Plotting the histogram of spgs in icsd
+########## Plotting the histogram of spgs in the simulation data
 
 spgs = [label[0] for label in labels]
 # spgs_compare = [sim.get_space_group_number(meta[0]) for meta in sim.sim_metas]

@@ -571,7 +571,7 @@ if __name__ == "__main__":
 
     if True:
 
-        repeat = 10
+        repeat = 100
 
         patterns = get_random_xy_patterns(
             range(1, 30), 1, 1.5406, 8016, (10, 90), max_NO_elements=10
@@ -594,6 +594,14 @@ if __name__ == "__main__":
         stop = time.time()
         print(f"{(stop-start)/repeat}s per swipe")
 
-        print(f"Timings generation: {np.mean(timings_generation)}")
-        print(f"Timings simulation pattern: {np.mean(timings_simulation_pattern)}")
-        print(f"Timings simulation smeared: {np.mean(timings_simulation_smeared)}")
+        print(f"Average timings generation: {np.mean(timings_generation)}")
+        print(
+            f"Average timings simulation pattern: {np.mean(timings_simulation_pattern)}"
+        )
+        print(
+            f"Average timings simulation smeared: {np.mean(timings_simulation_smeared)}"
+        )
+
+        print(f"Max timings generation: {np.max(timings_generation)}")
+        print(f"Max timings simulation pattern: {np.max(timings_simulation_pattern)}")
+        print(f"Max timings simulation smeared: {np.max(timings_simulation_smeared)}")
