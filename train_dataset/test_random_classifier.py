@@ -58,9 +58,16 @@ patterns = sim.sim_patterns
 labels = sim.sim_labels
 variations = sim.sim_variations
 
+"""
 ########## Plotting the histogram of spgs in the ICSD
 
 spgs = [sim.get_space_group_number(id) for id in sim.icsd_ids]
+
+for i in reversed(range(0, len(spgs))):
+    if spgs[i] is None:
+        del spgs[i]
+
+print(f"Number of ICSD entries with spg number: {len(spgs)}")
 
 plt.figure()
 plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
@@ -68,7 +75,6 @@ plt.xlabel("International space group number")
 plt.savefig("distribution_spgs.png")
 # plt.show()
 
-"""
 ########## Plotting the histogram of spgs in the simulation data
 
 spgs = [label[0] for label in labels]
@@ -99,44 +105,57 @@ ys_unique = [14, 104]
 # counter_14 = 0
 # counter_104 = 0
 
+__wyckoff_strs = []
+
 for i in reversed(range(0, len(patterns))):
 
     # index = sim.icsd_ids.index(sim.sim_metas[i][0])
     # NO_elements = len(sim.icsd_sumformulas[index].split(" "))
 
-    is_pure, NO_wyckoffs = sim.get_wyckoff_info(sim.sim_metas[i][0])
+    is_pure, NO_wyckoffs, wyckoff_str = sim.get_wyckoff_info(sim.sim_metas[i][0])
     # print(NO_wyckoffs)
 
     if (
         np.any(np.isnan(variations[i][0]))
         or labels[i][0] not in ys_unique
-        or NO_wyckoffs > 5
-        or not is_pure
+        # or NO_wyckoffs > 5
+        # or not is_pure
     ):
         del patterns[i]
         del labels[i]
         del variations[i]
-#    elif labels[i][0] == 14:
-#        if counter_14 < 10:
-#            plt.figure()
-#            plt.plot(patterns[i][0])
-#            plt.savefig(f"14_{i}.pdf")
-#            counter_14 += 1
-#    elif labels[i][0] == 104:
-#        if counter_104 < 10:
-#            plt.figure()
-#            plt.plot(patterns[i][0])
-#            plt.savefig(f"104_{i}.pdf")
-#            counter_104 += 1
-
+    #    elif labels[i][0] == 14:
+    #        if counter_14 < 10:
+    #            plt.figure()
+    #            plt.plot(patterns[i][0])
+    #            plt.savefig(f"14_{i}.pdf")
+    #            counter_14 += 1
+    #    elif labels[i][0] == 104:
+    #        if counter_104 < 10:
+    #            plt.figure()
+    #            plt.plot(patterns[i][0])
+    #            plt.savefig(f"104_{i}.pdf")
+    #            counter_104 += 1
+    else:
+        __wyckoff_strs.append(wyckoff_str)
 # exit()
+
+__wyckoff_strs = list(reversed(__wyckoff_strs))
+
+wyckoff_strs = []
+for wyckoff_str in __wyckoff_strs:
+    wyckoff_strs.extend([wyckoff_str] * 5)
 
 counter = [0, 0]
 
 y = []
-for label in labels:
+corn_sizes = []
+
+for i, label in enumerate(labels):
     y.extend([ys_unique.index(label[0])] * n_patterns_per_crystal)
     counter[ys_unique.index(label[0])] += 1
+    corn_sizes.extend([item[0] for item in sim.sim_variations[i]])
+
 y = np.array(y)
 
 x_unscaled = []
@@ -201,6 +220,24 @@ print()
 print(
     f"Correctly classified: {np.sum(predicted_y == y)} ({np.sum(predicted_y == y) / len(y)} %)"
 )
+
+# falsely classified:
+falsely_indices = np.argwhere(predicted_y != y)[:, 0]
+
+print(len(wyckoff_strs))
+print(len(predicted_y))
+print(len(y))
+
+wrong_cornsizes = []
+for i in falsely_indices:
+    print(wyckoff_strs[i])
+    print()
+
+    wrong_cornsizes.append(corn_sizes[i])
+
+plt.figure()
+plt.hist(wrong_cornsizes)
+plt.show()
 
 print()
 print("Classification report:")

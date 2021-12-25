@@ -302,12 +302,7 @@ class Simulation:
         self.crystal_files_Ns.append(end - start)
 
         sim_crystals = np.empty(
-            shape=(
-                len(
-                    self.sim_crystals[start:end],
-                )
-            ),
-            dtype=object,
+            shape=(len(self.sim_crystals[start:end],)), dtype=object,
         )
 
         # force crystals to be written as python objects
@@ -401,26 +396,26 @@ class Simulation:
             ),
         )
 
-        for file in crystals_files:
+        for file in crystals_files[0:1]:
             self.sim_crystals.extend(np.load(file, allow_pickle=True))
 
-        for file in labels_files:
+        for file in labels_files[0:1]:
             self.sim_labels.extend(np.load(file, allow_pickle=True))
 
-        for file in metas_files:
+        for file in metas_files[0:1]:
             self.sim_metas.extend(np.load(file, allow_pickle=True))
 
-        for file in patterns_files:
+        for file in patterns_files[0:1]:
             self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
-        for file in variations_files:
+        for file in variations_files[0:1]:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
-        for file in angles_files:
+        for file in angles_files[0:1]:
             with open(file, "rb") as pickle_file:
                 self.sim_angles.extend(pickle.load(pickle_file))
 
-        for file in intensities_files:
+        for file in intensities_files[0:1]:
             with open(file, "rb") as pickle_file:
                 self.sim_intensities.extend(pickle.load(pickle_file))
 
@@ -542,7 +537,7 @@ class Simulation:
         return None
 
     def get_wyckoff_info(self, id):
-        # return: is_pure_occupancy, number_of_placements
+        # return: is_pure_occupancy, number_of_placements, wyckoff_str
 
         cif_path = self.icsd_paths[self.icsd_ids.index(id)]
 
@@ -554,6 +549,8 @@ class Simulation:
             counter = 0
             counting = False
             is_pure = True
+
+            wyckoff_str = ""
 
             for line in file:
                 """Example entry
@@ -580,8 +577,10 @@ class Simulation:
                             is_pure = False
 
                         counter += 1
+                        wyckoff_str += line.strip() + "\n"
+
                     else:
-                        return is_pure, counter
+                        return is_pure, counter, wyckoff_str
 
                 if "_atom_site_occupancy" in line or "_atom_site_occupance" in line:
                     counting = True
@@ -608,10 +607,7 @@ class Simulation:
                     lines = np.array(self.sim_angles[i])
 
                     plt.vlines(
-                        lines,
-                        1.05,
-                        1.15,
-                        lw=0.15,
+                        lines, 1.05, 1.15, lw=0.15,
                     )
 
                     # plt.xlim((0, 90))
