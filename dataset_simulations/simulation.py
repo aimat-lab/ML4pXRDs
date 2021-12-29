@@ -396,26 +396,29 @@ class Simulation:
             ),
         )
 
-        for file in crystals_files[0:1]:
+        load_only = 1
+        last_index = load_only if load_only is not None else len(crystals_files)
+
+        for file in crystals_files[0:last_index]:
             self.sim_crystals.extend(np.load(file, allow_pickle=True))
 
-        for file in labels_files[0:1]:
+        for file in labels_files[0:last_index]:
             self.sim_labels.extend(np.load(file, allow_pickle=True))
 
-        for file in metas_files[0:1]:
+        for file in metas_files[0:last_index]:
             self.sim_metas.extend(np.load(file, allow_pickle=True))
 
-        for file in patterns_files[0:1]:
+        for file in patterns_files[0:last_index]:
             self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
-        for file in variations_files[0:1]:
+        for file in variations_files[0:last_index]:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
-        for file in angles_files[0:1]:
+        for file in angles_files[0:last_index]:
             with open(file, "rb") as pickle_file:
                 self.sim_angles.extend(pickle.load(pickle_file))
 
-        for file in intensities_files[0:1]:
+        for file in intensities_files[0:last_index]:
             with open(file, "rb") as pickle_file:
                 self.sim_intensities.extend(pickle.load(pickle_file))
 

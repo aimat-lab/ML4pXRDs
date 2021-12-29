@@ -183,8 +183,11 @@ if scale_features:
 if is_conv_model:
     x = np.expand_dims(x, axis=2)
 
+x = x.astype(np.float32)
+y = y.astype(np.float32)
+
 score, acc = classifier_model.evaluate(
-    x, y, batch_size=128
+    x, y, batch_size=x.shape[0]
 )  # score is the value of the loss function
 
 print("Test score:", score)
@@ -198,10 +201,14 @@ print(counter)
 print()
 
 prob_model = keras.Sequential([classifier_model, keras.layers.Activation("sigmoid")])
-predicted_y = np.array(prob_model.predict(x))
-predicted_y = predicted_y[:, 0]
+# prob_model = classifier_model
+predicted_y = np.array(prob_model.predict(x, batch_size=x.shape[0]))
+# predicted_y = np.array(prob_model(x))
 
-predicted_y = np.where(predicted_y > 0.5, 1, 0)
+predicted_y = predicted_y[:, 0]
+predicted_y = np.where(predicted_y > 0.5, 1.0, 0.0)
+
+predicted_y = predicted_y.astype(np.float32)
 
 print()
 print("Predicted as spg 14:")
@@ -223,11 +230,13 @@ print(
 
 # falsely classified:
 falsely_indices = np.argwhere(predicted_y != y)[:, 0]
+rightly_indices = np.argwhere(predicted_y == y)[:, 0]
 
 print(len(wyckoff_strs))
 print(len(predicted_y))
 print(len(y))
 
+""" Analyze dependence on corn sizes
 wrong_cornsizes = []
 for i in falsely_indices:
     print(wyckoff_strs[i])
@@ -238,6 +247,7 @@ for i in falsely_indices:
 plt.figure()
 plt.hist(wrong_cornsizes)
 plt.show()
+"""
 
 print()
 print("Classification report:")
