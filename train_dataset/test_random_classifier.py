@@ -183,15 +183,14 @@ if scale_features:
 if is_conv_model:
     x = np.expand_dims(x, axis=2)
 
-x = x.astype(np.float32)
-y = y.astype(np.float32)
+# x = x.astype(np.float32)
+# y = y.astype(np.float32)
 
-score, acc = classifier_model.evaluate(
-    x, y, batch_size=x.shape[0]
-)  # score is the value of the loss function
-
-print("Test score:", score)
-print("Test accuracy:", acc)
+# score, acc = classifier_model.evaluate(
+#    x, y, batch_size=x.shape[0]
+# )  # score is the value of the loss function
+# print("Test score:", score)
+# print("Test accuracy:", acc)
 
 print()
 
@@ -208,7 +207,7 @@ predicted_y = np.array(prob_model.predict(x, batch_size=x.shape[0]))
 predicted_y = predicted_y[:, 0]
 predicted_y = np.where(predicted_y > 0.5, 1.0, 0.0)
 
-predicted_y = predicted_y.astype(np.float32)
+# predicted_y = predicted_y.astype(np.float32)
 
 print()
 print("Predicted as spg 14:")
