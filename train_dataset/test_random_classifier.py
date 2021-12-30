@@ -12,6 +12,8 @@ import pickle
 import gc
 from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
+from pyxtal.database.element import Element
+import math
 
 # classifier_model_name = "random_25-11-2021_12:09:51_test"
 classifier_model_name = "random_27-11-2021_09:12:22_test"
@@ -50,13 +52,16 @@ else:
     )
     sim.output_dir = path_to_patterns
 
-sim.load(load_only=14)
+# sim.load(load_only=14)
+sim.load(load_only=10)
 
 n_patterns_per_crystal = len(sim.sim_patterns[0])
 
 patterns = sim.sim_patterns
 labels = sim.sim_labels
 variations = sim.sim_variations
+crystals = sim.sim_crystals
+
 
 """
 ########## Plotting the histogram of spgs in the ICSD
@@ -132,6 +137,7 @@ for i in reversed(range(0, len(patterns))):
         del patterns[i]
         del labels[i]
         del variations[i]
+        del crystals[i]
     #    elif labels[i][0] == 14:
     #        if counter_14 < 10:
     #            plt.figure()
@@ -248,13 +254,9 @@ print(
     f"Correctly classified: {np.sum(predicted_y == y)} ({np.sum(predicted_y == y) / len(y)} %)"
 )
 
-# falsely classified:
-falsely_indices = np.argwhere(predicted_y != y)[:, 0]
-rightly_indices = np.argwhere(predicted_y == y)[:, 0]
-
-print(len(wyckoff_strs))
-print(len(predicted_y))
-print(len(y))
+# print(len(wyckoff_strs))
+# print(len(predicted_y))
+# print(len(y))
 
 """ Analyze dependence on corn sizes
 wrong_cornsizes = []
@@ -272,3 +274,95 @@ plt.show()
 print()
 print("Classification report:")
 print(classification_report(y, predicted_y))
+
+# Analyze rightly vs falsely classified structures
+
+falsely_indices = np.argwhere(predicted_y != y)[:, 0]
+rightly_indices = np.argwhere(predicted_y == y)[:, 0]
+
+
+def get_volume_factor(structure):
+
+    try:
+
+        actual_volume = structure.volume
+
+        calculated_volume = 0
+        for atom in structure:
+            specie = str(atom.specie.element)
+            r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
+            calculated_volume += 4 / 3 * np.pi * r ** 3
+
+        return actual_volume / calculated_volume
+
+    except:
+        return None
+
+
+falsely_volumes = []
+falsely_volume_factors = []
+
+rightly_volumes = []
+rightly_volume_factors = []
+
+for i in falsely_indices:
+
+    structure = crystals[int(i / 5)]
+
+    volume = structure.volume
+    volume_factor = get_volume_factor(structure)
+
+    falsely_volumes.append(volume)
+
+    if volume_factor is not None:
+        falsely_volume_factors.append(volume_factor)
+
+for i in rightly_indices:
+
+    structure = crystals[int(i / 5)]
+
+    volume = structure.volume
+    volume_factor = get_volume_factor(structure)
+
+    rightly_volumes.append(volume)
+
+    if volume_factor is not None:
+        rightly_volume_factors.append(volume_factor)
+
+# plot volumes:
+bins_volumes = np.linspace(
+    min(np.min(rightly_volumes), np.min(falsely_volumes)),
+    max(np.max(rightly_volumes), np.max(falsely_volumes)),
+    30,
+)
+plt.hist(
+    [rightly_volumes, falsely_volumes],
+    bins_volumes,
+    label=["rightly", "falsely"],
+    alpha=0.5,
+)
+plt.legend(loc="upper right")
+plt.show()
+
+# plot volume_factors:
+bins_volume_factors = np.linspace(
+    min(np.min(rightly_volume_factors), np.min(falsely_volume_factors)),
+    max(np.max(rightly_volume_factors), np.max(falsely_volume_factors)),
+    30,
+)
+plt.hist(
+    [rightly_volume_factors, falsely_volume_factors],
+    bins_volume_factors,
+    label=["rightly", "falsely"],
+    alpha=0.5,
+)
+plt.legend(loc="upper right")
+plt.show()
+
+# TODO: VOLUMES OF 10**3???
+
+# TODO:
+# get number of wyckoff sites
+# get number of elements
+# get highest number of repetitions
+# get occupancies

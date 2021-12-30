@@ -571,7 +571,7 @@ if __name__ == "__main__":
 
     if True:
 
-        repeat = 100
+        repeat = 5
 
         patterns = get_random_xy_patterns(
             range(1, 30), 1, 1.5406, 8016, (10, 90), max_NO_elements=10
@@ -587,7 +587,7 @@ if __name__ == "__main__":
                 1.5406,
                 8016,
                 (10, 90),
-                max_NO_elements=10,
+                max_NO_elements=25,  # Attention: 25
                 do_print=True,
             )
 
