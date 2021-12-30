@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 import xrayutilities as xu
 from pymatgen.io.cif import CifParser
+import re
 
 num_files = 160
 num_processes = 80
@@ -334,7 +335,7 @@ class Simulation:
         with open(os.path.join(data_dir, f"intensities_{i}.npy"), "wb") as pickle_file:
             pickle.dump(self.sim_intensities[start:end], pickle_file)
 
-    def load(self):
+    def load(self, load_only=None):
 
         self.reset_simulation_status()
 
@@ -396,7 +397,6 @@ class Simulation:
             ),
         )
 
-        load_only = 1
         last_index = load_only if load_only is not None else len(crystals_files)
 
         for file in crystals_files[0:last_index]:
@@ -554,6 +554,7 @@ class Simulation:
             is_pure = True
 
             wyckoff_str = ""
+            elements = []
 
             for line in file:
                 """Example entry
@@ -574,6 +575,10 @@ class Simulation:
                     if NO_columns == 9:
                         occ = float(columns[-1])
 
+                        element = columns[0]
+                        element = re.sub(r"\d+$", "", element)
+                        elements.append(element)
+
                         # if abs((occ - 1.0)) > 0.02:
                         #    is_pure = False
                         if occ != 1.0:
@@ -583,7 +588,7 @@ class Simulation:
                         wyckoff_str += line.strip() + "\n"
 
                     else:
-                        return is_pure, counter, wyckoff_str
+                        return is_pure, counter, wyckoff_str, elements
 
                 if "_atom_site_occupancy" in line or "_atom_site_occupance" in line:
                     counting = True

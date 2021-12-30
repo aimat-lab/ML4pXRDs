@@ -50,7 +50,7 @@ else:
     )
     sim.output_dir = path_to_patterns
 
-sim.load()
+sim.load(load_only=14)
 
 n_patterns_per_crystal = len(sim.sim_patterns[0])
 
@@ -106,20 +106,28 @@ ys_unique = [14, 104]
 # counter_104 = 0
 
 __wyckoff_strs = []
+number_of_wyckoffs = []
 
 for i in reversed(range(0, len(patterns))):
 
     # index = sim.icsd_ids.index(sim.sim_metas[i][0])
     # NO_elements = len(sim.icsd_sumformulas[index].split(" "))
 
-    is_pure, NO_wyckoffs, wyckoff_str = sim.get_wyckoff_info(sim.sim_metas[i][0])
+    is_pure, NO_wyckoffs, wyckoff_str, elements = sim.get_wyckoff_info(
+        sim.sim_metas[i][0]
+    )
+
+    number_of_wyckoffs.append(len(elements))
+
     # print(NO_wyckoffs)
 
     if (
         np.any(np.isnan(variations[i][0]))
         or labels[i][0] not in ys_unique
-        # or NO_wyckoffs > 5
-        # or not is_pure
+        # or NO_wyckoffs > 5  # 91,8% for first 14 pattern files
+        # or not is_pure  # 94% for first 14 pattern files
+        # first two combined: 94% for first 14 pattern files
+        # or len(elements) != len(np.unique(elements)) # 92% for first 14 pattern files, 97% for first 3 pattern files
     ):
         del patterns[i]
         del labels[i]
@@ -141,6 +149,19 @@ for i in reversed(range(0, len(patterns))):
 # exit()
 
 __wyckoff_strs = list(reversed(__wyckoff_strs))
+number_of_wyckoffs = list(reversed(number_of_wyckoffs))
+
+"""
+plt.figure()
+plt.hist(
+    number_of_wyckoffs,
+    bins=np.arange(np.min(number_of_wyckoffs), np.max(number_of_wyckoffs) + 1) + 0.5,
+)
+plt.xlabel("Number of wyckoff sites")
+plt.savefig("number_of_wyckoff_sites.png")
+plt.show()
+exit()
+"""
 
 wyckoff_strs = []
 for wyckoff_str in __wyckoff_strs:
@@ -201,7 +222,7 @@ print()
 
 prob_model = keras.Sequential([classifier_model, keras.layers.Activation("sigmoid")])
 # prob_model = classifier_model
-predicted_y = np.array(prob_model.predict(x, batch_size=x.shape[0]))
+predicted_y = np.array(prob_model.predict(x, batch_size=128))
 # predicted_y = np.array(prob_model(x))
 
 predicted_y = predicted_y[:, 0]
