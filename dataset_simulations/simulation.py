@@ -557,6 +557,7 @@ class Simulation:
 
             wyckoff_str = ""
             elements = []
+            occupancies = []
 
             for line in file:
                 """Example entry
@@ -578,8 +579,9 @@ class Simulation:
                         occ = float(columns[-1])
 
                         element = columns[0]
-                        element = re.sub(r"\d+$", "", element)
+                        # element = re.sub(r"\d+$", "", element)
                         elements.append(element)
+                        occupancies.append(occ)
 
                         # if abs((occ - 1.0)) > 0.02:
                         #    is_pure = False
@@ -590,7 +592,7 @@ class Simulation:
                         wyckoff_str += line.strip() + "\n"
 
                     else:
-                        return is_pure, counter, wyckoff_str, elements
+                        return is_pure, counter, elements, occupancies
 
                 if "_atom_site_occupancy" in line or "_atom_site_occupance" in line:
                     counting = True

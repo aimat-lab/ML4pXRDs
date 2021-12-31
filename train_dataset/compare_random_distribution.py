@@ -10,6 +10,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pyxtal.database.element import Element
 import pickle
+from pyxtal import pyxtal
+from pymatgen.io.cif import CifWriter
+from pyxtal.symmetry import Group
 
 jobid = os.getenv("SLURM_JOB_ID")
 
@@ -25,7 +28,7 @@ else:
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 icsd_sim.output_dir = "../dataset_simulations/patterns/icsd/"
-icsd_sim.load(load_patterns_angles_intensities=False)
+icsd_sim.load(load_patterns_angles_intensities=False, load_only=1)
 
 # read random data:
 if jobid is not None and jobid != "":
@@ -38,8 +41,8 @@ else:
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
-random_sim.output_dir = "../dataset_simulations/patterns/icsd/"
-random_sim.load(load_patterns_angles_intensities=False)
+random_sim.output_dir = "../dataset_simulations/patterns/random_crystals_only/"
+random_sim.load(load_patterns_angles_intensities=False, load_only=1)
 
 n_patterns_per_crystal = 5
 
@@ -103,9 +106,10 @@ ys_unique = [14, 104]
 
 icsd_NO_wyckoffs = []
 icsd_elements = []
+icsd_occupancies = []
 
 for i in reversed(range(0, len(icsd_variations))):
-    is_pure, NO_wyckoffs, wyckoff_str, elements = icsd_sim.get_wyckoff_info(
+    is_pure, NO_wyckoffs, elements, occupancies = icsd_sim.get_wyckoff_info(
         icsd_sim.sim_metas[i][0]
     )
 
@@ -116,9 +120,11 @@ for i in reversed(range(0, len(icsd_variations))):
     else:
         icsd_NO_wyckoffs.append(NO_wyckoffs)
         icsd_elements.append(elements)
+        icsd_occupancies.append(occupancies)
 
 icsd_NO_wyckoffs = list(reversed(icsd_NO_wyckoffs))
 icsd_elements = list(reversed(icsd_elements))
+icsd_occupancies = list(reversed(icsd_occupancies))
 
 icsd_corn_sizes = []
 for i, label in enumerate(icsd_labels):
@@ -132,15 +138,46 @@ random_elements = []
 
 
 def get_wyckoff_info(crystal):
-    print()
+
+    # info = crystal.get_space_group_info()
+
+    # cif_writer = CifWriter(crystal)
+    # cif_writer.write_file("cif_test.cif")
+
+    struc = pyxtal()
+    struc.from_seed(crystal)
+
+    # pymatgen_s = struc.to_pymatgen()
+    # pymatgen_p = pymatgen_s.get_primitive_structure()
+
+    # TODO: What is wrong here? Why is this not the primitive structure???
+
+    # test = struc.get_alternatives()
+    # group = Group(139, dim=3)
+
+    elements = []
+
+    for site in struc.atom_sites:
+        specie_str = str(site.specie)
+        elements.append(specie_str)
+
+    return len(struc.atom_sites), elements
 
 
 for i in reversed(range(0, len(random_variations))):
 
-    is_pure, NO_wyckoffs, wyckoff_str, elements = get_wyckoff_info(random_crystals[i])
+    print(f"{i} of {len(random_variations)}")
+
+    success = True
+    try:
+        NO_wyckoffs, elements = get_wyckoff_info(random_crystals[i])
+    except Exception as ex:
+        print(ex)
+        success = False
 
     if (
-        np.any(np.isnan(random_variations[i][0]))
+        not success
+        or np.any(np.isnan(random_variations[i][0]))
         or random_labels[i][0] not in ys_unique
     ):
         del random_labels[i]
@@ -156,6 +193,7 @@ random_elements = list(reversed(random_elements))
 random_corn_sizes = []
 for i, label in enumerate(random_labels):
     random_corn_sizes.extend([item[0] for item in random_sim.sim_variations[i]])
+
 
 # calculate histograms:
 
@@ -186,7 +224,7 @@ rightly_denseness_factors = []
 
 for i in falsely_indices:
 
-    structure = crystals[int(i / 5)]
+    structure = icsd_crystals[int(i / 5)]
 
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
@@ -198,7 +236,7 @@ for i in falsely_indices:
 
 for i in rightly_indices:
 
-    structure = crystals[int(i / 5)]
+    structure = icsd_crystals[int(i / 5)]
 
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
@@ -207,6 +245,11 @@ for i in rightly_indices:
 
     if denseness_factor is not None:
         rightly_denseness_factors.append(denseness_factor)
+
+random_volumes = []
+random_denseness_factors = []
+
+#########################################################################################
 
 # plot volumes:
 bins_volumes = np.linspace(
@@ -239,16 +282,17 @@ plt.legend(loc="upper right")
 plt.show()
 
 # TODO:
-# Create separate script for this, remove stuff from each
-# Make a function out of this! Also with crystals as arguments (and tag), so it can be reused for random simulation, too!
+# ATTENTION: Patterns have not been copied over properly! Copy all of them.
 
-# also add corn sizes, here!
-# get lattice parameters => hist (all in the same histogram)
+# also add corn sizes, here! (get them from above)
+# get lattice parameters => hist (all in the same histogram), get them above in a list, too!
 # get number of wyckoff sites => hist
-# get number of elements => hist
-# get number of repetitions of element (are these then different wyckoff sites?)
-# => where in the cif file is written what kind of wyckoff site we are dealing with?
+# get number of elements (unique!), don't forget the multiplicity! => hist
+# get number of repetitions of element (on different wyckoff sites)
 
-# get occupancies => hist all of them
+# => where in the cif file is written what kind of wyckoff site we are dealing with?
+# => understand
+
+# get occupancies => hist all of them (only for the icsd data)
 
 # VOLUMES OF 10**3???
