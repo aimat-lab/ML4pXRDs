@@ -359,10 +359,15 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.show()
 
+# TODO: Rename volume factors to denseness factors
 # TODO: VOLUMES OF 10**3???
+# TODO: Make a function out of this! Also with crystals as arguments (and tag), so it can be reused for random simulation, too!
 
 # TODO:
-# get number of wyckoff sites
-# get number of elements
-# get highest number of repetitions
-# get occupancies
+# get lattice parameters => hist (all in the same histogram)
+# get number of wyckoff sites => hist
+# get number of elements => hist
+# get number of repetitions of element (are these then different wyckoff sites?)
+# => where in the cif file is written what kind of wyckoff site we are dealing with?
+
+# get occupancies => hist all of them
