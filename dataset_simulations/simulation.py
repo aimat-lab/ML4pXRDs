@@ -335,7 +335,7 @@ class Simulation:
         with open(os.path.join(data_dir, f"intensities_{i}.npy"), "wb") as pickle_file:
             pickle.dump(self.sim_intensities[start:end], pickle_file)
 
-    def load(self, load_only=None):
+    def load(self, load_only=None, load_patterns_angles_intensities=True):
 
         self.reset_simulation_status()
 
@@ -408,19 +408,21 @@ class Simulation:
         for file in metas_files[0:last_index]:
             self.sim_metas.extend(np.load(file, allow_pickle=True))
 
-        for file in patterns_files[0:last_index]:
-            self.sim_patterns.extend(np.load(file, allow_pickle=True))
-
         for file in variations_files[0:last_index]:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
-        for file in angles_files[0:last_index]:
-            with open(file, "rb") as pickle_file:
-                self.sim_angles.extend(pickle.load(pickle_file))
+        if load_patterns_angles_intensities:
 
-        for file in intensities_files[0:last_index]:
-            with open(file, "rb") as pickle_file:
-                self.sim_intensities.extend(pickle.load(pickle_file))
+            for file in patterns_files[0:last_index]:
+                self.sim_patterns.extend(np.load(file, allow_pickle=True))
+
+            for file in angles_files[0:last_index]:
+                with open(file, "rb") as pickle_file:
+                    self.sim_angles.extend(pickle.load(pickle_file))
+
+            for file in intensities_files[0:last_index]:
+                with open(file, "rb") as pickle_file:
+                    self.sim_intensities.extend(pickle.load(pickle_file))
 
     def get_space_group_number(self, id):
 

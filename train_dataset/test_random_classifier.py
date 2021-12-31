@@ -12,8 +12,6 @@ import pickle
 import gc
 from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
-from pyxtal.database.element import Element
-import math
 
 # classifier_model_name = "random_25-11-2021_12:09:51_test"
 classifier_model_name = "random_27-11-2021_09:12:22_test"
@@ -53,7 +51,7 @@ else:
     sim.output_dir = path_to_patterns
 
 # sim.load(load_only=14)
-sim.load(load_only=10)
+sim.load(load_only=14)
 
 n_patterns_per_crystal = len(sim.sim_patterns[0])
 
@@ -62,69 +60,20 @@ labels = sim.sim_labels
 variations = sim.sim_variations
 crystals = sim.sim_crystals
 
-
-"""
-########## Plotting the histogram of spgs in the ICSD
-
-spgs = [sim.get_space_group_number(id) for id in sim.icsd_ids]
-
-for i in reversed(range(0, len(spgs))):
-    if spgs[i] is None:
-        del spgs[i]
-
-print(f"Number of ICSD entries with spg number: {len(spgs)}")
-
-plt.figure()
-plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
-plt.xlabel("International space group number")
-plt.savefig("distribution_spgs.png")
-# plt.show()
-
-########## Plotting the histogram of spgs in the simulation data
-
-spgs = [label[0] for label in labels]
-# spgs_compare = [sim.get_space_group_number(meta[0]) for meta in sim.sim_metas]
-
-plt.figure()
-plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
-plt.xlabel("International space group number")
-plt.savefig("distribution_spgs.png")
-# plt.show()
-
-########## Plotting the histogram number of elements in icsd
-
-lengths = []
-for i, id in enumerate(sim.icsd_sumformulas):
-    lengths.append(len(id.split(" ")))
-
-plt.figure()
-plt.hist(lengths, bins=np.arange(0, np.max(lengths)) + 0.5)
-plt.xlabel("Number of elements")
-plt.savefig("distribution_NO_elements.png")
-# plt.show()
-"""
-
 # the space groups to test for:
 ys_unique = [14, 104]
 
 # counter_14 = 0
 # counter_104 = 0
 
-__wyckoff_strs = []
-number_of_wyckoffs = []
-
 for i in reversed(range(0, len(patterns))):
 
     # index = sim.icsd_ids.index(sim.sim_metas[i][0])
     # NO_elements = len(sim.icsd_sumformulas[index].split(" "))
 
-    is_pure, NO_wyckoffs, wyckoff_str, elements = sim.get_wyckoff_info(
-        sim.sim_metas[i][0]
-    )
-
-    number_of_wyckoffs.append(len(elements))
-
-    # print(NO_wyckoffs)
+    # is_pure, NO_wyckoffs, wyckoff_str, elements = sim.get_wyckoff_info(
+    #    sim.sim_metas[i][0]
+    # )
 
     if (
         np.any(np.isnan(variations[i][0]))
@@ -138,50 +87,14 @@ for i in reversed(range(0, len(patterns))):
         del labels[i]
         del variations[i]
         del crystals[i]
-    #    elif labels[i][0] == 14:
-    #        if counter_14 < 10:
-    #            plt.figure()
-    #            plt.plot(patterns[i][0])
-    #            plt.savefig(f"14_{i}.pdf")
-    #            counter_14 += 1
-    #    elif labels[i][0] == 104:
-    #        if counter_104 < 10:
-    #            plt.figure()
-    #            plt.plot(patterns[i][0])
-    #            plt.savefig(f"104_{i}.pdf")
-    #            counter_104 += 1
-    else:
-        __wyckoff_strs.append(wyckoff_str)
-# exit()
-
-__wyckoff_strs = list(reversed(__wyckoff_strs))
-number_of_wyckoffs = list(reversed(number_of_wyckoffs))
-
-"""
-plt.figure()
-plt.hist(
-    number_of_wyckoffs,
-    bins=np.arange(np.min(number_of_wyckoffs), np.max(number_of_wyckoffs) + 1) + 0.5,
-)
-plt.xlabel("Number of wyckoff sites")
-plt.savefig("number_of_wyckoff_sites.png")
-plt.show()
-exit()
-"""
-
-wyckoff_strs = []
-for wyckoff_str in __wyckoff_strs:
-    wyckoff_strs.extend([wyckoff_str] * 5)
 
 counter = [0, 0]
 
 y = []
-corn_sizes = []
 
 for i, label in enumerate(labels):
     y.extend([ys_unique.index(label[0])] * n_patterns_per_crystal)
     counter[ys_unique.index(label[0])] += 1
-    corn_sizes.extend([item[0] for item in sim.sim_variations[i]])
 
 y = np.array(y)
 
@@ -210,9 +123,7 @@ if scale_features:
 if is_conv_model:
     x = np.expand_dims(x, axis=2)
 
-# x = x.astype(np.float32)
-# y = y.astype(np.float32)
-
+# This is not working because of the metric (logits not supported):
 # score, acc = classifier_model.evaluate(
 #    x, y, batch_size=x.shape[0]
 # )  # score is the value of the loss function
@@ -226,15 +137,12 @@ print(counter)
 
 print()
 
+# Do it by hand:
 prob_model = keras.Sequential([classifier_model, keras.layers.Activation("sigmoid")])
-# prob_model = classifier_model
 predicted_y = np.array(prob_model.predict(x, batch_size=128))
-# predicted_y = np.array(prob_model(x))
 
 predicted_y = predicted_y[:, 0]
 predicted_y = np.where(predicted_y > 0.5, 1.0, 0.0)
-
-# predicted_y = predicted_y.astype(np.float32)
 
 print()
 print("Predicted as spg 14:")
@@ -254,120 +162,12 @@ print(
     f"Correctly classified: {np.sum(predicted_y == y)} ({np.sum(predicted_y == y) / len(y)} %)"
 )
 
-# print(len(wyckoff_strs))
-# print(len(predicted_y))
-# print(len(y))
-
-""" Analyze dependence on corn sizes
-wrong_cornsizes = []
-for i in falsely_indices:
-    print(wyckoff_strs[i])
-    print()
-
-    wrong_cornsizes.append(corn_sizes[i])
-
-plt.figure()
-plt.hist(wrong_cornsizes)
-plt.show()
-"""
-
 print()
 print("Classification report:")
 print(classification_report(y, predicted_y))
 
-# Analyze rightly vs falsely classified structures
-
 falsely_indices = np.argwhere(predicted_y != y)[:, 0]
 rightly_indices = np.argwhere(predicted_y == y)[:, 0]
 
-
-def get_volume_factor(structure):
-
-    try:
-
-        actual_volume = structure.volume
-
-        calculated_volume = 0
-        for atom in structure:
-            specie = str(atom.specie.element)
-            r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
-            calculated_volume += 4 / 3 * np.pi * r ** 3
-
-        return actual_volume / calculated_volume
-
-    except:
-        return None
-
-
-falsely_volumes = []
-falsely_volume_factors = []
-
-rightly_volumes = []
-rightly_volume_factors = []
-
-for i in falsely_indices:
-
-    structure = crystals[int(i / 5)]
-
-    volume = structure.volume
-    volume_factor = get_volume_factor(structure)
-
-    falsely_volumes.append(volume)
-
-    if volume_factor is not None:
-        falsely_volume_factors.append(volume_factor)
-
-for i in rightly_indices:
-
-    structure = crystals[int(i / 5)]
-
-    volume = structure.volume
-    volume_factor = get_volume_factor(structure)
-
-    rightly_volumes.append(volume)
-
-    if volume_factor is not None:
-        rightly_volume_factors.append(volume_factor)
-
-# plot volumes:
-bins_volumes = np.linspace(
-    min(np.min(rightly_volumes), np.min(falsely_volumes)),
-    max(np.max(rightly_volumes), np.max(falsely_volumes)),
-    30,
-)
-plt.hist(
-    [rightly_volumes, falsely_volumes],
-    bins_volumes,
-    label=["rightly", "falsely"],
-    alpha=0.5,
-)
-plt.legend(loc="upper right")
-plt.show()
-
-# plot volume_factors:
-bins_volume_factors = np.linspace(
-    min(np.min(rightly_volume_factors), np.min(falsely_volume_factors)),
-    max(np.max(rightly_volume_factors), np.max(falsely_volume_factors)),
-    30,
-)
-plt.hist(
-    [rightly_volume_factors, falsely_volume_factors],
-    bins_volume_factors,
-    label=["rightly", "falsely"],
-    alpha=0.5,
-)
-plt.legend(loc="upper right")
-plt.show()
-
-# TODO: Rename volume factors to denseness factors
-# TODO: VOLUMES OF 10**3???
-# TODO: Make a function out of this! Also with crystals as arguments (and tag), so it can be reused for random simulation, too!
-
-# TODO:
-# get lattice parameters => hist (all in the same histogram)
-# get number of wyckoff sites => hist
-# get number of elements => hist
-# get number of repetitions of element (are these then different wyckoff sites?)
-# => where in the cif file is written what kind of wyckoff site we are dealing with?
-
-# get occupancies => hist all of them
+with open("falsely_rightly.pickle", "wb") as file:
+    pickle.dump((falsely_indices, rightly_indices), file)
