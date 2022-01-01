@@ -28,7 +28,7 @@ else:
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 icsd_sim.output_dir = "../dataset_simulations/patterns/icsd/"
-icsd_sim.load(load_patterns_angles_intensities=False, load_only=1)
+icsd_sim.load(load_patterns_angles_intensities=False, load_only=14)
 
 # read random data:
 if jobid is not None and jobid != "":
@@ -106,6 +106,7 @@ ys_unique = [14, 104]
 
 icsd_NO_wyckoffs = []
 icsd_elements = []
+icsd_NO_elements = []
 icsd_occupancies = []
 
 for i in reversed(range(0, len(icsd_variations))):
@@ -120,6 +121,7 @@ for i in reversed(range(0, len(icsd_variations))):
     else:
         icsd_NO_wyckoffs.append(NO_wyckoffs)
         icsd_elements.append(elements)
+        icsd_NO_elements.append(len(np.unique(elements)))
         icsd_occupancies.append(occupancies)
 
 icsd_NO_wyckoffs = list(reversed(icsd_NO_wyckoffs))
@@ -128,7 +130,7 @@ icsd_occupancies = list(reversed(icsd_occupancies))
 
 icsd_corn_sizes = []
 for i, label in enumerate(icsd_labels):
-    icsd_corn_sizes.extend([item[0] for item in icsd_sim.sim_variations[i]])
+    icsd_corn_sizes.append([item[0] for item in icsd_sim.sim_variations[i]])
 
 
 # preprocess random data:
@@ -164,6 +166,8 @@ def get_wyckoff_info(crystal):
     return len(struc.atom_sites), elements
 
 
+random_NO_elements = []
+
 for i in reversed(range(0, len(random_variations))):
 
     print(f"{i} of {len(random_variations)}")
@@ -186,6 +190,7 @@ for i in reversed(range(0, len(random_variations))):
     else:
         random_NO_wyckoffs.append(NO_wyckoffs)
         random_elements.append(elements)
+        random_NO_elements.append(len(np.unique(elements)))
 
 random_NO_wyckoffs = list(reversed(random_NO_wyckoffs))
 random_elements = list(reversed(random_elements))
@@ -218,81 +223,196 @@ def get_denseness_factor(structure):
 
 falsely_volumes = []
 falsely_denseness_factors = []
+falsely_lattice_paras = []
+falsely_corn_sizes = []
+falsely_NO_wyckoffs = []
+falsely_NO_elements = []
 
 rightly_volumes = []
 rightly_denseness_factors = []
+rightly_lattice_paras = []
+rightly_corn_sizes = []
+rightly_NO_wyckoffs = []
+rightly_NO_elements = []
+
+random_volumes = []
+random_denseness_factors = []
+random_lattice_paras = []
 
 for i in falsely_indices:
 
-    structure = icsd_crystals[int(i / 5)]
+    index = int(i / 5)
+
+    structure = icsd_crystals[index]
 
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
 
     falsely_volumes.append(volume)
+    falsely_corn_sizes.extend(icsd_corn_sizes[index])
+    falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
+    falsely_NO_elements.append(icsd_NO_wyckoffs[index])
 
     if denseness_factor is not None:
         falsely_denseness_factors.append(denseness_factor)
 
 for i in rightly_indices:
 
-    structure = icsd_crystals[int(i / 5)]
+    index = int(i / 5)
+
+    structure = icsd_crystals[index]
 
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
 
     rightly_volumes.append(volume)
+    rightly_corn_sizes.extend(icsd_corn_sizes[index])
+    rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
+    rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
 
     if denseness_factor is not None:
         rightly_denseness_factors.append(denseness_factor)
 
-random_volumes = []
-random_denseness_factors = []
+for i, structure in random_crystals:
 
-#########################################################################################
+    volume = structure.volume
+    denseness_factor = get_denseness_factor(structure)
+
+    random_volumes.append(volume)
+
+    if denseness_factor is not None:
+        random_denseness_factors.append(denseness_factor)
 
 # plot volumes:
 bins_volumes = np.linspace(
-    min(np.min(rightly_volumes), np.min(falsely_volumes)),
-    max(np.max(rightly_volumes), np.max(falsely_volumes)),
+    min(np.min(rightly_volumes), np.min(falsely_volumes), np.min(random_volumes)),
+    max(np.max(rightly_volumes), np.max(falsely_volumes), np.max(random_volumes)),
     30,
 )
+plt.figure()
 plt.hist(
-    [rightly_volumes, falsely_volumes],
+    [rightly_volumes, falsely_volumes, random_volumes],
     bins_volumes,
-    label=["rightly", "falsely"],
+    label=["rightly", "falsely", "random"],
     alpha=0.5,
 )
 plt.legend(loc="upper right")
 plt.show()
+plt.savefig("comparison_volumes.png")
 
 # plot denseness factors:
 bins_denseness_factors = np.linspace(
-    min(np.min(rightly_denseness_factors), np.min(falsely_denseness_factors)),
-    max(np.max(rightly_denseness_factors), np.max(falsely_denseness_factors)),
+    min(
+        np.min(rightly_denseness_factors),
+        np.min(falsely_denseness_factors),
+        np.min(random_denseness_factors),
+    ),
+    max(
+        np.max(rightly_denseness_factors),
+        np.max(falsely_denseness_factors),
+        np.max(random_denseness_factors),
+    ),
     30,
 )
+plt.figure()
 plt.hist(
-    [rightly_denseness_factors, falsely_denseness_factors],
+    [rightly_denseness_factors, falsely_denseness_factors, random_denseness_factors],
     bins_denseness_factors,
-    label=["rightly", "falsely"],
+    label=["rightly", "falsely", "random"],
     alpha=0.5,
 )
 plt.legend(loc="upper right")
 plt.show()
+plt.savefig("comparison_denseness_factors.png")
+
+# plot corn sizes:
+bins_corn_sizes = np.linspace(
+    min(
+        np.min(rightly_corn_sizes),
+        np.min(falsely_corn_sizes),
+        np.min(random_corn_sizes),
+    ),
+    max(
+        np.max(rightly_corn_sizes),
+        np.max(falsely_corn_sizes),
+        np.max(random_corn_sizes),
+    ),
+    30,
+)
+plt.figure()
+plt.hist(
+    [rightly_corn_sizes, falsely_corn_sizes, random_corn_sizes],
+    bins_corn_sizes,
+    label=["rightly", "falsely", "random"],
+    alpha=0.5,
+)
+plt.legend(loc="upper right")
+plt.show()
+plt.savefig("comparison_corn_sizes.png")
+
+# plot NO_wyckoffs:
+bins_NO_wyckoffs = (
+    np.arange(
+        min(
+            np.min(rightly_NO_wyckoffs),
+            np.min(falsely_NO_wyckoffs),
+            np.min(random_NO_wyckoffs),
+        ),
+        max(
+            np.max(rightly_NO_wyckoffs),
+            np.max(falsely_NO_wyckoffs),
+            np.max(random_NO_wyckoffs),
+        )
+        + 1,
+    )
+    + 0.5
+)
+plt.figure()
+plt.hist(
+    [rightly_NO_wyckoffs, falsely_NO_wyckoffs, random_NO_wyckoffs],
+    bins=bins_NO_wyckoffs,
+)
+plt.xlabel("Number of set wyckoff sites")
+plt.savefig("NO_wyckoffs.png")
+plt.show()
+
+# plot NO_elements:
+bins_NO_elements = (
+    np.arange(
+        min(
+            np.min(rightly_NO_elements),
+            np.min(falsely_NO_elements),
+            np.min(random_NO_elements),
+        ),
+        max(
+            np.max(rightly_NO_elements),
+            np.max(falsely_NO_elements),
+            np.max(random_NO_elements),
+        )
+        + 1,
+    )
+    + 0.5
+)
+plt.figure()
+plt.hist(
+    [rightly_NO_elements, falsely_NO_elements, random_NO_elements],
+    bins=bins_NO_elements,
+)
+plt.xlabel("Number of unique elements on wyckoff sites")
+plt.savefig("NO_elements.png")
+plt.show()
 
 # TODO:
-# ATTENTION: Patterns have not been copied over properly! Copy all of them.
+# get number of unique elements (unique!) on wyckoff sites # TODO: make sure that for random AND unique it is actually unique!
+# Use the second column, remove +, -, 1+, 1-, etc.
 
-# also add corn sizes, here! (get them from above)
 # get lattice parameters => hist (all in the same histogram), get them above in a list, too!
-# get number of wyckoff sites => hist
-# get number of elements (unique!), don't forget the multiplicity! => hist
 # get number of repetitions of element (on different wyckoff sites)
-
-# => where in the cif file is written what kind of wyckoff site we are dealing with?
-# => understand
-
 # get occupancies => hist all of them (only for the icsd data)
 
-# VOLUMES OF 10**3???
+# TODO: Why VOLUMES OF 10**3???
+
+# => where in the cif file is written what kind of wyckoff site we are dealing with?
+# The general wyckoff site is always written in the cif file!
+# This is because the special ones are only special cases of the general wyckoff position!
+# Only the general wyckoff position is needed to generate all the coordinates.
