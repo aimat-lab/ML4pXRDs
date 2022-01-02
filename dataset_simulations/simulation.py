@@ -578,8 +578,11 @@ class Simulation:
                     if NO_columns == 9:
                         occ = float(columns[-1])
 
-                        element = columns[0]
+                        element = columns[1]
                         # element = re.sub(r"\d+$", "", element)
+                        element = re.sub(r"\d*\+?$", "", element)
+                        element = re.sub(r"\d*\-?$", "", element)
+
                         elements.append(element)
                         occupancies.append(occ)
 

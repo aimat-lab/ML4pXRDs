@@ -13,6 +13,7 @@ import pickle
 from pyxtal import pyxtal
 from pymatgen.io.cif import CifWriter
 from pyxtal.symmetry import Group
+import re
 
 jobid = os.getenv("SLURM_JOB_ID")
 
@@ -42,7 +43,7 @@ else:
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 random_sim.output_dir = "../dataset_simulations/patterns/random_crystals_only/"
-random_sim.load(load_patterns_angles_intensities=False, load_only=1)
+random_sim.load(load_patterns_angles_intensities=False, load_only=2)
 
 n_patterns_per_crystal = 5
 
@@ -74,7 +75,7 @@ plt.xlabel("International space group number")
 plt.savefig("distribution_spgs.png")
 # plt.show()
 
-########## Plotting the histogram of spgs in the simulation data
+########## Plotting the histogram of spgs in the simulation data (icsd, should be the same)
 
 spgs = [label[0] for label in labels]
 # spgs_compare = [icsd_sim.get_space_group_number(meta[0]) for meta in icsd_sim.sim_metas]
@@ -108,6 +109,7 @@ icsd_NO_wyckoffs = []
 icsd_elements = []
 icsd_NO_elements = []
 icsd_occupancies = []
+icsd_element_repetitions = []
 
 for i in reversed(range(0, len(icsd_variations))):
     is_pure, NO_wyckoffs, elements, occupancies = icsd_sim.get_wyckoff_info(
@@ -119,10 +121,17 @@ for i in reversed(range(0, len(icsd_variations))):
         del icsd_variations[i]
         del icsd_crystals[i]
     else:
+        elements_unique = np.unique(elements)
+
         icsd_NO_wyckoffs.append(NO_wyckoffs)
         icsd_elements.append(elements)
-        icsd_NO_elements.append(len(np.unique(elements)))
+        icsd_NO_elements.append(len(elements_unique))
         icsd_occupancies.append(occupancies)
+
+        reps = []
+        for el in elements_unique:
+            reps.append(np.sum(np.array(elements) == el))
+        icsd_element_repetitions.append(reps)
 
 icsd_NO_wyckoffs = list(reversed(icsd_NO_wyckoffs))
 icsd_elements = list(reversed(icsd_elements))
@@ -167,6 +176,7 @@ def get_wyckoff_info(crystal):
 
 
 random_NO_elements = []
+random_element_repetitions = []
 
 for i in reversed(range(0, len(random_variations))):
 
@@ -188,9 +198,17 @@ for i in reversed(range(0, len(random_variations))):
         del random_variations[i]
         del random_crystals[i]
     else:
+        elements_unique = np.unique(elements)
+
         random_NO_wyckoffs.append(NO_wyckoffs)
         random_elements.append(elements)
-        random_NO_elements.append(len(np.unique(elements)))
+        random_NO_elements.append(len(elements_unique))
+
+        reps = []
+        for el in elements_unique:
+            reps.append(np.sum(np.array(elements) == el))
+        random_element_repetitions.extend(reps)
+
 
 random_NO_wyckoffs = list(reversed(random_NO_wyckoffs))
 random_elements = list(reversed(random_elements))
@@ -211,7 +229,10 @@ def get_denseness_factor(structure):
 
         calculated_volume = 0
         for atom in structure:
-            specie = str(atom.specie.element)
+            specie = atom.species_string
+            specie = re.sub(r"\d*\+?$", "", specie)
+            specie = re.sub(r"\d*\-?$", "", specie)
+
             r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
             calculated_volume += 4 / 3 * np.pi * r ** 3
 
@@ -227,6 +248,8 @@ falsely_lattice_paras = []
 falsely_corn_sizes = []
 falsely_NO_wyckoffs = []
 falsely_NO_elements = []
+falsely_occupancies = []
+falsely_element_repetitions = []
 
 rightly_volumes = []
 rightly_denseness_factors = []
@@ -234,6 +257,8 @@ rightly_lattice_paras = []
 rightly_corn_sizes = []
 rightly_NO_wyckoffs = []
 rightly_NO_elements = []
+rightly_occupancies = []
+rightly_element_repetitions = []
 
 random_volumes = []
 random_denseness_factors = []
@@ -252,6 +277,12 @@ for i in falsely_indices:
     falsely_corn_sizes.extend(icsd_corn_sizes[index])
     falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
     falsely_NO_elements.append(icsd_NO_wyckoffs[index])
+    falsely_occupancies.extend(icsd_occupancies[index])
+    falsely_element_repetitions.extend(icsd_element_repetitions[index])
+
+    falsely_lattice_paras.append(structure.lattice.a)
+    falsely_lattice_paras.append(structure.lattice.b)
+    falsely_lattice_paras.append(structure.lattice.c)
 
     if denseness_factor is not None:
         falsely_denseness_factors.append(denseness_factor)
@@ -267,18 +298,28 @@ for i in rightly_indices:
 
     rightly_volumes.append(volume)
     rightly_corn_sizes.extend(icsd_corn_sizes[index])
+    rightly_NO_elements.append(icsd_NO_elements[index])
     rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-    rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
+    rightly_occupancies.extend(icsd_occupancies[index])
+    rightly_element_repetitions.extend(icsd_element_repetitions[index])
+
+    rightly_lattice_paras.append(structure.lattice.a)
+    rightly_lattice_paras.append(structure.lattice.b)
+    rightly_lattice_paras.append(structure.lattice.c)
 
     if denseness_factor is not None:
         rightly_denseness_factors.append(denseness_factor)
 
-for i, structure in random_crystals:
+for i, structure in enumerate(random_crystals):
 
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
 
     random_volumes.append(volume)
+
+    random_lattice_paras.append(structure.lattice.a)
+    random_lattice_paras.append(structure.lattice.b)
+    random_lattice_paras.append(structure.lattice.c)
 
     if denseness_factor is not None:
         random_denseness_factors.append(denseness_factor)
@@ -287,18 +328,19 @@ for i, structure in random_crystals:
 bins_volumes = np.linspace(
     min(np.min(rightly_volumes), np.min(falsely_volumes), np.min(random_volumes)),
     max(np.max(rightly_volumes), np.max(falsely_volumes), np.max(random_volumes)),
-    30,
+    200,
 )
 plt.figure()
 plt.hist(
     [rightly_volumes, falsely_volumes, random_volumes],
     bins_volumes,
     label=["rightly", "falsely", "random"],
-    alpha=0.5,
 )
 plt.legend(loc="upper right")
+plt.xlabel("volume")
+plt.ylabel("count")
+plt.savefig("comparison_volumes.png", dpi=400)
 plt.show()
-plt.savefig("comparison_volumes.png")
 
 # plot denseness factors:
 bins_denseness_factors = np.linspace(
@@ -319,11 +361,12 @@ plt.hist(
     [rightly_denseness_factors, falsely_denseness_factors, random_denseness_factors],
     bins_denseness_factors,
     label=["rightly", "falsely", "random"],
-    alpha=0.5,
 )
 plt.legend(loc="upper right")
+plt.xlabel("denseness factor")
+plt.ylabel("count")
+plt.savefig("comparison_denseness_factors.png", dpi=400)
 plt.show()
-plt.savefig("comparison_denseness_factors.png")
 
 # plot corn sizes:
 bins_corn_sizes = np.linspace(
@@ -344,11 +387,12 @@ plt.hist(
     [rightly_corn_sizes, falsely_corn_sizes, random_corn_sizes],
     bins_corn_sizes,
     label=["rightly", "falsely", "random"],
-    alpha=0.5,
 )
 plt.legend(loc="upper right")
+plt.xlabel("corn size")
+plt.ylabel("count")
+plt.savefig("comparison_corn_sizes.png", dpi=400)
 plt.show()
-plt.savefig("comparison_corn_sizes.png")
 
 # plot NO_wyckoffs:
 bins_NO_wyckoffs = (
@@ -371,12 +415,15 @@ plt.figure()
 plt.hist(
     [rightly_NO_wyckoffs, falsely_NO_wyckoffs, random_NO_wyckoffs],
     bins=bins_NO_wyckoffs,
+    label=["rightly", "falsely", "random"],
 )
+plt.legend(loc="upper right")
 plt.xlabel("Number of set wyckoff sites")
-plt.savefig("NO_wyckoffs.png")
+plt.ylabel("count")
+plt.savefig("NO_wyckoffs.png", dpi=400)
 plt.show()
 
-# plot NO_elements:
+# plot NO_elements (unique number of elements on wyckoff sites):
 bins_NO_elements = (
     np.arange(
         min(
@@ -397,21 +444,96 @@ plt.figure()
 plt.hist(
     [rightly_NO_elements, falsely_NO_elements, random_NO_elements],
     bins=bins_NO_elements,
+    label=["rightly", "falsely", "random"],
 )
+plt.legend()
 plt.xlabel("Number of unique elements on wyckoff sites")
-plt.savefig("NO_elements.png")
+plt.ylabel("count")
+plt.savefig("NO_elements.png", dpi=400)
 plt.show()
 
-# TODO:
-# get number of unique elements (unique!) on wyckoff sites # TODO: make sure that for random AND unique it is actually unique!
-# Use the second column, remove +, -, 1+, 1-, etc.
+# plot lattice_paras:
+bins_lattice_paras = np.linspace(
+    min(
+        np.min(rightly_lattice_paras),
+        np.min(falsely_lattice_paras),
+        np.min(random_lattice_paras),
+    ),
+    max(
+        np.max(rightly_lattice_paras),
+        np.max(falsely_lattice_paras),
+        np.max(random_lattice_paras),
+    ),
+    30,
+)
+plt.figure()
+plt.hist(
+    [rightly_lattice_paras, falsely_lattice_paras, random_lattice_paras],
+    bins_lattice_paras,
+    label=["rightly", "falsely", "random"],
+)
+plt.legend(loc="upper right")
+plt.xlabel("lattice para")
+plt.ylabel("count")
+plt.savefig("comparison_lattice_paras.png", dpi=400)
+plt.show()
 
-# get lattice parameters => hist (all in the same histogram), get them above in a list, too!
-# get number of repetitions of element (on different wyckoff sites)
-# get occupancies => hist all of them (only for the icsd data)
+# plot occupancies:
+bins_occupancies = np.linspace(
+    min(np.min(rightly_occupancies), np.min(falsely_occupancies),),
+    max(np.max(rightly_occupancies), np.max(falsely_occupancies),),
+    30,
+)
+plt.figure()
+plt.hist(
+    [rightly_occupancies, falsely_occupancies],
+    bins_occupancies,
+    label=["rightly", "falsely"],
+)
+plt.legend(loc="upper right")
+plt.xlabel("occupancy")
+plt.ylabel("count")
+plt.savefig("comparison_occupancies.png", dpi=400)
+plt.show()
 
-# TODO: Why VOLUMES OF 10**3???
+# plot number of element repetitions:
+bins_element_repetitions = (
+    np.arange(
+        min(
+            np.min(rightly_element_repetitions),
+            np.min(falsely_element_repetitions),
+            np.min(random_element_repetitions),
+        ),
+        max(
+            np.max(rightly_element_repetitions),
+            np.max(falsely_element_repetitions),
+            np.max(random_element_repetitions),
+        )
+        + 1,
+    )
+    + 0.5
+)
+plt.figure()
+plt.hist(
+    [
+        rightly_element_repetitions,
+        falsely_element_repetitions,
+        random_element_repetitions,
+    ],
+    bins=bins_element_repetitions,
+    label=["rightly", "falsely", "random"],
+)
+plt.legend()
+plt.xlabel("Number of element repetitions on wyckoff sites")
+plt.ylabel("count")
+plt.savefig("NO_element_repetitions.png", dpi=400)
+plt.show()
 
+
+# TODO: Why VOLUMES OF 10**3??? 1000; Isn't this a little bit high?
+
+
+# Info about wyckoff positions in cif file format:
 # => where in the cif file is written what kind of wyckoff site we are dealing with?
 # The general wyckoff site is always written in the cif file!
 # This is because the special ones are only special cases of the general wyckoff position!
