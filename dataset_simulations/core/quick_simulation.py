@@ -481,21 +481,26 @@ def get_random_xy_patterns(
             timings_generation.append(time.time() - start)
 
         for structure in structures:
+            
+            try:
 
-            pattern_ys = get_xy_pattern(
-                structure,
-                wavelength,
-                xs,
-                np.random.uniform(
-                    pymatgen_crystallite_size_gauss_min,
-                    pymatgen_crystallite_size_gauss_max,
-                ),
-                two_theta_range,
-                do_print=do_print,
-            )
-
-            labels.append(spg)
-            result_patterns_y.append(pattern_ys)
+                pattern_ys = get_xy_pattern(
+                    structure,
+                    wavelength,
+                    xs,
+                    np.random.uniform(
+                        pymatgen_crystallite_size_gauss_min,
+                        pymatgen_crystallite_size_gauss_max,
+                    ),
+                    two_theta_range,
+                    do_print=do_print,
+                )
+            except Exception as ex:
+                print("Error simulating pattern:")
+                print(ex)
+            else:
+                labels.append(spg)
+                result_patterns_y.append(pattern_ys)
 
     return result_patterns_y, labels
 
