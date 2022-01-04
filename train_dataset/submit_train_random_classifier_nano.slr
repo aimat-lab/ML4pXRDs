@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=128
+#SBATCH --time=10-48:00:00
+#SBATCH --mem=256000mb
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=tf_random_classifier
+
+# --time=30
+# --time=48:00:00
+
+export PARNODES="$SLURM_CPUS_PER_TASK"
+export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
+
+source ~/mambaforge/etc/profile.d/conda.sh
+
+conda activate pyxtal_debug
+
+export CURRENT_CLUSTER="nano"
+python train_random_classifier.py
