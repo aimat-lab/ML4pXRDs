@@ -24,8 +24,9 @@ max_NO_elements = 10
 structures_per_spg = 64
 # => 96k structures per spg per epoch
 
-spgs = [2, 15]
-#spgs = [14, 104]
+#spgs = [14, 104] # works well, relatively high val_acc
+#spgs = [129, 176] # 93.15%, pretty damn well!
+spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%
 
 # like in the Vecsei paper:
 start_angle, end_angle, N = 5, 90, 8501
@@ -33,8 +34,8 @@ start_angle, end_angle, N = 360/(2*np.pi)*np.arcsin(1.207930/1.5406 * np.sin(2*n
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}")
 
-NO_workers = 8
-queue_size = 40
+NO_workers = 32
+queue_size = 200
 do_multi_processing = True
 
 out_base = (
@@ -134,7 +135,7 @@ class CustomSequence(keras.utils.Sequence):
             do_print=False,
         )
 
-        patterns, labels = shuffle(patterns, labels) 
+        patterns, labels = shuffle(patterns, labels)
 
         # Set the label to the right index:
         for i in range(0, len(labels)):
@@ -161,7 +162,7 @@ model.fit(
     validation_data=(val_x, val_y),
     validation_freq=test_every_X_epochs,
     callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
-    verbose=1,
+    verbose=2,
     workers=NO_workers,
     max_queue_size=queue_size,
     use_multiprocessing=do_multi_processing,
