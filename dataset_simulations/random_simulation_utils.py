@@ -219,6 +219,7 @@ def generate_structure(
                 numIons=chosen_numbers,
                 # sites=chosen_wyckoff_positions,
                 my_seed=seed,
+                factor=np.random.uniform(0.7, 5.0) 
             )
 
         except Exception as ex:
