@@ -1,7 +1,7 @@
 import sys
 
-sys.path.append("../dataset_simulations/")
-sys.path.append("../")
+#sys.path.append("../dataset_simulations/")
+#sys.path.append("../")
 
 import tensorflow.keras as keras
 from dataset_simulations.core.quick_simulation import get_random_xy_patterns
@@ -12,6 +12,10 @@ import os
 from sklearn.utils import shuffle
 from dataset_simulations.simulation import Simulation
 from scipy import interpolate as ip
+
+import ray
+from ray.util.queue import Queue
+
 
 tag = "debug"
 
@@ -34,9 +38,9 @@ start_angle, end_angle, N = 360/(2*np.pi)*np.arcsin(1.207930/1.5406 * np.sin(2*n
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}")
 
-NO_workers = 32
+NO_workers = 8
 queue_size = 200
-do_multi_processing = True
+queue_size_tf = 100
 
 out_base = (
     "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "_" + tag + "/"
@@ -115,6 +119,50 @@ assert len(val_x) == len(val_y)
 
 val_x = np.expand_dims(val_x, axis=2)
 
+ray.init(include_dashboard=True, num_cpus=NO_workers)
+
+queue = Queue(maxsize=queue_size) # store a maximum of `queue_size` batches
+
+@ray.remote(num_cpus=1, num_gpus=0)
+def batch_generator(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements):
+
+    while True:
+
+        try:
+
+            patterns, labels = get_random_xy_patterns(
+                    spgs=spgs,
+                    structures_per_spg=structures_per_spg,
+                    #wavelength=1.5406,  # TODO: Cu-K line, when testing on ICSD data, switch to 1.207930 wavelength (scaling)
+                    wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
+                    N=N,
+                    two_theta_range=(start_angle, end_angle),
+                    max_NO_elements=max_NO_elements,
+                    do_print=False,
+                )
+
+            patterns, labels = shuffle(patterns, labels)
+
+            # Set the label to the right index:
+            for i in range(0, len(labels)):
+                labels[i] = spgs.index(labels[i])
+
+            patterns = np.array(patterns)
+            patterns = np.expand_dims(patterns, axis=2)
+
+            labels = np.array(labels)
+
+            queue.put((patterns,labels)) # blocks if queue is full, which is good
+        
+        except Exception as ex:
+
+            print("Error occurred in worker:")
+            print(ex)
+
+# Start worker tasks
+for i in range(0, NO_workers):
+    batch_generator.remote(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements)
+
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches):
         self.number_of_batches = number_of_batches
@@ -124,6 +172,7 @@ class CustomSequence(keras.utils.Sequence):
 
     def __getitem__(self, idx):
 
+        """
         patterns, labels = get_random_xy_patterns(
             spgs=spgs,
             structures_per_spg=structures_per_spg,
@@ -149,6 +198,9 @@ class CustomSequence(keras.utils.Sequence):
         return (
             patterns, labels
         )
+        """
+
+        return queue.get()
 
 
 sequence = CustomSequence(batches_per_epoch)
@@ -162,11 +214,13 @@ model.fit(
     validation_data=(val_x, val_y),
     validation_freq=test_every_X_epochs,
     callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
-    verbose=2,
-    workers=NO_workers,
-    max_queue_size=queue_size,
-    use_multiprocessing=do_multi_processing,
+    verbose=1,
+    workers=1,
+    max_queue_size=queue_size_tf,
+    use_multiprocessing=False,
     steps_per_epoch=batches_per_epoch,
 )
 
 model.save(out_base + "final")
+
+ray.shutdown()
