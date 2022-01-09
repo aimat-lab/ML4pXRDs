@@ -7,19 +7,24 @@ sys.path.append("../")
 from train_dataset.baseline_utils import load_experimental_data
 from scipy import interpolate as ip
 import tensorflow.keras as keras
-import pickle
 import pandas as pd
+
+from sklearn.metrics import confusion_matrix
+
 
 remove_background = True
 
 if __name__ == "__main__":
 
-    xs_exp, ys_exp = load_experimental_data("exp_data/XRDdata_classification.csv")
-
     classifier_model_name = "narrow_03-12-2021_12:31:23_test"
     unet_model_name = "removal_03-12-2021_16-48-30_UNetPP"
     classify_is_pure = False
     do_plot = False
+    only_pure_exps = True
+
+    xs_exp, ys_exp, ids_exp = load_experimental_data(
+        "exp_data/XRDdata_classification.csv"
+    )
 
     classifier_model = keras.models.load_model(
         "classifier/" + classifier_model_name + "/final", compile=False
@@ -27,16 +32,41 @@ if __name__ == "__main__":
     unet_model = keras.models.load_model("unet/" + unet_model_name + "/final")
 
     data_true_labels = pd.read_csv(
-        "exp_data/experimental_phases.txt", delimiter=" ", skiprows=0, header=None
+        "exp_data/experimental_phases"
+        + ("_only_pure" if only_pure_exps else "")
+        + ".txt",
+        delimiter=" ",
+        skiprows=0,
+        header=None,
     )
-    labels = np.array(data_true_labels.iloc[:, 2])
+    sample_names = list(data_true_labels.iloc[:, 0])
+    sample_ids = [int("".join(filter(str.isdigit, item))) for item in sample_names]
 
     spg_labels_pd = pd.read_csv(
-        "exp_data/experimental_spgs.txt", delimiter=" ", skiprows=0, header=None
+        "exp_data/experimental_spgs"
+        + ("_only_pure" if only_pure_exps else "")
+        + ".txt",
+        delimiter=" ",
+        skiprows=0,
+        header=None,
     )
     spg_labels = np.array(spg_labels_pd.iloc[:, 0])
 
+    if only_pure_exps:
+        # remove all non-pure samples from the test data
+
+        i = len(ids_exp) - 1
+        for id in reversed(ids_exp):
+            if id not in sample_ids:
+                xs_exp = np.delete(xs_exp, i, 1)
+                ys_exp = np.delete(ys_exp, i, 1)
+                del ids_exp[i]
+            i -= 1
+
     correct_counter = 0
+
+    predictions = []
+    trues = []
 
     for i in range(0, xs_exp.shape[1]):
 
@@ -86,6 +116,8 @@ if __name__ == "__main__":
             prediction_softmax = prob_model_softmax.predict(ys_to_be_classified)
             prediction_softmax = np.argmax(prediction_softmax, axis=1)
 
+            predictions.append(prediction_softmax[0])
+
             if classify_is_pure:
                 sigmoid_activation = keras.layers.Activation("sigmoid")(
                     classifier_model.get_layer("output_sigmoid").output
@@ -98,6 +130,9 @@ if __name__ == "__main__":
                 prediction_sigmoid = np.where(prediction_sigmoid > 0.5, 1, 0)
 
             narrow_phases = ["Fm-3m", "Ia-3", "P63/m"]
+
+            trues.append(narrow_phases.index(spg_labels[i]))
+
             print(
                 f"Output of phase classification: {narrow_phases[prediction_softmax[0]]} (True: {spg_labels[i]})"
             )
@@ -118,7 +153,7 @@ if __name__ == "__main__":
                     plt.plot(
                         current_xs,
                         corrected[0, :, 0],
-                        label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}, {purities[prediction_sigmoid[0]]}\nTrue label: {labels[i]}",
+                        label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}, {purities[prediction_sigmoid[0]]}\nTrue label: {spg_labels[i]}",
                     )
 
             else:
@@ -127,7 +162,7 @@ if __name__ == "__main__":
                     plt.plot(
                         current_xs,
                         corrected[0, :, 0],
-                        label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}\nTrue label: {labels[i]}",
+                        label=f"Corrected via U-Net\n\nPredicted labels: {narrow_phases[prediction_softmax[0]]}\nTrue label: {spg_labels[i]}",
                     )
 
             if do_plot:
@@ -141,3 +176,11 @@ if __name__ == "__main__":
                 plt.show()
 
     print(f"{correct_counter / len(spg_labels)} prediction accurary")
+
+    trues = np.array(trues)
+    predictions = np.array(predictions)
+
+    # print(f"{np.sum(trues==predictions) / len(trues)}")
+
+    print(narrow_phases)
+    print(confusion_matrix(trues, predictions))

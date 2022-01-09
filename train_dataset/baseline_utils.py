@@ -120,11 +120,15 @@ def rolling_ball(
 def load_experimental_data(path, mode="HEO"):
     if mode == "HEO":
 
-        data = pd.read_csv(path, delimiter=",", skiprows=1)
+        data = pd.read_csv(path, delimiter=",")
         xs = np.array(data.iloc[:, list(range(0, len(data.columns.values), 2))])
         ys = np.array(data.iloc[:, list(range(1, len(data.columns.values), 2))])
 
-        return (xs, ys)
+        ids = [
+            int("".join(filter(str.isdigit, item))) for item in list(data.columns)[1::2]
+        ]
+
+        return (xs, ys, ids)
 
     else:
 
