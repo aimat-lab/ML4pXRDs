@@ -122,6 +122,8 @@ val_x = np.expand_dims(val_x, axis=2)
 
 ray.init(include_dashboard=True, num_cpus=NO_workers)
 
+print(ray.cluster_resources())
+
 queue = Queue(maxsize=queue_size) # store a maximum of `queue_size` batches
 
 @ray.remote(num_cpus=1, num_gpus=0)

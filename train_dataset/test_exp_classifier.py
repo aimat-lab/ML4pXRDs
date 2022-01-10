@@ -184,3 +184,19 @@ if __name__ == "__main__":
 
     print(narrow_phases)
     print(confusion_matrix(trues, predictions))
+
+    plt.figure()
+
+    for i in range(0, 3):
+        first_index = np.argwhere(trues == i)[1 if i < 2 else 0, 0]
+
+        current_xs = xs_exp[:, first_index]
+        current_ys = ys_exp[:, first_index]
+
+        plt.plot(current_xs, current_ys, label=spg_labels[first_index])
+
+    plt.xlabel(r"$2 \theta$")
+    plt.ylabel(r"Intensity / arb. unit")
+    plt.legend()
+    plt.savefig("narrow_examples.png", dpi=300)
+    plt.show()
