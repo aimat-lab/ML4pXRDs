@@ -8,7 +8,7 @@ sys.path.append("../")
 sys.path.append("../../")
 sys.path.append("./")
 
-from random_simulation_utils import generate_structures
+from dataset_simulations.random_simulation_utils import generate_structures
 import json
 import os
 from math import asin, cos, degrees, pi, radians, sin
@@ -17,7 +17,6 @@ import collections
 from pymatgen.io.cif import CifParser
 import time
 import numba
-import random_simulation_utils
 import matplotlib.pyplot as plt
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 
