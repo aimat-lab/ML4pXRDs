@@ -15,4 +15,4 @@ ip_head=$head_node_ip:$port
 
 echo "Starting worker"
 
-srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "0" --block
+srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --redis-password='5241590000000000' --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "0" --block
