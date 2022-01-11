@@ -120,7 +120,8 @@ assert len(val_x) == len(val_y)
 
 val_x = np.expand_dims(val_x, axis=2)
 
-ray.init(include_dashboard=True, num_cpus=NO_workers)
+ray.init(address='auto')
+#ray.init(include_dashboard=True, num_cpus=NO_workers)
 
 print()
 print(ray.cluster_resources())
