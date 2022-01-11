@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=128
 #SBATCH --ntasks=1
 #SBATCH --mem=20000mb
 #SBATCH --tasks-per-node=1
@@ -15,4 +15,4 @@ ip_head=$head_node_ip:$port
 
 echo "Starting worker"
 
-srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "0" --block
+srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --num-cpus "126" --num-gpus "0" --block

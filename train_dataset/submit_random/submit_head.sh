@@ -20,4 +20,8 @@ echo "Starting HEAD at $ip_head"
 
 echo $head_node_ip > ./random_simulation_com
 
-srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --port=$port --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "1" --block
+srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --port=$port --num-cpus "14" --num-gpus "1" --block &
+
+cd ..
+
+python train_random_classifier.py

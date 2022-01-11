@@ -39,7 +39,7 @@ start_angle, end_angle, N = 360/(2*np.pi)*np.arcsin(1.207930/1.5406 * np.sin(2*n
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}")
 
-NO_workers = 8
+NO_workers = 126+14
 queue_size = 200
 queue_size_tf = 100
 
@@ -122,7 +122,9 @@ val_x = np.expand_dims(val_x, axis=2)
 
 ray.init(include_dashboard=True, num_cpus=NO_workers)
 
+print()
 print(ray.cluster_resources())
+print()
 
 queue = Queue(maxsize=queue_size) # store a maximum of `queue_size` batches
 
