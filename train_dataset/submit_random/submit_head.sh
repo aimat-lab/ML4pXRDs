@@ -1,31 +1,23 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=16
-#SBATCH --ntasks=1 
+#SBATCH --ntasks=1
 #SBATCH --mem=80000mb
-#SBATCH --tasks-per-node=1 
-#SBATCH --partition=gpu 
-#SBATCH --gres=gpu:1 
+#SBATCH --tasks-per-node=1
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:1
 #SBATCH --job-name=random_head
 #SBATCH --time=10-48:00:00
 
-# Getting the node names
-nodes=$(scontrol show hostnames "$SLURM_JOB_NODELIST")
-nodes_array=($nodes)
-
-my_mode=${nodes_array[0]}
-head_node_ip=$(srun --nodes=1 --ntasks=1 -w "$my_node" hostname --ip-address)
+source ~/mambaforge/etc/profile.d/conda.sh
+conda activate pyxtal_debug
 
 port=6379
+head_node_ip=$(hostname --ip-address)
+
 ip_head=$head_node_ip:$port
 export ip_head # pass along
-echo "IP Head: $ip_head"
+echo "Starting HEAD at $ip_head"
 
-echo "Starting HEAD at $head_node"
+echo $head_node_ip > ./random_simulation_com
 
-pipe=/tmp/random_simulation_com
-if [[ ! -p $pipe ]]; then
-    mkfifo $pipe
-fi
-echo $ip_head > $pipe 
-
-srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --port=$port --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "${SLURM_GPUS_PER_TASK}" --block &
+srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --port=$port --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "1" --block
