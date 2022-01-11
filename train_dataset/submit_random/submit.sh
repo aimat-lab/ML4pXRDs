@@ -19,5 +19,3 @@ echo "IP of head is $head_node_ip"
 sleep 10
 
 sbatch submit_worker.sh
-
-
