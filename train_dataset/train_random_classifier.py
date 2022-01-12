@@ -12,10 +12,9 @@ import os
 from sklearn.utils import shuffle
 from dataset_simulations.simulation import Simulation
 from scipy import interpolate as ip
-
 import ray
 from ray.util.queue import Queue
-
+import pickle
 
 tag = "debug"
 
@@ -23,6 +22,9 @@ tag = "debug"
 test_every_X_epochs = 1
 batches_per_epoch = 1500
 NO_epochs = 100
+
+compare_distributions = True
+NO_random_batches = 20
 
 max_NO_elements = 10
 structures_per_spg = 32
@@ -73,7 +75,7 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(load_only=5)
+icsd_sim.load(load_only=5) # TODO: Maybe change this (increase)!
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -98,6 +100,14 @@ for i in reversed(range(0, len(icsd_patterns))):
         del icsd_labels[i]
         del icsd_variations[i]
         del icsd_crystals[i]
+
+if compare_distributions:
+
+    with open(out_base + "spgs.pickle", "wb") as file:
+        pickle.dump("spgs.pickle")
+
+    with open(out_base + "icsd_data.pickle", "wb") as file:
+        pickle.dump((icsd_labels, icsd_variations, icsd_crystals))
 
 val_y = []
 for i, label in enumerate(icsd_labels):
@@ -171,6 +181,25 @@ def batch_generator(queue, spgs, structures_per_spg, N, start_angle, end_angle, 
 for i in range(0, NO_workers):
     batch_generator.remote(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements)
 
+if compare_distributions:
+    # pre-store some batches to compare to the rightly / falsely classified icsd samples
+
+    random_comparison_patterns = []
+    random_comparison_labels = []
+
+    for i in range(NO_random_batches):
+
+        patterns, labels = queue.get()
+
+        random_comparison_patterns.extend(patterns)
+        random_comparison_labels.extend(labels)
+
+    # TODO: I also want the crystals, here! Add an option to batch_generator for this!!??
+    # Also, I don't really need the patterns here!
+    # Also get the corn sizes!
+    with open(out_base + "random_data.pickle", "wb") as file:
+        pickle.dump((random_comparison_labels,), file)
+
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches):
         self.number_of_batches = number_of_batches
@@ -230,5 +259,7 @@ model.fit(
 )
 
 model.save(out_base + "final")
+
+# TODO: do one last test sweep and save rightly / falsely identified indices
 
 ray.shutdown()

@@ -15,6 +15,49 @@ from pymatgen.io.cif import CifWriter
 from pyxtal.symmetry import Group
 import re
 
+jobid = os.getenv("SLURM_JOB_ID")
+
+# read ICSD data:
+if jobid is not None and jobid != "":
+    icsd_sim = Simulation(
+        "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
+        "/home/kit/iti/la2559/Databases/ICSD/cif/",
+    )
+else:
+    icsd_sim = Simulation(
+        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+    )
+icsd_sim.output_dir = "../dataset_simulations/patterns/icsd/"
+icsd_sim.load(load_patterns_angles_intensities=False, load_only=14)
+
+# read random data:
+if jobid is not None and jobid != "":
+    random_sim = Simulation(
+        "/home/kit/iti/la2559/Databases/ICSD/ICSD_data_from_API.csv",
+        "/home/kit/iti/la2559/Databases/ICSD/cif/",
+    )
+else:
+    random_sim = Simulation(
+        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+    )
+random_sim.output_dir = "../dataset_simulations/patterns/random_crystals_only/"
+random_sim.load(load_patterns_angles_intensities=False, load_only=2)
+
+n_patterns_per_crystal = 5
+
+with open("falsely_rightly.pickle", "rb") as file:
+    falsely_indices, rightly_indices = pickle.load(file)
+
+icsd_variations = icsd_sim.sim_variations
+icsd_crystals = icsd_sim.sim_crystals
+icsd_labels = icsd_sim.sim_labels
+
+random_variations = random_sim.sim_variations
+random_crystals = random_sim.sim_crystals
+random_labels = random_sim.sim_labels
+
 """
 ########## Plotting the histogram of spgs in the ICSD
 
@@ -175,7 +218,8 @@ for i, label in enumerate(random_labels):
     random_corn_sizes.extend([item[0] for item in random_sim.sim_variations[i]])
 
 
-############## Calculate histograms:
+# calculate histograms:
+
 
 def get_denseness_factor(structure):
 
@@ -487,6 +531,7 @@ plt.show()
 
 
 # TODO: Why VOLUMES OF 10**3??? 1000; Isn't this a little bit high?
+
 
 # Info about wyckoff positions in cif file format:
 # => where in the cif file is written what kind of wyckoff site we are dealing with?
