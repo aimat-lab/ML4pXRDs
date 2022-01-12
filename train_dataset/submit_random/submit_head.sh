@@ -18,12 +18,17 @@ ip_head=$head_node_ip:$port
 export ip_head # pass along
 echo "Starting HEAD at $ip_head"
 
-echo $head_node_ip > ./random_simulation_com
-
 srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --port=$port --redis-password='5241590000000000' --num-cpus "14" --num-gpus "1" --block &
 
-cd ..
+sleep 20
+echo $head_node_ip > ./head_node_ip # signal that worker can connect
 
-sleep 60
+# wait until worker has connected
+until [ -f ./worker_ready ]
+do
+         sleep 5
+done
+
+cd ..
 
 python train_random_classifier.py
