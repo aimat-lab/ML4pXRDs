@@ -25,13 +25,15 @@ batches_per_epoch = 1500
 NO_epochs = 100
 
 max_NO_elements = 10
-structures_per_spg = 64
+structures_per_spg = 32
 # => 96k structures per spg per epoch
 
 #spgs = [14, 104] # works well, relatively high val_acc
 #spgs = [129, 176] # 93.15%, pretty damn well!
-spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+#spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
+
+spgs = [14,104,129,176]
 
 # like in the Vecsei paper:
 start_angle, end_angle, N = 5, 90, 8501
