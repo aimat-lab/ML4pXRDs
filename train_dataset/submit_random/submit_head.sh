@@ -24,4 +24,6 @@ srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --p
 
 cd ..
 
+sleep 60
+
 python train_random_classifier.py

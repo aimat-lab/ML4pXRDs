@@ -16,6 +16,6 @@ done
 read head_node_ip < ./random_simulation_com
 echo "IP of head is $head_node_ip"
 
-sleep 10
+sleep 20
 
 sbatch submit_worker.sh

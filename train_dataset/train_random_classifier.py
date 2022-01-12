@@ -159,7 +159,7 @@ def batch_generator(queue, spgs, structures_per_spg, N, start_angle, end_angle, 
             labels = np.array(labels)
 
             queue.put((patterns,labels)) # blocks if queue is full, which is good
-        
+
         except Exception as ex:
 
             print("Error occurred in worker:")
@@ -220,7 +220,7 @@ model.fit(
     validation_data=(val_x, val_y),
     validation_freq=test_every_X_epochs,
     callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
-    verbose=1,
+    verbose=2,
     workers=1,
     max_queue_size=queue_size_tf,
     use_multiprocessing=False,
