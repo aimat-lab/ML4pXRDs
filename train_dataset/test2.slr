@@ -1,7 +1,0 @@
-#!/bin/bash
-#SBATCH --ntasks=1 --mem-per-cpu=8G
-#SBATCH hetjob
-#SBATCH --ntasks=1 --mem=16G
-
-srun --het-group=0 "sleep 10"
-srun --het-group=1 "sleep 10"
