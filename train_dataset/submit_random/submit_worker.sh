@@ -9,10 +9,18 @@
 source ~/mambaforge/etc/profile.d/conda.sh
 conda activate pyxtal_debug
 
+# wait until head is ready
+until [ -f ./head_node_ip ]
+do
+         sleep 5
+done
+
 port=6379
-read head_node_ip < ./random_simulation_com
+read head_node_ip < ./head_node_ip
 ip_head=$head_node_ip:$port
 
 echo "Starting worker"
+
+{ sleep 20; echo "ready" > ./worker_ready; } & # signal that worker is connected
 
 srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --redis-password='5241590000000000' --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "0" --block
