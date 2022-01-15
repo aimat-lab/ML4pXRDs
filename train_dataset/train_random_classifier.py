@@ -16,26 +16,24 @@ import ray
 from ray.util.queue import Queue
 import pickle
 
-tag = "debug"
+tag = "just_test_it"
 
-#test_every_X_epochs = 10
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 100
+NO_epochs = 1000
 
-compare_distributions = True
+compare_distributions = False
 NO_random_batches = 20
 
 max_NO_elements = 10
-structures_per_spg = 32
-# => 96k structures per spg per epoch
+structures_per_spg = 1
 
 #spgs = [14, 104] # works well, relatively high val_acc
 #spgs = [129, 176] # 93.15%, pretty damn well!
 #spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
 
-spgs = [14,104,129,176]
+#spgs = [14,104,129,176] # after 100 epochs: 0.8503 val accuracy
 
 # like in the Vecsei paper:
 start_angle, end_angle, N = 5, 90, 8501
@@ -75,7 +73,7 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(load_only=5) # TODO: Maybe change this (increase)!
+icsd_sim.load(load_only=5)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -90,6 +88,8 @@ for i, label in enumerate(icsd_labels):
     dist_y.append(label[0])
 print(np.bincount(dist_y))
 """
+
+spgs = sorted(np.unique([item[0] for item in icsd_labels]))
 
 for i in reversed(range(0, len(icsd_patterns))):
     if (
@@ -151,7 +151,7 @@ def batch_generator(queue, spgs, structures_per_spg, N, start_angle, end_angle, 
             patterns, labels = get_random_xy_patterns(
                     spgs=spgs,
                     structures_per_spg=structures_per_spg,
-                    #wavelength=1.5406,  # TODO: Cu-K line, when testing on ICSD data, switch to 1.207930 wavelength (scaling)
+                    #wavelength=1.5406,  # TODO: Cu-K line
                     wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
                     N=N,
                     two_theta_range=(start_angle, end_angle),
