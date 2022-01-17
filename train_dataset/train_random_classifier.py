@@ -32,6 +32,14 @@ NO_random_batches = 20
 
 max_NO_elements = 10
 
+verbosity = 2
+
+local = False
+if local:
+    structures_per_spg = 1 # decrease batch size
+    NO_workers = 8
+    verbosity = 1
+
 #spgs = [14, 104] # works well, relatively high val_acc
 #spgs = [129, 176] # 93.15%, pretty damn well!
 #spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
@@ -73,7 +81,7 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(load_only=5)
+icsd_sim.load(load_only=5 if not local else 1)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -132,8 +140,11 @@ assert len(val_x) == len(val_y)
 
 val_x = np.expand_dims(val_x, axis=2)
 
-ray.init(address='auto')
-#ray.init(include_dashboard=True, num_cpus=NO_workers)
+if not local:
+    ray.init(address='auto', include_dashboard=False)
+    #ray.init(include_dashboard=True, num_cpus=NO_workers)
+else:
+    ray.init(include_dashboard=False)
 
 print()
 print(ray.cluster_resources())
@@ -177,6 +188,11 @@ def batch_generator(queue, spgs, structures_per_spg, N, start_angle, end_angle, 
 
             print("Error occurred in worker:")
             print(ex)
+            print(
+                type(ex).__name__,          # TypeError
+                __file__,                  # /tmp/example.py
+                ex.__traceback__.tb_lineno  # 2
+            )
 
 # Start worker tasks
 for i in range(0, NO_workers):
@@ -252,7 +268,7 @@ model.fit(
     validation_data=(val_x, val_y),
     validation_freq=test_every_X_epochs,
     callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
-    verbose=2,
+    verbose=verbosity,
     workers=1,
     max_queue_size=queue_size_tf,
     use_multiprocessing=False,

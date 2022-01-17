@@ -503,13 +503,19 @@ def get_random_xy_patterns(
                 print("Error simulating pattern:")
                 print(ex)
             else:
-                labels.append([spg]*NO_corn_sizes)
+                labels.extend([spg]*NO_corn_sizes)
                 result_patterns_y.extend(patterns_ys)
 
     return result_patterns_y, labels
 
 
 if __name__ == "__main__":
+
+    test = get_random_xy_patterns([115], 1, 1.2, 9000, 5)
+
+    plt.plot(test[0][3])
+    plt.plot(test[0][2])
+    plt.show()
 
     if False:
         # parser = CifParser("example.cif")
@@ -578,7 +584,7 @@ if __name__ == "__main__":
         plt.plot(xs, diffractogram)
         plt.show()
 
-    if True:
+    if False:
 
         repeat = 5
 
