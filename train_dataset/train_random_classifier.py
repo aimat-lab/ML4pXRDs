@@ -1,5 +1,3 @@
-import sys
-
 import tensorflow.keras as keras
 from dataset_simulations.core.quick_simulation import get_random_xy_patterns
 import numpy as np
@@ -27,7 +25,7 @@ NO_workers = 126+14
 queue_size = 200
 queue_size_tf = 100
 
-compare_distributions = False
+compare_distributions = True
 NO_random_batches = 20
 
 max_NO_elements = 10
@@ -45,7 +43,7 @@ if local:
 #spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
 #spgs = [14,104,129,176] # after 100 epochs: 0.8503 val accuracy
-# all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning
+# all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
 # like in the Vecsei paper:
 start_angle, end_angle, N = 5, 90, 8501
@@ -112,10 +110,10 @@ for i in reversed(range(0, len(icsd_patterns))):
 if compare_distributions:
 
     with open(out_base + "spgs.pickle", "wb") as file:
-        pickle.dump("spgs.pickle")
+        pickle.dump(spgs, file)
 
     with open(out_base + "icsd_data.pickle", "wb") as file:
-        pickle.dump((icsd_labels, icsd_variations, icsd_crystals))
+        pickle.dump((icsd_labels, icsd_variations, icsd_crystals), file)
 
 val_y = []
 for i, label in enumerate(icsd_labels):
@@ -153,23 +151,48 @@ print()
 queue = Queue(maxsize=queue_size) # store a maximum of `queue_size` batches
 
 @ray.remote(num_cpus=1, num_gpus=0)
-def batch_generator(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements):
+def batch_generator_with_structures(spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements):
+
+    patterns, labels, structures = get_random_xy_patterns(
+                spgs=spgs,
+                structures_per_spg=structures_per_spg,
+                #wavelength=1.5406,  # TODO: Cu-K line
+                wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
+                N=N,
+                NO_corn_sizes=NO_corn_sizes,
+                two_theta_range=(start_angle, end_angle),
+                max_NO_elements=max_NO_elements,
+                do_print=False,
+                return_structures=True
+            )
+
+    # Set the label to the right index:
+    for i in range(0, len(labels)):
+        labels[i] = spgs.index(labels[i])
+
+    patterns = np.array(patterns)
+    labels = np.array(labels)
+
+    return patterns, labels, structures
+
+@ray.remote(num_cpus=1, num_gpus=0)
+def batch_generator_queue(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements):
 
     while True:
 
         try:
 
             patterns, labels = get_random_xy_patterns(
-                    spgs=spgs,
-                    structures_per_spg=structures_per_spg,
-                    #wavelength=1.5406,  # TODO: Cu-K line
-                    wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
-                    N=N,
-                    NO_corn_sizes=NO_corn_sizes,
-                    two_theta_range=(start_angle, end_angle),
-                    max_NO_elements=max_NO_elements,
-                    do_print=False,
-                )
+                spgs=spgs,
+                structures_per_spg=structures_per_spg,
+                #wavelength=1.5406,  # TODO: Cu-K line
+                wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
+                N=N,
+                NO_corn_sizes=NO_corn_sizes,
+                two_theta_range=(start_angle, end_angle),
+                max_NO_elements=max_NO_elements,
+                do_print=False,
+            )
 
             patterns, labels = shuffle(patterns, labels)
 
@@ -196,7 +219,7 @@ def batch_generator(queue, spgs, structures_per_spg, N, start_angle, end_angle, 
 
 # Start worker tasks
 for i in range(0, NO_workers):
-    batch_generator.remote(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements)
+    batch_generator_queue.remote(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements)
 
 if compare_distributions:
     # pre-store some batches to compare to the rightly / falsely classified icsd samples

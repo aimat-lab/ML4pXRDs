@@ -473,6 +473,7 @@ def get_random_xy_patterns(
     two_theta_range=(0, 90),
     max_NO_elements=10,
     do_print=False,
+    return_structures = False,
 ):
 
     result_patterns_y = []
@@ -506,8 +507,10 @@ def get_random_xy_patterns(
                 labels.extend([spg]*NO_corn_sizes)
                 result_patterns_y.extend(patterns_ys)
 
-    return result_patterns_y, labels
-
+    if not return_structures:
+        return result_patterns_y, labels
+    else:
+        return result_patterns_y, labels, structures
 
 if __name__ == "__main__":
 
