@@ -14,12 +14,12 @@ import pickle
 tag = "just_test_it"
 
 test_every_X_epochs = 1
-batches_per_epoch = 75
+batches_per_epoch = 150
 NO_epochs = 1000
 
-structures_per_spg = 2
+structures_per_spg = 1
 NO_corn_sizes = 5
-# => batch size: 2*5*200=~2000
+# => batch size: 1*5*200=~1000
 
 NO_workers = 126+14
 queue_size = 200
@@ -113,7 +113,7 @@ if compare_distributions:
         pickle.dump(spgs, file)
 
     with open(out_base + "icsd_data.pickle", "wb") as file:
-        pickle.dump((icsd_labels, icsd_variations, icsd_crystals), file)
+        pickle.dump((icsd_crystals, icsd_labels, [item[0] for item in icsd_variations]), file)
 
 val_y = []
 for i, label in enumerate(icsd_labels):
@@ -151,9 +151,9 @@ print()
 queue = Queue(maxsize=queue_size) # store a maximum of `queue_size` batches
 
 @ray.remote(num_cpus=1, num_gpus=0)
-def batch_generator_with_structures(spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements):
+def batch_generator_with_additional(spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes):
 
-    patterns, labels, structures = get_random_xy_patterns(
+    patterns, labels, structures, corn_sizes = get_random_xy_patterns(
                 spgs=spgs,
                 structures_per_spg=structures_per_spg,
                 #wavelength=1.5406,  # TODO: Cu-K line
@@ -163,7 +163,7 @@ def batch_generator_with_structures(spgs, structures_per_spg, N, start_angle, en
                 two_theta_range=(start_angle, end_angle),
                 max_NO_elements=max_NO_elements,
                 do_print=False,
-                return_structures=True
+                return_additional=True
             )
 
     # Set the label to the right index:
@@ -173,10 +173,10 @@ def batch_generator_with_structures(spgs, structures_per_spg, N, start_angle, en
     patterns = np.array(patterns)
     labels = np.array(labels)
 
-    return patterns, labels, structures
+    return patterns, labels, structures, corn_sizes
 
 @ray.remote(num_cpus=1, num_gpus=0)
-def batch_generator_queue(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements):
+def batch_generator_queue(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes):
 
     while True:
 
@@ -217,28 +217,32 @@ def batch_generator_queue(queue, spgs, structures_per_spg, N, start_angle, end_a
                 ex.__traceback__.tb_lineno  # 2
             )
 
-# Start worker tasks
-for i in range(0, NO_workers):
-    batch_generator_queue.remote(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements)
-
 if compare_distributions:
     # pre-store some batches to compare to the rightly / falsely classified icsd samples
 
-    random_comparison_patterns = []
+    random_comparison_crystals = []
     random_comparison_labels = []
+    random_comparison_corn_sizes = []
 
+    object_refs = []
     for i in range(NO_random_batches):
+        ref = batch_generator_with_additional.remote(spgs, 1, N, start_angle, end_angle, max_NO_elements, 1)
+        object_refs.append(ref)
 
-        patterns, labels = queue.get()
+    results = ray.get(object_refs)
 
-        random_comparison_patterns.extend(patterns)
+    for result in results:
+        patterns, labels, crystals, corn_sizes = result
+        random_comparison_crystals.extend(crystals)
         random_comparison_labels.extend(labels)
+        random_comparison_corn_sizes.extend(corn_sizes)
 
-    # TODO: I also want the crystals, here! Add an option to batch_generator for this!!??
-    # Also, I don't really need the patterns here!
-    # Also get the corn sizes!
     with open(out_base + "random_data.pickle", "wb") as file:
-        pickle.dump((random_comparison_labels,), file)
+        pickle.dump((random_comparison_crystals, random_comparison_labels, random_comparison_corn_sizes), file)
+
+# Start worker tasks
+for i in range(0, NO_workers):
+    batch_generator_queue.remote(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes)
 
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches):
@@ -300,6 +304,21 @@ model.fit(
 
 model.save(out_base + "final")
 
-# TODO: do one last test sweep and save rightly / falsely identified indices
+prediction = model.predict(val_x)
+prediction = np.argmax(prediction, axis=1)
+
+#print(prediction)
+#print(len(prediction))
+#print(len(val_x))
+#print(len(icsd_crystals))
+
+rightly_indices = np.argwhere(prediction == val_y)[:, 0]
+falsely_indices = np.argwhere(prediction != val_y)[:, 0]
+
+#print(rightly_indices)
+#print(falsely_indices)
+
+with open(out_base + "rightly_falsely.pickle", "wb") as file:
+    pickle.dump((rightly_indices, falsely_indices), file)
 
 ray.shutdown()

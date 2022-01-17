@@ -435,8 +435,11 @@ timings_generation = []
 
 
 def get_xy_patterns(
-    structure, wavelength, xs, NO_corn_sizes=1, two_theta_range=(0, 90), do_print=False
+    structure, wavelength, xs, NO_corn_sizes=1, two_theta_range=(0, 90), do_print=False, return_corn_sizes = False
 ):
+
+    if return_corn_sizes:
+        corn_sizes = []
 
     if do_print:
         start = time.time()
@@ -449,19 +452,27 @@ def get_xy_patterns(
     if do_print:
         start = time.time()
 
-    result = []
+    results = []
 
     for i in range(0, NO_corn_sizes):
-        smeared = smeared_peaks(xs, angles, intensities, np.random.uniform(
+
+        corn_size = np.random.uniform(
                         pymatgen_crystallite_size_gauss_min,
                         pymatgen_crystallite_size_gauss_max,
-                    ), wavelength)
-        result.append(smeared)
+                    )
+        smeared = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
+        results.append(smeared)
+
+        if return_corn_sizes:
+            corn_sizes.append(corn_size)
 
     if do_print:
         timings_simulation_smeared.append((time.time() - start)/NO_corn_sizes)
 
-    return result
+    if not return_corn_sizes:
+        return results
+    else:
+        return results, corn_sizes
 
 
 def get_random_xy_patterns(
@@ -473,11 +484,12 @@ def get_random_xy_patterns(
     two_theta_range=(0, 90),
     max_NO_elements=10,
     do_print=False,
-    return_structures = False,
+    return_additional = False,
 ):
 
     result_patterns_y = []
     labels = []
+    all_corn_sizes = []
 
     xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
 
@@ -499,7 +511,12 @@ def get_random_xy_patterns(
                     NO_corn_sizes,
                     two_theta_range,
                     do_print=do_print,
+                    return_corn_sizes=return_additional
                 )
+
+                if return_additional:
+                    patterns_ys, corn_sizes = patterns_ys
+
             except Exception as ex:
                 print("Error simulating pattern:")
                 print(ex)
@@ -507,14 +524,17 @@ def get_random_xy_patterns(
                 labels.extend([spg]*NO_corn_sizes)
                 result_patterns_y.extend(patterns_ys)
 
-    if not return_structures:
+                if return_additional:
+                    all_corn_sizes.extend(corn_sizes)
+
+    if not return_additional:
         return result_patterns_y, labels
     else:
-        return result_patterns_y, labels, structures
+        return result_patterns_y, labels, structures, all_corn_sizes
 
 if __name__ == "__main__":
 
-    test = get_random_xy_patterns([115], 1, 1.2, 9000, 5)
+    test = get_random_xy_patterns([115], 1, 1.2, 9000, 5, return_additional=True)
 
     plt.plot(test[0][3])
     plt.plot(test[0][2])
