@@ -434,8 +434,8 @@ timings_simulation_smeared = []
 timings_generation = []
 
 
-def get_xy_pattern(
-    structure, wavelength, xs, domain_size, two_theta_range=(0, 90), do_print=False
+def get_xy_patterns(
+    structure, wavelength, xs, NO_corn_sizes=1, two_theta_range=(0, 90), do_print=False
 ):
 
     if do_print:
@@ -448,11 +448,20 @@ def get_xy_pattern(
 
     if do_print:
         start = time.time()
-    smeared = smeared_peaks(xs, angles, intensities, domain_size, wavelength)
-    if do_print:
-        timings_simulation_smeared.append(time.time() - start)
 
-    return smeared
+    result = []
+
+    for i in range(0, NO_corn_sizes):
+        smeared = smeared_peaks(xs, angles, intensities, np.random.uniform(
+                        pymatgen_crystallite_size_gauss_min,
+                        pymatgen_crystallite_size_gauss_max,
+                    ), wavelength)
+        result.append(smeared)
+
+    if do_print:
+        timings_simulation_smeared.append((time.time() - start)/NO_corn_sizes)
+
+    return result
 
 
 def get_random_xy_patterns(
@@ -460,6 +469,7 @@ def get_random_xy_patterns(
     structures_per_spg,
     wavelength,
     N,
+    NO_corn_sizes=1,
     two_theta_range=(0, 90),
     max_NO_elements=10,
     do_print=False,
@@ -469,8 +479,6 @@ def get_random_xy_patterns(
     labels = []
 
     xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
-
-    # TODO: Maybe make multiple patterns (grain sizes) for each structure => save time
 
     for spg in spgs:
         if do_print:
@@ -483,14 +491,11 @@ def get_random_xy_patterns(
             
             try:
 
-                pattern_ys = get_xy_pattern(
+                patterns_ys = get_xy_patterns(
                     structure,
                     wavelength,
                     xs,
-                    np.random.uniform(
-                        pymatgen_crystallite_size_gauss_min,
-                        pymatgen_crystallite_size_gauss_max,
-                    ),
+                    NO_corn_sizes,
                     two_theta_range,
                     do_print=do_print,
                 )
@@ -498,8 +503,8 @@ def get_random_xy_patterns(
                 print("Error simulating pattern:")
                 print(ex)
             else:
-                labels.append(spg)
-                result_patterns_y.append(pattern_ys)
+                labels.append([spg]*NO_corn_sizes)
+                result_patterns_y.extend(patterns_ys)
 
     return result_patterns_y, labels
 

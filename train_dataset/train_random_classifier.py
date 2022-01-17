@@ -1,8 +1,5 @@
 import sys
 
-#sys.path.append("../dataset_simulations/")
-#sys.path.append("../")
-
 import tensorflow.keras as keras
 from dataset_simulations.core.quick_simulation import get_random_xy_patterns
 import numpy as np
@@ -19,14 +16,21 @@ import pickle
 tag = "just_test_it"
 
 test_every_X_epochs = 1
-batches_per_epoch = 300
+batches_per_epoch = 30
 NO_epochs = 1000
+
+structures_per_spg = 5
+NO_corn_sizes = 5
+# => batch size: 5*5*200=~5000
+
+NO_workers = 126+14
+queue_size = 200
+queue_size_tf = 100
 
 compare_distributions = False
 NO_random_batches = 20
 
 max_NO_elements = 10
-structures_per_spg = 5
 
 #spgs = [14, 104] # works well, relatively high val_acc
 #spgs = [129, 176] # 93.15%, pretty damn well!
@@ -40,10 +44,6 @@ start_angle, end_angle, N = 5, 90, 8501
 start_angle, end_angle, N = 360/(2*np.pi)*np.arcsin(1.207930/1.5406 * np.sin(2*np.pi/360*start_angle)), 360/(2*np.pi)*np.arcsin(1.207930/1.5406 * np.sin(2*np.pi/360*end_angle)), 8501 # until ICSD has not been re-simulated with Cu-K line
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}")
-
-NO_workers = 126+14
-queue_size = 200
-queue_size_tf = 100
 
 out_base = (
     "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
@@ -154,6 +154,7 @@ def batch_generator(queue, spgs, structures_per_spg, N, start_angle, end_angle, 
                     #wavelength=1.5406,  # TODO: Cu-K line
                     wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
                     N=N,
+                    NO_corn_sizes=NO_corn_sizes,
                     two_theta_range=(start_angle, end_angle),
                     max_NO_elements=max_NO_elements,
                     do_print=False,
