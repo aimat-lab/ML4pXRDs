@@ -46,7 +46,7 @@ queue_size = 200
 queue_size_tf = 100
 
 out_base = (
-    "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "_" + tag + "/"
+    "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
 )
 os.system("mkdir -p " + out_base)
 
