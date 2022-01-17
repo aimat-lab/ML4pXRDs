@@ -19,14 +19,14 @@ import pickle
 tag = "just_test_it"
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
+batches_per_epoch = 300
 NO_epochs = 1000
 
 compare_distributions = False
 NO_random_batches = 20
 
 max_NO_elements = 10
-structures_per_spg = 1
+structures_per_spg = 5
 
 #spgs = [14, 104] # works well, relatively high val_acc
 #spgs = [129, 176] # 93.15%, pretty damn well!
