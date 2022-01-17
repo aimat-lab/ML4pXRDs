@@ -16,12 +16,12 @@ import pickle
 tag = "just_test_it"
 
 test_every_X_epochs = 1
-batches_per_epoch = 30
+batches_per_epoch = 75
 NO_epochs = 1000
 
-structures_per_spg = 5
+structures_per_spg = 2
 NO_corn_sizes = 5
-# => batch size: 5*5*200=~5000
+# => batch size: 2*5*200=~2000
 
 NO_workers = 126+14
 queue_size = 200

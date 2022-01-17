@@ -33,7 +33,7 @@ with open(
     ATOMIC_SCATTERING_PARAMS = json.load(f)
 
 
-@numba.njit(cache=True, fastmath=True, parallel=False)
+@numba.njit(cache=True, fastmath=True)
 def __get_pattern_optimized(
     wavelength,
     zs,
@@ -383,7 +383,7 @@ def get_pattern(structure, wavelength, two_theta_range=(0, 90)):
 #######################################################################################################
 
 
-@numba.njit
+@numba.njit(cache=True)
 def calc_std_dev(two_theta, tau, wavelength):
     """
     calculate standard deviation based on angle (two theta) and domain size (tau)
@@ -404,7 +404,7 @@ def calc_std_dev(two_theta, tau, wavelength):
     return sigma
 
 
-@numba.njit
+@numba.njit(cache=True)
 def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, wavelength):
 
     ys = np.zeros(len(xs))
