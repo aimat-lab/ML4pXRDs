@@ -23,10 +23,13 @@ with open(in_base + "icsd_data.pickle", "rb") as file:
 
 with open(in_base + "random_data.pickle", "rb") as file:
     (
-        random_comparison_crystals,
-        random_comparison_labels,
-        random_comparison_corn_sizes,
+        random_crystals,
+        random_labels,
+        random_variations,
     ) = pickle.load(file)
+random_variations_flat = []
+for item in random_variations:
+    random_variations_flat.extend(item)
 
 with open(in_base + "rightly_falsely.pickle", "rb") as file:
     rightly_indices, falsely_indices = pickle.load(file)
@@ -39,7 +42,7 @@ icsd_NO_elements = []
 icsd_occupancies = []
 icsd_element_repetitions = []
 
-# Just for the icsd meta-data (ids)
+# Just for the icsd meta-data (ids):
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is not None and jobid != "":
     sim = Simulation(
@@ -52,7 +55,7 @@ else:
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-for i in reversed(range(0, len(icsd_variations))):
+for i in range(0, len(icsd_variations)):
 
     is_pure, NO_wyckoffs, elements, occupancies = sim.get_wyckoff_info(icsd_metas[i][0])
 
@@ -68,22 +71,12 @@ for i in reversed(range(0, len(icsd_variations))):
         reps.append(np.sum(np.array(elements) == el))
     icsd_element_repetitions.append(reps)
 
-icsd_NO_wyckoffs = list(reversed(icsd_NO_wyckoffs))
-icsd_elements = list(reversed(icsd_elements))
-icsd_occupancies = list(reversed(icsd_occupancies))
-
-icsd_corn_sizes = []
-for i, label in enumerate(icsd_labels):
-    icsd_corn_sizes.append(icsd_variations[i])
-
 
 # preprocess random data:
 
-random_NO_wyckoffs = []
-random_elements = []
-
 
 def get_wyckoff_info(crystal):
+    # returns: Number of set wyckoffs, elements
 
     # info = crystal.get_space_group_info()
 
@@ -110,16 +103,18 @@ def get_wyckoff_info(crystal):
     return len(struc.atom_sites), elements
 
 
+random_NO_wyckoffs = []
+random_elements = []
 random_NO_elements = []
 random_element_repetitions = []
 
-for i in reversed(range(0, len(random_comparison_corn_sizes))):
+for i in range(0, len(random_variations)):
 
-    print(f"{i} of {len(random_comparison_corn_sizes)}")
+    print(f"Processing random: {i} of {len(random_variations)}")
 
     success = True
     try:
-        NO_wyckoffs, elements = get_wyckoff_info(random_comparison_crystals[i])
+        NO_wyckoffs, elements = get_wyckoff_info(random_crystals[i])
     except Exception as ex:
         print(ex)
         success = False
@@ -136,15 +131,6 @@ for i in reversed(range(0, len(random_comparison_corn_sizes))):
         for el in elements_unique:
             reps.append(np.sum(np.array(elements) == el))
         random_element_repetitions.extend(reps)
-
-
-random_NO_wyckoffs = list(reversed(random_NO_wyckoffs))
-random_elements = list(reversed(random_elements))
-
-random_corn_sizes = []
-for i, label in enumerate(random_comparison_labels):
-    random_corn_sizes.extend(random_comparison_corn_sizes[i])
-
 
 ############## Calculate histograms:
 
@@ -202,7 +188,7 @@ for i in falsely_indices:
     denseness_factor = get_denseness_factor(structure)
 
     falsely_volumes.append(volume)
-    falsely_corn_sizes.extend(icsd_corn_sizes[index])
+    falsely_corn_sizes.extend(icsd_variations[index])
     falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
     falsely_NO_elements.append(icsd_NO_wyckoffs[index])
     falsely_occupancies.extend(icsd_occupancies[index])
@@ -225,7 +211,7 @@ for i in rightly_indices:
     denseness_factor = get_denseness_factor(structure)
 
     rightly_volumes.append(volume)
-    rightly_corn_sizes.extend(icsd_corn_sizes[index])
+    rightly_corn_sizes.extend(icsd_variations[index])
     rightly_NO_elements.append(icsd_NO_elements[index])
     rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
     rightly_occupancies.extend(icsd_occupancies[index])
@@ -238,7 +224,7 @@ for i in rightly_indices:
     if denseness_factor is not None:
         rightly_denseness_factors.append(denseness_factor)
 
-for i, structure in enumerate(random_comparison_crystals):
+for i, structure in enumerate(random_crystals):
 
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
@@ -301,18 +287,18 @@ bins_corn_sizes = np.linspace(
     min(
         np.min(rightly_corn_sizes),
         np.min(falsely_corn_sizes),
-        np.min(random_corn_sizes),
+        np.min(random_variations_flat),
     ),
     max(
         np.max(rightly_corn_sizes),
         np.max(falsely_corn_sizes),
-        np.max(random_corn_sizes),
+        np.max(random_variations_flat),
     ),
     30,
 )
 plt.figure()
 plt.hist(
-    [rightly_corn_sizes, falsely_corn_sizes, random_corn_sizes],
+    [rightly_corn_sizes, falsely_corn_sizes, random_variations_flat],
     bins_corn_sizes,
     label=["rightly", "falsely", "random"],
 )
