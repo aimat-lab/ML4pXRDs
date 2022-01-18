@@ -303,7 +303,12 @@ class Simulation:
         self.crystal_files_Ns.append(end - start)
 
         sim_crystals = np.empty(
-            shape=(len(self.sim_crystals[start:end],)), dtype=object,
+            shape=(
+                len(
+                    self.sim_crystals[start:end],
+                )
+            ),
+            dtype=object,
         )
 
         # force crystals to be written as python objects
@@ -541,10 +546,8 @@ class Simulation:
 
         return None
 
-    def get_wyckoff_info(self, id):
+    def __get_wyckoff_info(cif_path):
         # return: is_pure_occupancy, number_of_placements, wyckoff_str
-
-        cif_path = self.icsd_paths[self.icsd_ids.index(id)]
 
         if cif_path is None:
             return None
@@ -600,6 +603,11 @@ class Simulation:
                 if "_atom_site_occupancy" in line or "_atom_site_occupance" in line:
                     counting = True
 
+    def get_wyckoff_info(self, id):
+        # return: is_pure_occupancy, number_of_placements, wyckoff_str
+        cif_path = self.icsd_paths[self.icsd_ids.index(id)]
+        return Simulation.__get_wyckoff_info(cif_path)
+
     def plot(self, together=1):
 
         xs = np.linspace(angle_min, angle_max, angle_n)
@@ -622,7 +630,10 @@ class Simulation:
                     lines = np.array(self.sim_angles[i])
 
                     plt.vlines(
-                        lines, 1.05, 1.15, lw=0.15,
+                        lines,
+                        1.05,
+                        1.15,
+                        lw=0.15,
                     )
 
                     # plt.xlim((0, 90))

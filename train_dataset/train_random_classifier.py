@@ -14,15 +14,15 @@ import pickle
 tag = "just_test_it"
 
 test_every_X_epochs = 1
-#batches_per_epoch = 150
+# batches_per_epoch = 150
 batches_per_epoch = 1500
-NO_epochs = 5
+NO_epochs = 50
 
-#structures_per_spg = 1
+# structures_per_spg = 1
 structures_per_spg = 5
 NO_corn_sizes = 5
 
-NO_workers = 126+14
+NO_workers = 126 + 14
 queue_size = 200
 queue_size_tf = 100
 
@@ -35,20 +35,28 @@ verbosity = 2
 
 local = True
 if local:
-    structures_per_spg = 1 # decrease batch size
+    structures_per_spg = 1  # decrease batch size
     NO_workers = 8
     verbosity = 1
 
-#spgs = [14, 104] # works well, relatively high val_acc
-#spgs = [129, 176] # 93.15%, pretty damn well!
-#spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+# spgs = [14, 104] # works well, relatively high val_acc
+# spgs = [129, 176] # 93.15%, pretty damn well!
+# spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
-spgs = [14,104,129,176] # after 100 epochs: 0.8503 val accuracy
+spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
 # like in the Vecsei paper:
 start_angle, end_angle, N = 5, 90, 8501
-start_angle, end_angle, N = 360/(2*np.pi)*np.arcsin(1.207930/1.5406 * np.sin(2*np.pi/360*start_angle)), 360/(2*np.pi)*np.arcsin(1.207930/1.5406 * np.sin(2*np.pi/360*end_angle)), 8501 # until ICSD has not been re-simulated with Cu-K line
+start_angle, end_angle, N = (
+    360
+    / (2 * np.pi)
+    * np.arcsin(1.207930 / 1.5406 * np.sin(2 * np.pi / 360 * start_angle)),
+    360
+    / (2 * np.pi)
+    * np.arcsin(1.207930 / 1.5406 * np.sin(2 * np.pi / 360 * end_angle)),
+    8501,
+)  # until ICSD has not been re-simulated with Cu-K line
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}")
 
@@ -88,6 +96,7 @@ icsd_patterns = icsd_sim.sim_patterns
 icsd_labels = icsd_sim.sim_labels
 icsd_variations = icsd_sim.sim_variations
 icsd_crystals = icsd_sim.sim_crystals
+icsd_metas = icsd_sim.sim_metas
 
 """
 dist_y = []
@@ -96,17 +105,15 @@ for i, label in enumerate(icsd_labels):
 print(np.bincount(dist_y))
 """
 
-#spgs = sorted(np.unique([item[0] for item in icsd_labels]))
+# spgs = sorted(np.unique([item[0] for item in icsd_labels]))
 
 for i in reversed(range(0, len(icsd_patterns))):
-    if (
-        np.any(np.isnan(icsd_variations[i][0]))
-        or icsd_labels[i][0] not in spgs
-    ):
+    if np.any(np.isnan(icsd_variations[i][0])) or icsd_labels[i][0] not in spgs:
         del icsd_patterns[i]
         del icsd_labels[i]
         del icsd_variations[i]
         del icsd_crystals[i]
+        del icsd_metas[i]
 
 if compare_distributions:
 
@@ -114,7 +121,15 @@ if compare_distributions:
         pickle.dump(spgs, file)
 
     with open(out_base + "icsd_data.pickle", "wb") as file:
-        pickle.dump((icsd_crystals, icsd_labels, [item[0] for item in icsd_variations]), file)
+        pickle.dump(
+            (
+                icsd_crystals,
+                icsd_labels,
+                [item[0] for item in icsd_variations],
+                icsd_metas,
+            ),
+            file,
+        )
 
 val_y = []
 for i, label in enumerate(icsd_labels):
@@ -128,7 +143,9 @@ val_x = []
 for pattern in icsd_patterns:
     for sub_pattern in pattern:
 
-        f = ip.CubicSpline(used_range, sub_pattern[start_index: end_index+1], bc_type="natural")
+        f = ip.CubicSpline(
+            used_range, sub_pattern[start_index : end_index + 1], bc_type="natural"
+        )
         actual_val = f(angle_range)
 
         val_x.append(actual_val)
@@ -140,8 +157,8 @@ assert len(val_x) == len(val_y)
 val_x = np.expand_dims(val_x, axis=2)
 
 if not local:
-    ray.init(address='auto', include_dashboard=False)
-    #ray.init(include_dashboard=True, num_cpus=NO_workers)
+    ray.init(address="auto", include_dashboard=False)
+    # ray.init(include_dashboard=True, num_cpus=NO_workers)
 else:
     ray.init(include_dashboard=False)
 
@@ -149,23 +166,26 @@ print()
 print(ray.cluster_resources())
 print()
 
-queue = Queue(maxsize=queue_size) # store a maximum of `queue_size` batches
+queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
+
 
 @ray.remote(num_cpus=1, num_gpus=0)
-def batch_generator_with_additional(spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes):
+def batch_generator_with_additional(
+    spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes
+):
 
     patterns, labels, structures, corn_sizes = get_random_xy_patterns(
-                spgs=spgs,
-                structures_per_spg=structures_per_spg,
-                #wavelength=1.5406,  # TODO: Cu-K line
-                wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
-                N=N,
-                NO_corn_sizes=NO_corn_sizes,
-                two_theta_range=(start_angle, end_angle),
-                max_NO_elements=max_NO_elements,
-                do_print=False,
-                return_additional=True
-            )
+        spgs=spgs,
+        structures_per_spg=structures_per_spg,
+        # wavelength=1.5406,  # TODO: Cu-K line
+        wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
+        N=N,
+        NO_corn_sizes=NO_corn_sizes,
+        two_theta_range=(start_angle, end_angle),
+        max_NO_elements=max_NO_elements,
+        do_print=False,
+        return_additional=True,
+    )
 
     # Set the label to the right index:
     for i in range(0, len(labels)):
@@ -176,8 +196,18 @@ def batch_generator_with_additional(spgs, structures_per_spg, N, start_angle, en
 
     return patterns, labels, structures, corn_sizes
 
+
 @ray.remote(num_cpus=1, num_gpus=0)
-def batch_generator_queue(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes):
+def batch_generator_queue(
+    queue,
+    spgs,
+    structures_per_spg,
+    N,
+    start_angle,
+    end_angle,
+    max_NO_elements,
+    NO_corn_sizes,
+):
 
     while True:
 
@@ -186,8 +216,8 @@ def batch_generator_queue(queue, spgs, structures_per_spg, N, start_angle, end_a
             patterns, labels = get_random_xy_patterns(
                 spgs=spgs,
                 structures_per_spg=structures_per_spg,
-                #wavelength=1.5406,  # TODO: Cu-K line
-                wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
+                # wavelength=1.5406,  # TODO: Cu-K line
+                wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
                 N=N,
                 NO_corn_sizes=NO_corn_sizes,
                 two_theta_range=(start_angle, end_angle),
@@ -206,17 +236,18 @@ def batch_generator_queue(queue, spgs, structures_per_spg, N, start_angle, end_a
 
             labels = np.array(labels)
 
-            queue.put((patterns,labels)) # blocks if queue is full, which is good
+            queue.put((patterns, labels))  # blocks if queue is full, which is good
 
         except Exception as ex:
 
             print("Error occurred in worker:")
             print(ex)
             print(
-                type(ex).__name__,          # TypeError
-                __file__,                  # /tmp/example.py
-                ex.__traceback__.tb_lineno  # 2
+                type(ex).__name__,  # TypeError
+                __file__,  # /tmp/example.py
+                ex.__traceback__.tb_lineno,  # 2
             )
+
 
 if compare_distributions:
     # pre-store some batches to compare to the rightly / falsely classified icsd samples
@@ -227,7 +258,9 @@ if compare_distributions:
 
     object_refs = []
     for i in range(NO_random_batches):
-        ref = batch_generator_with_additional.remote(spgs, 1, N, start_angle, end_angle, max_NO_elements, 1)
+        ref = batch_generator_with_additional.remote(
+            spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
+        )
         object_refs.append(ref)
 
     results = ray.get(object_refs)
@@ -239,11 +272,28 @@ if compare_distributions:
         random_comparison_corn_sizes.extend(corn_sizes)
 
     with open(out_base + "random_data.pickle", "wb") as file:
-        pickle.dump((random_comparison_crystals, random_comparison_labels, random_comparison_corn_sizes), file)
+        pickle.dump(
+            (
+                random_comparison_crystals,
+                random_comparison_labels,
+                random_comparison_corn_sizes,
+            ),
+            file,
+        )
 
 # Start worker tasks
 for i in range(0, NO_workers):
-    batch_generator_queue.remote(queue, spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes)
+    batch_generator_queue.remote(
+        queue,
+        spgs,
+        structures_per_spg,
+        N,
+        start_angle,
+        end_angle,
+        max_NO_elements,
+        NO_corn_sizes,
+    )
+
 
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches):
@@ -310,16 +360,16 @@ if compare_distributions:
     prediction = model.predict(val_x)
     prediction = np.argmax(prediction, axis=1)
 
-    #print(prediction)
-    #print(len(prediction))
-    #print(len(val_x))
-    #print(len(icsd_crystals))
+    # print(prediction)
+    # print(len(prediction))
+    # print(len(val_x))
+    # print(len(icsd_crystals))
 
     rightly_indices = np.argwhere(prediction == val_y)[:, 0]
     falsely_indices = np.argwhere(prediction != val_y)[:, 0]
 
-    #print(rightly_indices)
-    #print(falsely_indices)
+    # print(rightly_indices)
+    # print(falsely_indices)
 
     with open(out_base + "rightly_falsely.pickle", "wb") as file:
         pickle.dump((rightly_indices, falsely_indices), file)

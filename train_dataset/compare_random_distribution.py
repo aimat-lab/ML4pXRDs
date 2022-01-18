@@ -11,56 +11,27 @@ import matplotlib.pyplot as plt
 from pyxtal.database.element import Element
 import pickle
 from pyxtal import pyxtal
-from pymatgen.io.cif import CifWriter
-from pyxtal.symmetry import Group
 import re
 
-"""
-########## Plotting the histogram of spgs in the ICSD
+in_base = "classifier_spgs/18-01-2022_10-32-34_just_test_it/"
 
-spgs = [icsd_sim.get_space_group_number(id) for id in icsd_sim.icsd_ids]
+with open(in_base + "spgs.pickle", "rb") as file:
+    spgs = pickle.load(file)
 
-for i in reversed(range(0, len(spgs))):
-    if spgs[i] is None:
-        del spgs[i]
+with open(in_base + "icsd_data.pickle", "rb") as file:
+    icsd_crystals, icsd_labels, icsd_variations, icsd_metas = pickle.load(file)
 
-print(f"Number of ICSD entries with spg number: {len(spgs)}")
+with open(in_base + "random_data.pickle", "rb") as file:
+    (
+        random_comparison_crystals,
+        random_comparison_labels,
+        random_comparison_corn_sizes,
+    ) = pickle.load(file)
 
-plt.figure()
-plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
-plt.xlabel("International space group number")
-plt.savefig("distribution_spgs.png")
-# plt.show()
+with open(in_base + "rightly_falsely.pickle", "rb") as file:
+    rightly_indices, falsely_indices = pickle.load(file)
 
-########## Plotting the histogram of spgs in the simulation data (icsd, should be the same)
-
-spgs = [label[0] for label in labels]
-# spgs_compare = [icsd_sim.get_space_group_number(meta[0]) for meta in icsd_sim.sim_metas]
-
-plt.figure()
-plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
-plt.xlabel("International space group number")
-plt.savefig("distribution_spgs.png")
-# plt.show()
-
-########## Plotting the histogram of number of elements in icsd
-
-lengths = []
-for i, id in enumerate(icsd_sim.icsd_sumformulas):
-    lengths.append(len(id.split(" ")))
-
-plt.figure()
-plt.hist(lengths, bins=np.arange(0, np.max(lengths)) + 0.5)
-plt.xlabel("Number of elements")
-plt.savefig("distribution_NO_elements.png")
-# plt.show()
-"""
-
-# the space groups to test for:
-ys_unique = [14, 104]
-
-
-# preprocess icsd-data:
+# Get infos from icsd crystals:
 
 icsd_NO_wyckoffs = []
 icsd_elements = []
@@ -68,27 +39,34 @@ icsd_NO_elements = []
 icsd_occupancies = []
 icsd_element_repetitions = []
 
-for i in reversed(range(0, len(icsd_variations))):
-    is_pure, NO_wyckoffs, elements, occupancies = icsd_sim.get_wyckoff_info(
-        icsd_sim.sim_metas[i][0]
+# Just for the icsd meta-data (ids)
+jobid = os.getenv("SLURM_JOB_ID")
+if jobid is not None and jobid != "":
+    sim = Simulation(
+        "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
+        "/home/ws/uvgnh/Databases/ICSD/cif/",
+    )
+else:
+    sim = Simulation(
+        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-    if np.any(np.isnan(icsd_variations[i][0])) or icsd_labels[i][0] not in ys_unique:
-        del icsd_labels[i]
-        del icsd_variations[i]
-        del icsd_crystals[i]
-    else:
-        elements_unique = np.unique(elements)
+for i in reversed(range(0, len(icsd_variations))):
 
-        icsd_NO_wyckoffs.append(NO_wyckoffs)
-        icsd_elements.append(elements)
-        icsd_NO_elements.append(len(elements_unique))
-        icsd_occupancies.append(occupancies)
+    is_pure, NO_wyckoffs, elements, occupancies = sim.get_wyckoff_info(icsd_metas[i][0])
 
-        reps = []
-        for el in elements_unique:
-            reps.append(np.sum(np.array(elements) == el))
-        icsd_element_repetitions.append(reps)
+    elements_unique = np.unique(elements)
+
+    icsd_NO_wyckoffs.append(NO_wyckoffs)
+    icsd_elements.append(elements)
+    icsd_NO_elements.append(len(elements_unique))
+    icsd_occupancies.append(occupancies)
+
+    reps = []
+    for el in elements_unique:
+        reps.append(np.sum(np.array(elements) == el))
+    icsd_element_repetitions.append(reps)
 
 icsd_NO_wyckoffs = list(reversed(icsd_NO_wyckoffs))
 icsd_elements = list(reversed(icsd_elements))
@@ -96,7 +74,7 @@ icsd_occupancies = list(reversed(icsd_occupancies))
 
 icsd_corn_sizes = []
 for i, label in enumerate(icsd_labels):
-    icsd_corn_sizes.append([item[0] for item in icsd_sim.sim_variations[i]])
+    icsd_corn_sizes.append(icsd_variations[i])
 
 
 # preprocess random data:
@@ -135,26 +113,19 @@ def get_wyckoff_info(crystal):
 random_NO_elements = []
 random_element_repetitions = []
 
-for i in reversed(range(0, len(random_variations))):
+for i in reversed(range(0, len(random_comparison_corn_sizes))):
 
-    print(f"{i} of {len(random_variations)}")
+    print(f"{i} of {len(random_comparison_corn_sizes)}")
 
     success = True
     try:
-        NO_wyckoffs, elements = get_wyckoff_info(random_crystals[i])
+        NO_wyckoffs, elements = get_wyckoff_info(random_comparison_crystals[i])
     except Exception as ex:
         print(ex)
         success = False
 
-    if (
-        not success
-        or np.any(np.isnan(random_variations[i][0]))
-        or random_labels[i][0] not in ys_unique
-    ):
-        del random_labels[i]
-        del random_variations[i]
-        del random_crystals[i]
-    else:
+    if success:
+
         elements_unique = np.unique(elements)
 
         random_NO_wyckoffs.append(NO_wyckoffs)
@@ -171,11 +142,12 @@ random_NO_wyckoffs = list(reversed(random_NO_wyckoffs))
 random_elements = list(reversed(random_elements))
 
 random_corn_sizes = []
-for i, label in enumerate(random_labels):
-    random_corn_sizes.extend([item[0] for item in random_sim.sim_variations[i]])
+for i, label in enumerate(random_comparison_labels):
+    random_corn_sizes.extend(random_comparison_corn_sizes[i])
 
 
 ############## Calculate histograms:
+
 
 def get_denseness_factor(structure):
 
@@ -266,7 +238,7 @@ for i in rightly_indices:
     if denseness_factor is not None:
         rightly_denseness_factors.append(denseness_factor)
 
-for i, structure in enumerate(random_crystals):
+for i, structure in enumerate(random_comparison_crystals):
 
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
@@ -436,8 +408,14 @@ plt.show()
 
 # plot occupancies:
 bins_occupancies = np.linspace(
-    min(np.min(rightly_occupancies), np.min(falsely_occupancies),),
-    max(np.max(rightly_occupancies), np.max(falsely_occupancies),),
+    min(
+        np.min(rightly_occupancies),
+        np.min(falsely_occupancies),
+    ),
+    max(
+        np.max(rightly_occupancies),
+        np.max(falsely_occupancies),
+    ),
     30,
 )
 plt.figure()
@@ -485,8 +463,6 @@ plt.ylabel("count")
 plt.savefig("NO_element_repetitions.png", dpi=400)
 plt.show()
 
-
-# TODO: Why VOLUMES OF 10**3??? 1000; Isn't this a little bit high?
 
 # Info about wyckoff positions in cif file format:
 # => where in the cif file is written what kind of wyckoff site we are dealing with?
