@@ -14,12 +14,13 @@ import pickle
 tag = "just_test_it"
 
 test_every_X_epochs = 1
-batches_per_epoch = 150
-NO_epochs = 1000
+#batches_per_epoch = 150
+batches_per_epoch = 1500
+NO_epochs = 5
 
-structures_per_spg = 1
+#structures_per_spg = 1
+structures_per_spg = 5
 NO_corn_sizes = 5
-# => batch size: 1*5*200=~1000
 
 NO_workers = 126+14
 queue_size = 200
@@ -32,7 +33,7 @@ max_NO_elements = 10
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     structures_per_spg = 1 # decrease batch size
     NO_workers = 8
@@ -42,7 +43,7 @@ if local:
 #spgs = [129, 176] # 93.15%, pretty damn well!
 #spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
-#spgs = [14,104,129,176] # after 100 epochs: 0.8503 val accuracy
+spgs = [14,104,129,176] # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
 # like in the Vecsei paper:
@@ -79,7 +80,7 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(load_only=5 if not local else 1)
+icsd_sim.load(load_only=5 if not local else 2)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -95,7 +96,7 @@ for i, label in enumerate(icsd_labels):
 print(np.bincount(dist_y))
 """
 
-spgs = sorted(np.unique([item[0] for item in icsd_labels]))
+#spgs = sorted(np.unique([item[0] for item in icsd_labels]))
 
 for i in reversed(range(0, len(icsd_patterns))):
     if (
@@ -304,21 +305,23 @@ model.fit(
 
 model.save(out_base + "final")
 
-prediction = model.predict(val_x)
-prediction = np.argmax(prediction, axis=1)
+if compare_distributions:
 
-#print(prediction)
-#print(len(prediction))
-#print(len(val_x))
-#print(len(icsd_crystals))
+    prediction = model.predict(val_x)
+    prediction = np.argmax(prediction, axis=1)
 
-rightly_indices = np.argwhere(prediction == val_y)[:, 0]
-falsely_indices = np.argwhere(prediction != val_y)[:, 0]
+    #print(prediction)
+    #print(len(prediction))
+    #print(len(val_x))
+    #print(len(icsd_crystals))
 
-#print(rightly_indices)
-#print(falsely_indices)
+    rightly_indices = np.argwhere(prediction == val_y)[:, 0]
+    falsely_indices = np.argwhere(prediction != val_y)[:, 0]
 
-with open(out_base + "rightly_falsely.pickle", "wb") as file:
-    pickle.dump((rightly_indices, falsely_indices), file)
+    #print(rightly_indices)
+    #print(falsely_indices)
+
+    with open(out_base + "rightly_falsely.pickle", "wb") as file:
+        pickle.dump((rightly_indices, falsely_indices), file)
 
 ray.shutdown()

@@ -20,7 +20,7 @@ class BinaryAccuracy(tfm.BinaryAccuracy):
 def build_model_park(hp=None, number_of_input_values=9018, number_of_output_labels=2):
 
     # From Park:
-    # They actually train for 5000 epochs and batch size 500 in the original paper
+    # They actually train for 5000 epochs and batch size 1000 in the original paper
 
     model = keras.models.Sequential()
     model.add(
@@ -29,32 +29,32 @@ def build_model_park(hp=None, number_of_input_values=9018, number_of_output_labe
         )
     )  # add convolution layer
     model.add(keras.layers.Activation("relu"))  # activation
-    model.add(keras.layers.Dropout(0.3))
+    #model.add(keras.layers.Dropout(0.3))
     model.add(keras.layers.AveragePooling1D(pool_size=3, strides=2))  # pooling layer
     model.add(keras.layers.Convolution1D(80, 50, strides=5, padding="same"))
     model.add(keras.layers.Activation("relu"))
-    model.add(keras.layers.Dropout(0.3))
+    #model.add(keras.layers.Dropout(0.3))
     model.add(keras.layers.AveragePooling1D(pool_size=3, strides=None))
     model.add(keras.layers.Convolution1D(80, 25, strides=2, padding="same"))
     model.add(keras.layers.Activation("relu"))
 
-    model.add(keras.layers.Dropout(0.3))
+    #model.add(keras.layers.Dropout(0.3))
 
     model.add(keras.layers.AveragePooling1D(pool_size=3, strides=None))
     model.add(keras.layers.Flatten())
     model.add(keras.layers.Dense(700))
     model.add(keras.layers.Activation("relu"))
-    model.add(keras.layers.Dropout(0.5))
+    #model.add(keras.layers.Dropout(0.5))
     model.add(keras.layers.Dense(70))
     model.add(keras.layers.Activation("relu"))
-    model.add(keras.layers.Dropout(0.5))
+    #model.add(keras.layers.Dropout(0.5))
     model.add(
         keras.layers.Dense(
             1 if (number_of_output_labels == 2) else number_of_output_labels
         )
     )
 
-    optimizer = keras.optimizers.Adam()
+    optimizer = keras.optimizers.Adam(learning_rate=0.001)
 
     if number_of_output_labels == 2:
         model.compile(
