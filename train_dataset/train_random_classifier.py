@@ -16,7 +16,7 @@ tag = "just_test_it"
 test_every_X_epochs = 1
 # batches_per_epoch = 150
 batches_per_epoch = 1500
-NO_epochs = 50
+NO_epochs = 1000
 
 # structures_per_spg = 1
 structures_per_spg = 5
@@ -27,13 +27,14 @@ queue_size = 200
 queue_size_tf = 100
 
 compare_distributions = True
-NO_random_batches = 20
+#NO_random_batches = 20
+NO_random_batches = 1000 # as we only have 4 spgs right now
 
 max_NO_elements = 10
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     structures_per_spg = 1  # decrease batch size
     NO_workers = 8
