@@ -261,9 +261,13 @@ if compare_distributions:
         ref = batch_generator_with_additional.remote(
             spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
         )
+        #ref = batch_generator_with_additional(
+        #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
+        #)
         object_refs.append(ref)
 
     results = ray.get(object_refs)
+    #results = object_refs
 
     for result in results:
         patterns, labels, crystals, corn_sizes = result

@@ -19,7 +19,7 @@ with open(in_base + "spgs.pickle", "rb") as file:
     spgs = pickle.load(file)
 
 with open(in_base + "icsd_data.pickle", "rb") as file:
-    icsd_crystals, icsd_labels, icsd_variations, icsd_metas = pickle.load(file)
+    icsd_crystals, icsd_labels, icsd_variations, icsd_metas = pickle.load(file) # TODO: icsd_variations is still wrong!
 
 with open(in_base + "random_data.pickle", "rb") as file:
     (

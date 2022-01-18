@@ -490,6 +490,7 @@ def get_random_xy_patterns(
     result_patterns_y = []
     labels = []
     all_corn_sizes = []
+    all_structures = []
 
     xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
 
@@ -527,10 +528,12 @@ def get_random_xy_patterns(
                 if return_additional:
                     all_corn_sizes.extend(corn_sizes)
 
+                all_structures.extend(structures)
+
     if not return_additional:
         return result_patterns_y, labels
     else:
-        return result_patterns_y, labels, structures, all_corn_sizes
+        return result_patterns_y, labels, all_structures, all_corn_sizes
 
 if __name__ == "__main__":
 
