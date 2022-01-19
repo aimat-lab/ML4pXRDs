@@ -27,7 +27,7 @@ NO_workers = 126 + 14 # for cluster
 queue_size = 200
 queue_size_tf = 100
 
-compare_distributions = False
+compare_distributions = True
 #NO_random_batches = 20
 NO_random_batches = 1000 # as we only have 4 spgs right now
 
@@ -127,7 +127,7 @@ if compare_distributions:
             (
                 icsd_crystals,
                 icsd_labels,
-                [item[0] for item in icsd_variations],
+                [item[:,0] for item in icsd_variations],
                 icsd_metas,
             ),
             file,
@@ -284,6 +284,8 @@ if compare_distributions:
             ),
             file,
         )
+
+exit()
 
 # Start worker tasks
 for i in range(0, NO_workers):

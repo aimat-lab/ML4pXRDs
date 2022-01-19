@@ -27,9 +27,6 @@ with open(in_base + "random_data.pickle", "rb") as file:
         random_labels,
         random_variations,
     ) = pickle.load(file)
-random_variations_flat = []
-for item in random_variations:
-    random_variations_flat.extend(item)
 
 with open(in_base + "rightly_falsely.pickle", "rb") as file:
     rightly_indices, falsely_indices = pickle.load(file)
@@ -155,7 +152,6 @@ def get_denseness_factor(structure):
     except:
         return None
 
-
 falsely_volumes = []
 falsely_denseness_factors = []
 falsely_lattice_paras = []
@@ -253,7 +249,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("volume")
 plt.ylabel("count")
-plt.savefig("comparison_volumes.png", dpi=400)
+plt.savefig("comparison_plots/comparison_volumes.png", dpi=400)
 plt.show()
 
 # plot denseness factors:
@@ -279,7 +275,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("denseness factor")
 plt.ylabel("count")
-plt.savefig("comparison_denseness_factors.png", dpi=400)
+plt.savefig("comparison_plots/comparison_denseness_factors.png", dpi=400)
 plt.show()
 
 # plot corn sizes:
@@ -287,25 +283,25 @@ bins_corn_sizes = np.linspace(
     min(
         np.min(rightly_corn_sizes),
         np.min(falsely_corn_sizes),
-        np.min(random_variations_flat),
+        np.min(random_variations),
     ),
     max(
         np.max(rightly_corn_sizes),
         np.max(falsely_corn_sizes),
-        np.max(random_variations_flat),
+        np.max(random_variations),
     ),
     30,
 )
 plt.figure()
 plt.hist(
-    [rightly_corn_sizes, falsely_corn_sizes, random_variations_flat],
+    [rightly_corn_sizes, falsely_corn_sizes, random_variations],
     bins_corn_sizes,
     label=["rightly", "falsely", "random"],
 )
 plt.legend(loc="upper right")
 plt.xlabel("corn size")
 plt.ylabel("count")
-plt.savefig("comparison_corn_sizes.png", dpi=400)
+plt.savefig("comparison_plots/comparison_corn_sizes.png", dpi=400)
 plt.show()
 
 # plot NO_wyckoffs:
@@ -334,7 +330,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("Number of set wyckoff sites")
 plt.ylabel("count")
-plt.savefig("NO_wyckoffs.png", dpi=400)
+plt.savefig("comparison_plots/NO_wyckoffs.png", dpi=400)
 plt.show()
 
 # plot NO_elements (unique number of elements on wyckoff sites):
@@ -363,7 +359,7 @@ plt.hist(
 plt.legend()
 plt.xlabel("Number of unique elements on wyckoff sites")
 plt.ylabel("count")
-plt.savefig("NO_elements.png", dpi=400)
+plt.savefig("comparison_plots/NO_elements.png", dpi=400)
 plt.show()
 
 # plot lattice_paras:
@@ -389,7 +385,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("lattice para")
 plt.ylabel("count")
-plt.savefig("comparison_lattice_paras.png", dpi=400)
+plt.savefig("comparison_plots/comparison_lattice_paras.png", dpi=400)
 plt.show()
 
 # plot occupancies:
@@ -413,7 +409,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("occupancy")
 plt.ylabel("count")
-plt.savefig("comparison_occupancies.png", dpi=400)
+plt.savefig("comparison_plots/comparison_occupancies.png", dpi=400)
 plt.show()
 
 # plot number of element repetitions:
@@ -446,7 +442,7 @@ plt.hist(
 plt.legend()
 plt.xlabel("Number of element repetitions on wyckoff sites")
 plt.ylabel("count")
-plt.savefig("NO_element_repetitions.png", dpi=400)
+plt.savefig("comparison_plots/NO_element_repetitions.png", dpi=400)
 plt.show()
 
 

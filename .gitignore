@@ -28,3 +28,4 @@ compare_original
 *.py.prof
 train_dataset/classifier_spgs/*
 train_dataset/RRUFF_data/*
+train_dataset/comparison_plots/*
