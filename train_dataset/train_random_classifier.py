@@ -10,23 +10,24 @@ from scipy import interpolate as ip
 import ray
 from ray.util.queue import Queue
 import pickle
+import tensorflow as tf
 
 tag = "just_test_it"
 
 test_every_X_epochs = 1
-# batches_per_epoch = 150
 batches_per_epoch = 1500
 NO_epochs = 1000
 
-# structures_per_spg = 1
+# structures_per_spg = 1 # for all spgs
 structures_per_spg = 5
 NO_corn_sizes = 5
+# => 4*5*5=100 batch size
 
-NO_workers = 126 + 14
+NO_workers = 126 + 14 # for cluster
 queue_size = 200
 queue_size_tf = 100
 
-compare_distributions = True
+compare_distributions = False
 #NO_random_batches = 20
 NO_random_batches = 1000 # as we only have 4 spgs right now
 
@@ -34,9 +35,8 @@ max_NO_elements = 10
 
 verbosity = 2
 
-local = False
+local = True
 if local:
-    structures_per_spg = 1  # decrease batch size
     NO_workers = 8
     verbosity = 1
 
@@ -65,6 +65,7 @@ out_base = (
     "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
 )
 os.system("mkdir -p " + out_base)
+os.system("mkdir -p " + out_base + "tuner_tb")
 
 # load validation set (ICSD):
 
@@ -169,7 +170,6 @@ print()
 
 queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 
-
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_with_additional(
     spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes
@@ -249,7 +249,6 @@ def batch_generator_queue(
                 ex.__traceback__.tb_lineno,  # 2
             )
 
-
 if compare_distributions:
     # pre-store some batches to compare to the rightly / falsely classified icsd samples
 
@@ -299,6 +298,31 @@ for i in range(0, NO_workers):
         NO_corn_sizes,
     )
 
+tb_callback = keras.callbacks.TensorBoard(out_base + "tuner_tb")
+
+# log parameters to tensorboard
+file_writer = tf.summary.create_file_writer(out_base + "tuner_tb" + "/metrics")
+file_writer.set_as_default()
+
+params_txt = (
+f"tag: {tag}  \n  \n"
+f"batches_per_epoch: {batches_per_epoch}  \n"
+f"NO_epochs: {NO_epochs}  \n"
+f"structures_per_spg: {structures_per_spg}  \n"
+f"NO_corn_sizes: {NO_corn_sizes}  \n"
+f"-> batch size: {NO_corn_sizes*structures_per_spg*len(spgs)}  \n  \n"
+f"NO_workers: {NO_workers}  \n"
+f"queue_size: {queue_size}  \n"
+f"queue_size_tf: {queue_size_tf}  \n  \n"
+f"max_NO_elements: {max_NO_elements}  \n"
+f"start_angle: {start_angle}  \n"
+f"end_angle: {end_angle}  \n"
+f"N: {N}")
+tf.summary.text("Parameters", data=params_txt, step=0)
+
+class CustomCallback(keras.callbacks.Callback):
+    def on_train_batch_end(self, batch, logs=None):
+        tf.summary.scalar('ray queue size', data=queue.size(), step=batch)
 
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches):
@@ -339,7 +363,6 @@ class CustomSequence(keras.utils.Sequence):
 
         return queue.get()
 
-
 sequence = CustomSequence(batches_per_epoch)
 
 model = build_model_park(None, N, len(spgs))
@@ -350,7 +373,7 @@ model.fit(
     batch_size=batches_per_epoch,
     validation_data=(val_x, val_y),
     validation_freq=test_every_X_epochs,
-    callbacks=[keras.callbacks.TensorBoard(out_base + "tuner_tb")],
+    callbacks=[tb_callback, CustomCallback()],
     verbose=verbosity,
     workers=1,
     max_queue_size=queue_size_tf,
@@ -380,3 +403,7 @@ if compare_distributions:
         pickle.dump((rightly_indices, falsely_indices), file)
 
 ray.shutdown()
+
+print("Everything finished.")
+print("Output dir:")
+print(out_base)
