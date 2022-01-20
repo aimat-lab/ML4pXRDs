@@ -12,16 +12,17 @@ from ray.util.queue import Queue
 import pickle
 import tensorflow as tf
 
-tag = "just_test_it"
+tag = "spgs-2-15"
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 1000
+NO_epochs = 500
 
 # structures_per_spg = 1 # for all spgs
-structures_per_spg = 5
+#structures_per_spg = 5
+structures_per_spg = 10 # for (2,15) tuple
 NO_corn_sizes = 5
-# => 4*5*5=100 batch size
+# => 4*5*5=100 batch size (for 4 spgs)
 
 NO_workers = 126 + 14 # for cluster
 queue_size = 200
@@ -29,22 +30,22 @@ queue_size_tf = 100
 
 compare_distributions = True
 #NO_random_batches = 20
-NO_random_batches = 1000 # as we only have 4 spgs right now
+NO_random_batches = 1000 # make this smaller for the all-spgs run
 
 max_NO_elements = 10
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-# spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
-spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
+# spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
 # like in the Vecsei paper:
@@ -285,8 +286,6 @@ if compare_distributions:
             file,
         )
 
-exit()
-
 # Start worker tasks
 for i in range(0, NO_workers):
     batch_generator_queue.remote(
@@ -387,19 +386,32 @@ model.save(out_base + "final")
 
 if compare_distributions:
 
-    prediction = model.predict(val_x)
-    prediction = np.argmax(prediction, axis=1)
+    if len(spgs) > 2:
 
-    # print(prediction)
-    # print(len(prediction))
-    # print(len(val_x))
-    # print(len(icsd_crystals))
+        prediction = model.predict(val_x)
+        prediction = np.argmax(prediction, axis=1)
+
+        # print(prediction)
+        # print(len(prediction))
+        # print(len(val_x))
+        # print(len(icsd_crystals))
+
+        # print(rightly_indices)
+        # print(falsely_indices)
+
+    elif len(spgs) == 2:
+
+        prob_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
+        prediction = np.array(prob_model.predict(val_x))
+        prediction = prediction[:, 0]
+        prediction = np.where(prediction > 0.5, 1, 0)
+
+    else:
+
+        raise Exception("Unexpected number of spgs.")
 
     rightly_indices = np.argwhere(prediction == val_y)[:, 0]
     falsely_indices = np.argwhere(prediction != val_y)[:, 0]
-
-    # print(rightly_indices)
-    # print(falsely_indices)
 
     with open(out_base + "rightly_falsely.pickle", "wb") as file:
         pickle.dump((rightly_indices, falsely_indices), file)
