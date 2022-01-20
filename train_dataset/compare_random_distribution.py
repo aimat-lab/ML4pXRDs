@@ -13,13 +13,14 @@ import pickle
 from pyxtal import pyxtal
 import re
 
-in_base = "classifier_spgs/18-01-2022_10-32-34_just_test_it/"
+#in_base = "classifier_spgs/18-01-2022_10-32-34_just_test_it/"
+in_base = "classifier_spgs/4-spg-1000-epochs/"
 
 with open(in_base + "spgs.pickle", "rb") as file:
     spgs = pickle.load(file)
 
 with open(in_base + "icsd_data.pickle", "rb") as file:
-    icsd_crystals, icsd_labels, icsd_variations, icsd_metas = pickle.load(file) # TODO: icsd_variations is still wrong!
+    icsd_crystals, icsd_labels, icsd_variations, icsd_metas = pickle.load(file)
 
 with open(in_base + "random_data.pickle", "rb") as file:
     (
@@ -185,8 +186,8 @@ for i in falsely_indices:
 
     falsely_volumes.append(volume)
     falsely_corn_sizes.extend(icsd_variations[index])
+    falsely_NO_elements.append(icsd_NO_elements[index])
     falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-    falsely_NO_elements.append(icsd_NO_wyckoffs[index])
     falsely_occupancies.extend(icsd_occupancies[index])
     falsely_element_repetitions.extend(icsd_element_repetitions[index])
 
