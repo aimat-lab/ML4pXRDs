@@ -221,6 +221,7 @@ def generate_structure(
                 # sites=chosen_wyckoff_positions,
                 my_seed=seed,
                 factor=np.random.uniform(0.7, 5.0),
+                #factor=1.1,
                 do_distance_checks=do_distance_checks
             )
 
@@ -308,6 +309,41 @@ if __name__ == "__main__":
 
     if True:
 
+        NO_chosen_elements = 50
+
+        seed = 5215
+        number_per_spg = 1
+        low = 1
+        high = 231
+        np.random.seed(seed)
+        random.seed(seed)
+
+        structure_seeds = np.random.randint(0, 10000, 230 * number_per_spg)
+
+        # To pre-compile functions:
+        for spg in range(low, high):
+            generate_structures(spg, number_per_spg, seed=int(structure_seeds[spg - 1]), do_distance_checks=False)
+
+        start = time.time()
+        for spg in range(low, high):
+            generate_structures(
+                spg, number_per_spg, seed=int(structure_seeds[spg - 1]), do_distance_checks=False, max_NO_elements=NO_chosen_elements
+            )
+        stop = time.time()
+        print(f"No distance checks: {stop-start} s", flush=True)
+
+        if False:
+
+            start = time.time()
+            for spg in range(low, high):
+                generate_structures(
+                    spg, number_per_spg, seed=int(structure_seeds[spg - 1]), do_distance_checks=True, max_NO_elements=NO_chosen_elements
+                )
+            stop = time.time()
+            print(f"With distance checks: {stop-start} s", flush=True)
+
+    if False:
+
         seed = 5215
         number_per_spg = 1
 
@@ -348,7 +384,7 @@ if __name__ == "__main__":
 
         print(f"Total job took {stop-start} s", flush=True)
 
-    else:
+    if False:
 
         with open("compare_debug", "rb") as file:
             coords_debug = pickle.load(file)

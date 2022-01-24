@@ -496,6 +496,8 @@ def get_random_xy_patterns(
     xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
 
     for spg in spgs:
+        print(spg)
+
         if do_print:
             start = time.time()
         structures = generate_structures(spg, structures_per_spg, max_NO_elements, do_distance_checks=do_distance_checks)
@@ -538,11 +540,23 @@ def get_random_xy_patterns(
 
 if __name__ == "__main__":
 
-    test = get_random_xy_patterns([115], 1, 1.2, 9000, 5, return_additional=True)
+    if False:
 
-    plt.plot(test[0][3])
-    plt.plot(test[0][2])
-    plt.show()
+        max_NO_elements = 20
+
+        get_random_xy_patterns([5], 1, 1.2, 9000, 1, return_additional=False, max_NO_elements=max_NO_elements, do_distance_checks=False)
+
+        start = time.time()
+
+        for spg in range(1, 231):
+            get_random_xy_patterns([spg], 1, 1.2, 9000, 1, return_additional=False, max_NO_elements=max_NO_elements, do_distance_checks=False)
+
+        stop = time.time()
+        print(f"{stop-start}s")
+
+        #plt.plot(test[0][3])
+        #plt.plot(test[0][2])
+        #plt.show()
 
     if False:
         # parser = CifParser("example.cif")
@@ -611,12 +625,13 @@ if __name__ == "__main__":
         plt.plot(xs, diffractogram)
         plt.show()
 
-    if False:
+    if True:
 
         repeat = 5
+        max_NO_elements = 50
 
         patterns = get_random_xy_patterns(
-            range(1, 30), 1, 1.5406, 8016, (10, 90), max_NO_elements=10
+            range(1, 30), 1, 1.5406, 8016, 1, (10, 90), max_NO_elements=10
         )
 
         start = time.time()
@@ -628,9 +643,11 @@ if __name__ == "__main__":
                 1,
                 1.5406,
                 8016,
+                1,
                 (10, 90),
-                max_NO_elements=25,  # Attention: 25
+                max_NO_elements=max_NO_elements,
                 do_print=True,
+                do_distance_checks=False
             )
 
         stop = time.time()
