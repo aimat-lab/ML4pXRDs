@@ -143,6 +143,7 @@ def generate_structure(
     dofs,
     max_NO_elements=10,
     seed=-1,
+    do_distance_checks=True
 ):
     # TODO: maybe use slightly random volume factors later
 
@@ -219,7 +220,8 @@ def generate_structure(
                 numIons=chosen_numbers,
                 # sites=chosen_wyckoff_positions,
                 my_seed=seed,
-                factor=np.random.uniform(0.7, 5.0) 
+                factor=np.random.uniform(0.7, 5.0),
+                do_distance_checks=do_distance_checks
             )
 
         except Exception as ex:
@@ -267,7 +269,7 @@ def generate_structure(
         return crystal
 
 
-def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1):
+def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1, do_distance_checks=True):
 
     group = Group(spacegroup_number, dim=3)
 
@@ -292,6 +294,7 @@ def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1):
             dofs=dofs,
             max_NO_elements=max_NO_elements,
             seed=seed,
+            do_distance_checks=do_distance_checks
         )
         for i in range(0, N)
     ]

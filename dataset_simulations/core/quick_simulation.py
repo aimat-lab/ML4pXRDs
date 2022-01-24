@@ -485,6 +485,7 @@ def get_random_xy_patterns(
     max_NO_elements=10,
     do_print=False,
     return_additional = False,
+    do_distance_checks=True
 ):
 
     result_patterns_y = []
@@ -497,7 +498,7 @@ def get_random_xy_patterns(
     for spg in spgs:
         if do_print:
             start = time.time()
-        structures = generate_structures(spg, structures_per_spg, max_NO_elements)
+        structures = generate_structures(spg, structures_per_spg, max_NO_elements, do_distance_checks=do_distance_checks)
         if do_print:
             timings_generation.append(time.time() - start)
 
