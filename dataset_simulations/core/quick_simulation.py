@@ -496,7 +496,7 @@ def get_random_xy_patterns(
     xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
 
     for spg in spgs:
-        print(spg)
+        #print(spg)
 
         if do_print:
             start = time.time()
