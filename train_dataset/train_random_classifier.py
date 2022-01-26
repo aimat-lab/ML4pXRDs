@@ -14,7 +14,8 @@ import tensorflow as tf
 import sys
 
 #tag = "spgs-2-15"
-tag = "4-spgs-no-distance-check"
+#tag = "4-spgs-no-distance-check"
+tag = "test_slurm_output"
 
 out_base = sys.argv[1] + "/"
 #out_base = (
@@ -22,10 +23,12 @@ out_base = sys.argv[1] + "/"
 #)
 os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
+os.system("touch " + out_base + tag)
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 1000
+#NO_epochs = 1000
+NO_epochs = 5
 
 # structures_per_spg = 1 # for all spgs
 structures_per_spg = 5
