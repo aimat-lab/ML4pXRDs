@@ -31,4 +31,4 @@ done
 
 cd ..
 
-python train_random_classifier.py
+python train_random_classifier.py $1

@@ -6,5 +6,7 @@ conda activate pyxtal_debug
 rm -f ./worker_ready
 rm -f ./head_node_ip
 
-sbatch submit_head.sh
-sbatch submit_worker.sh
+out_dir="classifier_spgs/$(date +%d-%m-%Y_%H-%M-%S)"
+
+sbatch -o "../$out_dir/slurm_head.out" submit_head.sh "$out_dir"
+sbatch -o "../$out_dir/slurm_worker.out" submit_worker.sh

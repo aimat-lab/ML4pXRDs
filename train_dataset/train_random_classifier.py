@@ -11,9 +11,17 @@ import ray
 from ray.util.queue import Queue
 import pickle
 import tensorflow as tf
+import sys
 
 #tag = "spgs-2-15"
 tag = "4-spgs-no-distance-check"
+
+out_base = sys.argv[1] + "/"
+#out_base = (
+#    "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
+#)
+os.system("mkdir -p " + out_base)
+os.system("mkdir -p " + out_base + "tuner_tb")
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
@@ -63,12 +71,6 @@ start_angle, end_angle, N = (
 )  # until ICSD has not been re-simulated with Cu-K line
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}")
-
-out_base = (
-    "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
-)
-os.system("mkdir -p " + out_base)
-os.system("mkdir -p " + out_base + "tuner_tb")
 
 # load validation set (ICSD):
 
