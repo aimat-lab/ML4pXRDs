@@ -326,14 +326,8 @@ f"N: {N}")
 tf.summary.text("Parameters", data=params_txt, step=0)
 
 class CustomCallback(keras.callbacks.Callback):
-    def __init__(self):
-        self.epoch_nb = 0
-
-    def on_train_batch_end(self, batch, logs=None):
-        tf.summary.scalar('ray queue size', data=queue.size(), step=self.epoch_nb * batches_per_epoch + batch)
-
     def on_epoch_end(self, epoch, logs=None):
-        self.epoch_nb += 1
+        tf.summary.scalar('ray queue size', data=queue.size(), step=epoch)
 
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches):
