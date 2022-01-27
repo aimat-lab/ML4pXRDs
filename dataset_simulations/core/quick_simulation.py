@@ -20,6 +20,11 @@ import numba
 import matplotlib.pyplot as plt
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 
+if "NUMBA_DISABLE_JIT" in os.environ:
+    is_debugging = os.environ["NUMBA_DISABLE_JIT"] == "1"
+else:
+    is_debugging = False
+
 SCALED_INTENSITY_TOL = 0.001
 TWO_THETA_TOL = 1e-05
 
@@ -71,7 +76,7 @@ def __get_pattern_optimized(
 
             # Vectorized computation of g.r for all fractional coords and
             # hkl.
-            hkl_temp = np.array([hkl], numba.types.float64)
+            hkl_temp = np.array([hkl], numba.types.float64 if not is_debugging else float)
             # hkl_temp = np.array([hkl], float)
             g_dot_r = np.dot(fcoords, hkl_temp.T).T[0]
 
@@ -539,6 +544,34 @@ def get_random_xy_patterns(
     else:
         return result_patterns_y, labels, all_structures, all_corn_sizes
 
+def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
+
+    timings_simulation_pattern = []
+    timings_simulation_smeared = []
+    timings_generation = []
+
+    repeat = 5
+
+    for i in range(0, repeat):
+
+        patterns = get_random_xy_patterns(
+            range(1, 231, 5), # just to get something that is somehow representative
+            1,
+            1.207930,
+            8501,
+            1,
+            (3.9184, 51.6343),
+            max_NO_elements=NO_wyckoffs,
+            do_print=True,
+            do_distance_checks=False,
+            fixed_volume=volume
+        )
+
+    timings_simulation = np.array(timings_simulation_pattern) + np.array(timings_simulation_smeared)
+
+    return np.mean(timings_generation), np.mean(timings_simulation)
+
+
 if __name__ == "__main__":
 
     if False:
@@ -628,40 +661,39 @@ if __name__ == "__main__":
 
     if True:
 
-        repeat = 5
-        max_NO_elements = 50
+        volumes = np.linspace(100, 8000, 10)
+        NOs_wyckoffs = [1,5,10,20,30,40,50]
 
-        patterns = get_random_xy_patterns(
-            range(1, 30), 1, 1.5406, 8016, 1, (10, 90), max_NO_elements=10
-        )
+        xs = [] # volumes
+        ys = [] # NO_wyckoffs
+        zs1 = [] # average_timing_gen
+        zs2 = [] # average_timing_sim
 
-        start = time.time()
+        for i, volume in enumerate(volumes):
+            print(f"### Volume: {volume}")
 
-        for i in range(0, repeat):
-            print(i)
-            patterns = get_random_xy_patterns(
-                range(1, 231),
-                1,
-                1.5406,
-                8016,
-                1,
-                (10, 90),
-                max_NO_elements=max_NO_elements,
-                do_print=True,
-                do_distance_checks=False
-            )
+            for j, NO_wyckoffs in enumerate(NOs_wyckoffs):
+                print(f"### NO_wyckoffs: {NO_wyckoffs}")
 
-        stop = time.time()
-        print(f"{(stop-start)/repeat}s per swipe")
+                average_timing_gen, average_timing_sim = time_swipe_with_fixed_volume(volume, NO_wyckoffs)
 
-        print(f"Average timings generation: {np.mean(timings_generation)}")
-        print(
-            f"Average timings simulation pattern: {np.mean(timings_simulation_pattern)}"
-        )
-        print(
-            f"Average timings simulation smeared: {np.mean(timings_simulation_smeared)}"
-        )
+                xs.append(volume)
+                ys.append(NO_wyckoffs)
+                zs1.append(average_timing_gen)
+                zs2.append(average_timing_sim)
 
-        print(f"Max timings generation: {np.max(timings_generation)}")
-        print(f"Max timings simulation pattern: {np.max(timings_simulation_pattern)}")
-        print(f"Max timings simulation smeared: {np.max(timings_simulation_smeared)}")
+        cm = plt.cm.get_cmap('RdYlBu')
+        sc = plt.scatter(xs, ys, c=zs1, s=20, cmap=cm)
+        plt.colorbar(sc)
+        plt.xlabel("Volume")
+        plt.ylabel("Number of set wyckoffs")
+        plt.title("Timings generation")
+        plt.show()
+
+        plt.figure()
+        sc = plt.scatter(xs, ys, c=zs2, s=20, cmap=cm)
+        plt.colorbar(sc)
+        plt.xlabel("Volume")
+        plt.ylabel("Number of set wyckoffs")
+        plt.title("Timings simulation")
+        plt.show()       
