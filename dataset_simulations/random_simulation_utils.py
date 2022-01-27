@@ -145,6 +145,7 @@ def generate_structure(
     seed=-1,
     do_distance_checks=True,
     fixed_volume = None,
+    do_merge_checks = True,
 ):
     while True:
 
@@ -223,6 +224,7 @@ def generate_structure(
                 #factor=1.1,
                 do_distance_checks=do_distance_checks,
                 fixed_volume = fixed_volume,
+                do_merge_checks=do_merge_checks
             )
 
         except Exception as ex:
@@ -270,7 +272,7 @@ def generate_structure(
         return crystal
 
 
-def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1, do_distance_checks=True, fixed_volume=None):
+def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1, do_distance_checks=True, fixed_volume=None, do_merge_checks = True):
 
     group = Group(spacegroup_number, dim=3)
 
@@ -297,11 +299,10 @@ def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1, do_di
             seed=seed,
             do_distance_checks=do_distance_checks,
             fixed_volume=fixed_volume,
+            do_merge_checks=do_merge_checks
         )
         for i in range(0, N)
     ]
-
-    # print(f"Generated {len(result)} of {N} requested crystals", flush=True)
 
     return result
 

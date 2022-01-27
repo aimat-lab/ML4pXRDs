@@ -492,6 +492,7 @@ def get_random_xy_patterns(
     return_additional = False,
     do_distance_checks=True,
     fixed_volume=None,
+    do_merge_checks = True,
 ):
 
     result_patterns_y = []
@@ -506,7 +507,7 @@ def get_random_xy_patterns(
 
         if do_print:
             start = time.time()
-        structures = generate_structures(spg, structures_per_spg, max_NO_elements, do_distance_checks=do_distance_checks, fixed_volume=fixed_volume)
+        structures = generate_structures(spg, structures_per_spg, max_NO_elements, do_distance_checks=do_distance_checks, fixed_volume=fixed_volume, do_merge_checks=do_merge_checks)
         if do_print:
             timings_generation.append(time.time() - start)
 
@@ -696,4 +697,4 @@ if __name__ == "__main__":
         plt.xlabel("Volume")
         plt.ylabel("Number of set wyckoffs")
         plt.title("Timings simulation")
-        plt.show()       
+        plt.show()
