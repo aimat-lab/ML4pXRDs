@@ -485,7 +485,8 @@ def get_random_xy_patterns(
     max_NO_elements=10,
     do_print=False,
     return_additional = False,
-    do_distance_checks=True
+    do_distance_checks=True,
+    fixed_volume=None,
 ):
 
     result_patterns_y = []
@@ -500,7 +501,7 @@ def get_random_xy_patterns(
 
         if do_print:
             start = time.time()
-        structures = generate_structures(spg, structures_per_spg, max_NO_elements, do_distance_checks=do_distance_checks)
+        structures = generate_structures(spg, structures_per_spg, max_NO_elements, do_distance_checks=do_distance_checks, fixed_volume=fixed_volume)
         if do_print:
             timings_generation.append(time.time() - start)
 
