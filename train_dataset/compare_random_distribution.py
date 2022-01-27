@@ -13,8 +13,11 @@ import pickle
 from pyxtal import pyxtal
 import re
 
-#in_base = "classifier_spgs/18-01-2022_10-32-34_just_test_it/"
-in_base = "classifier_spgs/4-spg-1000-epochs/"
+in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
+tag = "2-15-batch-size-100"
+
+out_base = "comparison_plots/" + tag + "/"
+os.system("mkdir -p " + out_base)
 
 with open(in_base + "spgs.pickle", "rb") as file:
     spgs = pickle.load(file)
@@ -250,7 +253,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("volume")
 plt.ylabel("count")
-plt.savefig("comparison_plots/comparison_volumes.png", dpi=400)
+plt.savefig(f"{out_base}comparison_volumes.png", dpi=400)
 plt.show()
 
 # plot denseness factors:
@@ -276,7 +279,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("denseness factor")
 plt.ylabel("count")
-plt.savefig("comparison_plots/comparison_denseness_factors.png", dpi=400)
+plt.savefig(f"{out_base}comparison_denseness_factors.png", dpi=400)
 plt.show()
 
 # plot corn sizes:
@@ -302,7 +305,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("corn size")
 plt.ylabel("count")
-plt.savefig("comparison_plots/comparison_corn_sizes.png", dpi=400)
+plt.savefig(f"{out_base}comparison_corn_sizes.png", dpi=400)
 plt.show()
 
 # plot NO_wyckoffs:
@@ -331,7 +334,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("Number of set wyckoff sites")
 plt.ylabel("count")
-plt.savefig("comparison_plots/NO_wyckoffs.png", dpi=400)
+plt.savefig(f"{out_base}NO_wyckoffs.png", dpi=400)
 plt.show()
 
 # plot NO_elements (unique number of elements on wyckoff sites):
@@ -360,7 +363,7 @@ plt.hist(
 plt.legend()
 plt.xlabel("Number of unique elements on wyckoff sites")
 plt.ylabel("count")
-plt.savefig("comparison_plots/NO_elements.png", dpi=400)
+plt.savefig(f"{out_base}NO_elements.png", dpi=400)
 plt.show()
 
 # plot lattice_paras:
@@ -386,7 +389,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("lattice para")
 plt.ylabel("count")
-plt.savefig("comparison_plots/comparison_lattice_paras.png", dpi=400)
+plt.savefig(f"{out_base}comparison_lattice_paras.png", dpi=400)
 plt.show()
 
 # plot occupancies:
@@ -410,7 +413,7 @@ plt.hist(
 plt.legend(loc="upper right")
 plt.xlabel("occupancy")
 plt.ylabel("count")
-plt.savefig("comparison_plots/comparison_occupancies.png", dpi=400)
+plt.savefig(f"{out_base}comparison_occupancies.png", dpi=400)
 plt.show()
 
 # plot number of element repetitions:
@@ -443,7 +446,7 @@ plt.hist(
 plt.legend()
 plt.xlabel("Number of element repetitions on wyckoff sites")
 plt.ylabel("count")
-plt.savefig("comparison_plots/NO_element_repetitions.png", dpi=400)
+plt.savefig(f"{out_base}NO_element_repetitions.png", dpi=400)
 plt.show()
 
 
