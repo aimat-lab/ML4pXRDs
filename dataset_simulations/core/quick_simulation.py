@@ -14,7 +14,6 @@ import os
 from math import asin, cos, degrees, pi, radians, sin
 import numpy as np
 import collections
-from pymatgen.io.cif import CifParser
 import time
 import numba
 import matplotlib.pyplot as plt
@@ -547,16 +546,21 @@ def get_random_xy_patterns(
 
 def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
 
+    global timings_simulation_pattern
+    global timings_simulation_smeared
+    global timings_generation
     timings_simulation_pattern = []
     timings_simulation_smeared = []
     timings_generation = []
 
-    repeat = 5
+    repeat = 2
+    skip = 1
 
+    start = time.time()
     for i in range(0, repeat):
 
-        patterns = get_random_xy_patterns(
-            range(1, 231, 5), # just to get something that is somehow representative
+        get_random_xy_patterns(
+            range(1, 231, skip), # just to get something that is somehow representative
             1,
             1.207930,
             8501,
@@ -565,12 +569,14 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
             max_NO_elements=NO_wyckoffs,
             do_print=True,
             do_distance_checks=False,
-            fixed_volume=volume
+            fixed_volume=volume,
+            do_merge_checks=False
         )
+    end = time.time()
 
     timings_simulation = np.array(timings_simulation_pattern) + np.array(timings_simulation_smeared)
 
-    return np.mean(timings_generation), np.mean(timings_simulation)
+    return np.mean(timings_generation), np.mean(timings_simulation), (end - start) / repeat
 
 
 if __name__ == "__main__":
@@ -661,14 +667,22 @@ if __name__ == "__main__":
         plt.show()
 
     if True:
+        
+        # to load numba:
+        get_random_xy_patterns([15], 1, 1.207930, 8501, 1, (3.9184, 51.6343), 10, False, False, False, None, False)
 
-        volumes = np.linspace(100, 8000, 10)
-        NOs_wyckoffs = [1,5,10,20,30,40,50]
+        volumes = np.linspace(100, 7000, 12)
+        NOs_wyckoffs = [1,5,10,20,30,40,50,60,70,80,90,100]
+
+        # for testing 
+        #volumes = volumes[0:2]
+        #NOs_wyckoffs = NOs_wyckoffs[0:2]
 
         xs = [] # volumes
         ys = [] # NO_wyckoffs
         zs1 = [] # average_timing_gen
         zs2 = [] # average_timing_sim
+        zs3 = [] # time per swipe
 
         for i, volume in enumerate(volumes):
             print(f"### Volume: {volume}")
@@ -676,12 +690,13 @@ if __name__ == "__main__":
             for j, NO_wyckoffs in enumerate(NOs_wyckoffs):
                 print(f"### NO_wyckoffs: {NO_wyckoffs}")
 
-                average_timing_gen, average_timing_sim = time_swipe_with_fixed_volume(volume, NO_wyckoffs)
+                average_timing_gen, average_timing_sim, time_per_swipe = time_swipe_with_fixed_volume(volume, NO_wyckoffs)
 
                 xs.append(volume)
                 ys.append(NO_wyckoffs)
                 zs1.append(average_timing_gen)
                 zs2.append(average_timing_sim)
+                zs3.append(time_per_swipe)
 
         cm = plt.cm.get_cmap('RdYlBu')
         sc = plt.scatter(xs, ys, c=zs1, s=20, cmap=cm)
@@ -689,12 +704,25 @@ if __name__ == "__main__":
         plt.xlabel("Volume")
         plt.ylabel("Number of set wyckoffs")
         plt.title("Timings generation")
+        plt.savefig("timings_generation.png")
         plt.show()
 
         plt.figure()
+        cm = plt.cm.get_cmap('RdYlBu')
         sc = plt.scatter(xs, ys, c=zs2, s=20, cmap=cm)
         plt.colorbar(sc)
         plt.xlabel("Volume")
         plt.ylabel("Number of set wyckoffs")
         plt.title("Timings simulation")
+        plt.savefig("timings_simulation.png")
+        plt.show()
+
+        plt.figure()
+        cm = plt.cm.get_cmap('RdYlBu')
+        sc = plt.scatter(xs, ys, c=zs3, s=20, cmap=cm)
+        plt.colorbar(sc)
+        plt.xlabel("Volume")
+        plt.ylabel("Number of set wyckoffs")
+        plt.title("Time per swipe")
+        plt.savefig("timings_swipe.png")
         plt.show()

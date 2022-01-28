@@ -162,13 +162,13 @@ def generate_structure(
         chosen_wyckoff_positions = []
         chosen_wyckoff_letters = []
 
-        counter_collisions = 0
-
         for i in range(0, NO_elements):
+
+            counter_collisions = 0
             while True:
 
-                if counter_collisions > 100:
-                    print("More than 100 collisions.", flush=True)
+                if counter_collisions > 30:
+                    print("More than 30 collisions setting one atom.", flush=True)
                     break
 
                 chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
