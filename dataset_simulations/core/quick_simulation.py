@@ -559,7 +559,7 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
     start = time.time()
     for i in range(0, repeat):
 
-        get_random_xy_patterns(
+        patterns, labels = get_random_xy_patterns(
             range(1, 231, skip), # just to get something that is somehow representative
             1,
             1.207930,
@@ -572,6 +572,10 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
             fixed_volume=volume,
             do_merge_checks=False
         )
+
+        #plt.plot(patterns[0])
+        #plt.show()
+
     end = time.time()
 
     timings_simulation = np.array(timings_simulation_pattern) + np.array(timings_simulation_smeared)
@@ -675,8 +679,8 @@ if __name__ == "__main__":
         NOs_wyckoffs = [1,5,10,20,30,40,50,60,70,80,90,100]
 
         # for testing 
-        #volumes = volumes[0:2]
-        #NOs_wyckoffs = NOs_wyckoffs[0:2]
+        #volumes = volumes[:1]
+        #NOs_wyckoffs = NOs_wyckoffs[:1]
 
         xs = [] # volumes
         ys = [] # NO_wyckoffs

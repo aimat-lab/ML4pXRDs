@@ -4,10 +4,9 @@ import numpy as np
 import random
 from pyxtal.symmetry import Group
 import time
-from pymatgen.vis.structure_vtk import StructureVis
-from pyxtal.operations import filtered_coords
 import pickle
-import os
+from dataset_simulations.simulation import Simulation
+from pymatgen.io.cif import CifParser
 
 # import warnings
 # with warnings.catch_warnings():
@@ -306,10 +305,75 @@ def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1, do_di
 
     return result
 
+def analyse_set_wyckoffs():
+
+    icsd_sim = Simulation(
+        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+    )
+
+    counts_per_spg_per_wyckoff = {}
+
+    counter_per_element = {}
+
+    # pre-process the symmetry groups:
+
+    for spg_number in range(1, 231):
+        group = Group(spg_number, dim=3)
+        names = [(str(x.multiplicity) + x.letter) for x in group]
+
+        counts_per_spg_per_wyckoff[spg_number] = {}
+        for name in names:
+            counts_per_spg_per_wyckoff[spg_number][name] = 0
+
+    for i, path in enumerate(icsd_sim.icsd_paths):
+
+        try: 
+
+            #spg_number = icsd_sim.get_space_group_number(icsd_sim.icsd_ids[i])
+
+            parser = CifParser(path)
+            crystals = parser.get_structures()
+
+            if len(crystals) == 0:
+                continue
+
+            crystal = crystals[0]
+
+            struc = pyxtal()
+            struc.from_seed(crystal)
+
+        except Exception as ex:
+
+            print(f"Error reading {path}:")
+            print(ex)
+
+            continue
+
+        #if spg_number != struc.group.number:
+        #
+        #   print("ohoh")
+
+        spg_number = struc.group.number
+
+        for site in struc.atom_sites:
+            specie_str = str(site.specie)
+            if specie_str in counter_per_element:
+                counter_per_element[specie_str] += 1
+            else:
+                counter_per_element[specie_str] = 0
+
+            name = str(site.wp.multiplicity) + site.wp.letter
+            counts_per_spg_per_wyckoff[spg_number][name] += 1 
+
+    print()
 
 if __name__ == "__main__":
 
     if True:
+        analyse_set_wyckoffs()
+
+    if False:
 
         NO_chosen_elements = 50
 
