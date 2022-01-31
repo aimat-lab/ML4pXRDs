@@ -385,8 +385,8 @@ def analyse_set_wyckoffs():
         for name in names:
             counts_per_spg_per_wyckoff[spg_number][name] = 0
 
-    paths = icsd_sim.icsd_paths[0:500]
-    # paths = icsd_sim.icsd_paths
+    # paths = icsd_sim.icsd_paths[0:500]
+    paths = icsd_sim.icsd_paths
 
     for i, path in enumerate(paths):
 
@@ -461,10 +461,10 @@ def load_wyckoff_statistics():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         analyse_set_wyckoffs()
 
-    if True:
+    if False:
 
         (
             probability_per_element,
