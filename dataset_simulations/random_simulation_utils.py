@@ -7,6 +7,7 @@ import time
 import pickle
 from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
+import numpy.random
 
 # import warnings
 # with warnings.catch_warnings():
@@ -145,28 +146,13 @@ def generate_structure(
     do_distance_checks=True,
     fixed_volume = None,
     do_merge_checks = True,
-    use_icsd_statistics = True,
+    use_icsd_statistics = False,
+    probability_per_element = None, 
+    probability_per_spg_per_wyckoff = None,
 ):
-    # TODO: Do not do this in here! Do this outside of this function.
-    if use_icsd_statistics:
-        with open("set_wyckoffs_statistics", "rb") as file:
-            (counter_per_element, counts_per_spg_per_wyckoff) = pickle.load(file)
 
-        # convert to relative entries
-        total = 0
-        for key in counter_per_element.keys():
-            total += counter_per_element[key]
-        for key in counter_per_element.keys():
-            counter_per_element[key] /= total
-        probability_per_element = counter_per_element
-
-        for spg in counts_per_spg_per_wyckoff.keys():
-            total = 0
-            for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
-                total += counts_per_spg_per_wyckoff[spg][wyckoff_site]
-            for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
-                counts_per_spg_per_wyckoff[spg][wyckoff_site] /= total
-        probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff 
+    if use_icsd_statistics and (probability_per_element is None or probability_per_spg_per_wyckoff is None):
+        raise Exception("Statistics data needed if use_icsd_statistics = True.")
 
     while True:
 
@@ -191,8 +177,13 @@ def generate_structure(
                 if counter_collisions > 30:
                     print("More than 30 collisions setting one atom.", flush=True)
                     break
+                
+                if not use_icsd_statistics:
+                    chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
+                else:
+                    chosen_wyckoff = np.random.choice(probability_per_spg_per_wyckoff[group_object.number].keys(), 1, p=probability_per_spg_per_wyckoff[group_object.number].values())[0] 
+                    chosen_index = names.index(chosen_wyckoff)
 
-                chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
                 """
                 # always first choose the general Wyckoff site:
                 chosen_index = (
@@ -220,7 +211,16 @@ def generate_structure(
 
                 number_of_atoms_per_site[chosen_index] += 1
 
-                chosen_elements.append(random.choice(all_elements))
+                if not use_icsd_statistics:
+                    chosen_elements.append(random.choice(all_elements))
+                else:
+                    chosen_element = np.random.choice(probability_per_element.keys(), 1, p=probability_per_element.values())[0]
+
+                    if chosen_element in all_elements:
+                        chosen_elements.append(chosen_element)
+                    else:
+                        print(f"Warning: {chosen_element} not in the supported elements list.")
+
                 chosen_numbers.append(multiplicities[chosen_index])
                 chosen_wyckoff_positions.append([names[chosen_index]])
                 chosen_wyckoff_letters.append([letters[chosen_index]])
@@ -395,12 +395,34 @@ def analyse_set_wyckoffs():
     with open("set_wyckoffs_statistics", "wb") as file:
         pickle.dump((counter_per_element, counts_per_spg_per_wyckoff), file)
 
+def load_wyckoff_statistics():
+    with open("set_wyckoffs_statistics", "rb") as file:
+        (counter_per_element, counts_per_spg_per_wyckoff) = pickle.load(file)
+
+    # convert to relative entries
+    total = 0
+    for key in counter_per_element.keys():
+        total += counter_per_element[key]
+    for key in counter_per_element.keys():
+        counter_per_element[key] /= total
+    probability_per_element = counter_per_element
+
+    for spg in counts_per_spg_per_wyckoff.keys():
+        total = 0
+        for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+            total += counts_per_spg_per_wyckoff[spg][wyckoff_site]
+        for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+            counts_per_spg_per_wyckoff[spg][wyckoff_site] /= total
+    probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff
+
+    return (probability_per_element, probability_per_spg_per_wyckoff)
+
 if __name__ == "__main__":
 
-    if True:
+    if False:
         analyse_set_wyckoffs()
 
-    if False:
+    if True:
 
         NO_chosen_elements = 50
 
