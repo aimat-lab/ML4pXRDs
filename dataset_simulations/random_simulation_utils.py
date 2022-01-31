@@ -145,7 +145,29 @@ def generate_structure(
     do_distance_checks=True,
     fixed_volume = None,
     do_merge_checks = True,
+    use_icsd_statistics = True,
 ):
+    # TODO: Do not do this in here! Do this outside of this function.
+    if use_icsd_statistics:
+        with open("set_wyckoffs_statistics", "rb") as file:
+            (counter_per_element, counts_per_spg_per_wyckoff) = pickle.load(file)
+
+        # convert to relative entries
+        total = 0
+        for key in counter_per_element.keys():
+            total += counter_per_element[key]
+        for key in counter_per_element.keys():
+            counter_per_element[key] /= total
+        probability_per_element = counter_per_element
+
+        for spg in counts_per_spg_per_wyckoff.keys():
+            total = 0
+            for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+                total += counts_per_spg_per_wyckoff[spg][wyckoff_site]
+            for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+                counts_per_spg_per_wyckoff[spg][wyckoff_site] /= total
+        probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff 
+
     while True:
 
         if seed != -1:
@@ -313,7 +335,6 @@ def analyse_set_wyckoffs():
     )
 
     counts_per_spg_per_wyckoff = {}
-
     counter_per_element = {}
 
     # pre-process the symmetry groups:
@@ -326,7 +347,13 @@ def analyse_set_wyckoffs():
         for name in names:
             counts_per_spg_per_wyckoff[spg_number][name] = 0
 
-    for i, path in enumerate(icsd_sim.icsd_paths):
+    #paths = icsd_sim.icsd_paths[0:500]
+    paths = icsd_sim.icsd_paths
+
+    for i, path in enumerate(paths):
+
+        if (i % 100) == 0:
+            print(f"{i / len(paths) * 100} % processed.")
 
         try: 
 
@@ -345,13 +372,12 @@ def analyse_set_wyckoffs():
 
         except Exception as ex:
 
-            print(f"Error reading {path}:")
-            print(ex)
+            #print(f"Error reading {path}:")
+            #print(ex)
 
             continue
 
         #if spg_number != struc.group.number:
-        #
         #   print("ohoh")
 
         spg_number = struc.group.number
@@ -366,7 +392,8 @@ def analyse_set_wyckoffs():
             name = str(site.wp.multiplicity) + site.wp.letter
             counts_per_spg_per_wyckoff[spg_number][name] += 1 
 
-    print()
+    with open("set_wyckoffs_statistics", "wb") as file:
+        pickle.dump((counter_per_element, counts_per_spg_per_wyckoff), file)
 
 if __name__ == "__main__":
 
