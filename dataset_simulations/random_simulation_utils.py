@@ -9,6 +9,7 @@ import pickle
 from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
 import numpy.random
+import os
 
 # import warnings
 # with warnings.catch_warnings():
@@ -367,10 +368,17 @@ def generate_structures(
 
 def analyse_set_wyckoffs():
 
-    icsd_sim = Simulation(
-        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-    )
+    jobid = os.getenv("SLURM_JOB_ID")
+    if jobid is not None and jobid != "":
+        icsd_sim = Simulation(
+            "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
+            "/home/ws/uvgnh/Databases/ICSD/cif/",
+        )
+    else:
+        icsd_sim = Simulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
 
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
