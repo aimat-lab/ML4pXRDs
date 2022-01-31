@@ -369,16 +369,21 @@ def generate_structures(
 def analyse_set_wyckoffs():
 
     jobid = os.getenv("SLURM_JOB_ID")
+    path_to_patterns = "./patterns/icsd/"
     if jobid is not None and jobid != "":
         icsd_sim = Simulation(
             "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
             "/home/ws/uvgnh/Databases/ICSD/cif/",
         )
+        icsd_sim.output_dir = path_to_patterns
     else:
         icsd_sim = Simulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
+        icsd_sim.output_dir = path_to_patterns
+
+    icsd_sim.load(load_patterns_angles_intensities=False)
 
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
@@ -393,38 +398,44 @@ def analyse_set_wyckoffs():
         for name in names:
             counts_per_spg_per_wyckoff[spg_number][name] = 0
 
-    # paths = icsd_sim.icsd_paths[0:500]
-    paths = icsd_sim.icsd_paths
+    counter_mismatches = 0
 
-    for i, path in enumerate(paths):
+    start = time.time()
+
+    # paths = icsd_sim.icsd_paths[0:500]
+    # paths = icsd_sim.icsd_paths
+
+    # for i, path in enumerate(paths):
+    for i, crystal in enumerate(icsd_sim.sim_crystals):
 
         if (i % 100) == 0:
-            print(f"{i / len(paths) * 100} % processed.")
+            print(f"{i / len(icsd_sim.sim_crystals) * 100} % processed.")
 
         try:
 
-            # spg_number = icsd_sim.get_space_group_number(icsd_sim.icsd_ids[i])
+            spg_number = icsd_sim.sim_labels[i][0]
 
-            parser = CifParser(path)
-            crystals = parser.get_structures()
+            # parser = CifParser(path)
+            # crystals = parser.get_structures()
 
-            if len(crystals) == 0:
-                continue
+            # if len(crystals) == 0:
+            #    continue
 
-            crystal = crystals[0]
+            # crystal = crystals[0]
 
             struc = pyxtal()
             struc.from_seed(crystal)
 
         except Exception as ex:
 
-            print(f"Error reading {path}:")
+            # print(f"Error reading {path}:")
+            print(f"Error reading structure:")
             print(ex)
 
             continue
 
-        # if spg_number != struc.group.number:
-        #   print("ohoh")
+        if spg_number != struc.group.number:
+            counter_mismatches += 1
 
         spg_number = struc.group.number
 
@@ -433,10 +444,15 @@ def analyse_set_wyckoffs():
             if specie_str in counter_per_element:
                 counter_per_element[specie_str] += 1
             else:
-                counter_per_element[specie_str] = 0
+                counter_per_element[specie_str] = 1
 
             name = str(site.wp.multiplicity) + site.wp.letter
             counts_per_spg_per_wyckoff[spg_number][name] += 1
+
+    print(f"Took {time.time() - start} s")
+    print(
+        f"{counter_mismatches / len(icsd_sim.sim_crystals) * 100} % mismatches in space groups!"
+    )
 
     with open("set_wyckoffs_statistics", "wb") as file:
         pickle.dump((counter_per_element, counts_per_spg_per_wyckoff), file)
