@@ -75,7 +75,9 @@ def __get_pattern_optimized(
 
             # Vectorized computation of g.r for all fractional coords and
             # hkl.
-            hkl_temp = np.array([hkl], numba.types.float64 if not is_debugging else float)
+            hkl_temp = np.array(
+                [hkl], numba.types.float64 if not is_debugging else float
+            )
             # hkl_temp = np.array([hkl], float)
             g_dot_r = np.dot(fcoords, hkl_temp.T).T[0]
 
@@ -439,7 +441,13 @@ timings_generation = []
 
 
 def get_xy_patterns(
-    structure, wavelength, xs, NO_corn_sizes=1, two_theta_range=(0, 90), do_print=False, return_corn_sizes = False
+    structure,
+    wavelength,
+    xs,
+    NO_corn_sizes=1,
+    two_theta_range=(0, 90),
+    do_print=False,
+    return_corn_sizes=False,
 ):
 
     if return_corn_sizes:
@@ -461,9 +469,9 @@ def get_xy_patterns(
     for i in range(0, NO_corn_sizes):
 
         corn_size = np.random.uniform(
-                        pymatgen_crystallite_size_gauss_min,
-                        pymatgen_crystallite_size_gauss_max,
-                    )
+            pymatgen_crystallite_size_gauss_min,
+            pymatgen_crystallite_size_gauss_max,
+        )
         smeared = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
         results.append(smeared)
 
@@ -471,7 +479,7 @@ def get_xy_patterns(
             corn_sizes.append(corn_size)
 
     if do_print:
-        timings_simulation_smeared.append((time.time() - start)/NO_corn_sizes)
+        timings_simulation_smeared.append((time.time() - start) / NO_corn_sizes)
 
     if not return_corn_sizes:
         return results
@@ -488,10 +496,13 @@ def get_random_xy_patterns(
     two_theta_range=(0, 90),
     max_NO_elements=10,
     do_print=False,
-    return_additional = False,
+    return_additional=False,
     do_distance_checks=True,
     fixed_volume=None,
-    do_merge_checks = True,
+    do_merge_checks=True,
+    use_icsd_statistics=False,
+    probability_per_element=None,
+    probability_per_spg_per_wyckoff=None,
 ):
 
     result_patterns_y = []
@@ -502,16 +513,26 @@ def get_random_xy_patterns(
     xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
 
     for spg in spgs:
-        #print(spg)
+        # print(spg)
 
         if do_print:
             start = time.time()
-        structures = generate_structures(spg, structures_per_spg, max_NO_elements, do_distance_checks=do_distance_checks, fixed_volume=fixed_volume, do_merge_checks=do_merge_checks)
+        structures = generate_structures(
+            spg,
+            structures_per_spg,
+            max_NO_elements,
+            do_distance_checks=do_distance_checks,
+            fixed_volume=fixed_volume,
+            do_merge_checks=do_merge_checks,
+            use_icsd_statistics=use_icsd_statistics,
+            probability_per_element=probability_per_element,
+            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+        )
         if do_print:
             timings_generation.append(time.time() - start)
 
         for structure in structures:
-            
+
             try:
 
                 patterns_ys = get_xy_patterns(
@@ -521,7 +542,7 @@ def get_random_xy_patterns(
                     NO_corn_sizes,
                     two_theta_range,
                     do_print=do_print,
-                    return_corn_sizes=return_additional
+                    return_corn_sizes=return_additional,
                 )
 
                 if return_additional:
@@ -531,7 +552,7 @@ def get_random_xy_patterns(
                 print("Error simulating pattern:")
                 print(ex)
             else:
-                labels.extend([spg]*NO_corn_sizes)
+                labels.extend([spg] * NO_corn_sizes)
                 result_patterns_y.extend(patterns_ys)
 
                 if return_additional:
@@ -543,6 +564,7 @@ def get_random_xy_patterns(
         return result_patterns_y, labels
     else:
         return result_patterns_y, labels, all_structures, all_corn_sizes
+
 
 def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
 
@@ -560,7 +582,7 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
     for i in range(0, repeat):
 
         patterns, labels = get_random_xy_patterns(
-            range(1, 231, skip), # just to get something that is somehow representative
+            range(1, 231, skip),  # just to get something that is somehow representative
             1,
             1.207930,
             8501,
@@ -570,17 +592,23 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
             do_print=True,
             do_distance_checks=False,
             fixed_volume=volume,
-            do_merge_checks=False
+            do_merge_checks=False,
         )
 
-        #plt.plot(patterns[0])
-        #plt.show()
+        # plt.plot(patterns[0])
+        # plt.show()
 
     end = time.time()
 
-    timings_simulation = np.array(timings_simulation_pattern) + np.array(timings_simulation_smeared)
+    timings_simulation = np.array(timings_simulation_pattern) + np.array(
+        timings_simulation_smeared
+    )
 
-    return np.mean(timings_generation), np.mean(timings_simulation), (end - start) / repeat
+    return (
+        np.mean(timings_generation),
+        np.mean(timings_simulation),
+        (end - start) / repeat,
+    )
 
 
 if __name__ == "__main__":
@@ -589,19 +617,37 @@ if __name__ == "__main__":
 
         max_NO_elements = 20
 
-        get_random_xy_patterns([5], 1, 1.2, 9000, 1, return_additional=False, max_NO_elements=max_NO_elements, do_distance_checks=False)
+        get_random_xy_patterns(
+            [5],
+            1,
+            1.2,
+            9000,
+            1,
+            return_additional=False,
+            max_NO_elements=max_NO_elements,
+            do_distance_checks=False,
+        )
 
         start = time.time()
 
         for spg in range(1, 231):
-            get_random_xy_patterns([spg], 1, 1.2, 9000, 1, return_additional=False, max_NO_elements=max_NO_elements, do_distance_checks=False)
+            get_random_xy_patterns(
+                [spg],
+                1,
+                1.2,
+                9000,
+                1,
+                return_additional=False,
+                max_NO_elements=max_NO_elements,
+                do_distance_checks=False,
+            )
 
         stop = time.time()
         print(f"{stop-start}s")
 
-        #plt.plot(test[0][3])
-        #plt.plot(test[0][2])
-        #plt.show()
+        # plt.plot(test[0][3])
+        # plt.plot(test[0][2])
+        # plt.show()
 
     if False:
         # parser = CifParser("example.cif")
@@ -671,22 +717,35 @@ if __name__ == "__main__":
         plt.show()
 
     if True:
-        
+
         # to load numba:
-        get_random_xy_patterns([15], 1, 1.207930, 8501, 1, (3.9184, 51.6343), 10, False, False, False, None, False)
+        get_random_xy_patterns(
+            [15],
+            1,
+            1.207930,
+            8501,
+            1,
+            (3.9184, 51.6343),
+            10,
+            False,
+            False,
+            False,
+            None,
+            False,
+        )
 
         volumes = np.linspace(100, 7000, 12)
-        NOs_wyckoffs = [1,5,10,20,30,40,50,60,70,80,90,100]
+        NOs_wyckoffs = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
-        # for testing 
-        #volumes = volumes[:1]
-        #NOs_wyckoffs = NOs_wyckoffs[:1]
+        # for testing
+        # volumes = volumes[:1]
+        # NOs_wyckoffs = NOs_wyckoffs[:1]
 
-        xs = [] # volumes
-        ys = [] # NO_wyckoffs
-        zs1 = [] # average_timing_gen
-        zs2 = [] # average_timing_sim
-        zs3 = [] # time per swipe
+        xs = []  # volumes
+        ys = []  # NO_wyckoffs
+        zs1 = []  # average_timing_gen
+        zs2 = []  # average_timing_sim
+        zs3 = []  # time per swipe
 
         for i, volume in enumerate(volumes):
             print(f"### Volume: {volume}")
@@ -694,7 +753,11 @@ if __name__ == "__main__":
             for j, NO_wyckoffs in enumerate(NOs_wyckoffs):
                 print(f"### NO_wyckoffs: {NO_wyckoffs}")
 
-                average_timing_gen, average_timing_sim, time_per_swipe = time_swipe_with_fixed_volume(volume, NO_wyckoffs)
+                (
+                    average_timing_gen,
+                    average_timing_sim,
+                    time_per_swipe,
+                ) = time_swipe_with_fixed_volume(volume, NO_wyckoffs)
 
                 xs.append(volume)
                 ys.append(NO_wyckoffs)
@@ -702,7 +765,7 @@ if __name__ == "__main__":
                 zs2.append(average_timing_sim)
                 zs3.append(time_per_swipe)
 
-        cm = plt.cm.get_cmap('RdYlBu')
+        cm = plt.cm.get_cmap("RdYlBu")
         sc = plt.scatter(xs, ys, c=zs1, s=20, cmap=cm)
         plt.colorbar(sc)
         plt.xlabel("Volume")
@@ -712,7 +775,7 @@ if __name__ == "__main__":
         plt.show()
 
         plt.figure()
-        cm = plt.cm.get_cmap('RdYlBu')
+        cm = plt.cm.get_cmap("RdYlBu")
         sc = plt.scatter(xs, ys, c=zs2, s=20, cmap=cm)
         plt.colorbar(sc)
         plt.xlabel("Volume")
@@ -722,7 +785,7 @@ if __name__ == "__main__":
         plt.show()
 
         plt.figure()
-        cm = plt.cm.get_cmap('RdYlBu')
+        cm = plt.cm.get_cmap("RdYlBu")
         sc = plt.scatter(xs, ys, c=zs3, s=20, cmap=cm)
         plt.colorbar(sc)
         plt.xlabel("Volume")
