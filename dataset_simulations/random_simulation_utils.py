@@ -1,3 +1,4 @@
+from json import load
 from pyxtal import pyxtal
 import matplotlib.pyplot as plt
 import numpy as np
@@ -181,7 +182,9 @@ def generate_structure(
                 if not use_icsd_statistics:
                     chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
                 else:
-                    chosen_wyckoff = np.random.choice(probability_per_spg_per_wyckoff[group_object.number].keys(), 1, p=probability_per_spg_per_wyckoff[group_object.number].values())[0] 
+                    probability_per_wyckoff = probability_per_spg_per_wyckoff[group_object.number]
+
+                    chosen_wyckoff = np.random.choice(list(probability_per_wyckoff.keys()), 1, p=list(probability_per_wyckoff.values()))[0] 
                     chosen_index = names.index(chosen_wyckoff)
 
                 """
@@ -214,7 +217,7 @@ def generate_structure(
                 if not use_icsd_statistics:
                     chosen_elements.append(random.choice(all_elements))
                 else:
-                    chosen_element = np.random.choice(probability_per_element.keys(), 1, p=probability_per_element.values())[0]
+                    chosen_element = np.random.choice(list(probability_per_element.keys()), 1, p=list(probability_per_element.values()))[0]
 
                     if chosen_element in all_elements:
                         chosen_elements.append(chosen_element)
@@ -293,7 +296,9 @@ def generate_structure(
         return crystal
 
 
-def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1, do_distance_checks=True, fixed_volume=None, do_merge_checks = True):
+def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1, do_distance_checks=True, fixed_volume=None, do_merge_checks = True, use_icsd_statistics = False,
+    probability_per_element = None, 
+    probability_per_spg_per_wyckoff = None,):
 
     group = Group(spacegroup_number, dim=3)
 
@@ -320,7 +325,10 @@ def generate_structures(spacegroup_number, N, max_NO_elements=10, seed=-1, do_di
             seed=seed,
             do_distance_checks=do_distance_checks,
             fixed_volume=fixed_volume,
-            do_merge_checks=do_merge_checks
+            do_merge_checks=do_merge_checks,
+            use_icsd_statistics=use_icsd_statistics,
+            probability_per_element=probability_per_element,
+            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
         )
         for i in range(0, N)
     ]
@@ -347,8 +355,8 @@ def analyse_set_wyckoffs():
         for name in names:
             counts_per_spg_per_wyckoff[spg_number][name] = 0
 
-    #paths = icsd_sim.icsd_paths[0:500]
-    paths = icsd_sim.icsd_paths
+    paths = icsd_sim.icsd_paths[0:500]
+    #paths = icsd_sim.icsd_paths
 
     for i, path in enumerate(paths):
 
@@ -372,8 +380,8 @@ def analyse_set_wyckoffs():
 
         except Exception as ex:
 
-            #print(f"Error reading {path}:")
-            #print(ex)
+            print(f"Error reading {path}:")
+            print(ex)
 
             continue
 
@@ -396,6 +404,7 @@ def analyse_set_wyckoffs():
         pickle.dump((counter_per_element, counts_per_spg_per_wyckoff), file)
 
 def load_wyckoff_statistics():
+
     with open("set_wyckoffs_statistics", "rb") as file:
         (counter_per_element, counts_per_spg_per_wyckoff) = pickle.load(file)
 
@@ -411,8 +420,9 @@ def load_wyckoff_statistics():
         total = 0
         for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
             total += counts_per_spg_per_wyckoff[spg][wyckoff_site]
-        for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
-            counts_per_spg_per_wyckoff[spg][wyckoff_site] /= total
+        if total > 0:
+            for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+                counts_per_spg_per_wyckoff[spg][wyckoff_site] /= total
     probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff
 
     return (probability_per_element, probability_per_spg_per_wyckoff)
@@ -423,6 +433,11 @@ if __name__ == "__main__":
         analyse_set_wyckoffs()
 
     if True:
+
+        (probability_per_element, probability_per_spg_per_wyckoff) = load_wyckoff_statistics()
+        generate_structures(225, 1, 10, do_distance_checks=False, do_merge_checks=False, use_icsd_statistics=True, probability_per_element=probability_per_element, probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff)
+
+    if False:
 
         NO_chosen_elements = 50
 
