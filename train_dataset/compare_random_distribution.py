@@ -14,7 +14,7 @@ from pyxtal import pyxtal
 import re
 
 in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
-tag = "2-15-batch-size-100"
+tag = "2-15-batch-size-100_test"  # for outputdir for pngs
 
 out_base = "comparison_plots/" + tag + "/"
 os.system("mkdir -p " + out_base)
@@ -65,7 +65,7 @@ for i in range(0, len(icsd_variations)):
     icsd_NO_wyckoffs.append(NO_wyckoffs)
     icsd_elements.append(elements)
     icsd_NO_elements.append(len(elements_unique))
-    icsd_occupancies.append(occupancies)
+    icsd_occupancies.append(np.mean(occupancies))
 
     reps = []
     for el in elements_unique:
@@ -156,6 +156,7 @@ def get_denseness_factor(structure):
     except:
         return None
 
+
 falsely_volumes = []
 falsely_denseness_factors = []
 falsely_lattice_paras = []
@@ -164,6 +165,7 @@ falsely_NO_wyckoffs = []
 falsely_NO_elements = []
 falsely_occupancies = []
 falsely_element_repetitions = []
+falsely_NO_atoms = []
 
 rightly_volumes = []
 rightly_denseness_factors = []
@@ -173,10 +175,12 @@ rightly_NO_wyckoffs = []
 rightly_NO_elements = []
 rightly_occupancies = []
 rightly_element_repetitions = []
+rightly_NO_atoms = []
 
 random_volumes = []
 random_denseness_factors = []
 random_lattice_paras = []
+random_NO_atoms = []
 
 for i in falsely_indices:
 
@@ -187,11 +191,13 @@ for i in falsely_indices:
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
 
+    falsely_NO_atoms.append(len(structure.frac_coords))
+
     falsely_volumes.append(volume)
     falsely_corn_sizes.extend(icsd_variations[index])
     falsely_NO_elements.append(icsd_NO_elements[index])
     falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-    falsely_occupancies.extend(icsd_occupancies[index])
+    falsely_occupancies.append(icsd_occupancies[index])
     falsely_element_repetitions.extend(icsd_element_repetitions[index])
 
     falsely_lattice_paras.append(structure.lattice.a)
@@ -210,11 +216,13 @@ for i in rightly_indices:
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
 
+    rightly_NO_atoms.append(len(structure.frac_coords))
+
     rightly_volumes.append(volume)
     rightly_corn_sizes.extend(icsd_variations[index])
     rightly_NO_elements.append(icsd_NO_elements[index])
     rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-    rightly_occupancies.extend(icsd_occupancies[index])
+    rightly_occupancies.append(icsd_occupancies[index])
     rightly_element_repetitions.extend(icsd_element_repetitions[index])
 
     rightly_lattice_paras.append(structure.lattice.a)
@@ -229,6 +237,8 @@ for i, structure in enumerate(random_crystals):
     volume = structure.volume
     denseness_factor = get_denseness_factor(structure)
 
+    random_NO_atoms.append(len(structure.frac_coords))
+
     random_volumes.append(volume)
 
     random_lattice_paras.append(structure.lattice.a)
@@ -238,217 +248,230 @@ for i, structure in enumerate(random_crystals):
     if denseness_factor is not None:
         random_denseness_factors.append(denseness_factor)
 
-# plot volumes:
-bins_volumes = np.linspace(
-    min(np.min(rightly_volumes), np.min(falsely_volumes), np.min(random_volumes)),
-    max(np.max(rightly_volumes), np.max(falsely_volumes), np.max(random_volumes)),
-    200,
-)
-plt.figure()
-plt.hist(
+################# hist plotting ################
+
+bin_spacing_continuous = 60
+
+
+def create_histogram(
+    tag, data, labels, xlabel, ylabel, is_int=False, relative=False, min_is_zero=True
+):
+    # Data: rightly, falsely, random or only rightly, falsely
+
+    # determine range on x axis:
+    min = 10 ** 9
+    max = 0
+
+    for item in data:
+        new_min = np.min(item)
+        new_max = np.max(item)
+
+        if new_min < min:
+            min = new_min
+
+        if new_max > max:
+            max = new_max
+
+    if min_is_zero:
+        min = 0
+
+    if not is_int:
+        bins = np.linspace(
+            min,
+            max,
+            bin_spacing_continuous,
+        )
+    else:
+        bins = (
+            np.arange(
+                min,
+                max + 2,
+            )
+            - 0.5
+        )
+
+    bin_width = bins[1] - bins[0]
+
+    hists = []
+    for i, item in enumerate(data):
+        if relative and i == 2:  # random
+            hist, edges = np.histogram(item, bins, density=True)
+        else:
+            hist, edges = np.histogram(
+                item,
+                bins,
+            )
+
+        hists.append(hist)
+
+    # to handle rightly and falsely:
+    if relative:
+
+        total_hist = hists[0] + hists[1]
+
+        hists[0] = hists[0] / total_hist
+        hists[1] = hists[1] / total_hist
+
+        hists[0] = np.nan_to_num(hists[0])
+        hists[1] = np.nan_to_num(hists[1])
+
+        total_hist = total_hist / (np.sum(total_hist) * bin_width)
+
+        hists[0] = hists[0] * total_hist
+        hists[1] = hists[1] * total_hist
+
+    # Figure size
+    # plt.figure(figsize=(10, 5))
+
+    if not relative:
+        for i, hist in enumerate(hists):
+            plt.step(bins[:-1], hist, label=labels[i], where="post")
+
+    else:
+
+        # falsely
+        plt.bar(
+            bins[:-1],
+            hists[1],
+            bottom=0,
+            color="r",
+            label=labels[1],
+            width=bin_width,
+            align="edge",
+        )
+        # rightly
+        plt.bar(
+            bins[:-1],
+            hists[0],
+            bottom=hists[1],
+            color="g",
+            label=labels[0],
+            width=bin_width,
+            align="edge",
+        )
+
+        if len(data) > 2:
+            # random
+            plt.step(bins[:-1], hists[2], color="b", label=labels[2], where="post")
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    plt.gca().set_ylim(bottom=0, top=None)
+
+    plt.legend(loc="best")
+    plt.savefig(f"{out_base}{tag}{'_rel' if relative else ''}.png")
+    plt.show()
+
+    # TODO: Use bottom of bar to display relative properly!
+
+
+create_histogram(
+    "volumes",
     [rightly_volumes, falsely_volumes, random_volumes],
-    bins_volumes,
-    label=["rightly", "falsely", "random"],
+    ["rightly", "falsely", "random"],
+    "volume",
+    "probability (density)",
+    is_int=False,
+    relative=True,
+    min_is_zero=True,
 )
-plt.legend(loc="upper right")
-plt.xlabel("volume")
-plt.ylabel("count")
-plt.savefig(f"{out_base}comparison_volumes.png", dpi=400)
-plt.show()
 
-# plot denseness factors:
-bins_denseness_factors = np.linspace(
-    min(
-        np.min(rightly_denseness_factors),
-        np.min(falsely_denseness_factors),
-        np.min(random_denseness_factors),
-    ),
-    max(
-        np.max(rightly_denseness_factors),
-        np.max(falsely_denseness_factors),
-        np.max(random_denseness_factors),
-    ),
-    30,
-)
-plt.figure()
-plt.hist(
+create_histogram(
+    "denseness_factors",
     [rightly_denseness_factors, falsely_denseness_factors, random_denseness_factors],
-    bins_denseness_factors,
-    label=["rightly", "falsely", "random"],
+    ["rightly", "falsely", "random"],
+    "denseness factor",
+    "probability (density)",
+    is_int=False,
+    relative=True,
+    min_is_zero=True,
 )
-plt.legend(loc="upper right")
-plt.xlabel("denseness factor")
-plt.ylabel("count")
-plt.savefig(f"{out_base}comparison_denseness_factors.png", dpi=400)
-plt.show()
 
-# plot corn sizes:
-bins_corn_sizes = np.linspace(
-    min(
-        np.min(rightly_corn_sizes),
-        np.min(falsely_corn_sizes),
-        np.min(random_variations),
-    ),
-    max(
-        np.max(rightly_corn_sizes),
-        np.max(falsely_corn_sizes),
-        np.max(random_variations),
-    ),
-    30,
-)
-plt.figure()
-plt.hist(
+create_histogram(
+    "corn_sizes",
     [rightly_corn_sizes, falsely_corn_sizes, random_variations],
-    bins_corn_sizes,
-    label=["rightly", "falsely", "random"],
+    ["rightly", "falsely", "random"],
+    "corn size",
+    "probability (density)",
+    is_int=False,
+    relative=True,
+    min_is_zero=True,
 )
-plt.legend(loc="upper right")
-plt.xlabel("corn size")
-plt.ylabel("count")
-plt.savefig(f"{out_base}comparison_corn_sizes.png", dpi=400)
-plt.show()
 
-# plot NO_wyckoffs:
-bins_NO_wyckoffs = (
-    np.arange(
-        min(
-            np.min(rightly_NO_wyckoffs),
-            np.min(falsely_NO_wyckoffs),
-            np.min(random_NO_wyckoffs),
-        ),
-        max(
-            np.max(rightly_NO_wyckoffs),
-            np.max(falsely_NO_wyckoffs),
-            np.max(random_NO_wyckoffs),
-        )
-        + 1,
-    )
-    + 0.5
-)
-plt.figure()
-plt.hist(
+create_histogram(
+    "NO_wyckoffs",
     [rightly_NO_wyckoffs, falsely_NO_wyckoffs, random_NO_wyckoffs],
-    bins=bins_NO_wyckoffs,
-    label=["rightly", "falsely", "random"],
+    ["rightly", "falsely", "random"],
+    "Number of set wyckoff sites",
+    "probability (density)",
+    is_int=True,
+    relative=True,
+    min_is_zero=True,
 )
-plt.legend(loc="upper right")
-plt.xlabel("Number of set wyckoff sites")
-plt.ylabel("count")
-plt.savefig(f"{out_base}NO_wyckoffs.png", dpi=400)
-plt.show()
 
-# plot NO_elements (unique number of elements on wyckoff sites):
-bins_NO_elements = (
-    np.arange(
-        min(
-            np.min(rightly_NO_elements),
-            np.min(falsely_NO_elements),
-            np.min(random_NO_elements),
-        ),
-        max(
-            np.max(rightly_NO_elements),
-            np.max(falsely_NO_elements),
-            np.max(random_NO_elements),
-        )
-        + 1,
-    )
-    + 0.5
-)
-plt.figure()
-plt.hist(
+create_histogram(
+    "NO_elements",
     [rightly_NO_elements, falsely_NO_elements, random_NO_elements],
-    bins=bins_NO_elements,
-    label=["rightly", "falsely", "random"],
+    ["rightly", "falsely", "random"],
+    "Number of unique elements on wyckoff sites",
+    "probability (density)",
+    is_int=True,
+    relative=True,
+    min_is_zero=True,
 )
-plt.legend()
-plt.xlabel("Number of unique elements on wyckoff sites")
-plt.ylabel("count")
-plt.savefig(f"{out_base}NO_elements.png", dpi=400)
-plt.show()
 
-# plot lattice_paras:
-bins_lattice_paras = np.linspace(
-    min(
-        np.min(rightly_lattice_paras),
-        np.min(falsely_lattice_paras),
-        np.min(random_lattice_paras),
-    ),
-    max(
-        np.max(rightly_lattice_paras),
-        np.max(falsely_lattice_paras),
-        np.max(random_lattice_paras),
-    ),
-    30,
-)
-plt.figure()
-plt.hist(
+create_histogram(
+    "lattice_paras",
     [rightly_lattice_paras, falsely_lattice_paras, random_lattice_paras],
-    bins_lattice_paras,
-    label=["rightly", "falsely", "random"],
+    ["rightly", "falsely", "random"],
+    "lattice parameter",
+    "probability (density)",
+    is_int=False,
+    relative=True,
+    min_is_zero=True,
 )
-plt.legend(loc="upper right")
-plt.xlabel("lattice para")
-plt.ylabel("count")
-plt.savefig(f"{out_base}comparison_lattice_paras.png", dpi=400)
-plt.show()
 
-# plot occupancies:
-bins_occupancies = np.linspace(
-    min(
-        np.min(rightly_occupancies),
-        np.min(falsely_occupancies),
-    ),
-    max(
-        np.max(rightly_occupancies),
-        np.max(falsely_occupancies),
-    ),
-    30,
+create_histogram(
+    "occupancies",
+    [rightly_lattice_paras, falsely_lattice_paras],
+    ["rightly", "falsely"],
+    "occupancy",
+    "probability (density)",
+    is_int=False,
+    relative=True,
+    min_is_zero=True,
 )
-plt.figure()
-plt.hist(
-    [rightly_occupancies, falsely_occupancies],
-    bins_occupancies,
-    label=["rightly", "falsely"],
-)
-plt.legend(loc="upper right")
-plt.xlabel("occupancy")
-plt.ylabel("count")
-plt.savefig(f"{out_base}comparison_occupancies.png", dpi=400)
-plt.show()
 
-# plot number of element repetitions:
-bins_element_repetitions = (
-    np.arange(
-        min(
-            np.min(rightly_element_repetitions),
-            np.min(falsely_element_repetitions),
-            np.min(random_element_repetitions),
-        ),
-        max(
-            np.max(rightly_element_repetitions),
-            np.max(falsely_element_repetitions),
-            np.max(random_element_repetitions),
-        )
-        + 1,
-    )
-    + 0.5
-)
-plt.figure()
-plt.hist(
+create_histogram(
+    "element_repetitions",
     [
         rightly_element_repetitions,
         falsely_element_repetitions,
         random_element_repetitions,
     ],
-    bins=bins_element_repetitions,
-    label=["rightly", "falsely", "random"],
+    ["rightly", "falsely", "random"],
+    "Number of element repetitions on wyckoff sites",
+    "probability (density)",
+    is_int=True,
+    relative=True,
+    min_is_zero=True,
 )
-plt.legend()
-plt.xlabel("Number of element repetitions on wyckoff sites")
-plt.ylabel("count")
-plt.savefig(f"{out_base}NO_element_repetitions.png", dpi=400)
-plt.show()
 
+create_histogram(
+    "NO_atoms",
+    [
+        rightly_NO_atoms,
+        falsely_NO_atoms,
+        random_NO_elements,
+    ],
+    ["rightly", "falsely", "random"],
+    "Number of atoms in the unit cell",
+    "probability (density)",
+    is_int=True,
+    relative=True,
+    min_is_zero=True,
+)
 
 # Info about wyckoff positions in cif file format:
 # => where in the cif file is written what kind of wyckoff site we are dealing with?
