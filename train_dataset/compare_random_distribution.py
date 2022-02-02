@@ -256,7 +256,14 @@ bin_spacing_continuous = 60
 
 
 def create_histogram(
-    tag, data, labels, xlabel, ylabel, is_int=False, relative=False, min_is_zero=True
+    tag,
+    data,
+    labels,
+    xlabel,
+    ylabel,
+    is_int=False,
+    only_proportions=False,
+    min_is_zero=True,
 ):
     # Data: rightly, falsely, random or only rightly, falsely
 
@@ -294,7 +301,7 @@ def create_histogram(
 
     hists = []
     for i, item in enumerate(data):
-        if relative and i == 2:  # random
+        if i == 2:  # random
             hist, edges = np.histogram(item, bins, density=True)
         else:
             hist, edges = np.histogram(
@@ -305,54 +312,46 @@ def create_histogram(
         hists.append(hist)
 
     # to handle rightly and falsely:
-    if relative:
+    total_hist = hists[0] + hists[1]
 
-        total_hist = hists[0] + hists[1]
+    hists[0] = hists[0] / total_hist
+    hists[1] = hists[1] / total_hist
 
-        hists[0] = hists[0] / total_hist
-        hists[1] = hists[1] / total_hist
+    hists[0] = np.nan_to_num(hists[0])
+    hists[1] = np.nan_to_num(hists[1])
 
-        hists[0] = np.nan_to_num(hists[0])
-        hists[1] = np.nan_to_num(hists[1])
-
+    if not only_proportions:
         total_hist = total_hist / (np.sum(total_hist) * bin_width)
-
         hists[0] = hists[0] * total_hist
         hists[1] = hists[1] * total_hist
 
     # Figure size
     plt.figure()
 
-    if not relative:
-        for i, hist in enumerate(hists):
-            plt.step(bins[:-1], hist, label=labels[i], where="post")
+    # falsely
+    plt.bar(
+        bins[:-1],
+        hists[1],
+        bottom=0,
+        color="r",
+        label=labels[1],
+        width=bin_width,
+        align="edge",
+    )
+    # rightly
+    plt.bar(
+        bins[:-1],
+        hists[0],
+        bottom=hists[1],
+        color="g",
+        label=labels[0],
+        width=bin_width,
+        align="edge",
+    )
 
-    else:
-
-        # falsely
-        plt.bar(
-            bins[:-1],
-            hists[1],
-            bottom=0,
-            color="r",
-            label=labels[1],
-            width=bin_width,
-            align="edge",
-        )
-        # rightly
-        plt.bar(
-            bins[:-1],
-            hists[0],
-            bottom=hists[1],
-            color="g",
-            label=labels[0],
-            width=bin_width,
-            align="edge",
-        )
-
-        if len(data) > 2:
-            # random
-            plt.step(bins[:-1], hists[2], color="b", label=labels[2], where="post")
+    if len(data) > 2:
+        # random
+        plt.step(bins[:-1], hists[2], color="b", label=labels[2], where="post")
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -360,118 +359,129 @@ def create_histogram(
     plt.gca().set_ylim(bottom=0, top=None)
 
     plt.legend(loc="best")
-    plt.savefig(f"{out_base}{tag}{'_rel' if relative else ''}.png")
+    plt.savefig(f"{out_base}{tag}{'_prop' if only_proportions else ''}.png")
     plt.show()
 
-    # TODO: Use bottom of bar to display relative properly!
 
+for flag in [True, False]:
+    create_histogram(
+        "volumes",
+        [rightly_volumes, falsely_volumes, random_volumes],
+        ["rightly", "falsely", "random"],
+        "volume",
+        "probability (density)",
+        is_int=False,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
-create_histogram(
-    "volumes",
-    [rightly_volumes, falsely_volumes, random_volumes],
-    ["rightly", "falsely", "random"],
-    "volume",
-    "probability (density)",
-    is_int=False,
-    relative=True,
-    min_is_zero=True,
-)
+for flag in [True, False]:
+    create_histogram(
+        "denseness_factors",
+        [
+            rightly_denseness_factors,
+            falsely_denseness_factors,
+            random_denseness_factors,
+        ],
+        ["rightly", "falsely", "random"],
+        "denseness factor",
+        "probability (density)",
+        is_int=False,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
-create_histogram(
-    "denseness_factors",
-    [rightly_denseness_factors, falsely_denseness_factors, random_denseness_factors],
-    ["rightly", "falsely", "random"],
-    "denseness factor",
-    "probability (density)",
-    is_int=False,
-    relative=True,
-    min_is_zero=True,
-)
+for flag in [True, False]:
+    create_histogram(
+        "corn_sizes",
+        [rightly_corn_sizes, falsely_corn_sizes, random_variations],
+        ["rightly", "falsely", "random"],
+        "corn size",
+        "probability (density)",
+        is_int=False,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
-create_histogram(
-    "corn_sizes",
-    [rightly_corn_sizes, falsely_corn_sizes, random_variations],
-    ["rightly", "falsely", "random"],
-    "corn size",
-    "probability (density)",
-    is_int=False,
-    relative=True,
-    min_is_zero=True,
-)
+for flag in [True, False]:
+    create_histogram(
+        "NO_wyckoffs",
+        [rightly_NO_wyckoffs, falsely_NO_wyckoffs, random_NO_wyckoffs],
+        ["rightly", "falsely", "random"],
+        "Number of set wyckoff sites",
+        "probability (density)",
+        is_int=True,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
-create_histogram(
-    "NO_wyckoffs",
-    [rightly_NO_wyckoffs, falsely_NO_wyckoffs, random_NO_wyckoffs],
-    ["rightly", "falsely", "random"],
-    "Number of set wyckoff sites",
-    "probability (density)",
-    is_int=True,
-    relative=True,
-    min_is_zero=True,
-)
+for flag in [True, False]:
+    create_histogram(
+        "NO_elements",
+        [rightly_NO_elements, falsely_NO_elements, random_NO_elements],
+        ["rightly", "falsely", "random"],
+        "Number of unique elements on wyckoff sites",
+        "probability (density)",
+        is_int=True,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
-create_histogram(
-    "NO_elements",
-    [rightly_NO_elements, falsely_NO_elements, random_NO_elements],
-    ["rightly", "falsely", "random"],
-    "Number of unique elements on wyckoff sites",
-    "probability (density)",
-    is_int=True,
-    relative=True,
-    min_is_zero=True,
-)
+for flag in [True, False]:
+    create_histogram(
+        "lattice_paras",
+        [rightly_lattice_paras, falsely_lattice_paras, random_lattice_paras],
+        ["rightly", "falsely", "random"],
+        "lattice parameter",
+        "probability (density)",
+        is_int=False,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
-create_histogram(
-    "lattice_paras",
-    [rightly_lattice_paras, falsely_lattice_paras, random_lattice_paras],
-    ["rightly", "falsely", "random"],
-    "lattice parameter",
-    "probability (density)",
-    is_int=False,
-    relative=True,
-    min_is_zero=True,
-)
+for flag in [True, False]:
+    create_histogram(
+        "occupancies",
+        [rightly_lattice_paras, falsely_lattice_paras],
+        ["rightly", "falsely"],
+        "occupancy",
+        "probability (density)",
+        is_int=False,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
-create_histogram(
-    "occupancies",
-    [rightly_lattice_paras, falsely_lattice_paras],
-    ["rightly", "falsely"],
-    "occupancy",
-    "probability (density)",
-    is_int=False,
-    relative=True,
-    min_is_zero=True,
-)
+for flag in [True, False]:
+    create_histogram(
+        "element_repetitions",
+        [
+            rightly_element_repetitions,
+            falsely_element_repetitions,
+            random_element_repetitions,
+        ],
+        ["rightly", "falsely", "random"],
+        "Number of element repetitions on wyckoff sites",
+        "probability (density)",
+        is_int=True,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
-create_histogram(
-    "element_repetitions",
-    [
-        rightly_element_repetitions,
-        falsely_element_repetitions,
-        random_element_repetitions,
-    ],
-    ["rightly", "falsely", "random"],
-    "Number of element repetitions on wyckoff sites",
-    "probability (density)",
-    is_int=True,
-    relative=True,
-    min_is_zero=True,
-)
-
-create_histogram(
-    "NO_atoms",
-    [
-        rightly_NO_atoms,
-        falsely_NO_atoms,
-        random_NO_elements,
-    ],
-    ["rightly", "falsely", "random"],
-    "Number of atoms in the unit cell",
-    "probability (density)",
-    is_int=True,
-    relative=True,
-    min_is_zero=True,
-)
+for flag in [True, False]:
+    create_histogram(
+        "NO_atoms",
+        [
+            rightly_NO_atoms,
+            falsely_NO_atoms,
+            random_NO_elements,
+        ],
+        ["rightly", "falsely", "random"],
+        "Number of atoms in the unit cell",
+        "probability (density)",
+        is_int=True,
+        only_proportions=flag,
+        min_is_zero=True,
+    )
 
 # Info about wyckoff positions in cif file format:
 # => where in the cif file is written what kind of wyckoff site we are dealing with?
