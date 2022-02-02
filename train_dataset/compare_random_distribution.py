@@ -13,8 +13,10 @@ import pickle
 from pyxtal import pyxtal
 import re
 
-in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
-tag = "2-15-batch-size-100_test"  # for outputdir for pngs
+# in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
+in_base = "classifier_spgs/runs_from_cluster/4-spg-1000-epochs/"
+# tag = "2-15-batch-size-100_test"
+tag = "4-spg-1000-epochs"
 
 out_base = "comparison_plots/" + tag + "/"
 os.system("mkdir -p " + out_base)
@@ -282,11 +284,9 @@ def create_histogram(
             bin_spacing_continuous,
         )
     else:
+
         bins = (
-            np.arange(
-                min,
-                max + 2,
-            )
+            np.arange(min, max + 2, 1 if (max - min) < 60 else int((max - min) / 60))
             - 0.5
         )
 
@@ -321,7 +321,7 @@ def create_histogram(
         hists[1] = hists[1] * total_hist
 
     # Figure size
-    # plt.figure(figsize=(10, 5))
+    plt.figure()
 
     if not relative:
         for i, hist in enumerate(hists):
