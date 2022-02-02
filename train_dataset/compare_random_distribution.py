@@ -37,6 +37,10 @@ with open(in_base + "random_data.pickle", "rb") as file:
 with open(in_base + "rightly_falsely.pickle", "rb") as file:
     rightly_indices, falsely_indices = pickle.load(file)
 
+# random_crystals = random_crystals[0:100]
+# random_labels = random_labels[0:100]
+# random_variations = random_variations[0:100]
+
 # Get infos from icsd crystals:
 
 icsd_NO_wyckoffs = []
@@ -260,7 +264,6 @@ def create_histogram(
     data,
     labels,
     xlabel,
-    ylabel,
     is_int=False,
     only_proportions=False,
     min_is_zero=True,
@@ -327,9 +330,23 @@ def create_histogram(
 
     # Figure size
     plt.figure()
+    ax1 = plt.gca()
+
+    ax1.set_xlabel(xlabel)
+
+    if not only_proportions:
+        ax1.set_ylabel("probability density")
+    else:
+        ax1.set_ylabel("proportion for each bin")
+
+    if only_proportions and len(data) > 2:
+        ax2 = ax1.twinx()
+        ax2.set_ylabel("probability density")
+        ax2.tick_params(axis="y", labelcolor="b")
+        ax2.yaxis.label.set_color("b")
 
     # falsely
-    plt.bar(
+    h1 = ax1.bar(
         bins[:-1],
         hists[1],
         bottom=0,
@@ -339,7 +356,7 @@ def create_histogram(
         align="edge",
     )
     # rightly
-    plt.bar(
+    h2 = ax1.bar(
         bins[:-1],
         hists[0],
         bottom=hists[1],
@@ -351,14 +368,17 @@ def create_histogram(
 
     if len(data) > 2:
         # random
-        plt.step(bins[:-1], hists[2], color="b", label=labels[2], where="post")
+        (h3,) = (ax1 if not only_proportions else ax2).step(
+            bins[:-1], hists[2], color="b", label=labels[2], where="post"
+        )
+        ax1.legend(loc="best", handles=[h1, h2, h3])
 
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    else:
 
-    plt.gca().set_ylim(bottom=0, top=None)
+        ax1.legend(loc="best", handles=[h1, h2])
 
-    plt.legend(loc="best")
+    ax1.set_xlim(left=0, right=None)
+
     plt.savefig(f"{out_base}{tag}{'_prop' if only_proportions else ''}.png")
     plt.show()
 
@@ -367,9 +387,12 @@ for flag in [True, False]:
     create_histogram(
         "volumes",
         [rightly_volumes, falsely_volumes, random_volumes],
-        ["rightly", "falsely", "random"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+            "randomly generated structures",
+        ],
         "volume",
-        "probability (density)",
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
@@ -383,9 +406,12 @@ for flag in [True, False]:
             falsely_denseness_factors,
             random_denseness_factors,
         ],
-        ["rightly", "falsely", "random"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+            "randomly generated structures",
+        ],
         "denseness factor",
-        "probability (density)",
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
@@ -395,9 +421,12 @@ for flag in [True, False]:
     create_histogram(
         "corn_sizes",
         [rightly_corn_sizes, falsely_corn_sizes, random_variations],
-        ["rightly", "falsely", "random"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+            "randomly generated structures",
+        ],
         "corn size",
-        "probability (density)",
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
@@ -407,9 +436,12 @@ for flag in [True, False]:
     create_histogram(
         "NO_wyckoffs",
         [rightly_NO_wyckoffs, falsely_NO_wyckoffs, random_NO_wyckoffs],
-        ["rightly", "falsely", "random"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+            "randomly generated structures",
+        ],
         "Number of set wyckoff sites",
-        "probability (density)",
         is_int=True,
         only_proportions=flag,
         min_is_zero=True,
@@ -419,9 +451,12 @@ for flag in [True, False]:
     create_histogram(
         "NO_elements",
         [rightly_NO_elements, falsely_NO_elements, random_NO_elements],
-        ["rightly", "falsely", "random"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+            "randomly generated structures",
+        ],
         "Number of unique elements on wyckoff sites",
-        "probability (density)",
         is_int=True,
         only_proportions=flag,
         min_is_zero=True,
@@ -431,9 +466,12 @@ for flag in [True, False]:
     create_histogram(
         "lattice_paras",
         [rightly_lattice_paras, falsely_lattice_paras, random_lattice_paras],
-        ["rightly", "falsely", "random"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+            "randomly generated structures",
+        ],
         "lattice parameter",
-        "probability (density)",
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
@@ -443,9 +481,11 @@ for flag in [True, False]:
     create_histogram(
         "occupancies",
         [rightly_lattice_paras, falsely_lattice_paras],
-        ["rightly", "falsely"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+        ],
         "occupancy",
-        "probability (density)",
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
@@ -459,9 +499,12 @@ for flag in [True, False]:
             falsely_element_repetitions,
             random_element_repetitions,
         ],
-        ["rightly", "falsely", "random"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+            "randomly generated structures",
+        ],
         "Number of element repetitions on wyckoff sites",
-        "probability (density)",
         is_int=True,
         only_proportions=flag,
         min_is_zero=True,
@@ -475,9 +518,12 @@ for flag in [True, False]:
             falsely_NO_atoms,
             random_NO_elements,
         ],
-        ["rightly", "falsely", "random"],
+        [
+            "ICSD correctly classified",
+            "ICSD incorrectly classified",
+            "randomly generated structures",
+        ],
         "Number of atoms in the unit cell",
-        "probability (density)",
         is_int=True,
         only_proportions=flag,
         min_is_zero=True,
