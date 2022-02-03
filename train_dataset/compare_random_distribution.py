@@ -15,7 +15,7 @@ import re
 
 # in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
 in_base = "classifier_spgs/runs_from_cluster/4-spg-1000-epochs/"
-# tag = "2-15-batch-size-100_test"
+# tag = "2-15-batch-size-100"
 tag = "4-spg-1000-epochs"
 
 out_base = "comparison_plots/" + tag + "/"
@@ -378,9 +378,13 @@ def create_histogram(
         ax1.legend(loc="best", handles=[h1, h2])
 
     ax1.set_xlim(left=0, right=None)
+    ax1.set_ylim(bottom=0, top=None)
+
+    if len(data) > 2 and only_proportions:
+        ax2.set_ylim(bottom=0, top=None)
 
     plt.savefig(f"{out_base}{tag}{'_prop' if only_proportions else ''}.png")
-    plt.show()
+    # plt.show()
 
 
 for flag in [True, False]:
@@ -480,7 +484,7 @@ for flag in [True, False]:
 for flag in [True, False]:
     create_histogram(
         "occupancies",
-        [rightly_lattice_paras, falsely_lattice_paras],
+        [rightly_occupancies, falsely_occupancies],
         [
             "ICSD correctly classified",
             "ICSD incorrectly classified",
