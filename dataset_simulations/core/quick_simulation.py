@@ -737,9 +737,9 @@ if __name__ == "__main__":
         volumes = np.linspace(100, 7000, 12)
         NOs_wyckoffs = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
-        # for testing
-        # volumes = volumes[:1]
-        # NOs_wyckoffs = NOs_wyckoffs[:1]
+        # for testing # TODO: Change back
+        volumes = volumes[:2]
+        NOs_wyckoffs = NOs_wyckoffs[:2]
 
         xs = []  # volumes
         ys = []  # NO_wyckoffs
@@ -767,29 +767,38 @@ if __name__ == "__main__":
 
         cm = plt.cm.get_cmap("RdYlBu")
         sc = plt.scatter(xs, ys, c=zs1, s=20, cmap=cm)
-        plt.colorbar(sc)
-        plt.xlabel("Volume")
+        clb = plt.colorbar(sc)
+        clb.ax.get_yaxis().labelpad = 15
+        clb.ax.set_ylabel("Time in s", rotation=270)
+        plt.xlabel(r"Volume / $Å^3$")
         plt.ylabel("Number of set wyckoffs")
         plt.title("Timings generation")
-        plt.savefig("timings_generation.png")
+        plt.tight_layout()
+        plt.savefig("timings_generation.png", bbox_inches="tight")
         plt.show()
 
         plt.figure()
         cm = plt.cm.get_cmap("RdYlBu")
         sc = plt.scatter(xs, ys, c=zs2, s=20, cmap=cm)
-        plt.colorbar(sc)
-        plt.xlabel("Volume")
+        clb = plt.colorbar(sc)
+        clb.ax.get_yaxis().labelpad = 15
+        clb.ax.set_ylabel("Time in s", rotation=270)
+        plt.xlabel(r"Volume / $Å^3$")
         plt.ylabel("Number of set wyckoffs")
         plt.title("Timings simulation")
-        plt.savefig("timings_simulation.png")
+        plt.tight_layout()
+        plt.savefig("timings_simulation.png", bbox_inches="tight")
         plt.show()
 
         plt.figure()
         cm = plt.cm.get_cmap("RdYlBu")
         sc = plt.scatter(xs, ys, c=zs3, s=20, cmap=cm)
-        plt.colorbar(sc)
-        plt.xlabel("Volume")
+        clb = plt.colorbar(sc)
+        clb.ax.get_yaxis().labelpad = 15
+        clb.ax.set_ylabel("Time in s", rotation=270)
+        plt.xlabel(r"Volume / $Å^3$")
         plt.ylabel("Number of set wyckoffs")
         plt.title("Time per swipe")
-        plt.savefig("timings_swipe.png")
+        plt.tight_layout()
+        plt.savefig("timings_swipe.png", bbox_inches="tight")
         plt.show()

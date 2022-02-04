@@ -13,10 +13,10 @@ import pickle
 from pyxtal import pyxtal
 import re
 
-# in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
-in_base = "classifier_spgs/runs_from_cluster/4-spg-1000-epochs/"
-# tag = "2-15-batch-size-100"
-tag = "4-spg-1000-epochs"
+in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
+# in_base = "classifier_spgs/runs_from_cluster/4-spg-1000-epochs/"
+tag = "2-15-batch-size-100"
+# tag = "4-spg-1000-epochs"
 
 out_base = "comparison_plots/" + tag + "/"
 os.system("mkdir -p " + out_base)
@@ -383,7 +383,10 @@ def create_histogram(
     if len(data) > 2 and only_proportions:
         ax2.set_ylim(bottom=0, top=None)
 
-    plt.savefig(f"{out_base}{tag}{'_prop' if only_proportions else ''}.png")
+    plt.tight_layout()
+    plt.savefig(
+        f"{out_base}{tag}{'_prop' if only_proportions else ''}.png", bbox_inches="tight"
+    )
     # plt.show()
 
 
@@ -396,7 +399,7 @@ for flag in [True, False]:
             "ICSD incorrectly classified",
             "randomly generated structures",
         ],
-        "volume",
+        r"volume / $Å^3$",
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
@@ -475,7 +478,7 @@ for flag in [True, False]:
             "ICSD incorrectly classified",
             "randomly generated structures",
         ],
-        "lattice parameter",
+        r"lattice parameter / $Å$",
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
