@@ -68,19 +68,42 @@ def fit_diffractogram(x, y, angles, intensities, wavelength):
     )
 
 
+def dif_parser(path):
+    with open(path, "r") as file:
+        content = file.readlines()
+
+    relevant_content = []
+    is_reading = False
+    for line in content:
+        if "==========" in line:
+            break
+
+        if is_reading:
+            relevant_content.append(line)
+
+        if "2-THETA" in line and "INTENSITY" in line and "D-SPACING" in line:
+            is_reading = True
+
+    data = np.genfromtxt(relevant_content)[:, 0:2]
+
+    return data
+
+
 raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
 processed_files = []
 dif_files = []
 
+
 processed_xys = []
+
 raw_xys = []
+
 angles = []
 intensities = []
 
+
 counter_processed = 0
 counter_dif = 0
-
-# TODO: Do this without processed files? How many difs can I find this way? ALL??? !!!
 
 for i, raw_file in enumerate(raw_files):
 
@@ -91,27 +114,35 @@ for i, raw_file in enumerate(raw_files):
         "__".join(raw_filename.replace("RAW", "Processed").split("__")[:-1]) + "*.txt",
     )
     processed_file = glob(processed_file)
-    if not len(processed_file) > 0:
-        del raw_files[i]
-        continue
-    counter_processed += 1
+    if len(processed_file) > 0:
+        counter_processed += 1
+        processed_file = processed_file[0]
+        processed_files.append(processed_file)
+    else:
+        processed_files.append(None)
+        pass
 
     dif_file = os.path.join(
-        "../RRUFF_data/XY_Processed/",
+        "../RRUFF_data/DIF/",
         "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
     )
     dif_file = glob(dif_file)
-    if not len(dif_file) > 0:
-        del raw_files[i]
-        continue
-    counter_dif += 1
+    if len(dif_file) > 0:
+        counter_dif += 1
+        dif_file = dif_file[0]
+        dif_files.append(dif_file)
 
-    processed_file = processed_file[0]
-    processed_files.append(processed_file)
+        data = dif_parser(dif_file)
 
-    dif_file = dif_file[0]
-    dif_files.append(dif_file)
+        angles.append(data[:, 0])
+        intensities.append(data[:, 1])
 
+    else:
+        dif_files.append(None)
+        angles.append(None)
+        intensities.append(None)
+
+    """
     raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
     raw_xys.append(raw_xy)
 
@@ -119,6 +150,7 @@ for i, raw_file in enumerate(raw_files):
         processed_file, dtype=float, delimiter=",", comments="#"
     )
     processed_xys.append(processed_xy)
+    """
 
     pass
 
@@ -131,4 +163,14 @@ for i, raw_file in enumerate(raw_files):
     # plt.plot(raw_xy[:,0], raw_xy[:,1])
     # plt.show()
 
-print(f"{counter_processed} matching files found.")
+print(f"{counter_processed} processed files found.")
+print(f"{counter_dif} dif files found.")
+
+assert len(dif_files) == len(processed_files)
+
+counter_both = 0
+for i, dif_file in enumerate(dif_files):
+    if dif_file is not None and processed_files[i] is not None:
+        counter_both += 1
+
+print(f"{counter_both} files with dif and processed file found.")
