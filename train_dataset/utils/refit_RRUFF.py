@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 from scipy.optimize import curve_fit
 from functools import partial
+from sklearn.metrics import r2_score
 
 
 def calc_std_dev(two_theta, tau, wavelength):
@@ -86,11 +87,18 @@ def fit_diffractogram(x, y, angles, intensities, wavelength):
 
     fitted_curve = fit_function(x, *params, angles, intensities, wavelength)
 
+    score = r2_score(y, fitted_curve)
+    print(f"R2 score: {score}")
+
+    if score < 0.6:
+        print("Bad R2 score.")
+        return None
+
     plt.plot(x, fitted_curve)
 
     plt.show()
 
-    print()
+    return params
 
 
 def dif_parser(path):
