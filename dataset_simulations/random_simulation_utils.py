@@ -233,12 +233,7 @@ def generate_structure(
                         p=list(probability_per_element.values()),
                     )[0]
 
-                    if chosen_element in all_elements:
-                        chosen_elements.append(chosen_element)
-                    else:
-                        print(
-                            f"Warning: {chosen_element} not in the supported elements list."
-                        )
+                    chosen_elements.append(chosen_element)
 
                 chosen_numbers.append(multiplicities[chosen_index])
                 chosen_wyckoff_positions.append([names[chosen_index]])
@@ -465,6 +460,10 @@ def load_wyckoff_statistics():
     ) as file:
         (counter_per_element, counts_per_spg_per_wyckoff) = pickle.load(file)
 
+    for element in counter_per_element.keys():
+        if element not in all_elements:
+            raise Exception(f"Element {element} not supported.")
+
     # convert to relative entries
     total = 0
     for key in counter_per_element.keys():
@@ -496,9 +495,6 @@ if __name__ == "__main__":
         analyse_set_wyckoffs()
 
     if True:
-        statistic = load_wyckoff_statistics()
-
-    if False:
 
         (
             probability_per_element,
