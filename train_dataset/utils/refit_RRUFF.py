@@ -69,24 +69,40 @@ def fit_diffractogram(x, y, angles, intensities, wavelength):
 
 
 def dif_parser(path):
-    with open(path, "r") as file:
-        content = file.readlines()
 
-    relevant_content = []
-    is_reading = False
-    for line in content:
-        if "==========" in line:
-            break
+    try:
 
-        if is_reading:
-            relevant_content.append(line)
+        with open(path, "r") as file:
+            content = file.readlines()
 
-        if "2-THETA" in line and "INTENSITY" in line and "D-SPACING" in line:
-            is_reading = True
+        relevant_content = []
+        is_reading = False
+        for line in content:
+            if (
+                "==========" in line
+                or "XPOW Copyright" in line
+                or "For reference, see Downs" in line
+            ) and is_reading:
+                break
 
-    data = np.genfromtxt(relevant_content)[:, 0:2]
+            if is_reading:
+                relevant_content.append(line)
 
-    return data
+            if "2-THETA" in line and "INTENSITY" in line and "D-SPACING" in line:
+                is_reading = True
+            elif "2-THETA" in line and "D-SPACING" in line and not "INTENSITY" in line:
+                print(f"Error processing file {path}:")
+                print("No intensity data found.")
+                return None
+
+        data = np.genfromtxt(relevant_content)[:, 0:2]
+
+        return data
+
+    except Exception as ex:
+        print(f"Error processing file {path}:")
+        print(ex)
+        return None
 
 
 raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
@@ -106,6 +122,8 @@ counter_processed = 0
 counter_dif = 0
 
 for i, raw_file in enumerate(raw_files):
+
+    print(f"{(i+1)/len(raw_files)*100}% processed")
 
     raw_filename = os.path.basename(raw_file)
 
@@ -127,12 +145,15 @@ for i, raw_file in enumerate(raw_files):
         "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
     )
     dif_file = glob(dif_file)
+    data = None
     if len(dif_file) > 0:
         counter_dif += 1
         dif_file = dif_file[0]
         dif_files.append(dif_file)
 
         data = dif_parser(dif_file)
+
+    if data is not None:  # if nothing went wrong
 
         angles.append(data[:, 0])
         intensities.append(data[:, 1])
@@ -154,8 +175,6 @@ for i, raw_file in enumerate(raw_files):
 
     pass
 
-    # TODO: Read in the DIF file
-
     # This alone is not enough, unfortunately:
     # difference = raw_xy[:,1] - processed_xy[:,1]
     # plt.plot(raw_xy[:,0], difference)
@@ -166,6 +185,7 @@ for i, raw_file in enumerate(raw_files):
 print(f"{counter_processed} processed files found.")
 print(f"{counter_dif} dif files found.")
 
+# TODO: Fix this:
 assert len(dif_files) == len(processed_files)
 
 counter_both = 0
