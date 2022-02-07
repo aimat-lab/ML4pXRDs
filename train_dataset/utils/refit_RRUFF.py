@@ -44,7 +44,18 @@ def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, waveleng
 
 
 def fit_function(
-    xs, a0, a1, a2, a3, a4, a5, grain_size, angles, intensities, wavelength
+    xs,
+    a0,
+    a1,
+    a2,
+    a3,
+    a4,
+    a5,
+    grain_size,
+    intensity_scaling,
+    angles,
+    intensities,
+    wavelength,
 ):
 
     polynomial = (
@@ -52,20 +63,34 @@ def fit_function(
     )
 
     # add the code from the simulation
-    peaks = smeared_peaks(xs, angles, intensities, grain_size, wavelength)
+    peaks = intensity_scaling * smeared_peaks(
+        xs, angles, intensities, grain_size, wavelength
+    )
 
     return peaks + polynomial
 
 
 def fit_diffractogram(x, y, angles, intensities, wavelength):
 
+    plt.plot(x, y)
+    for angle in angles:
+        plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
+
     params, covs = curve_fit(
         partial(
-            fit_function, angles=angles, intensities=intensities, wavelength=intensities
+            fit_function, angles=angles, intensities=intensities, wavelength=wavelength
         ),
         x,
         y,
     )
+
+    fitted_curve = fit_function(x, *params, angles, intensities, wavelength)
+
+    plt.plot(x, fitted_curve)
+
+    plt.show()
+
+    print()
 
 
 def dif_parser(path):
@@ -176,7 +201,6 @@ for i, raw_file in enumerate(raw_files):
         angles.append(data[:, 0])
         intensities.append(data[:, 1])
 
-        """
         result = fit_diffractogram(
             raw_xys[-1][:, 0],
             raw_xys[-1][:, 1],
@@ -184,7 +208,6 @@ for i, raw_file in enumerate(raw_files):
             intensities[-1],
             wavelength,
         )
-        """
 
     else:
 
@@ -210,7 +233,6 @@ for i, raw_file in enumerate(raw_files):
 print(f"{counter_processed} processed files found.")
 print(f"{counter_dif} dif files found.")
 
-# TODO: Fix this:
 assert len(dif_files) == len(processed_files)
 
 counter_both = 0
