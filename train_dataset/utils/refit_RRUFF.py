@@ -77,7 +77,13 @@ def dif_parser(path):
 
         relevant_content = []
         is_reading = False
+        wavelength = None
+
         for line in content:
+
+            if "X-RAY WAVELENGTH" in line:
+                wavelength = float(line.replace("X-RAY WAVELENGTH:", "").strip())
+
             if (
                 "==========" in line
                 or "XPOW Copyright" in line
@@ -93,16 +99,21 @@ def dif_parser(path):
             elif "2-THETA" in line and "D-SPACING" in line and not "INTENSITY" in line:
                 print(f"Error processing file {path}:")
                 print("No intensity data found.")
-                return None
+                return None, None
 
         data = np.genfromtxt(relevant_content)[:, 0:2]
 
-        return data
+        if wavelength is None:
+            print(f"Error for file {path}:")
+            print("No wavelength information found.")
+            return None, None
+
+        return data, wavelength
 
     except Exception as ex:
         print(f"Error processing file {path}:")
         print(ex)
-        return None
+        return None, None
 
 
 raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
@@ -123,9 +134,11 @@ counter_dif = 0
 
 for i, raw_file in enumerate(raw_files):
 
-    print(f"{(i+1)/len(raw_files)*100}% processed")
+    print(f"{(i+1)/len(raw_files)*100:.2f}% processed")
 
     raw_filename = os.path.basename(raw_file)
+    raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
+    raw_xys.append(raw_xy)
 
     processed_file = os.path.join(
         "../RRUFF_data/XY_Processed/",
@@ -145,29 +158,41 @@ for i, raw_file in enumerate(raw_files):
         "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
     )
     dif_file = glob(dif_file)
+
     data = None
     if len(dif_file) > 0:
         counter_dif += 1
         dif_file = dif_file[0]
         dif_files.append(dif_file)
 
-        data = dif_parser(dif_file)
+        data, wavelength = dif_parser(dif_file)
+
+    else:
+
+        dif_files.append(None)
 
     if data is not None:  # if nothing went wrong
 
         angles.append(data[:, 0])
         intensities.append(data[:, 1])
 
+        """
+        result = fit_diffractogram(
+            raw_xys[-1][:, 0],
+            raw_xys[-1][:, 1],
+            angles[-1],
+            intensities[-1],
+            wavelength,
+        )
+        """
+
     else:
-        dif_files.append(None)
+
         angles.append(None)
         intensities.append(None)
 
     """
-    raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
-    raw_xys.append(raw_xy)
-
-    processed_xy = np.genfromtxt(
+        processed_xy = np.genfromtxt(
         processed_file, dtype=float, delimiter=",", comments="#"
     )
     processed_xys.append(processed_xy)
