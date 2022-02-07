@@ -249,6 +249,7 @@ def generate_structure(
 
         try:
 
+            # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
             my_crystal.from_random(
                 wyckoff_indices_per_specie=chosen_wyckoff_indices
                 if use_icsd_statistics
@@ -260,8 +261,10 @@ def generate_structure(
                 numIons=chosen_numbers,
                 # sites=chosen_wyckoff_positions,
                 my_seed=seed,
-                factor=np.random.uniform(0.7, 5.0),
                 # factor=1.1,
+                # factor=np.random.uniform(0.7, 5.0),
+                # factor=np.random.uniform(0.7, 3.0),
+                factor=np.random.uniform(0.7, 1.2),
                 do_distance_checks=do_distance_checks,
                 fixed_volume=fixed_volume,
                 do_merge_checks=do_merge_checks,
@@ -500,16 +503,37 @@ if __name__ == "__main__":
             probability_per_element,
             probability_per_spg_per_wyckoff,
         ) = load_wyckoff_statistics()
-        generate_structures(
-            225,
-            1,
-            10,
-            do_distance_checks=False,
-            do_merge_checks=False,
-            use_icsd_statistics=True,
-            probability_per_element=probability_per_element,
-            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+
+        volumes = []
+
+        for spg in range(1, 231):
+
+            print(f"Spg {spg}")
+
+            structures = generate_structures(
+                spg,
+                1,
+                100,
+                do_distance_checks=False,
+                do_merge_checks=False,
+                use_icsd_statistics=True,
+                probability_per_element=probability_per_element,
+                probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+            )
+
+            for structure in structures:
+                volumes.append(structure.volume)
+
+        bins = np.linspace(
+            np.min(volumes),
+            np.max(volumes),
+            60,
         )
+        bin_width = bins[1] - bins[0]
+        hist, edges = np.histogram(volumes, bins, density=True)
+
+        plt.bar(bins[:-1], hist, width=bin_width)
+        plt.show()
 
     if False:
 
