@@ -460,7 +460,9 @@ def analyse_set_wyckoffs():
 
 def load_wyckoff_statistics():
 
-    with open("set_wyckoffs_statistics", "rb") as file:
+    with open(
+        os.path.join(os.path.dirname(__file__), "set_wyckoffs_statistics"), "rb"
+    ) as file:
         (counter_per_element, counts_per_spg_per_wyckoff) = pickle.load(file)
 
     # convert to relative entries
@@ -475,9 +477,14 @@ def load_wyckoff_statistics():
         total = 0
         for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
             total += counts_per_spg_per_wyckoff[spg][wyckoff_site]
-        if total > 0:
-            for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+        for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+            if total > 0:
                 counts_per_spg_per_wyckoff[spg][wyckoff_site] /= total
+            else:  # if no observations are present in the ICSD, make it evenly distributed
+                counts_per_spg_per_wyckoff[spg][wyckoff_site] = 1 / len(
+                    counts_per_spg_per_wyckoff[spg].keys()
+                )
+
     probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff
 
     return (probability_per_element, probability_per_spg_per_wyckoff)
@@ -485,8 +492,11 @@ def load_wyckoff_statistics():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         analyse_set_wyckoffs()
+
+    if True:
+        statistic = load_wyckoff_statistics()
 
     if False:
 

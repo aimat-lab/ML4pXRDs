@@ -44,6 +44,11 @@ def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, waveleng
     return ys / np.max(ys)
 
 
+# TODO: Add lorentzian grain size / pseudo-voigt for peaks!
+# Use this https://lmfit.github.io/lmfit-py/builtin_models.html
+# Also use this to do the fitting.
+
+
 def fit_function(
     xs,
     a0,
