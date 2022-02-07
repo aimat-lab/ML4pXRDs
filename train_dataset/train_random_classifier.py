@@ -1,5 +1,6 @@
 import tensorflow.keras as keras
 from dataset_simulations.core.quick_simulation import get_random_xy_patterns
+from dataset_simulations.random_simulation_utils import load_wyckoff_statistics
 import numpy as np
 from models import build_model_park
 from datetime import datetime
@@ -37,6 +38,7 @@ NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
 do_distance_checks = False
 do_merge_checks = False
+use_icsd_statistics = True
 
 NO_workers = 126 + 14  # for cluster
 queue_size = 200
@@ -179,6 +181,14 @@ print()
 
 queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 
+if use_icsd_statistics:
+    (
+        probability_per_element,
+        probability_per_spg_per_wyckoff,
+    ) = load_wyckoff_statistics()
+else:
+    probability_per_element, probability_per_spg_per_wyckoff = None, None
+
 
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_with_additional(
@@ -198,6 +208,9 @@ def batch_generator_with_additional(
         return_additional=True,
         do_distance_checks=do_distance_checks,
         do_merge_checks=do_merge_checks,
+        use_icsd_statistics=use_icsd_statistics,
+        probability_per_element=probability_per_element,
+        probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
     )
 
     # Set the label to the right index:
@@ -223,7 +236,6 @@ def batch_generator_queue(
 ):
 
     while True:
-
         try:
 
             patterns, labels = get_random_xy_patterns(
@@ -238,6 +250,9 @@ def batch_generator_queue(
                 do_print=False,
                 do_distance_checks=do_distance_checks,
                 do_merge_checks=do_merge_checks,
+                use_icsd_statistics=use_icsd_statistics,
+                probability_per_element=probability_per_element,
+                probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -334,7 +349,8 @@ params_txt = (
     f"end_angle: {end_angle}  \n"
     f"N: {N}  \n  \n"
     f"do_distance_checks: {str(do_distance_checks)}  \n  \n"
-    f"do_merge_checks: {str(do_merge_checks)}"
+    f"do_merge_checks: {str(do_merge_checks)}  \n  \n"
+    f"use_icsd_statistics: {str(use_icsd_statistics)}"
 )
 tf.summary.text("Parameters", data=params_txt, step=0)
 
