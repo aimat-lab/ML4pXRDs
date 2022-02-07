@@ -13,39 +13,40 @@ import pickle
 import tensorflow as tf
 import sys
 
-#tag = "spgs-2-15"
-#tag = "4-spgs-no-distance-check"
+# tag = "spgs-2-15"
+# tag = "4-spgs-no-distance-check"
 tag = "test_slurm_output"
 
 out_base = sys.argv[1] + "/"
-#out_base = (
+# out_base = (
 #    "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
-#)
+# )
 os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-#NO_epochs = 1000
-NO_epochs = 5
+# NO_epochs = 1000
+NO_epochs = 1000
 
 # structures_per_spg = 1 # for all spgs
 structures_per_spg = 5
-#structures_per_spg = 10 # for (2,15) tuple
+# structures_per_spg = 10 # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
 do_distance_checks = False
+do_merge_checks = False
 
-NO_workers = 126 + 14 # for cluster
+NO_workers = 126 + 14  # for cluster
 queue_size = 200
 queue_size_tf = 100
 
 compare_distributions = True
-#NO_random_batches = 20
-NO_random_batches = 1000 # make this smaller for the all-spgs run
+# NO_random_batches = 20
+NO_random_batches = 1000  # make this smaller for the all-spgs run
 
-max_NO_elements = 10
+max_NO_elements = 100
 
 verbosity = 2
 
@@ -135,7 +136,7 @@ if compare_distributions:
             (
                 icsd_crystals,
                 icsd_labels,
-                [item[:,0] for item in icsd_variations],
+                [item[:, 0] for item in icsd_variations],
                 icsd_metas,
             ),
             file,
@@ -178,6 +179,7 @@ print()
 
 queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 
+
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_with_additional(
     spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes
@@ -194,7 +196,8 @@ def batch_generator_with_additional(
         max_NO_elements=max_NO_elements,
         do_print=False,
         return_additional=True,
-        do_distance_checks=do_distance_checks
+        do_distance_checks=do_distance_checks,
+        do_merge_checks=do_merge_checks,
     )
 
     # Set the label to the right index:
@@ -233,7 +236,8 @@ def batch_generator_queue(
                 two_theta_range=(start_angle, end_angle),
                 max_NO_elements=max_NO_elements,
                 do_print=False,
-                do_distance_checks=do_distance_checks
+                do_distance_checks=do_distance_checks,
+                do_merge_checks=do_merge_checks,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -259,6 +263,7 @@ def batch_generator_queue(
                 ex.__traceback__.tb_lineno,  # 2
             )
 
+
 if compare_distributions:
     # pre-store some batches to compare to the rightly / falsely classified icsd samples
 
@@ -271,13 +276,13 @@ if compare_distributions:
         ref = batch_generator_with_additional.remote(
             spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
         )
-        #ref = batch_generator_with_additional(
+        # ref = batch_generator_with_additional(
         #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
-        #)
+        # )
         object_refs.append(ref)
 
     results = ray.get(object_refs)
-    #results = object_refs
+    # results = object_refs
 
     for result in results:
         patterns, labels, crystals, corn_sizes = result
@@ -315,24 +320,29 @@ file_writer = tf.summary.create_file_writer(out_base + "tuner_tb" + "/metrics")
 file_writer.set_as_default()
 
 params_txt = (
-f"tag: {tag}  \n  \n"
-f"batches_per_epoch: {batches_per_epoch}  \n"
-f"NO_epochs: {NO_epochs}  \n"
-f"structures_per_spg: {structures_per_spg}  \n"
-f"NO_corn_sizes: {NO_corn_sizes}  \n"
-f"-> batch size: {NO_corn_sizes*structures_per_spg*len(spgs)}  \n  \n"
-f"NO_workers: {NO_workers}  \n"
-f"queue_size: {queue_size}  \n"
-f"queue_size_tf: {queue_size_tf}  \n  \n"
-f"max_NO_elements: {max_NO_elements}  \n"
-f"start_angle: {start_angle}  \n"
-f"end_angle: {end_angle}  \n"
-f"N: {N}")
+    f"tag: {tag}  \n  \n"
+    f"batches_per_epoch: {batches_per_epoch}  \n"
+    f"NO_epochs: {NO_epochs}  \n"
+    f"structures_per_spg: {structures_per_spg}  \n"
+    f"NO_corn_sizes: {NO_corn_sizes}  \n"
+    f"-> batch size: {NO_corn_sizes*structures_per_spg*len(spgs)}  \n  \n"
+    f"NO_workers: {NO_workers}  \n"
+    f"queue_size: {queue_size}  \n"
+    f"queue_size_tf: {queue_size_tf}  \n  \n"
+    f"max_NO_elements: {max_NO_elements}  \n"
+    f"start_angle: {start_angle}  \n"
+    f"end_angle: {end_angle}  \n"
+    f"N: {N}  \n  \n"
+    f"do_distance_checks: {str(do_distance_checks)}  \n  \n"
+    f"do_merge_checks: {str(do_merge_checks)}"
+)
 tf.summary.text("Parameters", data=params_txt, step=0)
+
 
 class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
-        tf.summary.scalar('ray queue size', data=queue.size(), step=epoch)
+        tf.summary.scalar("ray queue size", data=queue.size(), step=epoch)
+
 
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches):
@@ -372,6 +382,7 @@ class CustomSequence(keras.utils.Sequence):
         """
 
         return queue.get()
+
 
 sequence = CustomSequence(batches_per_epoch)
 
