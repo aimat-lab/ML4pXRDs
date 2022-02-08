@@ -151,6 +151,7 @@ def generate_structure(
     use_icsd_statistics=False,
     probability_per_element=None,
     probability_per_spg_per_wyckoff=None,
+    max_volume=None,
 ):
 
     if use_icsd_statistics and (
@@ -250,7 +251,7 @@ def generate_structure(
         try:
 
             # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
-            my_crystal.from_random(
+            volume_ok = my_crystal.from_random(
                 wyckoff_indices_per_specie=chosen_wyckoff_indices
                 if use_icsd_statistics
                 else None,
@@ -269,7 +270,11 @@ def generate_structure(
                 do_distance_checks=do_distance_checks,
                 fixed_volume=fixed_volume,
                 do_merge_checks=do_merge_checks,
+                max_volume=max_volume,
             )
+
+            if not volume_ok:
+                continue
 
         except Exception as ex:
             print(flush=True)
