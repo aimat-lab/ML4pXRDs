@@ -503,6 +503,7 @@ def get_random_xy_patterns(
     use_icsd_statistics=False,
     probability_per_element=None,
     probability_per_spg_per_wyckoff=None,
+    max_volume=None,
 ):
 
     result_patterns_y = []
@@ -527,6 +528,7 @@ def get_random_xy_patterns(
             use_icsd_statistics=use_icsd_statistics,
             probability_per_element=probability_per_element,
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+            max_volume=max_volume,
         )
         if do_print:
             timings_generation.append(time.time() - start)

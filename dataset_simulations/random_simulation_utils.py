@@ -266,11 +266,13 @@ def generate_structure(
                 # factor=np.random.uniform(0.7, 5.0),
                 # factor=np.random.uniform(0.7, 3.0),
                 # factor=np.random.uniform(0.7, 1.2),
-                factor=np.random.uniform(0.7, 2.2),
+                factor=np.random.uniform(
+                    0.7, 2.2
+                ),  # trying to match the denseness factor distribution of ICSD
                 do_distance_checks=do_distance_checks,
                 fixed_volume=fixed_volume,
                 do_merge_checks=do_merge_checks,
-                max_volume=max_volume,
+                # max_volume=max_volume,
             )
 
             if not volume_ok:
@@ -332,6 +334,7 @@ def generate_structures(
     use_icsd_statistics=False,
     probability_per_element=None,
     probability_per_spg_per_wyckoff=None,
+    max_volume=None,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -363,6 +366,7 @@ def generate_structures(
             use_icsd_statistics=use_icsd_statistics,
             probability_per_element=probability_per_element,
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+            max_volume=max_volume,
         )
         for i in range(0, N)
     ]
@@ -525,10 +529,15 @@ if __name__ == "__main__":
                 use_icsd_statistics=True,
                 probability_per_element=probability_per_element,
                 probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+                max_volume=7000,
             )
 
             for structure in structures:
                 volumes.append(structure.volume)
+
+        volumes = np.array(volumes)
+        print(f"Volumes <= 7000: {np.sum(volumes <= 7000)}")
+        print(f"Volumes > 7000: {np.sum(volumes > 7000)}")
 
         bins = np.linspace(
             np.min(volumes),
