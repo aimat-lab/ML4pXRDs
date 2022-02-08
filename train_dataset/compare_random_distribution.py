@@ -12,11 +12,12 @@ from pyxtal.database.element import Element
 import pickle
 from pyxtal import pyxtal
 import re
+import random
 
-in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
-# in_base = "classifier_spgs/runs_from_cluster/4-spg-1000-epochs/"
-tag = "2-15-batch-size-100"
-# tag = "4-spg-1000-epochs"
+# in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
+in_base = "classifier_spgs/runs_from_cluster/4-spg-1000-epochs/"
+# tag = "2-15-batch-size-100"
+tag = "4-spg-1000-epochs"
 
 out_base = "comparison_plots/" + tag + "/"
 os.system("mkdir -p " + out_base)
@@ -142,7 +143,7 @@ for i in range(0, len(random_variations)):
 ############## Calculate histograms:
 
 
-def get_denseness_factor(structure):
+def get_denseness_factor_ran(structure):
 
     try:
 
@@ -154,13 +155,27 @@ def get_denseness_factor(structure):
             specie = re.sub(r"\d*\+?$", "", specie)
             specie = re.sub(r"\d*\-?$", "", specie)
 
-            r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
+            r = random.uniform(
+                Element(specie).covalent_radius, Element(specie).vdw_radius
+            )
             calculated_volume += 4 / 3 * np.pi * r ** 3
 
         return actual_volume / calculated_volume
 
     except:
         return None
+
+
+def get_denseness_factors(structure):
+
+    denseness_factors = []
+    for i in range(0, 10):
+        denseness_factor = get_denseness_factor_ran(structure)
+
+        if denseness_factor is not None:
+            denseness_factors.append(denseness_factor)
+
+    return denseness_factors
 
 
 falsely_volumes = []
@@ -195,7 +210,8 @@ for i in falsely_indices:
     structure = icsd_crystals[index]
 
     volume = structure.volume
-    denseness_factor = get_denseness_factor(structure)
+
+    denseness_factors = get_denseness_factors(structure)
 
     falsely_NO_atoms.append(len(structure.frac_coords))
 
@@ -210,8 +226,7 @@ for i in falsely_indices:
     falsely_lattice_paras.append(structure.lattice.b)
     falsely_lattice_paras.append(structure.lattice.c)
 
-    if denseness_factor is not None:
-        falsely_denseness_factors.append(denseness_factor)
+    falsely_denseness_factors.extend(denseness_factors)
 
 for i in rightly_indices:
 
@@ -220,7 +235,8 @@ for i in rightly_indices:
     structure = icsd_crystals[index]
 
     volume = structure.volume
-    denseness_factor = get_denseness_factor(structure)
+
+    denseness_factors = get_denseness_factors(structure)
 
     rightly_NO_atoms.append(len(structure.frac_coords))
 
@@ -235,13 +251,13 @@ for i in rightly_indices:
     rightly_lattice_paras.append(structure.lattice.b)
     rightly_lattice_paras.append(structure.lattice.c)
 
-    if denseness_factor is not None:
-        rightly_denseness_factors.append(denseness_factor)
+    rightly_denseness_factors.extend(denseness_factors)
 
 for i, structure in enumerate(random_crystals):
 
     volume = structure.volume
-    denseness_factor = get_denseness_factor(structure)
+
+    denseness_factors = get_denseness_factors(structure)
 
     random_NO_atoms.append(len(structure.frac_coords))
 
@@ -251,8 +267,7 @@ for i, structure in enumerate(random_crystals):
     random_lattice_paras.append(structure.lattice.b)
     random_lattice_paras.append(structure.lattice.c)
 
-    if denseness_factor is not None:
-        random_denseness_factors.append(denseness_factor)
+    random_denseness_factors.extend(denseness_factors)
 
 ################# hist plotting ################
 
@@ -267,6 +282,8 @@ def create_histogram(
     is_int=False,
     only_proportions=False,
     min_is_zero=True,
+    fixed_min=None,
+    fixed_max=None,
 ):
     # Data: rightly, falsely, random or only rightly, falsely
 
@@ -283,6 +300,12 @@ def create_histogram(
 
         if new_max > max:
             max = new_max
+
+    if fixed_max is not None:
+        max = fixed_max
+
+    if fixed_min is not None:
+        min = fixed_min
 
     if min_is_zero:
         min = 0
@@ -422,6 +445,7 @@ for flag in [True, False]:
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
+        fixed_max=10,  # TODO: Change back
     )
 
 for flag in [True, False]:

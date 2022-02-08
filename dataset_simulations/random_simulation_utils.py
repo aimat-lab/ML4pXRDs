@@ -264,7 +264,8 @@ def generate_structure(
                 # factor=1.1,
                 # factor=np.random.uniform(0.7, 5.0),
                 # factor=np.random.uniform(0.7, 3.0),
-                factor=np.random.uniform(0.7, 1.2),
+                # factor=np.random.uniform(0.7, 1.2),
+                factor=np.random.uniform(0.7, 2.2),
                 do_distance_checks=do_distance_checks,
                 fixed_volume=fixed_volume,
                 do_merge_checks=do_merge_checks,
@@ -512,7 +513,7 @@ if __name__ == "__main__":
 
             structures = generate_structures(
                 spg,
-                1,
+                2,
                 100,
                 do_distance_checks=False,
                 do_merge_checks=False,
