@@ -50,6 +50,9 @@ NO_random_batches = 1000  # make this smaller for the all-spgs run
 
 max_NO_elements = 100
 
+validation_max_volume = 7000  # None possible
+validation_max_NO_wyckoffs = 100  # None possible
+
 verbosity = 2
 
 local = False
@@ -101,7 +104,7 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(load_only=5 if not local else 2)
+icsd_sim.load(load_only=10 if not local else 2)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -121,12 +124,29 @@ print(np.bincount(dist_y))
 # spgs = sorted(np.unique([item[0] for item in icsd_labels]))
 
 for i in reversed(range(0, len(icsd_patterns))):
-    if np.any(np.isnan(icsd_variations[i][0])) or icsd_labels[i][0] not in spgs:
+
+    if validation_max_NO_wyckoffs is not None:
+        _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas[i][0])
+
+    if (
+        np.any(np.isnan(icsd_variations[i][0]))
+        or icsd_labels[i][0] not in spgs
+        or (
+            validation_max_volume is not None
+            and icsd_crystals[i].volume > validation_max_volume
+        )
+        or (
+            validation_max_NO_wyckoffs is not None
+            and NO_wyckoffs > validation_max_NO_wyckoffs
+        )
+    ):
         del icsd_patterns[i]
         del icsd_labels[i]
         del icsd_variations[i]
         del icsd_crystals[i]
         del icsd_metas[i]
+
+print(f"{len(icsd_crystals)} crystals remaining in the ICSD validation set.")
 
 if compare_distributions:
 
@@ -350,7 +370,9 @@ params_txt = (
     f"N: {N}  \n  \n"
     f"do_distance_checks: {str(do_distance_checks)}  \n  \n"
     f"do_merge_checks: {str(do_merge_checks)}  \n  \n"
-    f"use_icsd_statistics: {str(use_icsd_statistics)}"
+    f"use_icsd_statistics: {str(use_icsd_statistics)}  \n  \n"
+    f"validation_max_volume: {str(validation_max_volume)}  \n  \n"
+    f"validation_max_NO_wyckoffs: {str(validation_max_NO_wyckoffs)}"
 )
 tf.summary.text("Parameters", data=params_txt, step=0)
 
