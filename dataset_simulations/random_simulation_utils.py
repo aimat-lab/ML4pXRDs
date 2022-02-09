@@ -272,7 +272,7 @@ def generate_structure(
                 do_distance_checks=do_distance_checks,
                 fixed_volume=fixed_volume,
                 do_merge_checks=do_merge_checks,
-                # max_volume=max_volume,
+                max_volume=max_volume,
             )
 
             if not volume_ok:

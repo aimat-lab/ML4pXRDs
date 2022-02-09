@@ -48,7 +48,8 @@ compare_distributions = True
 # NO_random_batches = 20
 NO_random_batches = 1000  # make this smaller for the all-spgs run
 
-max_NO_elements = 100
+generation_max_volume = 7000
+generation_max_NO_wyckoffs = 100
 
 validation_max_volume = 7000  # None possible
 validation_max_NO_wyckoffs = 100  # None possible
@@ -231,6 +232,7 @@ def batch_generator_with_additional(
         use_icsd_statistics=use_icsd_statistics,
         probability_per_element=probability_per_element,
         probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+        max_volume=generation_max_volume,
     )
 
     # Set the label to the right index:
@@ -273,6 +275,7 @@ def batch_generator_queue(
                 use_icsd_statistics=use_icsd_statistics,
                 probability_per_element=probability_per_element,
                 probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+                max_volume=generation_max_volume,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -309,7 +312,7 @@ if compare_distributions:
     object_refs = []
     for i in range(NO_random_batches):
         ref = batch_generator_with_additional.remote(
-            spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
+            spgs, 1, N, start_angle, end_angle, generation_max_NO_wyckoffs, 1
         )
         # ref = batch_generator_with_additional(
         #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
@@ -344,7 +347,7 @@ for i in range(0, NO_workers):
         N,
         start_angle,
         end_angle,
-        max_NO_elements,
+        generation_max_NO_wyckoffs,
         NO_corn_sizes,
     )
 
@@ -364,7 +367,7 @@ params_txt = (
     f"NO_workers: {NO_workers}  \n"
     f"queue_size: {queue_size}  \n"
     f"queue_size_tf: {queue_size_tf}  \n  \n"
-    f"max_NO_elements: {max_NO_elements}  \n"
+    f"max_NO_elements: {generation_max_NO_wyckoffs}  \n"
     f"start_angle: {start_angle}  \n"
     f"end_angle: {end_angle}  \n"
     f"N: {N}  \n  \n"
