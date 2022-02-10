@@ -16,14 +16,23 @@ import xrayutilities as xu
 from pymatgen.io.cif import CifParser
 import re
 
-num_files = 160
-num_processes = 80
+# num_files = 160
+# num_processes = 80
+num_files = 8
+num_processes = 8
 
-simulation_software = "pymatgen"  # possible: pymatgen and xrayutilities
+simulation_software = (
+    "pymatgen_numba"  # possible: pymatgen, xrayutilities and pymatgen_numba
+)
 
-angle_min = 0
-angle_max = 90
-angle_n = 9018
+# angle_min = 0
+# angle_max = 90
+# angle_n = 9018
+
+# as Park:
+angle_min = 10
+angle_max = 110
+angle_n = 10001
 
 
 class Simulation:

@@ -10,9 +10,10 @@ import functools
 import os
 import pickle
 from numba import jit
+import time
 
-sys.path.append("../")
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
+from dataset_simulations.core.quick_simulation import get_xy_patterns
 
 
 # xrayutilities
@@ -25,16 +26,22 @@ xrayutil_crystallite_size_lor_max = 50 * 10 ** -9
 paymatgen_crystallite_size_gauss_min = 5
 paymatgen_crystallite_size_gauss_max = 100
 
-angle_min = 0
-angle_max = 90
-angle_n = 9018
+# wavelength = 1.207930 # original HEO line
+wavelength = 1.5406  # Cu-K line
+
+# angle_min = 0
+# angle_max = 90
+# angle_n = 9018
+
+# as Park:
+angle_min = 10
+angle_max = 110
+angle_n = 10001
 
 max_volume = 20000  # None possible
 
 
-def simulate_crystal(
-    crystal, test_crystallite_sizes, simulation_software, id
-):  # keep this out of the class context to ensure thread safety
+def simulate_crystal(crystal, test_crystallite_sizes, simulation_software, id):
     # TODO: maybe add option for zero-point shifts
 
     try:
@@ -118,7 +125,7 @@ def simulate_crystal(
                             # "dominant_wavelength": 1.207930e-10, # this is a read-only setting!
                         },
                         "emission": {
-                            "emiss_wavelengths": (1.207930e-10),
+                            "emiss_wavelengths": (wavelength * 1e-10),
                             "emiss_intensities": (1.0),
                             "emiss_gauss_widths": (3e-14),
                             "emiss_lor_widths": (3e-14),
@@ -185,7 +192,7 @@ def simulate_crystal(
 
                 gc.collect()
 
-        else:  # pymatgen
+        elif simulation_software == "pymatgen":  # pymatgen
 
             broadener = BroadGen(
                 crystal,
@@ -193,6 +200,7 @@ def simulate_crystal(
                 max_domain_size=paymatgen_crystallite_size_gauss_max,
                 min_angle=angle_min,
                 max_angle=angle_max,
+                wavelength=wavelength,
             )
 
             for i in range(0, 5 if not test_crystallite_sizes else 2):
@@ -227,6 +235,35 @@ def simulate_crystal(
                 variations.append([domain_size])
 
                 gc.collect()
+
+        elif simulation_software == "pymatgen_numba":
+
+            if test_crystallite_sizes:
+                raise Exception(
+                    "Testing crystallite sizes is not supported in this simulation mode."
+                )
+
+            xs = np.linspace(angle_min, angle_max, angle_n)
+
+            diffractograms, corn_sizes, angles, intensities = get_xy_patterns(
+                crystal,
+                wavelength,
+                xs,
+                5,
+                (angle_min, angle_max),
+                False,
+                True,
+                return_angles_intensities=True,
+            )
+
+            for corn_size in corn_sizes:
+                variations.append([corn_size])
+
+            gc.collect()
+
+        else:
+
+            raise Exception("Simulation software not supported.")
 
     except BaseException as ex:
 
@@ -311,6 +348,8 @@ if __name__ == "__main__":
 
         save_points = range(0, len(sim_crystals), int(len(sim_crystals) / 20) + 1)
 
+        timings = []
+
         for i, pattern in enumerate(sim_patterns):
 
             counter += 1
@@ -324,9 +363,12 @@ if __name__ == "__main__":
 
             crystal = sim_crystals[i]
 
+            start = time.time()
             result = simulate_crystal(
                 crystal, test_crystallite_sizes, simulation_software, sim_metas[i]
             )
+            stop = time.time()
+            timings.append(stop - start)
 
             diffractograms, variations, angles, intensities = result
 
@@ -350,6 +392,12 @@ if __name__ == "__main__":
                     pickle.dump(sim_intensities, pickle_file)
 
             gc.collect()
+
+        print(f"Timings:: {timings}")
+        print(f"Average timing: {np.average(timings)}")
+        print(f"Max timing: {np.max(timings)}")
+        print(f"Min timing: {np.min(timings)}")
+        print(f"Median timing: {np.median(timings)}")
 
         # in the end save it as a proper numpy array
         np.save(sim_patterns_filepath, np.array(sim_patterns.tolist(), dtype=float))

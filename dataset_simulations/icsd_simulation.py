@@ -9,7 +9,8 @@ class ICSDSimulation(Simulation):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
-        self.output_dir = "patterns/icsd/"
+        # self.output_dir = "patterns/icsd_park/"
+        self.output_dir = "patterns/icsd_park/"
 
     def generate_structures(self):
 
@@ -19,7 +20,7 @@ class ICSDSimulation(Simulation):
 
         for i, path in enumerate(self.icsd_paths):
 
-            if i == 2500:
+            if i == 500:  # TODO: Change back
                 break
 
             print(f"Generated {i} structures.", flush=True)
@@ -64,7 +65,7 @@ if __name__ == "__main__":
         )
 
     if True:  # toggle
-        simulation.load()
+        simulation.load(load_only=1)
     else:
         simulation.generate_structures()
 
@@ -72,6 +73,4 @@ if __name__ == "__main__":
 
         simulation.simulate_all(start_from_scratch=True)
 
-        # simulation.load()
-
-    # simulation.plot(together=5)
+    simulation.plot(together=5)

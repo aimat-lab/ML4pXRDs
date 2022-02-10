@@ -448,6 +448,7 @@ def get_xy_patterns(
     two_theta_range=(0, 90),
     do_print=False,
     return_corn_sizes=False,
+    return_angles_intensities=False,
 ):
 
     if return_corn_sizes:
@@ -482,9 +483,15 @@ def get_xy_patterns(
         timings_simulation_smeared.append((time.time() - start) / NO_corn_sizes)
 
     if not return_corn_sizes:
-        return results
+        if return_angles_intensities:
+            return results, angles, intensities
+        else:
+            return results
     else:
-        return results, corn_sizes
+        if return_angles_intensities:
+            return results, corn_sizes, angles, intensities
+        else:
+            return results, corn_sizes
 
 
 def get_random_xy_patterns(
