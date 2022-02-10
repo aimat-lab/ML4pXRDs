@@ -107,6 +107,7 @@ def fit_diffractogram(x, y, angles, intensities):
     for angle in angles:
         plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
 
+    # TODO: Search for reasonable parameter ranges; maybe make a good estimate of the background function based on what you already have (processed)?
     params, covs = curve_fit(
         partial(fit_function, angles=angles, intensities=intensities),
         x,

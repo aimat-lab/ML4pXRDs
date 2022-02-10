@@ -29,6 +29,8 @@ angle_min = 0
 angle_max = 90
 angle_n = 9018
 
+max_volume = 20000  # None possible
+
 
 def simulate_crystal(
     crystal, test_crystallite_sizes, simulation_software, id
@@ -42,6 +44,9 @@ def simulate_crystal(
 
         angles = None
         intensities = None
+
+        if max_volume is not None and crystal.volume > max_volume:
+            raise Exception(f"Volume higher than max_volume ({max_volume})")
 
         if simulation_software == "xrayutilities":
 
