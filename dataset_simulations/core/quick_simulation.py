@@ -27,7 +27,6 @@ else:
 SCALED_INTENSITY_TOL = 0.001
 TWO_THETA_TOL = 1e-05
 
-# TODO: Maybe rather use the range from UNet pattern generation
 pymatgen_crystallite_size_gauss_min = 5
 pymatgen_crystallite_size_gauss_max = 100
 

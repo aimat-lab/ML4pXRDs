@@ -16,10 +16,10 @@ import xrayutilities as xu
 from pymatgen.io.cif import CifParser
 import re
 
-# num_files = 160
-# num_processes = 80
-num_files = 8
-num_processes = 8
+num_files = 127
+num_processes = 127
+# num_files = 8
+# num_processes = 8
 
 simulation_software = (
     "pymatgen_numba"  # possible: pymatgen, xrayutilities and pymatgen_numba

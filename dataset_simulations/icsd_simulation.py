@@ -20,9 +20,6 @@ class ICSDSimulation(Simulation):
 
         for i, path in enumerate(self.icsd_paths):
 
-            if i == 500:  # TODO: Change back
-                break
-
             print(f"Generated {i} structures.", flush=True)
 
             if path is None:
@@ -64,13 +61,13 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    if True:  # toggle
+    if False:  # toggle
         simulation.load(load_only=1)
     else:
         simulation.generate_structures()
 
-    if False:
+    if True:
 
         simulation.simulate_all(start_from_scratch=True)
 
-    simulation.plot(together=5)
+    # simulation.plot(together=5)
