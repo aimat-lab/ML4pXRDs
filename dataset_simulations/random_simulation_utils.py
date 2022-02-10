@@ -374,7 +374,10 @@ def generate_structures(
     return result
 
 
-def analyse_set_wyckoffs():
+def analyse_set_wyckoffs(spgs=None):
+
+    if spgs is None:
+        spgs = range(1, 231)
 
     jobid = os.getenv("SLURM_JOB_ID")
     path_to_patterns = "./patterns/icsd/"
@@ -395,10 +398,12 @@ def analyse_set_wyckoffs():
 
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
+    counter_per_spg_per_element = {}
 
     # pre-process the symmetry groups:
 
-    for spg_number in range(1, 231):
+    for spg_number in spgs:
+
         group = Group(spg_number, dim=3)
         names = [(str(x.multiplicity) + x.letter) for x in group]
 
@@ -406,12 +411,16 @@ def analyse_set_wyckoffs():
         for name in names:
             counts_per_spg_per_wyckoff[spg_number][name] = 0
 
+        counter_per_spg_per_element[spg_number] = {}
+
     counter_mismatches = 0
 
     start = time.time()
 
     # paths = icsd_sim.icsd_paths[0:500]
     # paths = icsd_sim.icsd_paths
+
+    count_crystals = 0
 
     # for i, path in enumerate(paths):
     for i, crystal in enumerate(icsd_sim.sim_crystals):
@@ -431,8 +440,23 @@ def analyse_set_wyckoffs():
 
             # crystal = crystals[0]
 
+            if spg_number not in spgs:
+                continue
+
+            count_crystals += 1
+
             struc = pyxtal()
             struc.from_seed(crystal)
+
+            # TODO: Make sure that is the same spg, skip if not
+            # TODO: Add other spgs, too
+            # TODO: Commit
+
+            if spg_number != struc.group.number:
+                counter_mismatches += 1
+                continue
+
+            # spg_number = struc.group.number # TODO: Change back maybe
 
         except Exception as ex:
 
@@ -442,25 +466,27 @@ def analyse_set_wyckoffs():
 
             continue
 
-        if spg_number != struc.group.number:
-            counter_mismatches += 1
-
-        spg_number = struc.group.number
-
         for site in struc.atom_sites:
+
             specie_str = str(site.specie)
             if specie_str in counter_per_element:
                 counter_per_element[specie_str] += 1
             else:
                 counter_per_element[specie_str] = 1
 
+            if specie_str in counter_per_spg_per_element[spg_number]:
+                counter_per_spg_per_element[spg_number][specie_str] += 1
+            else:
+                counter_per_spg_per_element[spg_number][specie_str] = 1
+
             name = str(site.wp.multiplicity) + site.wp.letter
             counts_per_spg_per_wyckoff[spg_number][name] += 1
 
     print(f"Took {time.time() - start} s")
-    print(
-        f"{counter_mismatches / len(icsd_sim.sim_crystals) * 100} % mismatches in space groups!"
-    )
+    # print(
+    #    f"{counter_mismatches / len(icsd_sim.sim_crystals) * 100} % mismatches in space groups!"
+    # )
+    print(f"{counter_mismatches / count_crystals * 100} % mismatches in space groups!")
 
     with open("set_wyckoffs_statistics", "wb") as file:
         pickle.dump((counter_per_element, counts_per_spg_per_wyckoff), file)
@@ -504,10 +530,10 @@ def load_wyckoff_statistics():
 
 if __name__ == "__main__":
 
-    if False:
-        analyse_set_wyckoffs()
-
     if True:
+        analyse_set_wyckoffs([2, 15, 14, 104])
+
+    if False:
 
         (
             probability_per_element,
