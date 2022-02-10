@@ -6,32 +6,56 @@ from scipy.optimize import curve_fit
 from functools import partial
 from sklearn.metrics import r2_score
 
-
-def calc_std_dev(two_theta, tau, wavelength):
-
-    ## Calculate FWHM based on the Scherrer equation
-    K = 0.9  ## shape factor
-    wavelength = wavelength * 0.1  ## angstrom to nm
-    theta = np.radians(two_theta / 2.0)  ## Bragg angle in radians
-    beta = (K * wavelength) / (np.cos(theta) * tau)  # in radians
-
-    ## Convert FWHM to std deviation of gaussian
-    sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
-    return sigma
+# Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement
 
 
-def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, wavelength):
+def fn_x(theta, mean, H):
+    return (2 * theta - 2 * mean) / H
+
+
+def fn_H(theta, U, V, W):
+    return np.sqrt(
+        U * np.tan(theta / 360 * 2 * np.pi) ** 2
+        + V * np.tan(theta / 360 * 2 * np.pi)
+        + W
+    )
+
+
+def fn_H_dash(theta, X, Y):
+    return X / np.cos(theta / 360 * 2 * np.pi) + Y * np.tan(theta / 360 * 2 * np.pi)
+
+
+def fn_eta(theta, eta_0, eta_1, eta_2):
+    return eta_0 + eta_1 * 2 * theta + eta_2 * theta ** 2
+
+
+# TODO: How to make eta 0 <= eta <= 1???
+def peak_function(theta, mean, U, V, W, X, Y, eta_0, eta_1, eta_2):
+
+    C_G = 4 * np.log(2)
+    C_L = 4
+
+    eta = fn_eta(theta, eta_0, eta_1, eta_2)
+    H = fn_H(theta, U, V, W)
+    H_dash = fn_H_dash(theta, X, Y)
+
+    x = fn_x(theta, mean, H)
+
+    return eta * C_G ** (1 / 2) / (np.sqrt(np.pi) * H) * np.exp(-1 * C_G * x ** 2) + (
+        1 - eta
+    ) * C_L ** (1 / 2) / (np.sqrt(np.pi) * H_dash) * (1 + C_L * x ** 2) ** (-1)
+
+
+def smeared_peaks(
+    xs, pattern_angles, pattern_intensities, U, V, W, X, Y, eta_0, eta_1, eta_2
+):
 
     ys = np.zeros(len(xs))
 
     for twotheta, intensity in zip(pattern_angles, pattern_intensities):
 
-        sigma = calc_std_dev(twotheta, domain_size, wavelength)
-
-        peak = (
-            intensity
-            / (sigma * np.sqrt(2 * np.pi))
-            * np.exp(-1 / (2 * sigma ** 2) * (xs - twotheta) ** 2)
+        peak = intensity * peak_function(
+            xs / 2, twotheta / 2, U, V, W, X, Y, eta_0, eta_1, eta_2
         )
 
         # For more accurate normalization
@@ -44,11 +68,6 @@ def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, waveleng
     return ys / np.max(ys)
 
 
-# TODO: Add lorentzian grain size / pseudo-voigt for peaks!
-# Use this https://lmfit.github.io/lmfit-py/builtin_models.html
-# Also use this to do the fitting.
-
-
 def fit_function(
     xs,
     a0,
@@ -57,11 +76,17 @@ def fit_function(
     a3,
     a4,
     a5,
-    grain_size,
+    U,
+    V,
+    W,
+    X,
+    Y,
+    eta_0,
+    eta_1,
+    eta_2,
     intensity_scaling,
     angles,
     intensities,
-    wavelength,
 ):
 
     polynomial = (
@@ -70,27 +95,25 @@ def fit_function(
 
     # add the code from the simulation
     peaks = intensity_scaling * smeared_peaks(
-        xs, angles, intensities, grain_size, wavelength
+        xs, angles, intensities, U, V, W, X, Y, eta_0, eta_1, eta_2
     )
 
     return peaks + polynomial
 
 
-def fit_diffractogram(x, y, angles, intensities, wavelength):
+def fit_diffractogram(x, y, angles, intensities):
 
     plt.plot(x, y)
     for angle in angles:
         plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
 
     params, covs = curve_fit(
-        partial(
-            fit_function, angles=angles, intensities=intensities, wavelength=wavelength
-        ),
+        partial(fit_function, angles=angles, intensities=intensities),
         x,
         y,
     )
 
-    fitted_curve = fit_function(x, *params, angles, intensities, wavelength)
+    fitted_curve = fit_function(x, *params, angles, intensities)
 
     score = r2_score(y, fitted_curve)
     print(f"R2 score: {score}")
