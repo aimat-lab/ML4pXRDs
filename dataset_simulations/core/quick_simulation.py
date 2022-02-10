@@ -4,10 +4,6 @@
 
 import sys
 
-sys.path.append("../")
-sys.path.append("../../")
-sys.path.append("./")
-
 from dataset_simulations.random_simulation_utils import generate_structures
 import json
 import os
@@ -27,7 +23,8 @@ else:
 SCALED_INTENSITY_TOL = 0.001
 TWO_THETA_TOL = 1e-05
 
-pymatgen_crystallite_size_gauss_min = 5
+# pymatgen_crystallite_size_gauss_min = 5
+pymatgen_crystallite_size_gauss_min = 20  # for now
 pymatgen_crystallite_size_gauss_max = 100
 
 with open(
