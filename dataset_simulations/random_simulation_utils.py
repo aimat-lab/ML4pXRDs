@@ -374,7 +374,7 @@ def generate_structures(
     return result
 
 
-def analyse_set_wyckoffs(spgs=None):
+def analyse_set_wyckoffs(spgs=None, load_only=None):
 
     if spgs is None:
         spgs = range(1, 231)
@@ -394,7 +394,7 @@ def analyse_set_wyckoffs(spgs=None):
         )
         icsd_sim.output_dir = path_to_patterns
 
-    icsd_sim.load(load_patterns_angles_intensities=False)
+    icsd_sim.load(load_patterns_angles_intensities=False, load_only=load_only)
 
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
@@ -482,6 +482,23 @@ def analyse_set_wyckoffs(spgs=None):
             name = str(site.wp.multiplicity) + site.wp.letter
             counts_per_spg_per_wyckoff[spg_number][name] += 1
 
+    for spg in counter_per_spg_per_element.keys():
+        total = np.sum(list(counter_per_spg_per_element[spg].values()))
+        for element in counter_per_spg_per_element[spg].keys():
+            counter_per_spg_per_element[spg][element] /= total
+
+    for element in counter_per_element.keys():
+        print_string = element + ": "
+
+        for spg in counter_per_spg_per_element.keys():
+            if element in counter_per_spg_per_element[spg].keys():
+                print_string += str(counter_per_spg_per_element[spg][element])
+            else:
+                print_string += "0"
+            print_string += f" ({spg}) "
+
+        print(print_string)
+
     print(f"Took {time.time() - start} s")
     # print(
     #    f"{counter_mismatches / len(icsd_sim.sim_crystals) * 100} % mismatches in space groups!"
@@ -489,7 +506,14 @@ def analyse_set_wyckoffs(spgs=None):
     print(f"{counter_mismatches / count_crystals * 100} % mismatches in space groups!")
 
     with open("set_wyckoffs_statistics", "wb") as file:
-        pickle.dump((counter_per_element, counts_per_spg_per_wyckoff), file)
+        pickle.dump(
+            (
+                counter_per_element,
+                counts_per_spg_per_wyckoff,
+                counter_per_spg_per_element,
+            ),
+            file,
+        )
 
 
 def load_wyckoff_statistics():
@@ -497,7 +521,9 @@ def load_wyckoff_statistics():
     with open(
         os.path.join(os.path.dirname(__file__), "set_wyckoffs_statistics"), "rb"
     ) as file:
-        (counter_per_element, counts_per_spg_per_wyckoff) = pickle.load(file)
+        data = pickle.load(file)
+        counter_per_element = data[0]
+        counts_per_spg_per_wyckoff = data[1]
 
     for element in counter_per_element.keys():
         if element not in all_elements:
@@ -531,7 +557,7 @@ def load_wyckoff_statistics():
 if __name__ == "__main__":
 
     if True:
-        analyse_set_wyckoffs([2, 15, 14, 104])
+        analyse_set_wyckoffs([2, 15, 14, 104, 129, 176], load_only=1)
 
     if False:
 
