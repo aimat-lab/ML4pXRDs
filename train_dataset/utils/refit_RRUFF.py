@@ -74,8 +74,8 @@ def fit_function(
     a1,
     a2,
     a3,
-    a4,
-    a5,
+    # a4,
+    # a5,
     U,
     V,
     W,
@@ -90,8 +90,8 @@ def fit_function(
 ):
 
     polynomial = (
-        a0 + a1 * xs + a2 * xs ** 2 + a3 * xs ** 3 + a4 * xs ** 4 + a5 * xs ** 5
-    )
+        a0 + a1 * xs + a2 * xs ** 2 + a3 * xs ** 3
+    )  # + a4 * xs ** 4 + a5 * xs ** 5
 
     # add the code from the simulation
     peaks = intensity_scaling * smeared_peaks(
@@ -111,6 +111,7 @@ def fit_diffractogram(x, y, angles, intensities):
         partial(fit_function, angles=angles, intensities=intensities),
         x,
         y,
+        maxfev=10000,
     )
 
     fitted_curve = fit_function(x, *params, angles, intensities)
@@ -118,9 +119,9 @@ def fit_diffractogram(x, y, angles, intensities):
     score = r2_score(y, fitted_curve)
     print(f"R2 score: {score}")
 
-    if score < 0.6:
-        print("Bad R2 score.")
-        return None
+    # if score < 0.6:
+    #    print("Bad R2 score.")
+    #    return None
 
     plt.plot(x, fitted_curve)
 
@@ -242,7 +243,6 @@ for i, raw_file in enumerate(raw_files):
             raw_xys[-1][:, 1],
             angles[-1],
             intensities[-1],
-            wavelength,
         )
 
     else:
