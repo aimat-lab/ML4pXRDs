@@ -551,7 +551,7 @@ for flag in [True, False]:
         [
             rightly_NO_atoms,
             falsely_NO_atoms,
-            random_NO_elements,
+            random_NO_atoms,
         ],
         [
             "ICSD correctly classified",
