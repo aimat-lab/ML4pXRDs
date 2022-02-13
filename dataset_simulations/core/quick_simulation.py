@@ -5,6 +5,7 @@
 import sys
 
 from dataset_simulations.random_simulation_utils import generate_structures
+from dataset_simulations.random_simulation_utils import load_wyckoff_statistics
 import json
 import os
 from math import asin, cos, degrees, pi, radians, sin
@@ -14,6 +15,8 @@ import time
 import numba
 import matplotlib.pyplot as plt
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
+import traceback
+from multiprocessing import Pool
 
 if "NUMBA_DISABLE_JIT" in os.environ:
     is_debugging = os.environ["NUMBA_DISABLE_JIT"] == "1"
@@ -554,8 +557,14 @@ def get_random_xy_patterns(
                     patterns_ys, corn_sizes = patterns_ys
 
             except Exception as ex:
+
                 print("Error simulating pattern:")
                 print(ex)
+                print("".join(traceback.format_exception(None, ex, ex.__traceback__)))
+
+                if "list index" in str(ex):
+                    print(structure)
+
             else:
                 labels.extend([spg] * NO_corn_sizes)
                 result_patterns_y.extend(patterns_ys)
@@ -618,14 +627,19 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
 
-        max_NO_elements = 20
+        (
+            probability_per_element,
+            probability_per_spg_per_wyckoff,
+        ) = load_wyckoff_statistics()
+
+        max_NO_elements = 100
 
         get_random_xy_patterns(
             [5],
             1,
-            1.2,
+            1.5406,
             9000,
             1,
             return_additional=False,
@@ -633,26 +647,29 @@ if __name__ == "__main__":
             do_distance_checks=False,
         )
 
-        start = time.time()
-
-        for spg in range(1, 231):
+        def to_map():
             get_random_xy_patterns(
-                [spg],
-                1,
-                1.2,
-                9000,
-                1,
-                return_additional=False,
+                spgs=[14, 104, 129, 176],
+                structures_per_spg=5,
+                # wavelength=1.5406,  # TODO: Cu-K line
+                wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
+                N=8501,
+                NO_corn_sizes=5,
+                two_theta_range=(3.9, 51.6),
                 max_NO_elements=max_NO_elements,
+                do_print=False,
                 do_distance_checks=False,
+                do_merge_checks=False,
+                use_icsd_statistics=True,
+                probability_per_element=probability_per_element,
+                probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+                max_volume=7000,
             )
 
-        stop = time.time()
-        print(f"{stop-start}s")
-
-        # plt.plot(test[0][3])
-        # plt.plot(test[0][2])
-        # plt.show()
+        Pool(8).starmap(
+            to_map,
+            [() for _ in range(5000)],
+        )
 
     if False:
         # parser = CifParser("example.cif")
@@ -721,7 +738,7 @@ if __name__ == "__main__":
         plt.plot(xs, diffractogram)
         plt.show()
 
-    if True:
+    if False:
 
         # to load numba:
         get_random_xy_patterns(
@@ -742,9 +759,9 @@ if __name__ == "__main__":
         volumes = np.linspace(100, 7000, 12)
         NOs_wyckoffs = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
-        # for testing # TODO: Change back
-        volumes = volumes[:2]
-        NOs_wyckoffs = NOs_wyckoffs[:2]
+        # for testing
+        # volumes = volumes[:5]
+        # NOs_wyckoffs = NOs_wyckoffs[:5]
 
         xs = []  # volumes
         ys = []  # NO_wyckoffs

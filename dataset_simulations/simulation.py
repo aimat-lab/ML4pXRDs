@@ -85,6 +85,8 @@ class Simulation:
         log_files = []
         crystals_per_process = []
 
+        print(flush=True)
+
         for i in range(0, num_processes):
 
             if (i + 1) * N_files_per_process < N_files_to_process:

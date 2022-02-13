@@ -16,10 +16,12 @@ import random
 
 # in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
 # in_base = "classifier_spgs/runs_from_cluster/4-spg-1000-epochs/"
-in_base = "classifier_spgs/runs_from_cluster/4-spgs-new_generation/"
+# in_base = "classifier_spgs/runs_from_cluster/4-spgs-new_generation/"
+in_base = "classifier_spgs/runs_from_cluster/2-spgs-new_generation_max_volume/"
 # tag = "2-15-batch-size-100"
 # tag = "4-spg-1000-epochs"
-tag = "4-spgs-new_generation"
+# tag = "4-spgs-new_generation"
+tag = "2-spgs-new_generation_max_volume"
 
 out_base = "comparison_plots/" + tag + "/"
 os.system("mkdir -p " + out_base)
@@ -447,7 +449,7 @@ for flag in [True, False]:
         is_int=False,
         only_proportions=flag,
         min_is_zero=True,
-        fixed_max=10,  # TODO: Change back
+        # fixed_max=10,
     )
 
 for flag in [True, False]:

@@ -3,7 +3,6 @@ from dataset_simulations.core.quick_simulation import get_random_xy_patterns
 from dataset_simulations.random_simulation_utils import load_wyckoff_statistics
 import numpy as np
 from models import build_model_park
-from datetime import datetime
 import os
 from sklearn.utils import shuffle
 from dataset_simulations.simulation import Simulation
@@ -13,15 +12,23 @@ from ray.util.queue import Queue
 import pickle
 import tensorflow as tf
 import sys
+from datetime import datetime
 
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
 tag = "2-spgs-new_generation_max_volume"
 
-out_base = sys.argv[1] + "/"
-# out_base = (
-#    "classifier_spgs/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
-# )
+if len(sys.argv) > 1:
+    out_base = sys.argv[1] + "/"
+else:
+    out_base = (
+        "classifier_spgs/"
+        + datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        + "_"
+        + tag
+        + "/"
+    )
+
 os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
@@ -33,7 +40,7 @@ NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
-structures_per_spg = 10 # for (2,15) tuple
+structures_per_spg = 10  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
 do_distance_checks = False
@@ -56,14 +63,17 @@ validation_max_NO_wyckoffs = 100  # None possible
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-spgs = [2, 15] # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+spgs = [
+    2,
+    15,
+]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
 # spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
