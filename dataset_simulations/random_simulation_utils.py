@@ -6,6 +6,8 @@ import random
 from pyxtal.symmetry import Group
 import time
 import pickle
+
+from sympy import re
 from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
 import numpy.random
@@ -152,6 +154,7 @@ def generate_structure(
     probability_per_element=None,
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
+    return_original_pyxtal_object=False,
 ):
 
     if use_icsd_statistics and (
@@ -320,7 +323,10 @@ def generate_structure(
         # vis.set_structure(crystal)
         # vis.show()
 
-        return crystal
+        if not return_original_pyxtal_object:
+            return crystal
+        else:
+            return crystal, my_crystal
 
 
 def generate_structures(
@@ -335,6 +341,7 @@ def generate_structures(
     probability_per_element=None,
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
+    return_original_pyxtal_object=False,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -367,6 +374,7 @@ def generate_structures(
             probability_per_element=probability_per_element,
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             max_volume=max_volume,
+            return_original_pyxtal_object=return_original_pyxtal_object,
         )
         for i in range(0, N)
     ]
@@ -557,6 +565,76 @@ def load_wyckoff_statistics():
 if __name__ == "__main__":
 
     if True:
+
+        parser = CifParser("example.cif")
+        structures_prim = parser.get_structures()[0]
+        structures_conv = parser.get_structures(primitive=False)[0]
+
+        print()
+
+    if True:
+
+        (
+            probability_per_element,
+            probability_per_spg_per_wyckoff,
+        ) = load_wyckoff_statistics()
+
+        structures = generate_structures(
+            225,
+            1,
+            2,
+            do_distance_checks=False,
+            do_merge_checks=False,
+            use_icsd_statistics=True,
+            probability_per_element=probability_per_element,
+            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+            return_original_pyxtal_object=True,
+        )
+
+        pymatgen_structure = structures[0][0]
+        pyxtal_structure = structures[0][1]
+
+        struc = pyxtal()
+        struc.from_seed(pymatgen_structure)
+
+        pymatgen_s = struc.to_pymatgen()
+        pymatgen_p = pymatgen_s.get_primitive_structure()
+
+        struc_1 = pyxtal()
+        struc_1.from_seed(pymatgen_p)
+
+        print(pymatgen_structure.lattice)
+        print()
+        print(pyxtal_structure.lattice)
+        print()
+        print(struc.lattice)
+        print()
+        print(pymatgen_s.lattice)
+        print()
+        print(pymatgen_p.lattice)
+        print()
+        print(struc_1.lattice)
+        print()
+        print()
+
+        print(pymatgen_structure.composition)
+        print()
+        print(pyxtal_structure.formula)
+        print()
+        print(struc.formula)
+        print()
+        print(pymatgen_s.composition)
+        print()
+        print(pymatgen_p.composition)
+        print()
+        print(struc_1.formula)
+
+        print()
+
+        # TODO: Also test this with some cif file
+        # TODO: Which cell is typically in ICSD? Primitive or conventional? Important for comparison.
+
+    if False:
         analyse_set_wyckoffs([2, 15, 14, 104, 129, 176], load_only=1)
 
     if False:

@@ -13,6 +13,7 @@ import pickle
 from pyxtal import pyxtal
 import re
 import random
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 # in_base = "classifier_spgs/runs_from_cluster/spgs-2-15-batch-size-100/"
 # in_base = "classifier_spgs/runs_from_cluster/4-spg-1000-epochs/"
@@ -42,9 +43,42 @@ with open(in_base + "random_data.pickle", "rb") as file:
 with open(in_base + "rightly_falsely.pickle", "rb") as file:
     rightly_indices, falsely_indices = pickle.load(file)
 
-# random_crystals = random_crystals[0:100]
-# random_labels = random_labels[0:100]
-# random_variations = random_variations[0:100]
+random_crystals = random_crystals
+random_labels = random_labels
+random_variations = random_variations
+
+print("Calculating conventional structures...")
+for i in reversed(range(0, len(icsd_crystals))):
+
+    try:
+        # percentage = i / (len(icsd_crystals) + len(random_crystals)) * 100
+        # print(f"{int(percentage)}%")
+
+        current_struc = icsd_crystals[i]
+        analyzer = SpacegroupAnalyzer(current_struc)
+        conv = analyzer.get_conventional_standard_structure()
+        icsd_crystals[i] = conv
+
+    except Exception as ex:
+        print(ex)
+
+# this is actually not really needed, but just in case...
+for i in reversed(range(0, len(random_crystals))):
+
+    try:
+        # percentage = (
+        #    (i + len(icsd_crystals)) / (len(icsd_crystals) + len(random_crystals)) * 100
+        # )
+        # print(f"{int(percentage)}%")
+
+        current_struc = random_crystals[i]
+        analyzer = SpacegroupAnalyzer(current_struc)
+        conv = analyzer.get_conventional_standard_structure()
+        random_crystals[i] = conv
+
+    except Exception as ex:
+        print(ex)
+
 
 # Get infos from icsd crystals:
 
@@ -90,21 +124,8 @@ for i in range(0, len(icsd_variations)):
 def get_wyckoff_info(crystal):
     # returns: Number of set wyckoffs, elements
 
-    # info = crystal.get_space_group_info()
-
-    # cif_writer = CifWriter(crystal)
-    # cif_writer.write_file("cif_test.cif")
-
     struc = pyxtal()
     struc.from_seed(crystal)
-
-    # pymatgen_s = struc.to_pymatgen()
-    # pymatgen_p = pymatgen_s.get_primitive_structure()
-
-    # TODO: What is wrong here? Why is this not the primitive structure???
-
-    # test = struc.get_alternatives()
-    # group = Group(139, dim=3)
 
     elements = []
 
@@ -162,7 +183,7 @@ def get_denseness_factor_ran(structure):
             r = random.uniform(
                 Element(specie).covalent_radius, Element(specie).vdw_radius
             )
-            calculated_volume += 4 / 3 * np.pi * r ** 3
+            calculated_volume += 4 / 3 * np.pi * r**3
 
         return actual_volume / calculated_volume
 
@@ -292,7 +313,7 @@ def create_histogram(
     # Data: rightly, falsely, random or only rightly, falsely
 
     # determine range on x axis:
-    min = 10 ** 9
+    min = 10**9
     max = 0
 
     for item in data:
