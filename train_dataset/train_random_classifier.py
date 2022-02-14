@@ -12,11 +12,10 @@ import pickle
 import tensorflow as tf
 import sys
 from datetime import datetime
-import copy
 
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
-tag = "4-spgs_new_vals_new_sim_data"
+tag = "4-spgs_debug"
 
 if len(sys.argv) > 1:
     out_base = sys.argv[1] + "/"
@@ -33,7 +32,7 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-test_every_X_epochs = 5
+test_every_X_epochs = 10
 batches_per_epoch = 1500
 # NO_epochs = 1000
 NO_epochs = 200
@@ -51,9 +50,8 @@ NO_workers = 126 + 14  # for cluster
 queue_size = 200
 queue_size_tf = 100
 
-compare_distributions = True
 # NO_random_batches = 20
-NO_random_batches = 1000  # make this smaller for the all-spgs run
+NO_random_swipes = 1000  # make this smaller for the all-spgs run
 
 generation_max_volume = 7000
 generation_max_NO_wyckoffs = 100
@@ -153,20 +151,19 @@ for i in reversed(range(0, len(icsd_patterns_all))):
         del icsd_variations_match[i]
         del icsd_metas_match[i]
 
-if compare_distributions:
-    with open(out_base + "spgs.pickle", "wb") as file:
-        pickle.dump(spgs, file)
+with open(out_base + "spgs.pickle", "wb") as file:
+    pickle.dump(spgs, file)
 
-    with open(out_base + "icsd_data.pickle", "wb") as file:
-        pickle.dump(
-            (
-                icsd_crystals_match,
-                icsd_labels_match,
-                [item[:, 0] for item in icsd_variations_match],
-                icsd_metas_match,
-            ),
-            file,
-        )
+with open(out_base + "icsd_data.pickle", "wb") as file:
+    pickle.dump(
+        (
+            icsd_crystals_match,
+            icsd_labels_match,
+            [item[:, 0] for item in icsd_variations_match],
+            icsd_metas_match,
+        ),
+        file,
+    )
 
 val_y_all = []
 for i, label in enumerate(icsd_labels_all):
@@ -314,41 +311,51 @@ def batch_generator_queue(
             )
 
 
-if compare_distributions:
-    # pre-store some batches to compare to the rightly / falsely classified icsd samples
+# For the comparison script:
+# pre-store some batches to compare to the rightly / falsely classified icsd samples
 
-    random_comparison_crystals = []
-    random_comparison_labels = []
-    random_comparison_corn_sizes = []
+random_comparison_crystals = []
+random_comparison_labels = []
+random_comparison_corn_sizes = []
 
-    object_refs = []
-    for i in range(NO_random_batches):
-        ref = batch_generator_with_additional.remote(
-            spgs, 1, N, start_angle, end_angle, generation_max_NO_wyckoffs, 1
-        )
-        # ref = batch_generator_with_additional(
-        #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
-        # )
-        object_refs.append(ref)
+object_refs = []
+for i in range(NO_random_swipes):
+    ref = batch_generator_with_additional.remote(
+        spgs, 1, N, start_angle, end_angle, generation_max_NO_wyckoffs, 1
+    )
+    # ref = batch_generator_with_additional(
+    #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
+    # )
+    object_refs.append(ref)
 
-    results = ray.get(object_refs)
-    # results = object_refs
+results = ray.get(object_refs)
+# results = object_refs
 
-    for result in results:
-        patterns, labels, crystals, corn_sizes = result
-        random_comparison_crystals.extend(crystals)
-        random_comparison_labels.extend(labels)
-        random_comparison_corn_sizes.extend(corn_sizes)
+val_x_random = []
+val_y_random = []
 
-    with open(out_base + "random_data.pickle", "wb") as file:
-        pickle.dump(
-            (
-                random_comparison_crystals,
-                random_comparison_labels,
-                random_comparison_corn_sizes,
-            ),
-            file,
-        )
+for result in results:
+    patterns, labels, crystals, corn_sizes = result
+
+    random_comparison_crystals.extend(crystals)
+    random_comparison_labels.extend(labels)
+    random_comparison_corn_sizes.extend(corn_sizes)
+
+    # TODO: Check if this is properly working as expected
+    val_x_random.extend(patterns)
+    val_y_random.extend([spgs.index(label) for label in labels])
+
+val_x_random = np.expand_dims(val_x_random, axis=2)
+
+with open(out_base + "random_data.pickle", "wb") as file:
+    pickle.dump(
+        (
+            random_comparison_crystals,
+            random_comparison_labels,
+            random_comparison_corn_sizes,
+        ),
+        file,
+    )
 
 # Start worker tasks
 for i in range(0, NO_workers):
@@ -395,7 +402,36 @@ tf.summary.text("Parameters", data=params_txt, step=0)
 
 class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
+
         tf.summary.scalar("ray queue size", data=queue.size(), step=epoch)
+
+        if ((epoch + 1) % test_every_X_epochs) == 0:
+
+            # gather metric names form model
+            metric_names = [
+                "{}_{}".format("epoch", metric.name) for metric in self.model.metrics
+            ]
+            # TODO: Check what this outputs (len?)
+            metric_name = metric_names[0]
+
+            scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=2)
+            scores_match = self.model.evaluate(x=val_x_match, y=val_y_match, verbose=2)
+            scores_random = self.model.evaluate(
+                x=val_x_random, y=val_y_random, verbose=2
+            )
+            # TODO: What is the len of those?
+
+            score_all = scores_all[0]
+            score_match = scores_match[0]
+            score_random = scores_random[0]
+
+            # gather evaluation metrics to TensorBoard
+            tf.summary.scalar(metric_name + "_all", score_all, step=epoch)
+            tf.summary.scalar(metric_name + "_match", score_match, step=epoch)
+            tf.summary.scalar(metric_name + "_random", score_random, step=epoch)
+            tf.summary.scalar(
+                metric_name + "_gap", score_random - score_match, step=epoch
+            )
 
 
 class CustomSequence(keras.utils.Sequence):
@@ -417,7 +453,7 @@ model.fit(
     x=sequence,
     epochs=NO_epochs,
     batch_size=batches_per_epoch,
-    validation_data=(val_x, val_y),
+    validation_data=(val_x_match, val_y_match),  # TODO: Remove this later when it fits
     validation_freq=test_every_X_epochs,
     callbacks=[tb_callback, CustomCallback()],
     verbose=verbosity,
@@ -429,37 +465,35 @@ model.fit(
 
 model.save(out_base + "final")
 
-if compare_distributions:
+if len(spgs) > 2:
 
-    if len(spgs) > 2:
+    prediction = model.predict(val_x_match)
+    prediction = np.argmax(prediction, axis=1)
 
-        prediction = model.predict(val_x)
-        prediction = np.argmax(prediction, axis=1)
+    # print(prediction)
+    # print(len(prediction))
+    # print(len(val_x))
+    # print(len(icsd_crystals))
 
-        # print(prediction)
-        # print(len(prediction))
-        # print(len(val_x))
-        # print(len(icsd_crystals))
+    # print(rightly_indices)
+    # print(falsely_indices)
 
-        # print(rightly_indices)
-        # print(falsely_indices)
+elif len(spgs) == 2:
 
-    elif len(spgs) == 2:
+    prob_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
+    prediction = np.array(prob_model.predict(val_x_match))
+    prediction = prediction[:, 0]
+    prediction = np.where(prediction > 0.5, 1, 0)
 
-        prob_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
-        prediction = np.array(prob_model.predict(val_x))
-        prediction = prediction[:, 0]
-        prediction = np.where(prediction > 0.5, 1, 0)
+else:
 
-    else:
+    raise Exception("Unexpected number of spgs.")
 
-        raise Exception("Unexpected number of spgs.")
+rightly_indices = np.argwhere(prediction == val_y_match)[:, 0]
+falsely_indices = np.argwhere(prediction != val_y_match)[:, 0]
 
-    rightly_indices = np.argwhere(prediction == val_y)[:, 0]
-    falsely_indices = np.argwhere(prediction != val_y)[:, 0]
-
-    with open(out_base + "rightly_falsely.pickle", "wb") as file:
-        pickle.dump((rightly_indices, falsely_indices), file)
+with open(out_base + "rightly_falsely.pickle", "wb") as file:
+    pickle.dump((rightly_indices, falsely_indices), file)
 
 ray.shutdown()
 
