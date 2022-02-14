@@ -82,7 +82,7 @@ start_angle, end_angle, N = 10, 110, 10001
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 
-path_to_patterns = "../dataset_simulations/patterns/icsd/"
+path_to_patterns = "../dataset_simulations/patterns/icsd_park/"
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is not None and jobid != "":
     icsd_sim = Simulation(
