@@ -43,9 +43,11 @@ with open(in_base + "random_data.pickle", "rb") as file:
 with open(in_base + "rightly_falsely.pickle", "rb") as file:
     rightly_indices, falsely_indices = pickle.load(file)
 
-random_crystals = random_crystals
-random_labels = random_labels
-random_variations = random_variations
+# limit the range:
+if False:
+    random_crystals = random_crystals[0:200]
+    random_labels = random_labels[0:200]
+    random_variations = random_variations[0:200]
 
 print("Calculating conventional structures...")
 for i in reversed(range(0, len(icsd_crystals))):
@@ -60,6 +62,7 @@ for i in reversed(range(0, len(icsd_crystals))):
         icsd_crystals[i] = conv
 
     except Exception as ex:
+        print("Error calculating conventional cell of ICSD:")
         print(ex)
 
 # this is actually not really needed, but just in case...
@@ -77,6 +80,8 @@ for i in reversed(range(0, len(random_crystals))):
         random_crystals[i] = conv
 
     except Exception as ex:
+        print("Error calculating conventional cell of random:")
+        print("(doesn't matter)")
         print(ex)
 
 
