@@ -45,7 +45,7 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-NO_workers = 127 + 31 + 14  # for cluster
+NO_workers = 127 + 127 + 14  # for cluster
 queue_size = 200
 queue_size_tf = 100
 
@@ -80,7 +80,7 @@ start_angle, end_angle, N = 10, 110, 10001
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 
-# Construct valdation sets
+# Construct validation sets
 # Used validation sets:
 # - All ICSD entries
 # - ICSD entries that match simulation parameters
@@ -102,7 +102,7 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(load_only=10 if not local else 2)
+icsd_sim.load(load_only=6 if not local else 2)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -182,7 +182,7 @@ for pattern in icsd_patterns_match:
     for sub_pattern in pattern:
         val_x_match.append(sub_pattern)
 
-print("Numbers in valdiation set (that matches sim parameters):")
+print("Numbers in validation set (that matches sim parameters):")
 for i in range(0, len(spgs)):
     print(f"Spg {spgs[i]} : {np.sum(val_y_match==i)}")
 

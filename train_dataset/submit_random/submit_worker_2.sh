@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=128
 #SBATCH --ntasks=1
-#SBATCH --mem=64000mb
+#SBATCH --mem=256000mb
 #SBATCH --tasks-per-node=1
 #SBATCH --job-name=random_worker
 #SBATCH --time=10-48:00:00
