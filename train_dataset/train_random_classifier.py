@@ -45,7 +45,7 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-NO_workers = 126 + 14  # for cluster
+NO_workers = 127 + 31 + 14  # for cluster
 queue_size = 200
 queue_size_tf = 100
 
