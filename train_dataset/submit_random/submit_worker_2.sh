@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=128
+#SBATCH --cpus-per-task=32
 #SBATCH --ntasks=1
-#SBATCH --mem=256000mb
+#SBATCH --mem=64000mb
 #SBATCH --tasks-per-node=1
 #SBATCH --job-name=random_worker
 #SBATCH --time=10-48:00:00
@@ -21,6 +21,6 @@ ip_head=$head_node_ip:$port
 
 echo "Starting worker"
 
-{ sleep 20; echo "ready" > ./worker_ready; } & # signal that worker is connected
+{ sleep 20; echo "ready" > ./worker_2_ready; } & # signal that worker is connected
 
 srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --redis-password='5241590000000000' --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "0" --block

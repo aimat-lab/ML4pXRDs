@@ -23,8 +23,14 @@ srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --p
 sleep 20
 echo $head_node_ip > ./head_node_ip # signal that worker can connect
 
-# wait until worker has connected
-until [ -f ./worker_ready ]
+# wait until worker 1 has connected
+until [ -f ./worker_1_ready ]
+do
+         sleep 5
+done
+
+# wait until worker 2 has connected
+until [ -f ./worker_2_ready ]
 do
          sleep 5
 done

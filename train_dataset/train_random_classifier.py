@@ -34,7 +34,6 @@ os.system("touch " + out_base + tag)
 
 test_every_X_epochs = 10
 batches_per_epoch = 1500
-# NO_epochs = 1000
 NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
@@ -124,14 +123,12 @@ for i in reversed(range(0, len(icsd_patterns_all))):
         del icsd_crystals_all[i]
         del icsd_metas_all[i]
 
-# TODO: Check that copying works as expected
-
 # patterns that fall into the simulation parameter range (volume and NO_wyckoffs)
 icsd_patterns_match = icsd_patterns_all.copy()
 icsd_labels_match = icsd_labels_all.copy()
 icsd_crystals_match = icsd_crystals_all.copy()
 icsd_variations_match = icsd_variations_all.copy()
-icsd_metas_match = icsd_variations_all.copy()
+icsd_metas_match = icsd_metas_all.copy()
 
 for i in reversed(range(0, len(icsd_patterns_all))):
 
@@ -341,11 +338,11 @@ for result in results:
     random_comparison_labels.extend(labels)
     random_comparison_corn_sizes.extend(corn_sizes)
 
-    # TODO: Check if this is properly working as expected
     val_x_random.extend(patterns)
-    val_y_random.extend([spgs.index(label) for label in labels])
+    val_y_random.extend(labels)
 
 val_x_random = np.expand_dims(val_x_random, axis=2)
+val_y_random = np.array(val_y_random)
 
 with open(out_base + "random_data.pickle", "wb") as file:
     pickle.dump(
@@ -408,30 +405,25 @@ class CustomCallback(keras.callbacks.Callback):
         if ((epoch + 1) % test_every_X_epochs) == 0:
 
             # gather metric names form model
-            metric_names = [
-                "{}_{}".format("epoch", metric.name) for metric in self.model.metrics
-            ]
-            # TODO: Check what this outputs (len?)
-            metric_name = metric_names[0]
+            metric_names = [metric.name for metric in self.model.metrics]
 
-            scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=2)
-            scores_match = self.model.evaluate(x=val_x_match, y=val_y_match, verbose=2)
+            scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
+            scores_match = self.model.evaluate(x=val_x_match, y=val_y_match, verbose=0)
             scores_random = self.model.evaluate(
-                x=val_x_random, y=val_y_random, verbose=2
+                x=val_x_random, y=val_y_random, verbose=0
             )
-            # TODO: What is the len of those?
-
-            score_all = scores_all[0]
-            score_match = scores_match[0]
-            score_random = scores_random[0]
 
             # gather evaluation metrics to TensorBoard
-            tf.summary.scalar(metric_name + "_all", score_all, step=epoch)
-            tf.summary.scalar(metric_name + "_match", score_match, step=epoch)
-            tf.summary.scalar(metric_name + "_random", score_random, step=epoch)
-            tf.summary.scalar(
-                metric_name + "_gap", score_random - score_match, step=epoch
-            )
+            for i, name in enumerate(metric_names):
+
+                tf.summary.scalar(name + "_all", scores_all[i], step=epoch)
+                tf.summary.scalar(name + "_match", scores_match[i], step=epoch)
+                tf.summary.scalar(name + "_random", scores_random[i], step=epoch)
+
+                if i == 1:  # Only makes sense for the accurarcy, not the loss
+                    tf.summary.scalar(
+                        name + "_gap", scores_random[i] - scores_match[i], step=epoch
+                    )
 
 
 class CustomSequence(keras.utils.Sequence):
