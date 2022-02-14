@@ -12,6 +12,7 @@ import pickle
 import tensorflow as tf
 import sys
 from datetime import datetime
+import copy
 
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
@@ -32,7 +33,7 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-test_every_X_epochs = 1
+test_every_X_epochs = 5
 batches_per_epoch = 1500
 # NO_epochs = 1000
 NO_epochs = 200
@@ -82,6 +83,13 @@ start_angle, end_angle, N = 10, 110, 10001
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 
+# Construct valdation sets
+# Used validation sets:
+# - All ICSD entries
+# - ICSD entries that match simulation parameters
+# - Pre-computed random dataset (the one from the comparison script)
+# - Gap between training and val acc that matches simulation parameters
+
 path_to_patterns = "../dataset_simulations/patterns/icsd_park/"
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is not None and jobid != "":
@@ -101,73 +109,98 @@ icsd_sim.load(load_only=10 if not local else 2)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
-icsd_patterns = icsd_sim.sim_patterns
-icsd_labels = icsd_sim.sim_labels
-icsd_variations = icsd_sim.sim_variations
-icsd_crystals = icsd_sim.sim_crystals
-icsd_metas = icsd_sim.sim_metas
+icsd_patterns_all = icsd_sim.sim_patterns
+icsd_labels_all = icsd_sim.sim_labels
+icsd_variations_all = icsd_sim.sim_variations
+icsd_crystals_all = icsd_sim.sim_crystals
+icsd_metas_all = icsd_sim.sim_metas
 
 # spgs = sorted(np.unique([item[0] for item in icsd_labels]))
 
-for i in reversed(range(0, len(icsd_patterns))):
+for i in reversed(range(0, len(icsd_patterns_all))):
+
+    if np.any(np.isnan(icsd_variations_all[i][0])) or icsd_labels_all[i][0] not in spgs:
+        del icsd_patterns_all[i]
+        del icsd_labels_all[i]
+        del icsd_variations_all[i]
+        del icsd_crystals_all[i]
+        del icsd_metas_all[i]
+
+# TODO: Check that copying works as expected
+
+# patterns that fall into the simulation parameter range (volume and NO_wyckoffs)
+icsd_patterns_match = icsd_patterns_all.copy()
+icsd_labels_match = icsd_labels_all.copy()
+icsd_crystals_match = icsd_crystals_all.copy()
+icsd_variations_match = icsd_variations_all.copy()
+icsd_metas_match = icsd_variations_all.copy()
+
+for i in reversed(range(0, len(icsd_patterns_all))):
 
     if validation_max_NO_wyckoffs is not None:
-        _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas[i][0])
+        _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas_all[i][0])
 
     if (
-        np.any(np.isnan(icsd_variations[i][0]))
-        or icsd_labels[i][0] not in spgs
-        or (
-            validation_max_volume is not None
-            and icsd_crystals[i].volume > validation_max_volume
-        )
-        or (
-            validation_max_NO_wyckoffs is not None
-            and NO_wyckoffs > validation_max_NO_wyckoffs
-        )
+        validation_max_volume is not None
+        and icsd_crystals_all[i].volume > validation_max_volume
+    ) or (
+        validation_max_NO_wyckoffs is not None
+        and NO_wyckoffs > validation_max_NO_wyckoffs
     ):
-        del icsd_patterns[i]
-        del icsd_labels[i]
-        del icsd_variations[i]
-        del icsd_crystals[i]
-        del icsd_metas[i]
-
-print(f"{len(icsd_crystals)} crystals remaining in the ICSD validation set.")
+        del icsd_patterns_match[i]
+        del icsd_labels_match[i]
+        del icsd_crystals_match[i]
+        del icsd_variations_match[i]
+        del icsd_metas_match[i]
 
 if compare_distributions:
-
     with open(out_base + "spgs.pickle", "wb") as file:
         pickle.dump(spgs, file)
 
     with open(out_base + "icsd_data.pickle", "wb") as file:
         pickle.dump(
             (
-                icsd_crystals,
-                icsd_labels,
-                [item[:, 0] for item in icsd_variations],
-                icsd_metas,
+                icsd_crystals_match,
+                icsd_labels_match,
+                [item[:, 0] for item in icsd_variations_match],
+                icsd_metas_match,
             ),
             file,
         )
 
-val_y = []
-for i, label in enumerate(icsd_labels):
-    val_y.extend([spgs.index(label[0])] * n_patterns_per_crystal)
-val_y = np.array(val_y)
+val_y_all = []
+for i, label in enumerate(icsd_labels_all):
+    val_y_all.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+val_y_all = np.array(val_y_all)
 
-for i in range(0, len(spgs)):
-    print(f"Spg {spgs[i]} : {np.sum(val_y==i)}")
-
-val_x = []
-for pattern in icsd_patterns:
+val_x_all = []
+for pattern in icsd_patterns_all:
     for sub_pattern in pattern:
-        val_x.append(sub_pattern)
+        val_x_all.append(sub_pattern)
 
-assert not np.any(np.isnan(val_x))
-assert not np.any(np.isnan(val_y))
-assert len(val_x) == len(val_y)
+val_y_match = []
+for i, label in enumerate(icsd_labels_match):
+    val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+val_y_match = np.array(val_y_match)
 
-val_x = np.expand_dims(val_x, axis=2)
+val_x_match = []
+for pattern in icsd_patterns_match:
+    for sub_pattern in pattern:
+        val_x_match.append(sub_pattern)
+
+print("Numbers in valdiation set (that matches sim parameters):")
+for i in range(0, len(spgs)):
+    print(f"Spg {spgs[i]} : {np.sum(val_y_match==i)}")
+
+assert not np.any(np.isnan(val_x_all))
+assert not np.any(np.isnan(val_y_all))
+assert not np.any(np.isnan(val_x_match))
+assert not np.any(np.isnan(val_y_match))
+assert len(val_x_all) == len(val_y_all)
+assert len(val_x_match) == len(val_y_match)
+
+val_x_all = np.expand_dims(val_x_all, axis=2)
+val_x_match = np.expand_dims(val_x_match, axis=2)
 
 if not local:
     ray.init(address="auto", include_dashboard=False)
