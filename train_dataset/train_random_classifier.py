@@ -6,7 +6,6 @@ from models import build_model_park
 import os
 from sklearn.utils import shuffle
 from dataset_simulations.simulation import Simulation
-from scipy import interpolate as ip
 import ray
 from ray.util.queue import Queue
 import pickle
@@ -16,7 +15,7 @@ from datetime import datetime
 
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
-tag = "2-spgs-new_generation_max_volume"
+tag = "4-spgs_new_vals_new_sim_data"
 
 if len(sys.argv) > 1:
     out_base = sys.argv[1] + "/"
@@ -39,8 +38,8 @@ batches_per_epoch = 1500
 NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
-# structures_per_spg = 5
-structures_per_spg = 10  # for (2,15) tuple
+structures_per_spg = 5
+# structures_per_spg = 10  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
 do_distance_checks = False
@@ -63,42 +62,25 @@ validation_max_NO_wyckoffs = 100  # None possible
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-spgs = [
-    2,
-    15,
-]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+# spgs = [
+#    2,
+#    15,
+# ]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
-# spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
+spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
-# like in the Vecsei paper:
-start_angle, end_angle, N = 5, 90, 8501
-start_angle, end_angle, N = (
-    360
-    / (2 * np.pi)
-    * np.arcsin(1.207930 / 1.5406 * np.sin(2 * np.pi / 360 * start_angle)),
-    360
-    / (2 * np.pi)
-    * np.arcsin(1.207930 / 1.5406 * np.sin(2 * np.pi / 360 * end_angle)),
-    8501,
-)  # until ICSD has not been re-simulated with Cu-K line
+# as Park:
+start_angle, end_angle, N = 10, 110, 10001
 angle_range = np.linspace(start_angle, end_angle, N)
-print(f"Start-angle: {start_angle}, end-angle: {end_angle}")
-
-# load validation set (ICSD):
-
-number_of_values_initial = 9018
-simulated_range = np.linspace(0, 90, number_of_values_initial)
-start_index = np.argwhere(simulated_range >= start_angle)[0][0]
-end_index = np.argwhere(simulated_range <= end_angle)[-1][0]
-used_range = simulated_range[start_index : end_index + 1]
+print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 
 path_to_patterns = "../dataset_simulations/patterns/icsd/"
 jobid = os.getenv("SLURM_JOB_ID")
@@ -124,13 +106,6 @@ icsd_labels = icsd_sim.sim_labels
 icsd_variations = icsd_sim.sim_variations
 icsd_crystals = icsd_sim.sim_crystals
 icsd_metas = icsd_sim.sim_metas
-
-"""
-dist_y = []
-for i, label in enumerate(icsd_labels):
-    dist_y.append(label[0])
-print(np.bincount(dist_y))
-"""
 
 # spgs = sorted(np.unique([item[0] for item in icsd_labels]))
 
@@ -186,13 +161,7 @@ for i in range(0, len(spgs)):
 val_x = []
 for pattern in icsd_patterns:
     for sub_pattern in pattern:
-
-        f = ip.CubicSpline(
-            used_range, sub_pattern[start_index : end_index + 1], bc_type="natural"
-        )
-        actual_val = f(angle_range)
-
-        val_x.append(actual_val)
+        val_x.append(sub_pattern)
 
 assert not np.any(np.isnan(val_x))
 assert not np.any(np.isnan(val_y))
@@ -229,8 +198,8 @@ def batch_generator_with_additional(
     patterns, labels, structures, corn_sizes = get_random_xy_patterns(
         spgs=spgs,
         structures_per_spg=structures_per_spg,
-        # wavelength=1.5406,  # TODO: Cu-K line
-        wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
+        wavelength=1.5406,  # Cu-Ka line
+        # wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
         N=N,
         NO_corn_sizes=NO_corn_sizes,
         two_theta_range=(start_angle, end_angle),
@@ -273,8 +242,8 @@ def batch_generator_queue(
             patterns, labels = get_random_xy_patterns(
                 spgs=spgs,
                 structures_per_spg=structures_per_spg,
-                # wavelength=1.5406,  # TODO: Cu-K line
-                wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
+                wavelength=1.5406,  # Cu-K line
+                # wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
                 N=N,
                 NO_corn_sizes=NO_corn_sizes,
                 two_theta_range=(start_angle, end_angle),
@@ -385,7 +354,8 @@ params_txt = (
     f"do_merge_checks: {str(do_merge_checks)}  \n  \n"
     f"use_icsd_statistics: {str(use_icsd_statistics)}  \n  \n"
     f"validation_max_volume: {str(validation_max_volume)}  \n  \n"
-    f"validation_max_NO_wyckoffs: {str(validation_max_NO_wyckoffs)}"
+    f"validation_max_NO_wyckoffs: {str(validation_max_NO_wyckoffs)}  \n  \n"
+    f"spgs: {str(spgs)}"
 )
 tf.summary.text("Parameters", data=params_txt, step=0)
 
@@ -403,35 +373,6 @@ class CustomSequence(keras.utils.Sequence):
         return self.number_of_batches
 
     def __getitem__(self, idx):
-
-        """
-        patterns, labels = get_random_xy_patterns(
-            spgs=spgs,
-            structures_per_spg=structures_per_spg,
-            #wavelength=1.5406,  # TODO: Cu-K line, when testing on ICSD data, switch to 1.207930 wavelength (scaling)
-            wavelength=1.207930, # until ICSD has not been re-simulated with Cu-K line
-            N=N,
-            two_theta_range=(start_angle, end_angle),
-            max_NO_elements=max_NO_elements,
-            do_print=False,
-        )
-
-        patterns, labels = shuffle(patterns, labels)
-
-        # Set the label to the right index:
-        for i in range(0, len(labels)):
-            labels[i] = spgs.index(labels[i])
-
-        patterns = np.array(patterns)
-        patterns = np.expand_dims(patterns, axis=2)
-
-        labels = np.array(labels)
-
-        return (
-            patterns, labels
-        )
-        """
-
         return queue.get()
 
 
