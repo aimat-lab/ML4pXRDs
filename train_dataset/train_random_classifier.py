@@ -32,10 +32,8 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-# test_every_X_epochs = 10
-test_every_X_epochs = 1  # TODO: Change back
-# batches_per_epoch = 1500 # TODO: Change back
-batches_per_epoch = 100
+test_every_X_epochs = 10
+batches_per_epoch = 1500
 NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
@@ -62,7 +60,7 @@ validation_max_NO_wyckoffs = 100  # None possible
 
 verbosity = 2
 
-local = True  # TODO: Change back
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -78,7 +76,10 @@ spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
 # as Park:
-start_angle, end_angle, N = 10, 110, 10001
+# start_angle, end_angle, N = 10, 110, 10001
+
+# as Vecsei:
+start_angle, end_angle, N = 5, 90, 8501
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 
@@ -89,7 +90,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 # - Pre-computed random dataset (the one from the comparison script)
 # - Gap between training and val acc that matches simulation parameters
 
-path_to_patterns = "../dataset_simulations/patterns/icsd_park/"
+path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is not None and jobid != "":
     icsd_sim = Simulation(

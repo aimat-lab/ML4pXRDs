@@ -576,7 +576,11 @@ if __name__ == "__main__":
             probability_per_spg_per_wyckoff,
         ) = load_wyckoff_statistics()
 
-        for i in range(0, 1000):
+        counter_mistakes = 0
+        counter_skipped = 0
+
+        N = 50
+        for i in range(0, N):
 
             print(i)
 
@@ -593,22 +597,44 @@ if __name__ == "__main__":
                 )[0]
 
                 try:
-                    analyzer = SpacegroupAnalyzer(structure, symprec=0.01)
-                    group_number = analyzer.get_space_group_number()
+                    # analyzer = SpacegroupAnalyzer(structure, symprec=0.01)
+                    # group_number = analyzer.get_space_group_number()
+
+                    pyxtal_structure = pyxtal()
+                    pyxtal_structure.from_seed(structure)
+                    group_number = pyxtal_structure.group.number
+
                 except Exception as ex:
+
+                    print(ex)
+
+                    counter_skipped += 1
 
                     if spg in skipped.keys():
                         skipped[spg] += 1
                     else:
                         skipped[spg] = 1
 
+                    # try:
+                    #    pyxtal_structure = pyxtal()
+                    #    pyxtal_structure.from_seed(structure)
+                    #    print(pyxtal_structure.group.number)
+                    # except Exception as ex:
+                    #    print(ex)
+
                     continue
 
                 if spg != group_number:
+
+                    counter_mistakes += 1
+
                     if spg in mistakes.keys():
                         mistakes[spg] += 1
                     else:
                         mistakes[spg] = 1
+
+        print(f"{counter_mistakes / (231*N) * 100}% mistakes")
+        print(f"{counter_skipped / (231*N) * 100}% skipped")
 
         counts_mistakes = [
             x[1]
