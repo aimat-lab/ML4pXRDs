@@ -17,12 +17,12 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 
 
 # xrayutilities
-xrayutil_crystallite_size_gauss_min = 15 * 10 ** -9
-xrayutil_crystallite_size_gauss_max = 50 * 10 ** -9
-xrayutil_crystallite_size_lor_min = 15 * 10 ** -9
-xrayutil_crystallite_size_lor_max = 50 * 10 ** -9
+xrayutil_crystallite_size_gauss_min = 15 * 10**-9
+xrayutil_crystallite_size_gauss_max = 50 * 10**-9
+xrayutil_crystallite_size_lor_min = 15 * 10**-9
+xrayutil_crystallite_size_lor_max = 50 * 10**-9
 
-# pymatgen, these are in nm
+# pymatgen, these are in nm (this is NOT for the sped-up version of pymatgen, but for the old)
 paymatgen_crystallite_size_gauss_min = 5
 paymatgen_crystallite_size_gauss_max = 100
 
@@ -33,10 +33,15 @@ wavelength = 1.5406  # Cu-K line
 # angle_max = 90
 # angle_n = 9018
 
+# as Vecsei:
+angle_min = 5
+angle_max = 90
+angle_n = 8501
+
 # as Park:
-angle_min = 10
-angle_max = 110
-angle_n = 10001
+# angle_min = 10
+# angle_max = 110
+# angle_n = 10001
 
 max_volume = 20000  # None possible
 
@@ -75,18 +80,18 @@ def simulate_crystal(crystal, test_crystallite_sizes, simulation_software, id):
                     # For comparing the different crystallite sizes
                     if i == 0:
                         size_gauss = xrayutil_crystallite_size_gauss_max
-                        size_lor = 3 * 10 ** 8
+                        size_lor = 3 * 10**8
                     elif i == 2:
                         size_gauss = xrayutil_crystallite_size_gauss_max
                         size_lor = xrayutil_crystallite_size_lor_max
                     elif i == 1:
-                        size_gauss = 3 * 10 ** 8
+                        size_gauss = 3 * 10**8
                         size_lor = xrayutil_crystallite_size_lor_max
                     elif i == 3:
                         size_gauss = xrayutil_crystallite_size_gauss_min
-                        size_lor = 3 * 10 ** 8
+                        size_lor = 3 * 10**8
                     elif i == 4:
-                        size_gauss = 3 * 10 ** 8
+                        size_gauss = 3 * 10**8
                         size_lor = xrayutil_crystallite_size_lor_min
                     elif i == 5:
                         size_gauss = xrayutil_crystallite_size_lor_min

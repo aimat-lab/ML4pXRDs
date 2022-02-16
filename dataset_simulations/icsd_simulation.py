@@ -10,7 +10,7 @@ class ICSDSimulation(Simulation):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
         # self.output_dir = "patterns/icsd_park/"
-        self.output_dir = "patterns/icsd_park/"
+        self.output_dir = "patterns/icsd_vecsei/"
 
     def generate_structures(self):
 

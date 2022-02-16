@@ -25,14 +25,15 @@ simulation_software = (
     "pymatgen_numba"  # possible: pymatgen, xrayutilities and pymatgen_numba
 )
 
-# angle_min = 0
-# angle_max = 90
-# angle_n = 9018
+# as Vecsei:
+angle_min = 5
+angle_max = 90
+angle_n = 8501
 
 # as Park:
-angle_min = 10
-angle_max = 110
-angle_n = 10001
+# angle_min = 10
+# angle_max = 110
+# angle_n = 10001
 
 
 class Simulation:
