@@ -32,8 +32,10 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-test_every_X_epochs = 10
-batches_per_epoch = 1500
+# test_every_X_epochs = 10
+test_every_X_epochs = 1  # TODO: Change back
+# batches_per_epoch = 1500 # TODO: Change back
+batches_per_epoch = 100
 NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
@@ -60,7 +62,7 @@ validation_max_NO_wyckoffs = 100  # None possible
 
 verbosity = 2
 
-local = False
+local = True  # TODO: Change back
 if local:
     NO_workers = 8
     verbosity = 1
@@ -416,13 +418,15 @@ class CustomCallback(keras.callbacks.Callback):
             # gather evaluation metrics to TensorBoard
             for i, name in enumerate(metric_names):
 
-                tf.summary.scalar(name + "_all", scores_all[i], step=epoch)
-                tf.summary.scalar(name + "_match", scores_match[i], step=epoch)
-                tf.summary.scalar(name + "_random", scores_random[i], step=epoch)
+                tf.summary.scalar("all " + name, scores_all[i], step=epoch)
+                tf.summary.scalar("match " + name, scores_match[i], step=epoch)
+                tf.summary.scalar("random " + name, scores_random[i], step=epoch)
 
                 if i == 1:  # Only makes sense for the accurarcy, not the loss
                     tf.summary.scalar(
-                        name + "_gap", scores_random[i] - scores_match[i], step=epoch
+                        "gap " + name,
+                        scores_random[i] - scores_match[i],
+                        step=epoch,
                     )
 
 

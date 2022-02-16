@@ -12,6 +12,8 @@ from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
 import numpy.random
 import os
+import spglib
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 # import warnings
 # with warnings.catch_warnings():
@@ -566,13 +568,73 @@ if __name__ == "__main__":
 
     if True:
 
+        mistakes = {}
+        skipped = {}
+
+        (
+            probability_per_element,
+            probability_per_spg_per_wyckoff,
+        ) = load_wyckoff_statistics()
+
+        for i in range(0, 1000):
+
+            print(i)
+
+            for spg in range(1, 231):
+                structure = generate_structures(
+                    spg,
+                    1,
+                    100,
+                    do_distance_checks=False,
+                    do_merge_checks=False,
+                    use_icsd_statistics=True,
+                    probability_per_element=probability_per_element,
+                    probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+                )[0]
+
+                try:
+                    analyzer = SpacegroupAnalyzer(structure, symprec=0.01)
+                    group_number = analyzer.get_space_group_number()
+                except Exception as ex:
+
+                    if spg in skipped.keys():
+                        skipped[spg] += 1
+                    else:
+                        skipped[spg] = 1
+
+                    continue
+
+                if spg != group_number:
+                    if spg in mistakes.keys():
+                        mistakes[spg] += 1
+                    else:
+                        mistakes[spg] = 1
+
+        counts_mistakes = [
+            x[1]
+            for x in sorted(zip(mistakes.keys(), mistakes.values()), key=lambda x: x[0])
+        ]
+        plt.bar(sorted(mistakes.keys()), counts_mistakes)
+        plt.title("Mistakes")
+        plt.show()
+
+        counts_skipped = [
+            x[1]
+            for x in sorted(zip(skipped.keys(), skipped.values()), key=lambda x: x[0])
+        ]
+        plt.bar(sorted(skipped.keys()), counts_skipped)
+        plt.title("Skipped")
+        plt.show()
+
+    if False:
+
         parser = CifParser("example.cif")
         structures_prim = parser.get_structures()[0]
         structures_conv = parser.get_structures(primitive=False)[0]
 
         print()
 
-    if True:
+    if False:
 
         (
             probability_per_element,
@@ -630,9 +692,6 @@ if __name__ == "__main__":
         print(struc_1.formula)
 
         print()
-
-        # TODO: Also test this with some cif file
-        # TODO: Which cell is typically in ICSD? Primitive or conventional? Important for comparison.
 
     if False:
         analyse_set_wyckoffs([2, 15, 14, 104, 129, 176], load_only=1)
