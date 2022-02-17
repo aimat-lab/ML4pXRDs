@@ -1,4 +1,3 @@
-from json import load
 from pyxtal import pyxtal
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,13 +5,9 @@ import random
 from pyxtal.symmetry import Group
 import time
 import pickle
-
-from sympy import re
 from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
-import numpy.random
 import os
-import spglib
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 # import warnings
@@ -157,6 +152,7 @@ def generate_structure(
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
+    check_symmetry=True,
 ):
 
     if use_icsd_statistics and (
@@ -308,6 +304,16 @@ def generate_structure(
             #    site.coords = filtered_coords(site.coords)
 
             crystal = my_crystal.to_pymatgen()
+
+            # Make sure that the space group is actually correct / unique
+            analyzer = SpacegroupAnalyzer(
+                crystal,
+                symprec=1e-8,
+                angle_tolerance=5.0,
+            )
+            if analyzer.get_space_group_number() != group_object.number:
+                print("Mismatch in space group number, skipping structure.")
+                continue
 
         except Exception as ex:
             print(flush=True)
