@@ -105,7 +105,7 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(load_only=6 if not local else 2)
+icsd_sim.load(load_only=12 if not local else 2)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 

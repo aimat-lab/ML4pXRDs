@@ -579,12 +579,16 @@ if __name__ == "__main__":
         counter_mistakes = 0
         counter_skipped = 0
 
+        timings = []
+
         N = 50
         for i in range(0, N):
 
             print(i)
 
-            for spg in range(1, 231):
+            # spgs = [2, 15]
+            spgs = range(1, 231)
+            for spg in spgs:
                 structure = generate_structures(
                     spg,
                     1,
@@ -597,12 +601,19 @@ if __name__ == "__main__":
                 )[0]
 
                 try:
-                    # analyzer = SpacegroupAnalyzer(structure, symprec=0.01)
-                    # group_number = analyzer.get_space_group_number()
 
-                    pyxtal_structure = pyxtal()
-                    pyxtal_structure.from_seed(structure)
-                    group_number = pyxtal_structure.group.number
+                    start = time.time()
+
+                    analyzer = SpacegroupAnalyzer(
+                        structure, symprec=1e-3, angle_tolerance=5.0
+                    )
+                    group_number = analyzer.get_space_group_number()
+
+                    timings.append(time.time() - start)
+
+                    # pyxtal_structure = pyxtal()
+                    # pyxtal_structure.from_seed(structure)
+                    # group_number = pyxtal_structure.group.number
 
                 except Exception as ex:
 
@@ -633,8 +644,10 @@ if __name__ == "__main__":
                     else:
                         mistakes[spg] = 1
 
-        print(f"{counter_mistakes / (231*N) * 100}% mistakes")
-        print(f"{counter_skipped / (231*N) * 100}% skipped")
+        print(f"{counter_mistakes / (len(spgs)*N) * 100}% mistakes")
+        print(f"{counter_skipped / (len(spgs)*N) * 100}% skipped")
+
+        print(f"Average timing: {np.mean(timings)}")
 
         counts_mistakes = [
             x[1]
