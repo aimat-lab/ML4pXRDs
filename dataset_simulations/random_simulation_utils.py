@@ -605,7 +605,10 @@ if __name__ == "__main__":
                     start = time.time()
 
                     analyzer = SpacegroupAnalyzer(
-                        structure, symprec=1e-3, angle_tolerance=5.0
+                        # structure, symprec=1e-4, angle_tolerance=5.0
+                        structure,
+                        symprec=1e-8,
+                        angle_tolerance=5.0,
                     )
                     group_number = analyzer.get_space_group_number()
 
