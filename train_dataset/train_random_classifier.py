@@ -90,7 +90,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
     probability_per_element,
     probability_per_spg_per_wyckoff,
     NO_wyckoffs_counts,
-    indices_mismatches_spgs,
+    corrected_labels,
     files_to_use_for_test_set,
 ) = load_dataset_info()
 
@@ -137,6 +137,14 @@ icsd_variations_all = icsd_sim.sim_variations
 icsd_crystals_all = icsd_sim.sim_crystals
 icsd_metas_all = icsd_sim.sim_metas
 
+icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
+icsd_labels_match_corrected_labels = corrected_labels
+icsd_crystals_match_corrected_labels = icsd_crystals_all.copy()
+icsd_variations_match_corrected_labels = icsd_variations_all.copy()
+icsd_metas_match_corrected_labels = icsd_metas_all.copy()
+
+assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
+
 # spgs = sorted(np.unique([item[0] for item in icsd_labels]))
 
 for i in reversed(range(0, len(icsd_patterns_all))):
@@ -148,6 +156,18 @@ for i in reversed(range(0, len(icsd_patterns_all))):
         del icsd_crystals_all[i]
         del icsd_metas_all[i]
 
+for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
+
+    if (
+        np.any(np.isnan(icsd_variations_all[i][0]))
+        or icsd_labels_match_corrected_labels[i] not in spgs
+    ):
+        del icsd_patterns_match_corrected_labels[i]
+        del icsd_labels_match_corrected_labels[i]
+        del icsd_variations_match_corrected_labels[i]
+        del icsd_crystals_match_corrected_labels[i]
+        del icsd_metas_match_corrected_labels[i]
+
 # patterns that fall into the simulation parameter range (volume and NO_wyckoffs)
 icsd_patterns_match = icsd_patterns_all.copy()
 icsd_labels_match = icsd_labels_all.copy()
@@ -155,13 +175,7 @@ icsd_crystals_match = icsd_crystals_all.copy()
 icsd_variations_match = icsd_variations_all.copy()
 icsd_metas_match = icsd_metas_all.copy()
 
-icsd_patterns_match_correct_spg = icsd_patterns_all.copy()
-icsd_labels_match_correct_spg = icsd_labels_all.copy()
-icsd_crystals_match_correct_spg = icsd_crystals_all.copy()
-icsd_variations_match_correct_spg = icsd_variations_all.copy()
-icsd_metas_match_correct_spg = icsd_metas_all.copy()
-
-for i in reversed(range(0, len(icsd_patterns_all))):
+for i in reversed(range(0, len(icsd_patterns_match))):
 
     if validation_max_NO_wyckoffs is not None:
         _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas_all[i][0])
@@ -179,20 +193,25 @@ for i in reversed(range(0, len(icsd_patterns_all))):
         del icsd_variations_match[i]
         del icsd_metas_match[i]
 
-        del icsd_patterns_match_correct_spg[i]
-        del icsd_labels_match_correct_spg[i]
-        del icsd_crystals_match_correct_spg[i]
-        del icsd_variations_match_correct_spg[i]
-        del icsd_metas_match_correct_spg[i]
+for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 
-    if i in indices_mismatches_spgs:
+    if validation_max_NO_wyckoffs is not None:
+        _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(
+            icsd_metas_match_corrected_labels[i][0]
+        )
 
-        del icsd_patterns_match_correct_spg[i]
-        del icsd_labels_match_correct_spg[i]
-        del icsd_crystals_match_correct_spg[i]
-        del icsd_variations_match_correct_spg[i]
-        del icsd_metas_match_correct_spg[i]
-
+    if (
+        validation_max_volume is not None
+        and icsd_crystals_match_corrected_labels[i].volume > validation_max_volume
+    ) or (
+        validation_max_NO_wyckoffs is not None
+        and NO_wyckoffs > validation_max_NO_wyckoffs
+    ):
+        del icsd_patterns_match_corrected_labels[i]
+        del icsd_labels_match_corrected_labels[i]
+        del icsd_crystals_match_corrected_labels[i]
+        del icsd_variations_match_corrected_labels[i]
+        del icsd_metas_match_corrected_labels[i]
 
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)

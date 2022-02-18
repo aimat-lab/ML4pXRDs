@@ -531,17 +531,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     print("Processing test dataset...")
     start = time.time()
 
-    for i in reversed(range(0, len(sim_test.sim_crystals))):
-        if (
-            np.any(np.isnan(sim_test.sim_variations[i][0]))
-            or sim_test.sim_labels[i][0] not in spgs
-        ):
-            del sim_test.sim_labels[i]
-            del sim_test.sim_variations[i]
-            del sim_test.sim_crystals[i]
-            del sim_test.sim_metas[i]
-
-    indices_mismatches_spgs = []
+    corrected_labels = []
+    count_mismatches = 0
 
     for i, crystal in enumerate(sim_test.sim_crystals):
 
@@ -562,18 +553,21 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 angle_tolerance=5.0,
             )
 
-            if analyzer.get_space_group_number() != spg_number_icsd:
-                indices_mismatches_spgs.append(i)
+            spg_analyzer = analyzer.get_space_group_number()
+
+            if spg_analyzer != spg_number_icsd:
+                count_mismatches += 1
+
+            corrected_labels.append(spg_analyzer)
 
         except Exception as ex:
 
             print(f"Error processing structure, skipping in test set:")
             print(ex)
-            indices_mismatches_spgs.append(i)
 
-    print(
-        f"{len(indices_mismatches_spgs)/len(sim_test.sim_crystals)*100}% mismatches in test set."
-    )
+            corrected_labels.append(None)
+
+    print(f"{count_mismatches/len(sim_test.sim_crystals)*100}% mismatches in test set.")
 
     print(f"Took {time.time() - start} s to process the test dataset.")
 
@@ -584,7 +578,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 counts_per_spg_per_wyckoff,
                 counter_per_spg_per_element,  # just for testing purposes
                 NO_wyckoffs_counts,
-                indices_mismatches_spgs,
+                corrected_labels,
                 files_to_use_for_test_set,
             ),
             file,
@@ -600,7 +594,7 @@ def load_dataset_info():
         counter_per_element = data[0]
         counts_per_spg_per_wyckoff = data[1]
         NO_wyckoffs_counts = data[3]
-        indices_mismatches_spgs = data[4]
+        corrected_labels = data[4]
         files_to_use_for_test_set = data[5]
 
     for element in counter_per_element.keys():
@@ -633,7 +627,7 @@ def load_dataset_info():
         probability_per_element,
         probability_per_spg_per_wyckoff,
         NO_wyckoffs_counts,
-        indices_mismatches_spgs,
+        corrected_labels,
         files_to_use_for_test_set,
     )
 
