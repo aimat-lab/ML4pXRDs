@@ -5,7 +5,7 @@
 import sys
 
 from dataset_simulations.random_simulation_utils import generate_structures
-from dataset_simulations.random_simulation_utils import load_wyckoff_statistics
+from dataset_simulations.random_simulation_utils import load_dataset_info
 import json
 import os
 from math import asin, cos, degrees, pi, radians, sin
@@ -636,7 +636,7 @@ if __name__ == "__main__":
         (
             probability_per_element,
             probability_per_spg_per_wyckoff,
-        ) = load_wyckoff_statistics()
+        ) = load_dataset_info()
 
         max_NO_elements = 100
 

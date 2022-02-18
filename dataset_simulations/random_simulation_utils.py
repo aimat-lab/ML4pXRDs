@@ -404,27 +404,46 @@ def generate_structures(
     return result
 
 
-def prepare_training(spgs=None, load_only=None):
+def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
-    if spgs is None:
-        spgs = range(1, 231)
+    spgs = range(1, 231)
 
     jobid = os.getenv("SLURM_JOB_ID")
     path_to_patterns = "./patterns/icsd_vecsei/"
+
     if jobid is not None and jobid != "":
-        icsd_sim = Simulation(
+        sim_test = Simulation(
             "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
             "/home/ws/uvgnh/Databases/ICSD/cif/",
         )
-        icsd_sim.output_dir = path_to_patterns
+        sim_test.output_dir = path_to_patterns
+
+        sim_statistics = Simulation(
+            "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
+            "/home/ws/uvgnh/Databases/ICSD/cif/",
+        )
+        sim_statistics.output_dir = path_to_patterns
     else:
-        icsd_sim = Simulation(
+        sim_test = Simulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
-        icsd_sim.output_dir = path_to_patterns
+        sim_test.output_dir = path_to_patterns
 
-    icsd_sim.load(load_patterns_angles_intensities=False, stop=load_only)
+        sim_statistics = Simulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
+        sim_statistics.output_dir = path_to_patterns
+
+    sim_test.load(
+        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+    )
+    sim_statistics.load(
+        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+    )
+
+    # Calculate the statistics from the sim_statistics part of the simulation:
 
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
@@ -445,56 +464,28 @@ def prepare_training(spgs=None, load_only=None):
 
         counter_per_spg_per_element[spg_number] = {}
 
-    counter_mismatches = 0
+    count_crystals = 0
 
     start = time.time()
 
-    # paths = icsd_sim.icsd_paths[0:500]
-    # paths = icsd_sim.icsd_paths
-
-    count_crystals = 0
-
-    # for i, path in enumerate(paths):
-    for i, crystal in enumerate(icsd_sim.sim_crystals):
+    for i, crystal in enumerate(sim_statistics.sim_crystals):
 
         if (i % 100) == 0:
-            print(f"{i / len(icsd_sim.sim_crystals) * 100} % processed.")
+            print(f"{i / len(sim_statistics.sim_crystals) * 100} % processed.")
 
         try:
 
-            spg_number = icsd_sim.sim_labels[i][0]
-
-            # parser = CifParser(path)
-            # crystals = parser.get_structures()
-
-            # if len(crystals) == 0:
-            #    continue
-
-            # crystal = crystals[0]
-
-            if spg_number not in spgs:
-                continue
+            spg_number = sim_statistics.sim_labels[i][0]
 
             count_crystals += 1
 
             struc = pyxtal()
             struc.from_seed(crystal)
 
-            # TODO: Make sure that is the same spg, skip if not
-            # TODO: Add other spgs, too
-            # TODO: Commit
-
             NO_wyckoffs.append(len(struc.atom_sites))
-
-            if spg_number != struc.group.number:
-                counter_mismatches += 1
-                continue
-
-            # spg_number = struc.group.number # TODO: Change back maybe
 
         except Exception as ex:
 
-            # print(f"Error reading {path}:")
             print(f"Error reading structure:")
             print(ex)
 
@@ -535,11 +526,56 @@ def prepare_training(spgs=None, load_only=None):
 
     NO_wyckoffs_counts = np.bincount(NO_wyckoffs)
 
-    print(f"Took {time.time() - start} s")
-    # print(
-    #    f"{counter_mismatches / len(icsd_sim.sim_crystals) * 100} % mismatches in space groups!"
-    # )
-    print(f"{counter_mismatches / count_crystals * 100} % mismatches in space groups!")
+    print(f"Took {time.time() - start} s to calculate the statistics.")
+
+    print("Processing test dataset...")
+    start = time.time()
+
+    for i in reversed(range(0, len(sim_test.sim_crystals))):
+        if (
+            np.any(np.isnan(sim_test.sim_variations[i][0]))
+            or sim_test.sim_labels[i][0] not in spgs
+        ):
+            del sim_test.sim_labels[i]
+            del sim_test.sim_variations[i]
+            del sim_test.sim_crystals[i]
+            del sim_test.sim_metas[i]
+
+    indices_mismatches_spgs = []
+
+    for i, crystal in enumerate(sim_test.sim_crystals):
+
+        if (i % 100) == 0:
+            print(f"{i / len(sim_test.sim_crystals) * 100} % processed.")
+
+        try:
+
+            spg_number_icsd = sim_statistics.sim_labels[i][0]
+
+            # struc = pyxtal()
+            # struc.from_seed(crystal)
+
+            analyzer = SpacegroupAnalyzer(
+                crystal,
+                # symprec=1e-8,
+                symprec=1e-4,  # for now, use higher value than for perfect generated crystals
+                angle_tolerance=5.0,
+            )
+
+            if analyzer.get_space_group_number() != spg_number_icsd:
+                indices_mismatches_spgs.append(i)
+
+        except Exception as ex:
+
+            print(f"Error processing structure, skipping in test set:")
+            print(ex)
+            indices_mismatches_spgs.append(i)
+
+    print(
+        f"{len(indices_mismatches_spgs)/len(sim_test.sim_crystals)*100}% mismatches in test set."
+    )
+
+    print(f"Took {time.time() - start} s to process the test dataset.")
 
     with open("set_wyckoffs_statistics", "wb") as file:
         pickle.dump(
@@ -548,12 +584,14 @@ def prepare_training(spgs=None, load_only=None):
                 counts_per_spg_per_wyckoff,
                 counter_per_spg_per_element,  # just for testing purposes
                 NO_wyckoffs_counts,
+                indices_mismatches_spgs,
+                files_to_use_for_test_set,
             ),
             file,
         )
 
 
-def load_wyckoff_statistics():
+def load_dataset_info():
 
     with open(
         os.path.join(os.path.dirname(__file__), "set_wyckoffs_statistics"), "rb"
@@ -562,6 +600,8 @@ def load_wyckoff_statistics():
         counter_per_element = data[0]
         counts_per_spg_per_wyckoff = data[1]
         NO_wyckoffs_counts = data[3]
+        indices_mismatches_spgs = data[4]
+        files_to_use_for_test_set = data[5]
 
     for element in counter_per_element.keys():
         if element not in all_elements:
@@ -593,6 +633,8 @@ def load_wyckoff_statistics():
         probability_per_element,
         probability_per_spg_per_wyckoff,
         NO_wyckoffs_counts,
+        indices_mismatches_spgs,
+        files_to_use_for_test_set,
     )
 
 

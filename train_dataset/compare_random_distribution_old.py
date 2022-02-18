@@ -29,7 +29,7 @@ else:
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 icsd_sim.output_dir = "../dataset_simulations/patterns/icsd/"
-icsd_sim.load(load_patterns_angles_intensities=False, load_only=14)
+icsd_sim.load(load_patterns_angles_intensities=False, stop=14)
 
 # read random data:
 if jobid is not None and jobid != "":
@@ -43,7 +43,7 @@ else:
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 random_sim.output_dir = "../dataset_simulations/patterns/random_crystals_only/"
-random_sim.load(load_patterns_angles_intensities=False, load_only=2)
+random_sim.load(load_patterns_angles_intensities=False, stop=2)
 
 n_patterns_per_crystal = 5
 
@@ -234,7 +234,7 @@ def get_denseness_factor(structure):
             specie = re.sub(r"\d*\-?$", "", specie)
 
             r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
-            calculated_volume += 4 / 3 * np.pi * r ** 3
+            calculated_volume += 4 / 3 * np.pi * r**3
 
         return actual_volume / calculated_volume
 
@@ -480,8 +480,14 @@ plt.show()
 
 # plot occupancies:
 bins_occupancies = np.linspace(
-    min(np.min(rightly_occupancies), np.min(falsely_occupancies),),
-    max(np.max(rightly_occupancies), np.max(falsely_occupancies),),
+    min(
+        np.min(rightly_occupancies),
+        np.min(falsely_occupancies),
+    ),
+    max(
+        np.max(rightly_occupancies),
+        np.max(falsely_occupancies),
+    ),
     30,
 )
 plt.figure()

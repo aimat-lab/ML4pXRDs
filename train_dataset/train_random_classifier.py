@@ -1,6 +1,6 @@
 import tensorflow.keras as keras
 from dataset_simulations.core.quick_simulation import get_random_xy_patterns
-from dataset_simulations.random_simulation_utils import load_wyckoff_statistics
+from dataset_simulations.random_simulation_utils import load_dataset_info
 import numpy as np
 from models import build_model_park
 import os
@@ -86,6 +86,25 @@ start_angle, end_angle, N = 5, 90, 8501
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 
+(
+    probability_per_element,
+    probability_per_spg_per_wyckoff,
+    NO_wyckoffs_counts,
+    indices_mismatches_spgs,
+    files_to_use_for_test_set,
+) = load_dataset_info()
+
+if not use_icsd_statistics:
+    probability_per_element, probability_per_spg_per_wyckoff, NO_wyckoffs_counts = (
+        None,
+        None,
+        None,
+    )
+
+if not use_NO_wyckoffs_counts:
+    NO_wyckoffs_counts = None
+
+
 # Construct validation sets
 # Used validation sets:
 # - All ICSD entries
@@ -108,7 +127,7 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(stop=12 if not local else 2)
+icsd_sim.load(start=0, stop=files_to_use_for_test_set if not local else 2)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -136,6 +155,12 @@ icsd_crystals_match = icsd_crystals_all.copy()
 icsd_variations_match = icsd_variations_all.copy()
 icsd_metas_match = icsd_metas_all.copy()
 
+icsd_patterns_match_correct_spg = icsd_patterns_all.copy()
+icsd_labels_match_correct_spg = icsd_labels_all.copy()
+icsd_crystals_match_correct_spg = icsd_crystals_all.copy()
+icsd_variations_match_correct_spg = icsd_variations_all.copy()
+icsd_metas_match_correct_spg = icsd_metas_all.copy()
+
 for i in reversed(range(0, len(icsd_patterns_all))):
 
     if validation_max_NO_wyckoffs is not None:
@@ -153,6 +178,21 @@ for i in reversed(range(0, len(icsd_patterns_all))):
         del icsd_crystals_match[i]
         del icsd_variations_match[i]
         del icsd_metas_match[i]
+
+        del icsd_patterns_match_correct_spg[i]
+        del icsd_labels_match_correct_spg[i]
+        del icsd_crystals_match_correct_spg[i]
+        del icsd_variations_match_correct_spg[i]
+        del icsd_metas_match_correct_spg[i]
+
+    if i in indices_mismatches_spgs:
+
+        del icsd_patterns_match_correct_spg[i]
+        del icsd_labels_match_correct_spg[i]
+        del icsd_crystals_match_correct_spg[i]
+        del icsd_variations_match_correct_spg[i]
+        del icsd_metas_match_correct_spg[i]
+
 
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)
@@ -188,6 +228,16 @@ for pattern in icsd_patterns_match:
     for sub_pattern in pattern:
         val_x_match.append(sub_pattern)
 
+val_y_match_correct_spgs = []
+for i, label in enumerate(icsd_labels_match_correct_spg):
+    val_y_match_correct_spgs.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+val_y_match_correct_spgs = np.array(val_y_match_correct_spgs)
+
+val_x_match_correct_spgs = []
+for pattern in icsd_patterns_match_correct_spg:
+    for sub_pattern in pattern:
+        val_x_match_correct_spgs.append(sub_pattern)
+
 print("Numbers in validation set (that matches sim parameters):")
 for i in range(0, len(spgs)):
     print(f"Spg {spgs[i]} : {np.sum(val_y_match==i)}")
@@ -196,11 +246,15 @@ assert not np.any(np.isnan(val_x_all))
 assert not np.any(np.isnan(val_y_all))
 assert not np.any(np.isnan(val_x_match))
 assert not np.any(np.isnan(val_y_match))
+assert not np.any(np.isnan(val_x_match_correct_spgs))
+assert not np.any(np.isnan(val_y_match_correct_spgs))
 assert len(val_x_all) == len(val_y_all)
 assert len(val_x_match) == len(val_y_match)
+assert len(val_x_match_correct_spgs) == len(val_y_match_correct_spgs)
 
 val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match = np.expand_dims(val_x_match, axis=2)
+val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 
 if not local:
     ray.init(address="auto", include_dashboard=False)
@@ -213,22 +267,6 @@ print(ray.cluster_resources())
 print()
 
 queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
-
-if use_icsd_statistics:
-    (
-        probability_per_element,
-        probability_per_spg_per_wyckoff,
-        NO_wyckoffs_counts,
-    ) = load_wyckoff_statistics()
-else:
-    probability_per_element, probability_per_spg_per_wyckoff, NO_wyckoffs_counts = (
-        None,
-        None,
-        None,
-    )
-
-if not use_NO_wyckoffs_counts:
-    NO_wyckoffs_counts = None
 
 
 @ray.remote(num_cpus=1, num_gpus=0)
@@ -429,6 +467,9 @@ class CustomCallback(keras.callbacks.Callback):
 
             scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
             scores_match = self.model.evaluate(x=val_x_match, y=val_y_match, verbose=0)
+            scores_match_correct_spgs = self.model.evaluate(
+                x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
+            )
             scores_random = self.model.evaluate(
                 x=val_x_random, y=val_y_random, verbose=0
             )
@@ -438,6 +479,11 @@ class CustomCallback(keras.callbacks.Callback):
 
                 tf.summary.scalar("all " + name, scores_all[i], step=epoch)
                 tf.summary.scalar("match " + name, scores_match[i], step=epoch)
+                tf.summary.scalar(
+                    "match_correct_spgs " + name,
+                    scores_match_correct_spgs[i],
+                    step=epoch,
+                )
                 tf.summary.scalar("random " + name, scores_random[i], step=epoch)
 
                 if i == 1:  # Only makes sense for the accurarcy, not the loss

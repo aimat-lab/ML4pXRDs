@@ -51,7 +51,7 @@ else:
     sim.output_dir = path_to_patterns
 
 # sim.load(load_only=14)
-sim.load(load_only=14)
+sim.load(stop=14)
 
 n_patterns_per_crystal = len(sim.sim_patterns[0])
 
