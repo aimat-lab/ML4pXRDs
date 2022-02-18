@@ -70,7 +70,7 @@ def __get_pattern_optimized(
             s = g_hkl / 2
 
             # Store s^2 since we are using it a few times.
-            s2 = s ** 2
+            s2 = s**2
 
             # Vectorized computation of g.r for all fractional coords and
             # hkl.
@@ -317,7 +317,7 @@ def get_pattern(structure, wavelength, two_theta_range=(0, 90)):
             s = g_hkl / 2
 
             # Store s^2 since we are using it a few times.
-            s2 = s ** 2
+            s2 = s**2
 
             # Vectorized computation of g.r for all fractional coords and
             # hkl.
@@ -421,7 +421,7 @@ def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, waveleng
         peak = (
             intensity
             / (sigma * np.sqrt(2 * np.pi))
-            * np.exp(-1 / (2 * sigma ** 2) * (xs - twotheta) ** 2)
+            * np.exp(-1 / (2 * sigma**2) * (xs - twotheta) ** 2)
         )
 
         # delta_x = xs[1] - xs[0]
@@ -510,6 +510,7 @@ def get_random_xy_patterns(
     probability_per_element=None,
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
+    NO_wyckoffs_counts=None,
 ):
 
     result_patterns_y = []
@@ -535,6 +536,7 @@ def get_random_xy_patterns(
             probability_per_element=probability_per_element,
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             max_volume=max_volume,
+            NO_wyckoffs_counts=NO_wyckoffs_counts,
         )
         if do_print:
             timings_generation.append(time.time() - start)

@@ -153,6 +153,7 @@ def generate_structure(
     max_volume=None,
     return_original_pyxtal_object=False,
     check_symmetry=True,
+    NO_wyckoffs_counts=None,
 ):
 
     if use_icsd_statistics and (
@@ -168,7 +169,14 @@ def generate_structure(
 
         number_of_atoms_per_site = np.zeros(len(names))
 
-        NO_elements = random.randint(1, max_NO_elements)
+        if NO_wyckoffs_counts is None:
+            NO_elements = random.randint(1, max_NO_elements)
+        else:
+            np.random.choice(
+                range(1, len(NO_wyckoffs_counts)),
+                size=1,
+                p=(NO_wyckoffs_counts[1:] / np.sum(NO_wyckoffs_counts[1:])),
+            )
 
         chosen_elements = []
         chosen_numbers = []
@@ -305,15 +313,17 @@ def generate_structure(
 
             crystal = my_crystal.to_pymatgen()
 
-            # Make sure that the space group is actually correct / unique
-            analyzer = SpacegroupAnalyzer(
-                crystal,
-                symprec=1e-8,
-                angle_tolerance=5.0,
-            )
-            if analyzer.get_space_group_number() != group_object.number:
-                print("Mismatch in space group number, skipping structure.")
-                continue
+            if check_symmetry:
+
+                # Make sure that the space group is actually correct / unique
+                analyzer = SpacegroupAnalyzer(
+                    crystal,
+                    symprec=1e-8,
+                    angle_tolerance=5.0,
+                )
+                if analyzer.get_space_group_number() != group_object.number:
+                    print("Mismatch in space group number, skipping structure.")
+                    continue
 
         except Exception as ex:
             print(flush=True)
@@ -350,6 +360,7 @@ def generate_structures(
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
+    NO_wyckoffs_counts=None,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -383,6 +394,7 @@ def generate_structures(
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             max_volume=max_volume,
             return_original_pyxtal_object=return_original_pyxtal_object,
+            NO_wyckoffs_counts=NO_wyckoffs_counts,
         )
         for i in range(0, N)
     ]
@@ -396,7 +408,7 @@ def analyse_set_wyckoffs(spgs=None, load_only=None):
         spgs = range(1, 231)
 
     jobid = os.getenv("SLURM_JOB_ID")
-    path_to_patterns = "./patterns/icsd/"
+    path_to_patterns = "./patterns/icsd_vecsei/"
     if jobid is not None and jobid != "":
         icsd_sim = Simulation(
             "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
@@ -415,6 +427,8 @@ def analyse_set_wyckoffs(spgs=None, load_only=None):
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
     counter_per_spg_per_element = {}
+
+    NO_wyckoffs = []
 
     # pre-process the symmetry groups:
 
@@ -468,6 +482,8 @@ def analyse_set_wyckoffs(spgs=None, load_only=None):
             # TODO: Add other spgs, too
             # TODO: Commit
 
+            NO_wyckoffs.append(len(struc.atom_sites))
+
             if spg_number != struc.group.number:
                 counter_mismatches += 1
                 continue
@@ -515,6 +531,8 @@ def analyse_set_wyckoffs(spgs=None, load_only=None):
 
         print(print_string)
 
+    NO_wyckoffs_counts = np.bincount(NO_wyckoffs)
+
     print(f"Took {time.time() - start} s")
     # print(
     #    f"{counter_mismatches / len(icsd_sim.sim_crystals) * 100} % mismatches in space groups!"
@@ -526,7 +544,8 @@ def analyse_set_wyckoffs(spgs=None, load_only=None):
             (
                 counter_per_element,
                 counts_per_spg_per_wyckoff,
-                counter_per_spg_per_element,
+                counter_per_spg_per_element,  # just for testing purposes
+                NO_wyckoffs_counts,
             ),
             file,
         )
@@ -540,6 +559,7 @@ def load_wyckoff_statistics():
         data = pickle.load(file)
         counter_per_element = data[0]
         counts_per_spg_per_wyckoff = data[1]
+        NO_wyckoffs_counts = data[3]
 
     for element in counter_per_element.keys():
         if element not in all_elements:
@@ -567,12 +587,19 @@ def load_wyckoff_statistics():
 
     probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff
 
-    return (probability_per_element, probability_per_spg_per_wyckoff)
+    return (
+        probability_per_element,
+        probability_per_spg_per_wyckoff,
+        NO_wyckoffs_counts,
+    )
 
 
 if __name__ == "__main__":
 
     if True:
+        analyse_set_wyckoffs()
+
+    if False:
 
         mistakes = {}
         skipped = {}

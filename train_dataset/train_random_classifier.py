@@ -215,9 +215,14 @@ if use_icsd_statistics:
     (
         probability_per_element,
         probability_per_spg_per_wyckoff,
+        NO_wyckoffs_counts,
     ) = load_wyckoff_statistics()
 else:
-    probability_per_element, probability_per_spg_per_wyckoff = None, None
+    probability_per_element, probability_per_spg_per_wyckoff, NO_wyckoffs_counts = (
+        None,
+        None,
+        None,
+    )
 
 
 @ray.remote(num_cpus=1, num_gpus=0)
@@ -242,6 +247,7 @@ def batch_generator_with_additional(
         probability_per_element=probability_per_element,
         probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
         max_volume=generation_max_volume,
+        NO_wyckoffs_counts=NO_wyckoffs_counts,
     )
 
     # Set the label to the right index:
@@ -285,6 +291,7 @@ def batch_generator_queue(
                 probability_per_element=probability_per_element,
                 probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
                 max_volume=generation_max_volume,
+                NO_wyckoffs_counts=NO_wyckoffs_counts,
             )
 
             patterns, labels = shuffle(patterns, labels)
