@@ -58,6 +58,9 @@ generation_max_NO_wyckoffs = 100
 validation_max_volume = 7000  # None possible
 validation_max_NO_wyckoffs = 100  # None possible
 
+do_symmetry_checks = True
+use_NO_wyckoffs_counts = True
+
 verbosity = 2
 
 local = False
@@ -224,6 +227,9 @@ else:
         None,
     )
 
+if not use_NO_wyckoffs_counts:
+    NO_wyckoffs_counts = None
+
 
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_with_additional(
@@ -248,6 +254,7 @@ def batch_generator_with_additional(
         probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
         max_volume=generation_max_volume,
         NO_wyckoffs_counts=NO_wyckoffs_counts,
+        do_symmetry_checks=do_symmetry_checks,
     )
 
     # Set the label to the right index:
@@ -292,6 +299,7 @@ def batch_generator_queue(
                 probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
                 max_volume=generation_max_volume,
                 NO_wyckoffs_counts=NO_wyckoffs_counts,
+                do_symmetry_checks=do_symmetry_checks,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -402,7 +410,9 @@ params_txt = (
     f"use_icsd_statistics: {str(use_icsd_statistics)}  \n  \n"
     f"validation_max_volume: {str(validation_max_volume)}  \n  \n"
     f"validation_max_NO_wyckoffs: {str(validation_max_NO_wyckoffs)}  \n  \n"
-    f"spgs: {str(spgs)}"
+    f"spgs: {str(spgs)}  \n  \n"
+    f"do_symmetry_checks: {str(do_symmetry_checks)}  \n  \n"
+    f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)}"
 )
 tf.summary.text("Parameters", data=params_txt, step=0)
 

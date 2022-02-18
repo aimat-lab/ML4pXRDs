@@ -152,8 +152,8 @@ def generate_structure(
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
-    check_symmetry=True,
     NO_wyckoffs_counts=None,
+    do_symmetry_checks=True,
 ):
 
     if use_icsd_statistics and (
@@ -313,7 +313,7 @@ def generate_structure(
 
             crystal = my_crystal.to_pymatgen()
 
-            if check_symmetry:
+            if do_symmetry_checks:
 
                 # Make sure that the space group is actually correct / unique
                 analyzer = SpacegroupAnalyzer(
@@ -361,6 +361,7 @@ def generate_structures(
     max_volume=None,
     return_original_pyxtal_object=False,
     NO_wyckoffs_counts=None,
+    do_symmetry_checks=True,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -395,6 +396,7 @@ def generate_structures(
             max_volume=max_volume,
             return_original_pyxtal_object=return_original_pyxtal_object,
             NO_wyckoffs_counts=NO_wyckoffs_counts,
+            do_symmetry_checks=do_symmetry_checks,
         )
         for i in range(0, N)
     ]

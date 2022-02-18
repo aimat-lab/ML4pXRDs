@@ -511,6 +511,7 @@ def get_random_xy_patterns(
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     NO_wyckoffs_counts=None,
+    do_symmetry_checks=True,
 ):
 
     result_patterns_y = []
@@ -537,6 +538,7 @@ def get_random_xy_patterns(
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             max_volume=max_volume,
             NO_wyckoffs_counts=NO_wyckoffs_counts,
+            do_symmetry_checks=do_symmetry_checks,
         )
         if do_print:
             timings_generation.append(time.time() - start)
