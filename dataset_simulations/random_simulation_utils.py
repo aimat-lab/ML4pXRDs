@@ -404,7 +404,7 @@ def generate_structures(
     return result
 
 
-def analyse_set_wyckoffs(spgs=None, load_only=None):
+def prepare_training(spgs=None, load_only=None):
 
     if spgs is None:
         spgs = range(1, 231)
@@ -424,7 +424,7 @@ def analyse_set_wyckoffs(spgs=None, load_only=None):
         )
         icsd_sim.output_dir = path_to_patterns
 
-    icsd_sim.load(load_patterns_angles_intensities=False, load_only=load_only)
+    icsd_sim.load(load_patterns_angles_intensities=False, stop=load_only)
 
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
@@ -599,7 +599,7 @@ def load_wyckoff_statistics():
 if __name__ == "__main__":
 
     if True:
-        analyse_set_wyckoffs()
+        prepare_training()
 
     if False:
 

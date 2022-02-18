@@ -352,7 +352,7 @@ class Simulation:
         with open(os.path.join(data_dir, f"intensities_{i}.npy"), "wb") as pickle_file:
             pickle.dump(self.sim_intensities[start:end], pickle_file)
 
-    def load(self, load_only=None, load_patterns_angles_intensities=True):
+    def load(self, start=None, stop=None, load_patterns_angles_intensities=True):
 
         self.reset_simulation_status()
 
@@ -414,30 +414,31 @@ class Simulation:
             ),
         )
 
-        last_index = load_only if load_only is not None else len(crystals_files)
+        last_index = stop if stop is not None else len(crystals_files)
+        first_index = start if start is not None else 0
 
-        for file in crystals_files[0:last_index]:
+        for file in crystals_files[first_index:last_index]:
             self.sim_crystals.extend(np.load(file, allow_pickle=True))
 
-        for file in labels_files[0:last_index]:
+        for file in labels_files[first_index:last_index]:
             self.sim_labels.extend(np.load(file, allow_pickle=True))
 
-        for file in metas_files[0:last_index]:
+        for file in metas_files[first_index:last_index]:
             self.sim_metas.extend(np.load(file, allow_pickle=True))
 
-        for file in variations_files[0:last_index]:
+        for file in variations_files[first_index:last_index]:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
         if load_patterns_angles_intensities:
 
-            for file in patterns_files[0:last_index]:
+            for file in patterns_files[first_index:last_index]:
                 self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
-            for file in angles_files[0:last_index]:
+            for file in angles_files[first_index:last_index]:
                 with open(file, "rb") as pickle_file:
                     self.sim_angles.extend(pickle.load(pickle_file))
 
-            for file in intensities_files[0:last_index]:
+            for file in intensities_files[first_index:last_index]:
                 with open(file, "rb") as pickle_file:
                     self.sim_intensities.extend(pickle.load(pickle_file))
 
