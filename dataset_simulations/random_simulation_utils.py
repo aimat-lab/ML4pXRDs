@@ -152,7 +152,7 @@ def generate_structure(
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
-    NO_wyckoffs_counts=None,
+    NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
 ):
 
@@ -169,13 +169,13 @@ def generate_structure(
 
         number_of_atoms_per_site = np.zeros(len(names))
 
-        if NO_wyckoffs_counts is None:
+        if NO_wyckoffs_probability is None:
             NO_elements = random.randint(1, max_NO_elements)
         else:
             np.random.choice(
-                range(1, len(NO_wyckoffs_counts)),
+                range(1, len(NO_wyckoffs_probability)),
                 size=1,
-                p=(NO_wyckoffs_counts[1:] / np.sum(NO_wyckoffs_counts[1:])),
+                p=NO_wyckoffs_probability,
             )
 
         chosen_elements = []
@@ -360,7 +360,7 @@ def generate_structures(
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
-    NO_wyckoffs_counts=None,
+    NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
 ):
 
@@ -395,7 +395,7 @@ def generate_structures(
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             max_volume=max_volume,
             return_original_pyxtal_object=return_original_pyxtal_object,
-            NO_wyckoffs_counts=NO_wyckoffs_counts,
+            NO_wyckoffs_probability=NO_wyckoffs_probability,
             do_symmetry_checks=do_symmetry_checks,
         )
         for i in range(0, N)
@@ -447,7 +447,6 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
-    counter_per_spg_per_element = {}
 
     NO_wyckoffs = []
 
@@ -462,9 +461,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         for name in names:
             counts_per_spg_per_wyckoff[spg_number][name] = 0
 
-        counter_per_spg_per_element[spg_number] = {}
-
-    count_crystals = 0
+    # Analyse the statistics:
 
     start = time.time()
 
@@ -476,8 +473,6 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         try:
 
             spg_number = sim_statistics.sim_labels[i][0]
-
-            count_crystals += 1
 
             struc = pyxtal()
             struc.from_seed(crystal)
@@ -499,30 +494,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             else:
                 counter_per_element[specie_str] = 1
 
-            if specie_str in counter_per_spg_per_element[spg_number]:
-                counter_per_spg_per_element[spg_number][specie_str] += 1
-            else:
-                counter_per_spg_per_element[spg_number][specie_str] = 1
-
             name = str(site.wp.multiplicity) + site.wp.letter
             counts_per_spg_per_wyckoff[spg_number][name] += 1
-
-    for spg in counter_per_spg_per_element.keys():
-        total = np.sum(list(counter_per_spg_per_element[spg].values()))
-        for element in counter_per_spg_per_element[spg].keys():
-            counter_per_spg_per_element[spg][element] /= total
-
-    for element in counter_per_element.keys():
-        print_string = element + ": "
-
-        for spg in counter_per_spg_per_element.keys():
-            if element in counter_per_spg_per_element[spg].keys():
-                print_string += str(counter_per_spg_per_element[spg][element])
-            else:
-                print_string += "0"
-            print_string += f" ({spg}) "
-
-        print(print_string)
 
     NO_wyckoffs_counts = np.bincount(NO_wyckoffs)
 
@@ -541,15 +514,12 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
         try:
 
-            spg_number_icsd = sim_statistics.sim_labels[i][0]
-
-            # struc = pyxtal()
-            # struc.from_seed(crystal)
+            spg_number_icsd = sim_test.sim_labels[i][0]
 
             analyzer = SpacegroupAnalyzer(
                 crystal,
                 # symprec=1e-8,
-                symprec=1e-4,  # for now, use higher value than for perfect generated crystals
+                symprec=1e-4,  # for now (as in Pyxtal), use higher value than for perfect generated crystals
                 angle_tolerance=5.0,
             )
 
@@ -576,7 +546,6 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             (
                 counter_per_element,
                 counts_per_spg_per_wyckoff,
-                counter_per_spg_per_element,  # just for testing purposes
                 NO_wyckoffs_counts,
                 corrected_labels,
                 files_to_use_for_test_set,
@@ -593,9 +562,9 @@ def load_dataset_info():
         data = pickle.load(file)
         counter_per_element = data[0]
         counts_per_spg_per_wyckoff = data[1]
-        NO_wyckoffs_counts = data[3]
-        corrected_labels = data[4]
-        files_to_use_for_test_set = data[5]
+        NO_wyckoffs_counts = data[2]
+        corrected_labels = data[3]
+        files_to_use_for_test_set = data[4]
 
     for element in counter_per_element.keys():
         if element not in all_elements:
@@ -626,7 +595,8 @@ def load_dataset_info():
     return (
         probability_per_element,
         probability_per_spg_per_wyckoff,
-        NO_wyckoffs_counts,
+        NO_wyckoffs_counts[1:]
+        / np.sum(NO_wyckoffs_counts[1:]),  # NO_wyckoffs_probability
         corrected_labels,
         files_to_use_for_test_set,
     )

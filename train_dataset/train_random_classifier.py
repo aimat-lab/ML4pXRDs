@@ -15,7 +15,7 @@ from datetime import datetime
 
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
-tag = "4-spgs_debug"
+tag = "4-spgs_debug_logging"
 description = ""
 
 if len(sys.argv) > 1:
@@ -64,7 +64,7 @@ use_NO_wyckoffs_counts = True
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1

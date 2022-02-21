@@ -510,7 +510,7 @@ def get_random_xy_patterns(
     probability_per_element=None,
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
-    NO_wyckoffs_counts=None,
+    NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
 ):
 
@@ -537,7 +537,7 @@ def get_random_xy_patterns(
             probability_per_element=probability_per_element,
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             max_volume=max_volume,
-            NO_wyckoffs_counts=NO_wyckoffs_counts,
+            NO_wyckoffs_probability=NO_wyckoffs_probability,
             do_symmetry_checks=do_symmetry_checks,
         )
         if do_print:
