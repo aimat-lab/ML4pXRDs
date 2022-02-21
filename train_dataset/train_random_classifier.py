@@ -248,12 +248,12 @@ for pattern in icsd_patterns_match:
         val_x_match.append(sub_pattern)
 
 val_y_match_correct_spgs = []
-for i, label in enumerate(icsd_labels_match_correct_spg):
+for i, label in enumerate(icsd_labels_match_corrected_labels):
     val_y_match_correct_spgs.extend([spgs.index(label[0])] * n_patterns_per_crystal)
 val_y_match_correct_spgs = np.array(val_y_match_correct_spgs)
 
 val_x_match_correct_spgs = []
-for pattern in icsd_patterns_match_correct_spg:
+for pattern in icsd_patterns_match_corrected_labels:
     for sub_pattern in pattern:
         val_x_match_correct_spgs.append(sub_pattern)
 
