@@ -406,12 +406,10 @@ def generate_structures(
 
 def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
-    files_to_use_for_test_set = 4  # TODO: Change back
-
     spgs = range(1, 231)
 
     jobid = os.getenv("SLURM_JOB_ID")
-    path_to_patterns = "./patterns/icsd_park/"  # TODO: Change back
+    path_to_patterns = "./patterns/icsd_vecsei/"
 
     if jobid is not None and jobid != "":
         sim_test = Simulation(
@@ -438,12 +436,11 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         )
         sim_statistics.output_dir = path_to_patterns
 
-    # TODO: Change this back.
     sim_test.load(
-        load_patterns_angles_intensities=True, start=0, stop=files_to_use_for_test_set
+        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
     )
     sim_statistics.load(
-        load_patterns_angles_intensities=True, start=files_to_use_for_test_set
+        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
     )
 
     # Calculate the statistics from the sim_statistics part of the simulation:
