@@ -16,6 +16,7 @@ from datetime import datetime
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
 tag = "4-spgs_debug"
+description = ""
 
 if len(sys.argv) > 1:
     out_base = sys.argv[1] + "/"
@@ -449,7 +450,8 @@ file_writer = tf.summary.create_file_writer(out_base + "tuner_tb" + "/metrics")
 file_writer.set_as_default()
 
 params_txt = (
-    f"tag: {tag}  \n  \n"
+    f"tag: {tag}  \n"
+    f"description: {description}  \n  \n"
     f"batches_per_epoch: {batches_per_epoch}  \n"
     f"NO_epochs: {NO_epochs}  \n"
     f"structures_per_spg: {structures_per_spg}  \n"
