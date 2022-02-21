@@ -406,10 +406,12 @@ def generate_structures(
 
 def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
+    files_to_use_for_test_set = 4  # TODO: Change back
+
     spgs = range(1, 231)
 
     jobid = os.getenv("SLURM_JOB_ID")
-    path_to_patterns = "./patterns/icsd_vecsei/"
+    path_to_patterns = "./patterns/icsd_park/"  # TODO: Change back
 
     if jobid is not None and jobid != "":
         sim_test = Simulation(
@@ -436,11 +438,12 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         )
         sim_statistics.output_dir = path_to_patterns
 
+    # TODO: Change this back.
     sim_test.load(
-        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+        load_patterns_angles_intensities=True, start=0, stop=files_to_use_for_test_set
     )
     sim_statistics.load(
-        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+        load_patterns_angles_intensities=True, start=files_to_use_for_test_set
     )
 
     # Calculate the statistics from the sim_statistics part of the simulation:
@@ -472,10 +475,14 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
         try:
 
-            spg_number = sim_statistics.sim_labels[i][0]
+            # spg_number = sim_statistics.sim_labels[i][0]
 
             struc = pyxtal()
             struc.from_seed(crystal)
+
+            spg_number = (
+                struc.group.number
+            )  # use the group as calculated by pyxtal for statistics; this should be fine.
 
             NO_wyckoffs.append(len(struc.atom_sites))
 
@@ -541,7 +548,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
     print(f"Took {time.time() - start} s to process the test dataset.")
 
-    with open("set_wyckoffs_statistics", "wb") as file:
+    with open("prepared_training", "wb") as file:
         pickle.dump(
             (
                 counter_per_element,
@@ -557,7 +564,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 def load_dataset_info():
 
     with open(
-        os.path.join(os.path.dirname(__file__), "set_wyckoffs_statistics"), "rb"
+        os.path.join(os.path.dirname(__file__), "prepared_training"), "rb"
     ) as file:
         data = pickle.load(file)
         counter_per_element = data[0]
@@ -604,8 +611,11 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         prepare_training()
+
+    if True:
+        data = load_dataset_info()
 
     if False:
 
