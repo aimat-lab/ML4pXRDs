@@ -178,6 +178,8 @@ def generate_structure(
                 p=NO_wyckoffs_probability,
             )[0]
 
+        # NO_elements = random.randint(1, max_NO_elements)
+
         chosen_elements = []
         chosen_numbers = []
         chosen_wyckoff_positions = []
@@ -608,11 +610,14 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         prepare_training()
 
-    if False:
+    if True:
         data = load_dataset_info()
+
+        plt.plot(data[2])
+        plt.show()
 
     if False:
 

@@ -368,7 +368,7 @@ def batch_generator_queue(
                 probability_per_element=probability_per_element,
                 probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
                 max_volume=generation_max_volume,
-                NO_wyckoffs_counts=NO_wyckoffs_counts,
+                NO_wyckoffs_probability=NO_wyckoffs_probability,
                 do_symmetry_checks=do_symmetry_checks,
             )
 
@@ -485,14 +485,14 @@ params_txt = (
     f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)}"
 )
 
-with file_writer.set_as_default():
+with file_writer.as_default():
     tf.summary.text("Parameters", data=params_txt, step=0)
 
 
 class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
 
-        with file_writer.set_as_default():
+        with file_writer.as_default():
 
             tf.summary.scalar("ray queue size", data=queue.size(), step=epoch)
 
