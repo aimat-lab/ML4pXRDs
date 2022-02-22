@@ -172,11 +172,11 @@ def generate_structure(
         if NO_wyckoffs_probability is None:
             NO_elements = random.randint(1, max_NO_elements)
         else:
-            np.random.choice(
+            NO_elements = np.random.choice(
                 range(1, len(NO_wyckoffs_probability) + 1),
                 size=1,
                 p=NO_wyckoffs_probability,
-            )
+            )[0]
 
         chosen_elements = []
         chosen_numbers = []
