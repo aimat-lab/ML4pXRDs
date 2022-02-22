@@ -90,7 +90,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 (
     probability_per_element,
     probability_per_spg_per_wyckoff,
-    NO_wyckoffs_counts,
+    NO_wyckoffs_probability,
     corrected_labels,
     files_to_use_for_test_set,
 ) = load_dataset_info()
@@ -192,7 +192,7 @@ for i in reversed(range(0, len(icsd_patterns_match))):
 
     if (
         validation_max_volume is not None
-        and icsd_patterns_match[i].volume > validation_max_volume
+        and icsd_crystals_match[i].volume > validation_max_volume
     ) or (
         validation_max_NO_wyckoffs is not None
         and NO_wyckoffs > validation_max_NO_wyckoffs
@@ -262,7 +262,7 @@ for pattern in icsd_patterns_match:
 
 val_y_match_correct_spgs = []
 for i, label in enumerate(icsd_labels_match_corrected_labels):
-    val_y_match_correct_spgs.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+    val_y_match_correct_spgs.extend([spgs.index(label)] * n_patterns_per_crystal)
 val_y_match_correct_spgs = np.array(val_y_match_correct_spgs)
 
 val_x_match_correct_spgs = []
@@ -323,7 +323,7 @@ def batch_generator_with_additional(
         probability_per_element=probability_per_element,
         probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
         max_volume=generation_max_volume,
-        NO_wyckoffs_counts=NO_wyckoffs_counts,
+        NO_wyckoffs_probability=NO_wyckoffs_probability,
         do_symmetry_checks=do_symmetry_checks,
     )
 
