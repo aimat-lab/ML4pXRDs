@@ -608,10 +608,10 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         prepare_training()
 
-    if True:
+    if False:
         data = load_dataset_info()
 
     if False:

@@ -33,9 +33,9 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-test_every_X_epochs = 10
+test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 200
+NO_epochs = 2
 
 # structures_per_spg = 1 # for all spgs
 structures_per_spg = 5
@@ -128,7 +128,9 @@ else:
     )
     icsd_sim.output_dir = path_to_patterns
 
-icsd_sim.load(start=0, stop=files_to_use_for_test_set if not local else 2)
+icsd_sim.load(
+    start=0, stop=files_to_use_for_test_set if not local else 2
+)  # to not overflow the memory
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -139,7 +141,9 @@ icsd_crystals_all = icsd_sim.sim_crystals
 icsd_metas_all = icsd_sim.sim_metas
 
 icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
-icsd_labels_match_corrected_labels = corrected_labels
+icsd_labels_match_corrected_labels = (
+    corrected_labels if not local else corrected_labels[: len(icsd_labels_all)]
+)  # corrected labels from spglib
 icsd_crystals_match_corrected_labels = icsd_crystals_all.copy()
 icsd_variations_match_corrected_labels = icsd_variations_all.copy()
 icsd_metas_match_corrected_labels = icsd_metas_all.copy()
@@ -160,7 +164,8 @@ for i in reversed(range(0, len(icsd_patterns_all))):
 for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 
     if (
-        np.any(np.isnan(icsd_variations_all[i][0]))
+        np.any(np.isnan(icsd_variations_match_corrected_labels[i][0]))
+        or icsd_labels_match_corrected_labels[i] is None
         or icsd_labels_match_corrected_labels[i] not in spgs
     ):
         del icsd_patterns_match_corrected_labels[i]
@@ -172,34 +177,41 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 # patterns that fall into the simulation parameter range (volume and NO_wyckoffs)
 icsd_patterns_match = icsd_patterns_all.copy()
 icsd_labels_match = icsd_labels_all.copy()
-icsd_crystals_match = icsd_crystals_all.copy()
 icsd_variations_match = icsd_variations_all.copy()
+icsd_crystals_match = icsd_crystals_all.copy()
 icsd_metas_match = icsd_metas_all.copy()
 
+NO_wyckoffs_cached = {}
 for i in reversed(range(0, len(icsd_patterns_match))):
 
     if validation_max_NO_wyckoffs is not None:
-        _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas_all[i][0])
+        _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas_match[i][0])
+
+        if icsd_metas_match[i][0] not in NO_wyckoffs_cached.keys():
+            NO_wyckoffs_cached[icsd_metas_match[i][0]] = NO_wyckoffs
 
     if (
         validation_max_volume is not None
-        and icsd_crystals_all[i].volume > validation_max_volume
+        and icsd_patterns_match[i].volume > validation_max_volume
     ) or (
         validation_max_NO_wyckoffs is not None
         and NO_wyckoffs > validation_max_NO_wyckoffs
     ):
         del icsd_patterns_match[i]
         del icsd_labels_match[i]
-        del icsd_crystals_match[i]
         del icsd_variations_match[i]
+        del icsd_crystals_match[i]
         del icsd_metas_match[i]
 
 for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 
     if validation_max_NO_wyckoffs is not None:
-        _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(
-            icsd_metas_match_corrected_labels[i][0]
-        )
+        if icsd_metas_match_corrected_labels[i][0] not in NO_wyckoffs_cached.keys():
+            _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(
+                icsd_metas_match_corrected_labels[i][0]
+            )
+        else:
+            NO_wyckoffs = NO_wyckoffs_cached[icsd_metas_match_corrected_labels[i][0]]
 
     if (
         validation_max_volume is not None
@@ -210,8 +222,8 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
     ):
         del icsd_patterns_match_corrected_labels[i]
         del icsd_labels_match_corrected_labels[i]
-        del icsd_crystals_match_corrected_labels[i]
         del icsd_variations_match_corrected_labels[i]
+        del icsd_crystals_match_corrected_labels[i]
         del icsd_metas_match_corrected_labels[i]
 
 with open(out_base + "spgs.pickle", "wb") as file:
@@ -446,8 +458,7 @@ for i in range(0, NO_workers):
 tb_callback = keras.callbacks.TensorBoard(out_base + "tuner_tb")
 
 # log parameters to tensorboard
-file_writer = tf.summary.create_file_writer(out_base + "tuner_tb" + "/metrics")
-file_writer.set_as_default()
+file_writer = tf.summary.create_file_writer(out_base + "metrics")
 
 params_txt = (
     f"tag: {tag}  \n"
@@ -473,46 +484,52 @@ params_txt = (
     f"do_symmetry_checks: {str(do_symmetry_checks)}  \n  \n"
     f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)}"
 )
-tf.summary.text("Parameters", data=params_txt, step=0)
+
+with file_writer.set_as_default():
+    tf.summary.text("Parameters", data=params_txt, step=0)
 
 
 class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
 
-        tf.summary.scalar("ray queue size", data=queue.size(), step=epoch)
+        with file_writer.set_as_default():
 
-        if ((epoch + 1) % test_every_X_epochs) == 0:
+            tf.summary.scalar("ray queue size", data=queue.size(), step=epoch)
 
-            # gather metric names form model
-            metric_names = [metric.name for metric in self.model.metrics]
+            if ((epoch + 1) % test_every_X_epochs) == 0:
 
-            scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
-            scores_match = self.model.evaluate(x=val_x_match, y=val_y_match, verbose=0)
-            scores_match_correct_spgs = self.model.evaluate(
-                x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
-            )
-            scores_random = self.model.evaluate(
-                x=val_x_random, y=val_y_random, verbose=0
-            )
+                # gather metric names form model
+                metric_names = [metric.name for metric in self.model.metrics]
 
-            # gather evaluation metrics to TensorBoard
-            for i, name in enumerate(metric_names):
-
-                tf.summary.scalar("all " + name, scores_all[i], step=epoch)
-                tf.summary.scalar("match " + name, scores_match[i], step=epoch)
-                tf.summary.scalar(
-                    "match_correct_spgs " + name,
-                    scores_match_correct_spgs[i],
-                    step=epoch,
+                scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
+                scores_match = self.model.evaluate(
+                    x=val_x_match, y=val_y_match, verbose=0
                 )
-                tf.summary.scalar("random " + name, scores_random[i], step=epoch)
+                scores_match_correct_spgs = self.model.evaluate(
+                    x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
+                )
+                scores_random = self.model.evaluate(
+                    x=val_x_random, y=val_y_random, verbose=0
+                )
 
-                if i == 1:  # Only makes sense for the accurarcy, not the loss
+                # gather evaluation metrics to TensorBoard
+                for i, name in enumerate(metric_names):
+
+                    tf.summary.scalar("all " + name, scores_all[i], step=epoch)
+                    tf.summary.scalar("match " + name, scores_match[i], step=epoch)
                     tf.summary.scalar(
-                        "gap " + name,
-                        scores_random[i] - scores_match[i],
+                        "match_correct_spgs " + name,
+                        scores_match_correct_spgs[i],
                         step=epoch,
                     )
+                    tf.summary.scalar("random " + name, scores_random[i], step=epoch)
+
+                    if i == 1:  # Only makes sense for the accuracy, not the loss
+                        tf.summary.scalar(
+                            "gap " + name,
+                            scores_random[i] - scores_match[i],
+                            step=epoch,
+                        )
 
 
 class CustomSequence(keras.utils.Sequence):
