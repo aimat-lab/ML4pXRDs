@@ -173,7 +173,7 @@ def generate_structure(
             NO_elements = random.randint(1, max_NO_elements)
         else:
             np.random.choice(
-                range(1, len(NO_wyckoffs_probability)),
+                range(1, len(NO_wyckoffs_probability) + 1),
                 size=1,
                 p=NO_wyckoffs_probability,
             )
