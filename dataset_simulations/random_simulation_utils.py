@@ -161,24 +161,23 @@ def generate_structure(
     ):
         raise Exception("Statistics data needed if use_icsd_statistics = True.")
 
+    if seed != -1:
+        np.random.seed(seed)
+        random.seed(seed)
+
+    if NO_wyckoffs_probability is None:
+        NO_elements = random.randint(1, max_NO_elements)
+    else:
+        NO_elements = np.random.choice(
+            range(1, len(NO_wyckoffs_probability) + 1),
+            size=1,
+            p=NO_wyckoffs_probability,
+        )[0]
+    # NO_elements = random.randint(1, max_NO_elements)
+
     while True:
 
-        if seed != -1:
-            np.random.seed(seed)
-            random.seed(seed)
-
         number_of_atoms_per_site = np.zeros(len(names))
-
-        if NO_wyckoffs_probability is None:
-            NO_elements = random.randint(1, max_NO_elements)
-        else:
-            NO_elements = np.random.choice(
-                range(1, len(NO_wyckoffs_probability) + 1),
-                size=1,
-                p=NO_wyckoffs_probability,
-            )[0]
-
-        # NO_elements = random.randint(1, max_NO_elements)
 
         chosen_elements = []
         chosen_numbers = []

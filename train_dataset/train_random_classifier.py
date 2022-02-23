@@ -34,9 +34,10 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-test_every_X_epochs = 5
-batches_per_epoch = 1500
-NO_epochs = 20
+test_every_X_epochs = 1
+# batches_per_epoch = 1500 TODO: Change this all back
+batches_per_epoch = 20
+NO_epochs = 5
 
 # structures_per_spg = 1 # for all spgs
 structures_per_spg = 5
@@ -608,21 +609,6 @@ with open(out_base + "rightly_falsely.pickle", "wb") as file:
 ray.shutdown()
 
 # log all the stored info to tensorboard:
-
-log_wait_timings = []
-
-log_ray_queue_size = []
-
-log_all_loss = []
-log_match_loss = []
-log_match_correct_spgs_loss = []
-log_random_loss = []
-
-log_all_accuracy = []
-log_match_accuracy = []
-log_match_correct_spgs_accuracy = []
-log_random_accuracy = []
-log_gap_accuracy = []
 
 with file_writer.as_default():
     for i, value in enumerate(log_wait_timings):
