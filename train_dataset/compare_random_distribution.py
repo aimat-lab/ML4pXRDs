@@ -87,6 +87,7 @@ if __name__ == "__main__":
     icsd_elements = []
     icsd_NO_elements = []
     icsd_occupancies = []
+    icsd_occupancies_weights = []
     icsd_element_repetitions = []
 
     # Just for the icsd meta-data (ids):
@@ -113,7 +114,8 @@ if __name__ == "__main__":
         icsd_NO_wyckoffs.append(NO_wyckoffs)
         icsd_elements.append(elements)
         icsd_NO_elements.append(len(elements_unique))
-        icsd_occupancies.append(np.mean(occupancies))
+        icsd_occupancies.append(occupancies)
+        icsd_occupancies_weights.append([1 / len(occupancies)] * len(occupancies))
 
         reps = []
         for el in elements_unique:
@@ -207,6 +209,7 @@ if __name__ == "__main__":
     falsely_NO_wyckoffs = []
     falsely_NO_elements = []
     falsely_occupancies = []
+    falsely_occupancies_weights = []
     falsely_element_repetitions = []
     falsely_NO_atoms = []
 
@@ -217,6 +220,7 @@ if __name__ == "__main__":
     rightly_NO_wyckoffs = []
     rightly_NO_elements = []
     rightly_occupancies = []
+    rightly_occupancies_weights = []
     rightly_element_repetitions = []
     rightly_NO_atoms = []
 
@@ -241,7 +245,8 @@ if __name__ == "__main__":
         falsely_corn_sizes.extend(icsd_variations[index])
         falsely_NO_elements.append(icsd_NO_elements[index])
         falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-        falsely_occupancies.append(icsd_occupancies[index])
+        falsely_occupancies.extend(icsd_occupancies[index])
+        falsely_occupancies_weights.extend(icsd_occupancies_weights[index])
         falsely_element_repetitions.extend(icsd_element_repetitions[index])
 
         falsely_lattice_paras.append(structure.lattice.a)
@@ -266,7 +271,8 @@ if __name__ == "__main__":
         rightly_corn_sizes.extend(icsd_variations[index])
         rightly_NO_elements.append(icsd_NO_elements[index])
         rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-        rightly_occupancies.append(icsd_occupancies[index])
+        rightly_occupancies.extend(icsd_occupancies[index])
+        rightly_occupancies_weights.extend(icsd_occupancies_weights[index])
         rightly_element_repetitions.extend(icsd_element_repetitions[index])
 
         rightly_lattice_paras.append(structure.lattice.a)
@@ -305,6 +311,7 @@ if __name__ == "__main__":
         min_is_zero=True,
         fixed_min=None,
         fixed_max=None,
+        weights=None,
     ):
         # Data: rightly, falsely, random or only rightly, falsely
 
@@ -354,8 +361,7 @@ if __name__ == "__main__":
                 hist, edges = np.histogram(item, bins, density=True)
             else:
                 hist, edges = np.histogram(
-                    item,
-                    bins,
+                    item, bins, weights=weights  # for occupancies
                 )
 
             hists.append(hist)
@@ -543,6 +549,7 @@ if __name__ == "__main__":
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
+            weights=[rightly_occupancies_weights, falsely_occupancies_weights],
         )
 
     for flag in [True, False]:
