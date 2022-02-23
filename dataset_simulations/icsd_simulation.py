@@ -44,8 +44,33 @@ class ICSDSimulation(Simulation):
 
         print(f"Skipped {counter} structures due to errors or missing path.")
 
+    def plot_histogram_of_spgs(self, do_show=True, logscale=True):
+
+        spgs = [
+            self.get_space_group_number(id) for id in self.icsd_ids
+        ]  # TODO: Change back
+
+        for i in reversed(range(0, len(spgs))):
+            if spgs[i] is None:
+                del spgs[i]
+
+        print(f"Number of ICSD entries with available spg number: {len(spgs)}")
+
+        plt.figure()
+        plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
+
+        if logscale:
+            plt.yscale("log")
+
+        plt.xlabel("International space group number")
+        plt.savefig(f"distribution_spgs{'_logscale' if logscale else ''}.png")
+
+        if do_show:
+            plt.show()
+
 
 if __name__ == "__main__":
+
     # make print statement always flush
     print = functools.partial(print, flush=True)
 
@@ -61,13 +86,20 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    if False:  # toggle
-        simulation.load(load_only=1)
-    else:
-        simulation.generate_structures()
-
     if True:
 
-        simulation.simulate_all(start_from_scratch=True)
+        simulation.plot_histogram_of_spgs(logscale=True)
+        simulation.plot_histogram_of_spgs(logscale=False)
 
-    # simulation.plot(together=5)
+    if False:
+
+        if False:  # toggle
+            simulation.load(load_only=1)
+        else:
+            simulation.generate_structures()
+
+        if True:
+
+            simulation.simulate_all(start_from_scratch=True)
+
+        # simulation.plot(together=5)
