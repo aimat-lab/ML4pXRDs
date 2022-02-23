@@ -489,51 +489,56 @@ params_txt = (
 with file_writer.as_default():
     tf.summary.text("Parameters", data=params_txt, step=0)
 
+log_wait_timings = []
+
+log_ray_queue_size = []
+
+log_all_loss = []
+log_match_loss = []
+log_match_correct_spgs_loss = []
+log_random_loss = []
+
+log_all_accuracy = []
+log_match_accuracy = []
+log_match_correct_spgs_accuracy = []
+log_random_accuracy = []
+log_gap_accuracy = []
+
 
 class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
 
-        with file_writer.as_default():
+        if ((epoch + 1) % test_every_X_epochs) == 0:
 
-            tf.summary.scalar("ray queue size", data=queue.size(), step=epoch)
+            log_ray_queue_size.append((epoch, queue.size()))
 
-            if ((epoch + 1) % test_every_X_epochs) == 0:
+            # gather metric names form model
+            metric_names = [metric.name for metric in self.model.metrics]
 
-                # gather metric names form model
-                metric_names = [metric.name for metric in self.model.metrics]
+            scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
+            scores_match = self.model.evaluate(x=val_x_match, y=val_y_match, verbose=0)
+            scores_match_correct_spgs = self.model.evaluate(
+                x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
+            )
+            scores_random = self.model.evaluate(
+                x=val_x_random, y=val_y_random, verbose=0
+            )
 
-                scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
-                scores_match = self.model.evaluate(
-                    x=val_x_match, y=val_y_match, verbose=0
-                )
-                scores_match_correct_spgs = self.model.evaluate(
-                    x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
-                )
-                scores_random = self.model.evaluate(
-                    x=val_x_random, y=val_y_random, verbose=0
-                )
+            assert metric_names[0] == "loss"
 
-                # gather evaluation metrics to TensorBoard
-                for i, name in enumerate(metric_names):
+            log_all_loss.append((epoch, scores_all[0]))
+            log_match_loss.append((epoch, scores_match[0]))
+            log_match_correct_spgs_loss.append((epoch, scores_match_correct_spgs[0]))
+            log_random_loss.append((epoch, scores_random[0]))
 
-                    tf.summary.scalar("all " + name, scores_all[i], step=epoch)
-                    tf.summary.scalar("match " + name, scores_match[i], step=epoch)
-                    tf.summary.scalar(
-                        "match_correct_spgs " + name,
-                        scores_match_correct_spgs[i],
-                        step=epoch,
-                    )
-                    tf.summary.scalar("random " + name, scores_random[i], step=epoch)
+            log_all_accuracy.append((epoch, scores_all[1]))
+            log_match_accuracy.append((epoch, scores_match[1]))
+            log_match_correct_spgs_accuracy.append(
+                (epoch, scores_match_correct_spgs[1])
+            )
+            log_random_accuracy.append((epoch, scores_random[1]))
 
-                    if i == 1:  # Only makes sense for the accuracy, not the loss
-                        tf.summary.scalar(
-                            "gap " + name,
-                            scores_random[i] - scores_match[i],
-                            step=epoch,
-                        )
-
-
-wait_timings = []
+            log_gap_accuracy.append((epoch, scores_random[1] - scores_match[1]))
 
 
 class CustomSequence(keras.utils.Sequence):
@@ -546,7 +551,7 @@ class CustomSequence(keras.utils.Sequence):
     def __getitem__(self, idx):
         start = time.time()
         result = queue.get()
-        wait_timings.append(time.time() - start)
+        log_wait_timings.append(time.time() - start)
         return result
 
 
@@ -600,12 +605,52 @@ falsely_indices = np.argwhere(prediction != val_y_match)[:, 0]
 with open(out_base + "rightly_falsely.pickle", "wb") as file:
     pickle.dump((rightly_indices, falsely_indices), file)
 
-# log the wait times
+ray.shutdown()
+
+# log all the stored info to tensorboard:
+
+log_wait_timings = []
+
+log_ray_queue_size = []
+
+log_all_loss = []
+log_match_loss = []
+log_match_correct_spgs_loss = []
+log_random_loss = []
+
+log_all_accuracy = []
+log_match_accuracy = []
+log_match_correct_spgs_accuracy = []
+log_random_accuracy = []
+log_gap_accuracy = []
+
 with file_writer.as_default():
-    for i, value in wait_timings:
+    for i, value in enumerate(log_wait_timings):
         tf.summary.scalar("waiting time", data=value, step=i)
 
-ray.shutdown()
+    for epoch, value in log_ray_queue_size:
+        tf.summary.scalar("queue size", data=value, step=epoch)
+
+    for epoch, value in log_all_loss:
+        tf.summary.scalar("loss all", data=value, step=epoch)
+    for epoch, value in log_match_loss:
+        tf.summary.scalar("loss match", data=value, step=epoch)
+    for epoch, value in log_match_correct_spgs_loss:
+        tf.summary.scalar("loss match_correct_spgs", data=value, step=epoch)
+    for epoch, value in log_random_loss:
+        tf.summary.scalar("loss random", data=value, step=epoch)
+
+    for epoch, value in log_all_accuracy:
+        tf.summary.scalar("accuracy all", data=value, step=epoch)
+    for epoch, value in log_match_accuracy:
+        tf.summary.scalar("accuracy match", data=value, step=epoch)
+    for epoch, value in log_match_correct_spgs_accuracy:
+        tf.summary.scalar("accuracy match_correct_spgs", data=value, step=epoch)
+    for epoch, value in log_random_accuracy:
+        tf.summary.scalar("accuracy random", data=value, step=epoch)
+
+    for epoch, value in log_gap_accuracy:
+        tf.summary.scalar("accuracy gap", data=value, step=epoch)
 
 print("Everything finished.")
 print("Output dir:")
