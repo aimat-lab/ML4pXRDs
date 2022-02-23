@@ -9,6 +9,8 @@ from pyxtal import pyxtal
 import re
 import random
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from pymatgen.io.ase import AseAtomsAdaptor
+from ase.visualize import view
 
 if __name__ == "__main__":
 
@@ -20,6 +22,11 @@ if __name__ == "__main__":
     else:
         in_base = "classifier_spgs/runs_from_cluster/2-spgs-new_generation_max_volume/"
         tag = "2-spgs-new_generation_max_volume"
+
+    show_sample_structures = True
+    samples_to_show = 3
+    counter_shown_icsd_samples = 0
+    counter_shown_random_samples = 0
 
     out_base = "comparison_plots/" + tag + "/"
     os.system("mkdir -p " + out_base)
@@ -54,6 +61,17 @@ if __name__ == "__main__":
             # print(f"{int(percentage)}%")
 
             current_struc = icsd_crystals[i]
+
+            if show_sample_structures and counter_shown_icsd_samples < samples_to_show:
+
+                counter_shown_icsd_samples += 1
+
+                ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
+
+                view(ase_struc)
+
+                input()
+
             analyzer = SpacegroupAnalyzer(current_struc)
             conv = analyzer.get_conventional_standard_structure()
             icsd_crystals[i] = conv
@@ -72,6 +90,20 @@ if __name__ == "__main__":
             # print(f"{int(percentage)}%")
 
             current_struc = random_crystals[i]
+
+            if (
+                show_sample_structures
+                and counter_shown_random_samples < samples_to_show
+            ):
+
+                counter_shown_random_samples += 1
+
+                ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
+
+                view(ase_struc)
+
+                input()
+
             analyzer = SpacegroupAnalyzer(current_struc)
             conv = analyzer.get_conventional_standard_structure()
             random_crystals[i] = conv

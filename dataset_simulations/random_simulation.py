@@ -8,7 +8,7 @@ sys.path.append("../")
 sys.path.append("./")
 
 from dataset_simulations.simulation import Simulation
-import random_simulation_utils
+from dataset_simulations.random_simulation_utils import generate_structures
 
 space_groups = [14, 104]
 N_per_space_group = 100000
@@ -31,9 +31,7 @@ class RandomSimulation(Simulation):
 
             start = time.time()
 
-            structures = random_simulation_utils.generate_structures(
-                spg, N_per_space_group
-            )
+            structures = generate_structures(spg, N_per_space_group)
 
             stop = time.time()
             print(
