@@ -12,6 +12,7 @@ import pickle
 import tensorflow as tf
 import sys
 from datetime import datetime
+import time
 
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
@@ -532,6 +533,9 @@ class CustomCallback(keras.callbacks.Callback):
                         )
 
 
+wait_timings = []
+
+
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches):
         self.number_of_batches = number_of_batches
@@ -540,7 +544,10 @@ class CustomSequence(keras.utils.Sequence):
         return self.number_of_batches
 
     def __getitem__(self, idx):
-        return queue.get()
+        start = time.time()
+        result = queue.get()
+        wait_timings.append(time.time() - start)
+        return result
 
 
 sequence = CustomSequence(batches_per_epoch)
@@ -592,6 +599,11 @@ falsely_indices = np.argwhere(prediction != val_y_match)[:, 0]
 
 with open(out_base + "rightly_falsely.pickle", "wb") as file:
     pickle.dump((rightly_indices, falsely_indices), file)
+
+# log the wait times
+with file_writer.as_default():
+    for i, value in wait_timings:
+        tf.summary.scalar("waiting time", data=value, step=i)
 
 ray.shutdown()
 
