@@ -613,11 +613,60 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if True:
+    if False:
         data = load_dataset_info()
 
         plt.plot(data[2])
         plt.show()
+
+    if True:
+
+        N = 10000
+
+        # Compare the amount of spg skips due to wrong spg
+
+        (
+            probability_per_element,
+            probability_per_spg_per_wyckoff,
+            NO_wyckoffs_probability,
+            corrected_labels,
+            files_to_use_for_test_set,
+        ) = load_dataset_info()
+
+        spg_sets = [[2, 15], [14, 104, 129, 176]]
+
+        for evenly_distributed in [True, False]:
+
+            print(
+                "Evenly distributed"
+                if evenly_distributed
+                else "Following ICSD distribution"
+            )
+
+            for spg_set in spg_sets:
+
+                print(f"Spg set:")
+                print(spg_set)
+
+                for i in range(0, int(N / len(spg_set))):
+
+                    for spg in spg_set:
+
+                        generate_structures(
+                            spacegroup_number=spg,
+                            N=1,
+                            max_NO_elements=100,
+                            do_distance_checks=False,
+                            do_merge_checks=False,
+                            use_icsd_statistics=True,
+                            probability_per_element=probability_per_element,
+                            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+                            max_volume=7000,
+                            NO_wyckoffs_probability=NO_wyckoffs_probability
+                            if not evenly_distributed
+                            else None,
+                            do_symmetry_checks=True,
+                        )
 
     if False:
 

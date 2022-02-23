@@ -33,9 +33,9 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-test_every_X_epochs = 1
+test_every_X_epochs = 5
 batches_per_epoch = 1500
-NO_epochs = 2
+NO_epochs = 20
 
 # structures_per_spg = 1 # for all spgs
 structures_per_spg = 5
