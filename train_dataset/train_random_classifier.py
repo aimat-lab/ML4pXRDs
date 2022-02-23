@@ -477,14 +477,15 @@ params_txt = (
     f"start_angle: {start_angle}  \n"
     f"end_angle: {end_angle}  \n"
     f"N: {N}  \n  \n"
-    f"do_distance_checks: {str(do_distance_checks)}  \n  \n"
+    f"do_distance_checks: {str(do_distance_checks)}  \n"
     f"do_merge_checks: {str(do_merge_checks)}  \n  \n"
     f"use_icsd_statistics: {str(use_icsd_statistics)}  \n  \n"
-    f"validation_max_volume: {str(validation_max_volume)}  \n  \n"
+    f"validation_max_volume: {str(validation_max_volume)}  \n"
     f"validation_max_NO_wyckoffs: {str(validation_max_NO_wyckoffs)}  \n  \n"
     f"spgs: {str(spgs)}  \n  \n"
     f"do_symmetry_checks: {str(do_symmetry_checks)}  \n  \n"
-    f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)}"
+    f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)} \n \n \n"
+    f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
 with file_writer.as_default():
