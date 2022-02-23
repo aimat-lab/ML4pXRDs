@@ -13,6 +13,7 @@ import tensorflow as tf
 import sys
 from datetime import datetime
 import time
+import subprocess
 
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
@@ -33,6 +34,8 @@ else:
 os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
+
+run_analysis_after_run = False
 
 test_every_X_epochs = 1
 # batches_per_epoch = 1500 TODO: Change this all back
@@ -639,6 +642,14 @@ with file_writer.as_default():
     for epoch, value in log_gap_accuracy:
         tf.summary.scalar("accuracy gap", data=value, step=epoch)
 
-print("Everything finished.")
+print("Training finished.")
 print("Output dir:")
 print(out_base)
+
+if run_analysis_after_run:
+
+    subprocess.call(
+        f"python compare_random_distribution.py {out_base} {tag}", shell=True
+    )
+
+    print("Starting analysis now...")
