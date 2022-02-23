@@ -14,6 +14,7 @@ import sys
 from datetime import datetime
 import time
 import subprocess
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 # tag = "spgs-2-15"
 # tag = "4-spgs-no-distance-check"
@@ -110,7 +111,6 @@ if not use_icsd_statistics:
 if not use_NO_wyckoffs_counts:
     NO_wyckoffs_counts = None
 
-
 # Construct validation sets
 # Used validation sets:
 # - All ICSD entries
@@ -144,6 +144,27 @@ icsd_labels_all = icsd_sim.sim_labels
 icsd_variations_all = icsd_sim.sim_variations
 icsd_crystals_all = icsd_sim.sim_crystals
 icsd_metas_all = icsd_sim.sim_metas
+
+# Mainly to make the volume constraints correct:
+conventional_errors_counter = 0
+print("Calculating conventional structures...")
+for i in reversed(range(0, len(icsd_crystals_all))):
+
+    try:
+        current_struc = icsd_crystals_all[i]
+        analyzer = SpacegroupAnalyzer(current_struc)
+        conv = analyzer.get_conventional_standard_structure()
+        icsd_crystals_all[i] = conv
+
+    except Exception as ex:
+
+        print("Error calculating conventional cell of ICSD:")
+        print(ex)
+        conventional_errors_counter += 1
+
+print(
+    f"{conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell."
+)
 
 icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
 icsd_labels_match_corrected_labels = (
