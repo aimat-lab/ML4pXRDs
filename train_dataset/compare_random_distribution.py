@@ -23,7 +23,7 @@ if __name__ == "__main__":
         in_base = "classifier_spgs/runs_from_cluster/2-spgs-new_generation_max_volume/"
         tag = "2-spgs-new_generation_max_volume"
 
-    show_sample_structures = True
+    show_sample_structures = False
     samples_to_show = 3
     counter_shown_icsd_samples = 0
     counter_shown_random_samples = 0
@@ -52,6 +52,10 @@ if __name__ == "__main__":
         random_crystals = random_crystals[0:200]
         random_labels = random_labels[0:200]
         random_variations = random_variations[0:200]
+        icsd_crystals = icsd_crystals[0:200]
+        icsd_labels = icsd_labels[0:200]
+        icsd_variations = icsd_variations[0:200]
+        icsd_metas = icsd_metas[0:200]
 
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):

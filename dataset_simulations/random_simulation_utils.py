@@ -142,7 +142,7 @@ def generate_structure(
     names,
     letters,
     dofs,
-    max_NO_elements=10,
+    max_NO_elements=10,  # This doesn't have any effect if NO_wyckoffs_probability is set
     seed=-1,
     do_distance_checks=True,
     fixed_volume=None,
@@ -154,6 +154,7 @@ def generate_structure(
     return_original_pyxtal_object=False,
     NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
+    set_NO_elements_to_max=False,
 ):
 
     if use_icsd_statistics and (
@@ -165,7 +166,9 @@ def generate_structure(
         np.random.seed(seed)
         random.seed(seed)
 
-    if NO_wyckoffs_probability is None:
+    if set_NO_elements_to_max:
+        NO_elements = max_NO_elements
+    elif NO_wyckoffs_probability is None:
         NO_elements = random.randint(1, max_NO_elements)
     else:
         NO_elements = np.random.choice(
@@ -173,7 +176,6 @@ def generate_structure(
             size=1,
             p=NO_wyckoffs_probability,
         )[0]
-    # NO_elements = random.randint(1, max_NO_elements)
 
     while True:
 
@@ -363,6 +365,7 @@ def generate_structures(
     return_original_pyxtal_object=False,
     NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
+    set_NO_elements_to_max=False,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -398,6 +401,7 @@ def generate_structures(
             return_original_pyxtal_object=return_original_pyxtal_object,
             NO_wyckoffs_probability=NO_wyckoffs_probability,
             do_symmetry_checks=do_symmetry_checks,
+            set_NO_elements_to_max=set_NO_elements_to_max,
         )
         for i in range(0, N)
     ]

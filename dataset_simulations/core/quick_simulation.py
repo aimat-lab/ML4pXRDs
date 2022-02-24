@@ -512,6 +512,7 @@ def get_random_xy_patterns(
     max_volume=None,
     NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
+    set_NO_elements_to_max=False,
 ):
 
     result_patterns_y = []
@@ -526,6 +527,7 @@ def get_random_xy_patterns(
 
         if do_print:
             start = time.time()
+
         structures = generate_structures(
             spg,
             structures_per_spg,
@@ -539,7 +541,9 @@ def get_random_xy_patterns(
             max_volume=max_volume,
             NO_wyckoffs_probability=NO_wyckoffs_probability,
             do_symmetry_checks=do_symmetry_checks,
+            set_NO_elements_to_max=set_NO_elements_to_max,
         )
+
         if do_print:
             timings_generation.append(time.time() - start)
 
@@ -596,25 +600,36 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
     repeat = 2
     skip = 1
 
+    (
+        probability_per_element,
+        probability_per_spg_per_wyckoff,
+        NO_wyckoffs_probability,
+        corrected_labels,
+        files_to_use_for_test_set,
+    ) = load_dataset_info()
+
     start = time.time()
     for i in range(0, repeat):
 
         patterns, labels = get_random_xy_patterns(
-            range(1, 231, skip),  # just to get something that is somehow representative
-            1,
-            1.207930,
-            8501,
-            1,
-            (3.9184, 51.6343),
+            spgs=range(1, 231, skip),
+            structures_per_spg=1,
+            wavelength=1.5406,
+            N=8501,
+            NO_corn_sizes=1,
+            two_theta_range=(5, 90),
             max_NO_elements=NO_wyckoffs,
             do_print=True,
             do_distance_checks=False,
-            fixed_volume=volume,
             do_merge_checks=False,
+            use_icsd_statistics=True,
+            probability_per_element=probability_per_element,
+            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+            max_volume=7000,
+            NO_wyckoffs_probability=None,
+            do_symmetry_checks=True,
+            fixed_volume=volume,
         )
-
-        # plt.plot(patterns[0])
-        # plt.show()
 
     end = time.time()
 
@@ -631,7 +646,7 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
 
         (
             probability_per_element,
@@ -676,45 +691,62 @@ if __name__ == "__main__":
         )
 
     if False:
-        # parser = CifParser("example.cif")
-        # crystals = parser.get_structures()
-        # crystal = crystals[0]
 
-        structures = random_simulation_utils.generate_structures(223, 1)
-        crystal = structures[0]
+        structures = [
+            generate_structures(
+                spg,
+                1,
+                100,
+                -1,
+                False,
+                None,
+                False,
+                False,
+                None,
+                None,
+                None,
+                False,
+                None,
+                False,
+            )[0]
+            for spg in range(1, 231)
+        ]
 
-        total = 1
-
+        data_non_opt = []
         start = time.time()
-        for i in range(0, total):
-            data_non_opt = get_pattern(
-                crystal, 1.5406, (0, 90)  # for now, use Cu-K line
-            )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
+        for structure in structures:
+            data_non_opt.append(get_pattern(structure, 1.5406, (5, 90)))
         stop = time.time()
-        time_non_optimized = (stop - start) / total
+        time_non_optimized = (stop - start) / len(structures)
 
-        data_opt = get_pattern_optimized(
-            crystal, 1.5406, (0, 90), do_print=False
-        )  # for now, use Cu-K line
+        # To load numba functions
+        get_pattern_optimized(structures[0], 1.5406, (5, 90), do_print=False)
 
+        data_opt = []
         start = time.time()
-        for i in range(0, total):
-            data_opt = get_pattern_optimized(
-                crystal, 1.5406, (0, 90)  # for now, use Cu-K line
-            )  # just specifying a different range / wavelength can yield a significant speed improvement, already!
+        for structure in structures:
+            data_opt.append(get_pattern_optimized(structure, 1.5406, (5, 90)))
         stop = time.time()
-        time_optimized = (stop - start) / total
+        time_optimized = (stop - start) / len(structures)
 
-        print("Took {} s for non-optimized version".format(time_non_optimized))
-        print("Took {} s for optimized version".format(time_optimized))
+        print(
+            "Took {} s for non-optimized version per structure".format(
+                time_non_optimized
+            )
+        )
+        print("Took {} s for optimized version per structure".format(time_optimized))
         print(f"Optimized version is {time_non_optimized/time_optimized}x faster")
 
-        difference_angles = np.sum(
-            np.abs(np.array(data_opt[0]) - np.array(data_non_opt[0]))
-        )
-        difference_intensities = np.sum(
-            np.abs(np.array(data_opt[1]) - np.array(data_non_opt[1]))
-        )
+        difference_angles = 0
+        difference_intensities = 0
+
+        for i, data in data_non_opt:
+            difference_angles += np.sum(
+                np.abs(np.array(data_opt[i][0]) - np.array(data_non_opt[i][0]))
+            )
+            difference_intensities += np.sum(
+                np.abs(np.array(data_opt[i][1]) - np.array(data_non_opt[i][1]))
+            )
 
         print("Numerical differences:")
         print(f"Angles: {difference_angles}")
@@ -742,7 +774,7 @@ if __name__ == "__main__":
         plt.plot(xs, diffractogram)
         plt.show()
 
-    if False:
+    if True:
 
         # to load numba:
         get_random_xy_patterns(
@@ -797,7 +829,7 @@ if __name__ == "__main__":
         clb.ax.get_yaxis().labelpad = 15
         clb.ax.set_ylabel("Time in s", rotation=270)
         plt.xlabel(r"Volume / $Å^3$")
-        plt.ylabel("Number of set wyckoffs")
+        plt.ylabel("Max number of set wyckoffs")
         plt.title("Timings generation")
         plt.tight_layout()
         plt.savefig("timings_generation.png", bbox_inches="tight")
