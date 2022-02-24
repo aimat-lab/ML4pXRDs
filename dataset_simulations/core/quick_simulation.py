@@ -629,6 +629,7 @@ def time_swipe_with_fixed_volume(volume, NO_wyckoffs):
             NO_wyckoffs_probability=None,
             do_symmetry_checks=True,
             fixed_volume=volume,
+            set_NO_elements_to_max=True,
         )
 
     end = time.time()
@@ -796,8 +797,8 @@ if __name__ == "__main__":
         NOs_wyckoffs = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
         # for testing
-        # volumes = volumes[:5]
-        # NOs_wyckoffs = NOs_wyckoffs[:5]
+        volumes = volumes[:5]  # TODO: Change back
+        NOs_wyckoffs = NOs_wyckoffs[:5]
 
         xs = []  # volumes
         ys = []  # NO_wyckoffs

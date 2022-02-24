@@ -15,7 +15,7 @@ from ase.visualize import view
 if __name__ == "__main__":
 
     if len(sys.argv) == 3:
-        # Probably run directly from the training script, so take arguments
+        # Probably running directly from the training script, so take arguments
 
         in_base = sys.argv[1]
         tag = sys.argv[2]
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         rightly_indices, falsely_indices = pickle.load(file)
 
     # limit the range:
-    if False:
+    if True:
         random_crystals = random_crystals[0:200]
         random_labels = random_labels[0:200]
         random_variations = random_variations[0:200]
@@ -224,7 +224,10 @@ if __name__ == "__main__":
 
             return actual_volume / calculated_volume
 
-        except:
+        except Exception as ex:
+            print("Not able to get denseness factor:")
+            print(ex)
+
             return None
 
     def get_denseness_factors(structure):

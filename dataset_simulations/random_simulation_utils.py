@@ -324,8 +324,12 @@ def generate_structure(
                     symprec=1e-8,
                     angle_tolerance=5.0,
                 )
-                if analyzer.get_space_group_number() != group_object.number:
-                    print("Mismatch in space group number, skipping structure.")
+
+                checked_spg = analyzer.get_space_group_number()
+                if checked_spg != group_object.number:
+                    print(
+                        f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}"
+                    )
                     continue
 
         except Exception as ex:
