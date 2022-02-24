@@ -177,7 +177,34 @@ def generate_structure(
             p=NO_wyckoffs_probability,
         )[0]
 
+    tries_counter = 0
+
     while True:
+
+        # If trying 10 times to generate a crystal with the given NO_elements fails, then pick a new
+        # NO_elements and return that. This should always return at some point.
+        if tries_counter > 10:
+            return generate_structure(
+                _,
+                group_object,
+                multiplicities,
+                names,
+                letters,
+                dofs,
+                max_NO_elements,
+                seed,
+                do_distance_checks,
+                fixed_volume,
+                do_merge_checks,
+                use_icsd_statistics,
+                probability_per_element,
+                probability_per_spg_per_wyckoff,
+                max_volume,
+                return_original_pyxtal_object,
+                NO_wyckoffs_probability,
+                do_symmetry_checks,
+                set_NO_elements_to_max,
+            )
 
         number_of_atoms_per_site = np.zeros(len(names))
 
@@ -288,6 +315,9 @@ def generate_structure(
             )
 
             if not volume_ok:
+
+                tries_counter += 1
+
                 continue
 
         except Exception as ex:
@@ -297,6 +327,9 @@ def generate_structure(
             print(chosen_elements, flush=True)
             print(chosen_numbers, flush=True)
             print(flush=True)
+
+            tries_counter += 1
+
             continue
 
         if not my_crystal.valid:
@@ -306,6 +339,9 @@ def generate_structure(
             print(chosen_elements, flush=True)
             print(chosen_numbers, flush=True)
             print(flush=True)
+
+            tries_counter += 1
+
             continue
 
         try:
@@ -330,6 +366,9 @@ def generate_structure(
                     print(
                         f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}"
                     )
+
+                    tries_counter += 1
+
                     continue
 
         except Exception as ex:
@@ -339,6 +378,9 @@ def generate_structure(
             print(chosen_elements, flush=True)
             print(chosen_numbers, flush=True)
             print(flush=True)
+
+            tries_counter += 1
+
             continue
 
         # print(spacegroup_number)

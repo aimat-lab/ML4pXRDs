@@ -49,13 +49,13 @@ if __name__ == "__main__":
 
     # limit the range:
     if True:
-        random_crystals = random_crystals[0:200]
-        random_labels = random_labels[0:200]
-        random_variations = random_variations[0:200]
-        icsd_crystals = icsd_crystals[0:200]
-        icsd_labels = icsd_labels[0:200]
-        icsd_variations = icsd_variations[0:200]
-        icsd_metas = icsd_metas[0:200]
+        random_crystals = random_crystals[0:50]
+        random_labels = random_labels[0:50]
+        random_variations = random_variations[0:50]
+        icsd_crystals = icsd_crystals[0:50]
+        icsd_labels = icsd_labels[0:50]
+        icsd_variations = icsd_variations[0:50]
+        icsd_metas = icsd_metas[0:50]
 
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):
@@ -213,18 +213,44 @@ if __name__ == "__main__":
 
             calculated_volume = 0
             for atom in structure:
-                specie = atom.species_string
-                specie = re.sub(r"\d*\+?$", "", specie)
-                specie = re.sub(r"\d*\-?$", "", specie)
 
-                r = random.uniform(
-                    Element(specie).covalent_radius, Element(specie).vdw_radius
-                )
-                calculated_volume += 4 / 3 * np.pi * r**3
+                splitted_sites = [
+                    item.strip() for item in atom.species_string.split(",")
+                ]
+
+                for splitted_site in splitted_sites:
+
+                    splitted = splitted_site.split(":")
+
+                    specie = re.sub(r"\d*\+?$", "", splitted[0])
+                    specie = re.sub(r"\d*\-?$", "", specie)
+
+                    if len(splitted) > 1:
+                        occupancy = float(splitted[1])
+
+                        if (
+                            occupancy
+                            != atom.species.element_composition.to_reduced_dict[specie]
+                        ):
+                            print("Occupancies do not match.")
+                            return None
+                    else:
+                        occupancy = atom.species.element_composition.to_reduced_dict[
+                            specie
+                        ]
+
+                        if occupancy != 1.0:
+                            print("Occupancy not 1.0.")
+
+                    r = random.uniform(
+                        Element(specie).covalent_radius, Element(specie).vdw_radius
+                    )
+                    calculated_volume += 4 / 3 * np.pi * r**3 * occupancy
 
             return actual_volume / calculated_volume
 
         except Exception as ex:
+
             print("Not able to get denseness factor:")
             print(ex)
 

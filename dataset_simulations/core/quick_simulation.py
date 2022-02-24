@@ -691,7 +691,7 @@ if __name__ == "__main__":
             [() for _ in range(5000)],
         )
 
-    if False:
+    if True:
 
         structures = [
             generate_structures(
@@ -775,7 +775,7 @@ if __name__ == "__main__":
         plt.plot(xs, diffractogram)
         plt.show()
 
-    if True:
+    if False:
 
         # to load numba:
         get_random_xy_patterns(

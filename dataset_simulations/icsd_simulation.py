@@ -3,6 +3,8 @@ import functools
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from pymatgen.io.cif import CifParser
+from dataset_simulations.core.quick_simulation import get_xy_patterns
 
 
 class ICSDSimulation(Simulation):
@@ -87,6 +89,29 @@ if __name__ == "__main__":
         )
 
     if True:
+
+        id = 259366
+
+        path = simulation.icsd_paths[simulation.icsd_ids.index(id)]
+
+        parser = CifParser(path)
+        crystals = parser.get_structures()
+        crystal = crystals[0]
+
+        print(crystal.atomic_numbers)
+
+        data = get_xy_patterns(
+            crystal, 1.2, np.linspace(0, 90, 9000), 1, (0, 90), False, False, False
+        )[0]
+
+        plt.plot(data)
+        plt.show()
+
+        # So it turns out that this is not really a big problem and is OK to happen...
+
+        pass
+
+    if False:
 
         simulation.plot_histogram_of_spgs(logscale=True)
         simulation.plot_histogram_of_spgs(logscale=False)
