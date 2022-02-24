@@ -321,7 +321,6 @@ def generate_structure(
             )
 
             if not volume_ok:
-
                 tries_counter += 1
 
                 continue

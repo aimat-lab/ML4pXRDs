@@ -699,7 +699,7 @@ if __name__ == "__main__":
             generate_structures(
                 spg,
                 1,
-                100,
+                30,
                 -1,
                 False,
                 None,
@@ -707,7 +707,7 @@ if __name__ == "__main__":
                 False,
                 None,
                 None,
-                None,
+                7000,
                 False,
                 None,
                 False,
@@ -719,7 +719,8 @@ if __name__ == "__main__":
 
         data_non_opt = []
         start = time.time()
-        for structure in structures:
+        for i, structure in enumerate(structures):
+            print(i)
             data_non_opt.append(get_pattern(structure, 1.5406, (5, 90)))
         stop = time.time()
         time_non_optimized = (stop - start) / len(structures)
@@ -729,7 +730,8 @@ if __name__ == "__main__":
 
         data_opt = []
         start = time.time()
-        for structure in structures:
+        for i, structure in enumerate(structures):
+            print(i)
             data_opt.append(get_pattern_optimized(structure, 1.5406, (5, 90)))
         stop = time.time()
         time_optimized = (stop - start) / len(structures)
@@ -745,7 +747,7 @@ if __name__ == "__main__":
         difference_angles = 0
         difference_intensities = 0
 
-        for i, data in data_non_opt:
+        for i, data in enumerate(data_non_opt):
             difference_angles += np.sum(
                 np.abs(np.array(data_opt[i][0]) - np.array(data_non_opt[i][0]))
             )
