@@ -155,6 +155,7 @@ def generate_structure(
     NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
     set_NO_elements_to_max=False,
+    force_wyckoff_indices=True,
 ):
 
     if use_icsd_statistics and (
@@ -184,6 +185,11 @@ def generate_structure(
         # If trying 10 times to generate a crystal with the given NO_elements fails, then pick a new
         # NO_elements and return that. This should always return at some point.
         if tries_counter > 10:
+
+            print(
+                f"Failed generating crystal of spg {group_object.number} with {NO_elements} set wyckoff positions 10 times. Choosing new NO_elements now."
+            )
+
             return generate_structure(
                 _,
                 group_object,
@@ -292,9 +298,9 @@ def generate_structure(
             # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
             volume_ok = my_crystal.from_random(
                 wyckoff_indices_per_specie=chosen_wyckoff_indices
-                if use_icsd_statistics
+                if force_wyckoff_indices
                 else None,
-                use_given_wyckoff_sites=use_icsd_statistics,
+                use_given_wyckoff_sites=force_wyckoff_indices,
                 dim=3,
                 group=group_object,
                 species=chosen_elements,
@@ -412,6 +418,7 @@ def generate_structures(
     NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
     set_NO_elements_to_max=False,
+    force_wyckoff_indices=True,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -448,6 +455,7 @@ def generate_structures(
             NO_wyckoffs_probability=NO_wyckoffs_probability,
             do_symmetry_checks=do_symmetry_checks,
             set_NO_elements_to_max=set_NO_elements_to_max,
+            force_wyckoff_indices=force_wyckoff_indices,
         )
         for i in range(0, N)
     ]

@@ -513,6 +513,7 @@ def get_random_xy_patterns(
     NO_wyckoffs_probability=None,
     do_symmetry_checks=True,
     set_NO_elements_to_max=False,
+    force_wyckoff_indices=True,
 ):
 
     result_patterns_y = []
@@ -542,6 +543,7 @@ def get_random_xy_patterns(
             NO_wyckoffs_probability=NO_wyckoffs_probability,
             do_symmetry_checks=do_symmetry_checks,
             set_NO_elements_to_max=set_NO_elements_to_max,
+            force_wyckoff_indices=force_wyckoff_indices,
         )
 
         if do_print:
@@ -712,6 +714,8 @@ if __name__ == "__main__":
             )[0]
             for spg in range(1, 231)
         ]
+
+        print("Done generating structures.")
 
         data_non_opt = []
         start = time.time()
