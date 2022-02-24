@@ -268,6 +268,7 @@ if __name__ == "__main__":
         return denseness_factors
 
     falsely_volumes = []
+    falsely_angles = []
     falsely_denseness_factors = []
     falsely_lattice_paras = []
     falsely_corn_sizes = []
@@ -279,6 +280,7 @@ if __name__ == "__main__":
     falsely_NO_atoms = []
 
     rightly_volumes = []
+    rightly_angles = []
     rightly_denseness_factors = []
     rightly_lattice_paras = []
     rightly_corn_sizes = []
@@ -290,6 +292,7 @@ if __name__ == "__main__":
     rightly_NO_atoms = []
 
     random_volumes = []
+    random_angles = []
     random_denseness_factors = []
     random_lattice_paras = []
     random_NO_atoms = []
@@ -307,6 +310,9 @@ if __name__ == "__main__":
         falsely_NO_atoms.append(len(structure.frac_coords))
 
         falsely_volumes.append(volume)
+        falsely_angles.extend(
+            [structure.lattice.alpha, structure.lattice.beta, structure.lattice.gamma]
+        )
         falsely_corn_sizes.extend(icsd_variations[index])
         falsely_NO_elements.append(icsd_NO_elements[index])
         falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
@@ -333,6 +339,9 @@ if __name__ == "__main__":
         rightly_NO_atoms.append(len(structure.frac_coords))
 
         rightly_volumes.append(volume)
+        rightly_angles.extend(
+            [structure.lattice.alpha, structure.lattice.beta, structure.lattice.gamma]
+        )
         rightly_corn_sizes.extend(icsd_variations[index])
         rightly_NO_elements.append(icsd_NO_elements[index])
         rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
@@ -355,6 +364,9 @@ if __name__ == "__main__":
         random_NO_atoms.append(len(structure.frac_coords))
 
         random_volumes.append(volume)
+        random_angles.extend(
+            [structure.lattice.alpha, structure.lattice.beta, structure.lattice.gamma]
+        )
 
         random_lattice_paras.append(structure.lattice.a)
         random_lattice_paras.append(structure.lattice.b)
@@ -517,6 +529,21 @@ if __name__ == "__main__":
                 "randomly generated structures",
             ],
             r"volume / $Å^3$",
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "angles",
+            [rightly_angles, falsely_angles, random_angles],
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "randomly generated structures",
+            ],
+            r"angle / °",
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
