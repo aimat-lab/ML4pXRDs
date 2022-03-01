@@ -472,7 +472,11 @@ if __name__ == "__main__":
                 hist, edges = np.histogram(item, bins, density=True)
             else:
                 hist, edges = np.histogram(
-                    item, bins, weights=weights  # for occupancies
+                    item,
+                    bins,
+                    weights=weights[i]
+                    if weights is not None
+                    else None,  # for occupancies
                 )
 
             hists.append(hist)
