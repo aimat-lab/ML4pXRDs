@@ -14,14 +14,24 @@ from ase.visualize import view
 
 if __name__ == "__main__":
 
-    if len(sys.argv) == 3:
+    if len(sys.argv) > 2:
         # Probably running directly from the training script, so take arguments
 
         in_base = sys.argv[1]
         tag = sys.argv[2]
+
+        spgs = [int(spg) for spg in sys.argv[3:]]
+
+        if len(spgs) == 0:
+            spgs = None  # all spgs
+        else:
+            tag += "/" + "_".join([str(spg) for spg in spgs])
+
     else:
         in_base = "classifier_spgs/runs_from_cluster/2-spgs-new_generation_max_volume/"
         tag = "2-spgs-new_generation_max_volume"
+
+        spgs = None  # analyse all space groups; alternative: list of spgs
 
     show_sample_structures = False
     samples_to_show = 3
@@ -67,13 +77,9 @@ if __name__ == "__main__":
             current_struc = icsd_crystals[i]
 
             if show_sample_structures and counter_shown_icsd_samples < samples_to_show:
-
                 counter_shown_icsd_samples += 1
-
                 ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
-
                 view(ase_struc)
-
                 input()
 
             analyzer = SpacegroupAnalyzer(current_struc)
@@ -190,7 +196,7 @@ if __name__ == "__main__":
             print(ex)
             success = False
 
-        if success:
+        if success and (spgs is None or random_labels[i][0] in spgs):
 
             elements_unique = np.unique(elements)
 
@@ -311,78 +317,96 @@ if __name__ == "__main__":
 
         index = int(i / 5)
 
-        structure = icsd_crystals[index]
+        if spgs is None or icsd_labels[index][0] in spgs:
 
-        volume = structure.volume
+            structure = icsd_crystals[index]
 
-        denseness_factors = get_denseness_factors(structure)
+            volume = structure.volume
 
-        falsely_NO_atoms.append(len(structure.frac_coords))
+            denseness_factors = get_denseness_factors(structure)
 
-        falsely_volumes.append(volume)
-        falsely_angles.extend(
-            [structure.lattice.alpha, structure.lattice.beta, structure.lattice.gamma]
-        )
-        falsely_corn_sizes.extend(icsd_variations[index])
-        falsely_NO_elements.append(icsd_NO_elements[index])
-        falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-        falsely_occupancies.extend(icsd_occupancies[index])
-        falsely_occupancies_weights.extend(icsd_occupancies_weights[index])
-        falsely_element_repetitions.extend(icsd_element_repetitions[index])
+            falsely_NO_atoms.append(len(structure.frac_coords))
 
-        falsely_lattice_paras.append(structure.lattice.a)
-        falsely_lattice_paras.append(structure.lattice.b)
-        falsely_lattice_paras.append(structure.lattice.c)
+            falsely_volumes.append(volume)
+            falsely_angles.extend(
+                [
+                    structure.lattice.alpha,
+                    structure.lattice.beta,
+                    structure.lattice.gamma,
+                ]
+            )
+            falsely_corn_sizes.extend(icsd_variations[index])
+            falsely_NO_elements.append(icsd_NO_elements[index])
+            falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
+            falsely_occupancies.extend(icsd_occupancies[index])
+            falsely_occupancies_weights.extend(icsd_occupancies_weights[index])
+            falsely_element_repetitions.extend(icsd_element_repetitions[index])
 
-        falsely_denseness_factors.extend(denseness_factors)
+            falsely_lattice_paras.append(structure.lattice.a)
+            falsely_lattice_paras.append(structure.lattice.b)
+            falsely_lattice_paras.append(structure.lattice.c)
+
+            falsely_denseness_factors.extend(denseness_factors)
 
     for i in rightly_indices:
 
         index = int(i / 5)
 
-        structure = icsd_crystals[index]
+        if spgs is None or icsd_labels[index][0] in spgs:
 
-        volume = structure.volume
+            structure = icsd_crystals[index]
 
-        denseness_factors = get_denseness_factors(structure)
+            volume = structure.volume
 
-        rightly_NO_atoms.append(len(structure.frac_coords))
+            denseness_factors = get_denseness_factors(structure)
 
-        rightly_volumes.append(volume)
-        rightly_angles.extend(
-            [structure.lattice.alpha, structure.lattice.beta, structure.lattice.gamma]
-        )
-        rightly_corn_sizes.extend(icsd_variations[index])
-        rightly_NO_elements.append(icsd_NO_elements[index])
-        rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-        rightly_occupancies.extend(icsd_occupancies[index])
-        rightly_occupancies_weights.extend(icsd_occupancies_weights[index])
-        rightly_element_repetitions.extend(icsd_element_repetitions[index])
+            rightly_NO_atoms.append(len(structure.frac_coords))
 
-        rightly_lattice_paras.append(structure.lattice.a)
-        rightly_lattice_paras.append(structure.lattice.b)
-        rightly_lattice_paras.append(structure.lattice.c)
+            rightly_volumes.append(volume)
+            rightly_angles.extend(
+                [
+                    structure.lattice.alpha,
+                    structure.lattice.beta,
+                    structure.lattice.gamma,
+                ]
+            )
+            rightly_corn_sizes.extend(icsd_variations[index])
+            rightly_NO_elements.append(icsd_NO_elements[index])
+            rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
+            rightly_occupancies.extend(icsd_occupancies[index])
+            rightly_occupancies_weights.extend(icsd_occupancies_weights[index])
+            rightly_element_repetitions.extend(icsd_element_repetitions[index])
 
-        rightly_denseness_factors.extend(denseness_factors)
+            rightly_lattice_paras.append(structure.lattice.a)
+            rightly_lattice_paras.append(structure.lattice.b)
+            rightly_lattice_paras.append(structure.lattice.c)
+
+            rightly_denseness_factors.extend(denseness_factors)
 
     for i, structure in enumerate(random_crystals):
 
-        volume = structure.volume
+        if spgs is None or random_labels[i][0] in spgs:
 
-        denseness_factors = get_denseness_factors(structure)
+            volume = structure.volume
 
-        random_NO_atoms.append(len(structure.frac_coords))
+            denseness_factors = get_denseness_factors(structure)
 
-        random_volumes.append(volume)
-        random_angles.extend(
-            [structure.lattice.alpha, structure.lattice.beta, structure.lattice.gamma]
-        )
+            random_NO_atoms.append(len(structure.frac_coords))
 
-        random_lattice_paras.append(structure.lattice.a)
-        random_lattice_paras.append(structure.lattice.b)
-        random_lattice_paras.append(structure.lattice.c)
+            random_volumes.append(volume)
+            random_angles.extend(
+                [
+                    structure.lattice.alpha,
+                    structure.lattice.beta,
+                    structure.lattice.gamma,
+                ]
+            )
 
-        random_denseness_factors.extend(denseness_factors)
+            random_lattice_paras.append(structure.lattice.a)
+            random_lattice_paras.append(structure.lattice.b)
+            random_lattice_paras.append(structure.lattice.c)
+
+            random_denseness_factors.extend(denseness_factors)
 
     ################# hist plotting ################
 

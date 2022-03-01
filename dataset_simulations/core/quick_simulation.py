@@ -2,8 +2,6 @@
 # It is altered and optimized to run using numba.
 # If performance is not a concern to you, you should use the original pymatgen code.
 
-import sys
-
 from dataset_simulations.random_simulation_utils import generate_structures
 from dataset_simulations.random_simulation_utils import load_dataset_info
 import json

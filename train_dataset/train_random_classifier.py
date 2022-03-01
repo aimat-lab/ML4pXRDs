@@ -37,6 +37,7 @@ os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
 run_analysis_after_run = False
+analysis_per_spg = True
 
 test_every_X_epochs = 1
 # batches_per_epoch = 1500 TODO: Change this all back
@@ -669,8 +670,17 @@ print(out_base)
 
 if run_analysis_after_run:
 
-    subprocess.call(
-        f"python compare_random_distribution.py {out_base} {tag}", shell=True
-    )
-
     print("Starting analysis now...")
+
+    if analysis_per_spg:
+        for spg in spgs:
+            subprocess.call(
+                f"python compare_random_distribution.py {out_base} {tag} {spg}",
+                shell=True,
+            )
+
+    spg_str = " ".join([str(spg) for spg in spgs])
+    subprocess.call(
+        f"python compare_random_distribution.py {out_base} {tag} {spg_str}",
+        shell=True,
+    )
