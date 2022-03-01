@@ -49,13 +49,13 @@ if __name__ == "__main__":
 
     # limit the range:
     if True:
-        random_crystals = random_crystals[0:10]
-        random_labels = random_labels[0:10]
-        random_variations = random_variations[0:10]
-        icsd_crystals = icsd_crystals[0:10]
-        icsd_labels = icsd_labels[0:10]
-        icsd_variations = icsd_variations[0:10]
-        icsd_metas = icsd_metas[0:10]
+        random_crystals = random_crystals[0:100]
+        random_labels = random_labels[0:100]
+        random_variations = random_variations[0:100]
+        icsd_crystals = icsd_crystals[0:100]
+        icsd_labels = icsd_labels[0:100]
+        icsd_variations = icsd_variations[0:100]
+        icsd_metas = icsd_metas[0:100]
 
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):
@@ -222,10 +222,16 @@ if __name__ == "__main__":
 
                     splitted = splitted_site.split(":")
 
-                    specie = re.sub(r"\d*\+?$", "", splitted[0])
-                    specie = re.sub(r"\d*\-?$", "", specie)
+                    specie = re.sub(r"\d*[,.]?\d*\+?$", "", splitted[0])
+                    specie = re.sub(r"\d*[,.]?\d*\-?$", "", specie)
 
-                    if "-" in specie or "+" in specie or ":" in specie or "," in specie:
+                    if (
+                        "-" in specie
+                        or "+" in specie
+                        or ":" in specie
+                        or "," in specie
+                        or "." in specie
+                    ):
                         raise Exception(
                             "Something went wrong in get_denseness_factor_ran function."
                         )
