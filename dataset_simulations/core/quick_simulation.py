@@ -693,7 +693,7 @@ if __name__ == "__main__":
             [() for _ in range(5000)],
         )
 
-    if True:
+    if False:
 
         structures = [
             generate_structures(
@@ -781,7 +781,7 @@ if __name__ == "__main__":
         plt.plot(xs, diffractogram)
         plt.show()
 
-    if False:
+    if True:
 
         # to load numba:
         get_random_xy_patterns(
@@ -802,9 +802,9 @@ if __name__ == "__main__":
         volumes = np.linspace(100, 7000, 12)
         NOs_wyckoffs = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
-        # for testing
-        volumes = volumes[:5]  # TODO: Change back
-        NOs_wyckoffs = NOs_wyckoffs[:5]
+        if True:  # TODO: Change back
+            volumes = volumes[:5]
+            NOs_wyckoffs = NOs_wyckoffs[:5]
 
         xs = []  # volumes
         ys = []  # NO_wyckoffs
@@ -830,6 +830,66 @@ if __name__ == "__main__":
                 zs2.append(average_timing_sim)
                 zs3.append(time_per_swipe)
 
+        figure_zs1 = plt.figure()
+        plot_zs1 = figure_zs1.add_subplot(111)
+        plot_zs1.set_title("Average timing generating")
+        figure_zs2 = plt.figure()
+        plot_zs2 = figure_zs2.add_subplot(111)
+        plot_zs2.set_title("Average timing simulation")
+        figure_zs3 = plt.figure()
+        plot_zs3 = figure_zs3.add_subplot(111)
+        plot_zs3.set_title("Time per swipe")
+
+        current_volume = -1
+        for (
+            volume,
+            NO_wyckoff,
+            average_timing_gen,
+            average_timing_sim,
+            time_per_swipe,
+        ) in zip(xs, ys, zs1, zs2, zs3):
+
+            if volume != current_volume and current_volume != -1:
+
+                plot_zs1.plot(
+                    current_NO_wyckoffs,
+                    current_zs1,
+                    label=f"{current_volume}" + r" $A^3$",
+                )
+
+                plot_zs2.plot(
+                    current_NO_wyckoffs,
+                    current_zs2,
+                    label=f"{current_volume}" + r" $A^3$",
+                )
+
+                plot_zs3.plot(
+                    current_NO_wyckoffs,
+                    current_zs3,
+                    label=f"{current_volume}" + r" $A^3$",
+                )
+
+            if current_volume == -1 or volume != current_volume:
+                current_volume = volume
+                current_zs1 = []
+                current_zs2 = []
+                current_zs3 = []
+                current_NO_wyckoffs = []
+
+            current_zs1.append(average_timing_gen)
+            current_zs2.append(average_timing_sim)
+            current_zs3.append(time_per_swipe)
+            current_NO_wyckoffs.append(NO_wyckoff)
+
+        plot_zs1.legend()
+        plot_zs2.legend()
+        plot_zs3.legend()
+
+        figure_zs1.savefig("timings_generation.png")
+        figure_zs2.savefig("timings_simulation.png")
+        figure_zs3.savefig("timings_swipe.png")
+
+        """
         cm = plt.cm.get_cmap("RdYlBu")
         sc = plt.scatter(xs, ys, c=zs1, s=20, cmap=cm)
         clb = plt.colorbar(sc)
@@ -867,3 +927,4 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.savefig("timings_swipe.png", bbox_inches="tight")
         plt.show()
+        """

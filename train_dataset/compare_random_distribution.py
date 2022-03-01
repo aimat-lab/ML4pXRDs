@@ -48,14 +48,14 @@ if __name__ == "__main__":
         rightly_indices, falsely_indices = pickle.load(file)
 
     # limit the range:
-    if True:
-        random_crystals = random_crystals[0:100]
-        random_labels = random_labels[0:100]
-        random_variations = random_variations[0:100]
-        icsd_crystals = icsd_crystals[0:100]
-        icsd_labels = icsd_labels[0:100]
-        icsd_variations = icsd_variations[0:100]
-        icsd_metas = icsd_metas[0:100]
+    if False:
+        random_crystals = random_crystals[0:200]
+        random_labels = random_labels[0:200]
+        random_variations = random_variations[0:200]
+        icsd_crystals = icsd_crystals[0:200]
+        icsd_labels = icsd_labels[0:200]
+        icsd_variations = icsd_variations[0:200]
+        icsd_metas = icsd_metas[0:200]
 
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):

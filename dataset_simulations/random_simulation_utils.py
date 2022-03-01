@@ -675,7 +675,7 @@ if __name__ == "__main__":
         plt.plot(data[2])
         plt.show()
 
-    if True:
+    if False:
 
         N = 10000
 
