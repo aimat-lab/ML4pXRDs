@@ -49,13 +49,13 @@ if __name__ == "__main__":
 
     # limit the range:
     if True:
-        random_crystals = random_crystals[0:50]
-        random_labels = random_labels[0:50]
-        random_variations = random_variations[0:50]
-        icsd_crystals = icsd_crystals[0:50]
-        icsd_labels = icsd_labels[0:50]
-        icsd_variations = icsd_variations[0:50]
-        icsd_metas = icsd_metas[0:50]
+        random_crystals = random_crystals[0:10]
+        random_labels = random_labels[0:10]
+        random_variations = random_variations[0:10]
+        icsd_crystals = icsd_crystals[0:10]
+        icsd_labels = icsd_labels[0:10]
+        icsd_variations = icsd_variations[0:10]
+        icsd_metas = icsd_metas[0:10]
 
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):
@@ -225,22 +225,24 @@ if __name__ == "__main__":
                     specie = re.sub(r"\d*\+?$", "", splitted[0])
                     specie = re.sub(r"\d*\-?$", "", specie)
 
+                    if "-" in specie or "+" in specie or ":" in specie or "," in specie:
+                        raise Exception(
+                            "Something went wrong in get_denseness_factor_ran function."
+                        )
+
                     if len(splitted) > 1:
+
                         occupancy = float(splitted[1])
 
-                        if (
-                            occupancy
-                            != atom.species.element_composition.to_reduced_dict[specie]
-                        ):
-                            print("Occupancies do not match.")
-                            return None
                     else:
-                        occupancy = atom.species.element_composition.to_reduced_dict[
-                            specie
-                        ]
+                        # occupancy = atom.species.element_composition.to_reduced_dict[
+                        #    specie
+                        # ]
 
-                        if occupancy != 1.0:
-                            print("Occupancy not 1.0.")
+                        # if occupancy != 1.0:
+                        #    print("Occupancy not 1.0.")
+
+                        occupancy = 1.0
 
                     r = random.uniform(
                         Element(specie).covalent_radius, Element(specie).vdw_radius
