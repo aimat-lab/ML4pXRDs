@@ -889,6 +889,28 @@ if __name__ == "__main__":
         figure_zs2.savefig("timings_simulation.png")
         figure_zs3.savefig("timings_swipe.png")
 
+        # Test some edge cases separately:
+
+        (
+            average_timing_gen,
+            average_timing_sim,
+            time_per_swipe,
+        ) = time_swipe_with_fixed_volume(10000, 150)
+        print("Timing for volume 10000, 150 NO_wyckoffs:")
+        print(f"Average_timing_gen: {average_timing_gen}")
+        print(f"Average_timing_sim: {average_timing_sim}")
+        print(f"Time_per_swipe: {time_per_swipe}")
+
+        (
+            average_timing_gen,
+            average_timing_sim,
+            time_per_swipe,
+        ) = time_swipe_with_fixed_volume(20000, 200)
+        print("Timing for volume 20000, 200 NO_wyckoffs:")
+        print(f"Average_timing_gen: {average_timing_gen}")
+        print(f"Average_timing_sim: {average_timing_sim}")
+        print(f"Time_per_swipe: {time_per_swipe}")
+
         """
         cm = plt.cm.get_cmap("RdYlBu")
         sc = plt.scatter(xs, ys, c=zs1, s=20, cmap=cm)

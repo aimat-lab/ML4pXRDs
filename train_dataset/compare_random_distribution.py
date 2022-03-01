@@ -262,6 +262,8 @@ if __name__ == "__main__":
             print("Not able to get denseness factor:")
             print(ex)
 
+            # For D and Am exceptions are OK
+
             return None
 
     def get_denseness_factors(structure):
