@@ -178,6 +178,8 @@ def generate_structure(
             p=NO_wyckoffs_probability,
         )[0]
 
+        print(np.sum(NO_wyckoffs_probability))
+
     tries_counter = 0
 
     while True:
@@ -323,6 +325,7 @@ def generate_structure(
             if not volume_ok:
                 tries_counter += 1
 
+                print(f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})")
                 continue
 
         except Exception as ex:
@@ -665,6 +668,48 @@ def load_dataset_info():
 
 
 if __name__ == "__main__":
+
+    if True:
+
+        (
+            probability_per_element,
+            probability_per_spg_per_wyckoff,
+            NO_wyckoffs_probability,
+            corrected_labels,
+            files_to_use_for_test_set,
+        ) = load_dataset_info()
+
+        for i in range(0, 5):
+            for spg in range(1, 231):
+
+                structure, orig_pyxtal_obj = generate_structures(
+                    spg,
+                    1,
+                    100,
+                    -1,
+                    False,
+                    None,
+                    False,
+                    True,
+                    probability_per_element,
+                    probability_per_spg_per_wyckoff,
+                    7000,
+                    True,
+                    NO_wyckoffs_probability,
+                    True,
+                    False,
+                    True,
+                )[0]
+
+                orig_NO_wyckoffs = len(orig_pyxtal_obj.atom_sites)
+
+                pyxtal_obj = pyxtal()
+                pyxtal_obj.from_seed(structure)
+
+                new_NO_wyckoffs = len(pyxtal_obj.atom_sites)
+
+                if orig_NO_wyckoffs != new_NO_wyckoffs:
+                    print("Ohoh")
 
     if False:
         prepare_training()

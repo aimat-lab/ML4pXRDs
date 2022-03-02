@@ -352,6 +352,7 @@ def batch_generator_with_additional(
         max_volume=generation_max_volume,
         NO_wyckoffs_probability=NO_wyckoffs_probability,
         do_symmetry_checks=do_symmetry_checks,
+        force_wyckoff_indices=True,
     )
 
     # Set the label to the right index:
@@ -397,6 +398,7 @@ def batch_generator_queue(
                 max_volume=generation_max_volume,
                 NO_wyckoffs_probability=NO_wyckoffs_probability,
                 do_symmetry_checks=do_symmetry_checks,
+                force_wyckoff_indices=True,
             )
 
             patterns, labels = shuffle(patterns, labels)
