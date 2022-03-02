@@ -604,18 +604,12 @@ model.fit(
 
 model.save(out_base + "final")
 
+# Get predictions for val_x_match and write rightly_indices / falsely_indices:
+
 if len(spgs) > 2:
 
     prediction = model.predict(val_x_match)
     prediction = np.argmax(prediction, axis=1)
-
-    # print(prediction)
-    # print(len(prediction))
-    # print(len(val_x))
-    # print(len(icsd_crystals))
-
-    # print(rightly_indices)
-    # print(falsely_indices)
 
 elif len(spgs) == 2:
 
@@ -628,11 +622,37 @@ else:
 
     raise Exception("Unexpected number of spgs.")
 
-rightly_indices = np.argwhere(prediction == val_y_match)[:, 0]
-falsely_indices = np.argwhere(prediction != val_y_match)[:, 0]
+rightly_indices_match = np.argwhere(prediction == val_y_match)[:, 0]
+falsely_indices_match = np.argwhere(prediction != val_y_match)[:, 0]
 
-with open(out_base + "rightly_falsely.pickle", "wb") as file:
-    pickle.dump((rightly_indices, falsely_indices), file)
+with open(out_base + "rightly_falsely_icsd.pickle", "wb") as file:
+    pickle.dump((rightly_indices_match, falsely_indices_match), file)
+
+
+# Get predictions for val_x_random and write rightly_indices / falsely_indices:
+
+if len(spgs) > 2:
+
+    prediction = model.predict(val_x_random)
+    prediction = np.argmax(prediction, axis=1)
+
+elif len(spgs) == 2:
+
+    prob_model = keras.Sequential([model, keras.layers.Activation("sigmoid")])
+    prediction = np.array(prob_model.predict(val_x_random))
+    prediction = prediction[:, 0]
+    prediction = np.where(prediction > 0.5, 1, 0)
+
+else:
+
+    raise Exception("Unexpected number of spgs.")
+
+rightly_indices_random = np.argwhere(prediction == val_y_random)[:, 0]
+falsely_indices_random = np.argwhere(prediction != val_y_random)[:, 0]
+
+with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
+    pickle.dump((rightly_indices_random, falsely_indices_random), file)
+
 
 ray.shutdown()
 

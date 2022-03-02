@@ -685,6 +685,7 @@ if __name__ == "__main__":
         for i in range(0, 5):
             for spg in range(1, 231):
 
+                print(spg)
                 structure, orig_pyxtal_obj = generate_structures(
                     spg,
                     1,
@@ -713,6 +714,7 @@ if __name__ == "__main__":
 
                 if orig_NO_wyckoffs != new_NO_wyckoffs:
                     print("Ohoh")
+                    exit()
 
     if False:
         prepare_training()

@@ -54,7 +54,7 @@ if __name__ == "__main__":
             random_variations,
         ) = pickle.load(file)
 
-    with open(in_base + "rightly_falsely.pickle", "rb") as file:
+    with open(in_base + "rightly_falsely_icsd.pickle", "rb") as file:
         rightly_indices, falsely_indices = pickle.load(file)
 
     # limit the range:
