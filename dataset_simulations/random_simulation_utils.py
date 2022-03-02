@@ -172,13 +172,16 @@ def generate_structure(
     elif NO_wyckoffs_probability is None:
         NO_elements = random.randint(1, max_NO_elements)
     else:
-        NO_elements = np.random.choice(
-            range(1, len(NO_wyckoffs_probability) + 1),
-            size=1,
-            p=NO_wyckoffs_probability,
-        )[0]
 
-        print(np.sum(NO_wyckoffs_probability))
+        while True:
+            NO_elements = np.random.choice(
+                range(1, len(NO_wyckoffs_probability) + 1),
+                size=1,
+                p=NO_wyckoffs_probability,
+            )[0]
+
+            if NO_elements <= max_NO_elements:
+                break
 
     tries_counter = 0
 
