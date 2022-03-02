@@ -20,18 +20,18 @@ if __name__ == "__main__":
         in_base = sys.argv[1]
         tag = sys.argv[2]
 
-        spgs = [int(spg) for spg in sys.argv[3:]]
+        spgs_to_analyze = [int(spg) for spg in sys.argv[3:]]
 
-        if len(spgs) == 0:
-            spgs = None  # all spgs
+        if len(spgs_to_analyze) == 0:
+            spgs_to_analyze = None  # all spgs
         else:
-            tag += "/" + "_".join([str(spg) for spg in spgs])
+            tag += "/" + "_".join([str(spg) for spg in spgs_to_analyze])
 
     else:
         in_base = "classifier_spgs/runs_from_cluster/2-spgs-new_generation_max_volume/"
         tag = "2-spgs-new_generation_max_volume"
 
-        spgs = None  # analyse all space groups; alternative: list of spgs
+        spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
     show_sample_structures = False
     samples_to_show = 3
@@ -196,7 +196,9 @@ if __name__ == "__main__":
             print(ex)
             success = False
 
-        if success and (spgs is None or random_labels[i][0] in spgs):
+        if success and (
+            spgs_to_analyze is None or random_labels[i][0] in spgs_to_analyze
+        ):
 
             elements_unique = np.unique(elements)
 
@@ -317,7 +319,7 @@ if __name__ == "__main__":
 
         index = int(i / 5)
 
-        if spgs is None or icsd_labels[index][0] in spgs:
+        if spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze:
 
             structure = icsd_crystals[index]
 
@@ -352,7 +354,7 @@ if __name__ == "__main__":
 
         index = int(i / 5)
 
-        if spgs is None or icsd_labels[index][0] in spgs:
+        if spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze:
 
             structure = icsd_crystals[index]
 
@@ -385,7 +387,7 @@ if __name__ == "__main__":
 
     for i, structure in enumerate(random_crystals):
 
-        if spgs is None or random_labels[i][0] in spgs:
+        if spgs_to_analyze is None or random_labels[i][0] in spgs_to_analyze:
 
             volume = structure.volume
 
@@ -669,7 +671,7 @@ if __name__ == "__main__":
 
     for flag in [True, False]:
         create_histogram(
-            "occupancies",
+            "occupancies_weighted",
             [rightly_occupancies, falsely_occupancies],
             [
                 "ICSD correctly classified",
@@ -680,6 +682,20 @@ if __name__ == "__main__":
             only_proportions=flag,
             min_is_zero=True,
             weights=[rightly_occupancies_weights, falsely_occupancies_weights],
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "occupancies",
+            [rightly_occupancies, falsely_occupancies],
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+            ],
+            "occupancy",
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
         )
 
     for flag in [True, False]:
