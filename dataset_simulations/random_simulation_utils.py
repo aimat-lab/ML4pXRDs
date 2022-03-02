@@ -187,9 +187,9 @@ def generate_structure(
 
     while True:
 
-        # If trying 10 times to generate a crystal with the given NO_elements fails, then pick a new
+        # If trying 20 times to generate a crystal with the given NO_elements fails, then pick a new
         # NO_elements and return that. This should always return at some point.
-        if tries_counter > 10:
+        if tries_counter > 20:
 
             print(
                 f"Failed generating crystal of spg {group_object.number} with {NO_elements} set wyckoff positions 10 times. Choosing new NO_elements now."
@@ -375,7 +375,7 @@ def generate_structure(
                 checked_spg = analyzer.get_space_group_number()
                 if checked_spg != group_object.number:
                     print(
-                        f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}"
+                        f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; NO_elements: {NO_elements}"
                     )
 
                     tries_counter += 1
