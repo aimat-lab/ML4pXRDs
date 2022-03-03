@@ -16,9 +16,7 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-# tag = "spgs-2-15"
-# tag = "4-spgs-no-distance-check"
-tag = "4-spgs_debug_logging"
+tag = "4-spgs_debug"
 description = ""
 
 if len(sys.argv) > 1:
@@ -36,13 +34,13 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-run_analysis_after_run = False
+run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-# batches_per_epoch = 1500 TODO: Change this all back
-batches_per_epoch = 20
-NO_epochs = 5
+# batches_per_epoch = 1500 TODO: Change this back
+batches_per_epoch = 150
+NO_epochs = 20
 
 # structures_per_spg = 1 # for all spgs
 structures_per_spg = 5

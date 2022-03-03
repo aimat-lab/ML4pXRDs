@@ -232,7 +232,7 @@ def generate_structure(
 
                 if counter_collisions > 30:
                     print("More than 30 collisions setting one atom.", flush=True)
-                    break
+                    break  # try to set the next atom and skip the current one
 
                 if not use_icsd_statistics:
                     chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
@@ -255,7 +255,6 @@ def generate_structure(
                 )
                 """
 
-                # TODO: Think about this again! Is this OK?
                 """ See this from the documentation
                 PyXtal starts with the largest available WP, which is the general position of the space group.
                 If the number of atoms required is equal to or greater than the size of the general position,
@@ -292,9 +291,6 @@ def generate_structure(
                 chosen_wyckoff_indices.append(chosen_index)
 
                 break
-
-        # TODO: Maybe bring unique entries of chosen_elements together to form one?
-        # probably not needed / additional overhead
 
         my_crystal = pyxtal()
 
