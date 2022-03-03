@@ -402,7 +402,7 @@ if __name__ == "__main__":
 
         structure = random_crystals[index]
 
-        if spgs_to_analyze is None or random_labels[index][0] in spgs_to_analyze:
+        if spgs_to_analyze is None or random_labels[index] in spgs_to_analyze:
 
             volume = structure.volume
 
@@ -434,7 +434,7 @@ if __name__ == "__main__":
 
         structure = random_crystals[index]
 
-        if spgs_to_analyze is None or random_labels[index][0] in spgs_to_analyze:
+        if spgs_to_analyze is None or random_labels[index] in spgs_to_analyze:
 
             volume = structure.volume
 
