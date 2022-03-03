@@ -464,28 +464,36 @@ if __name__ == "__main__":
 
     ################# hist plotting ################
 
-    bin_spacing_continuous = 60
+    N_bins_continuous = 60
 
-    # TODO: Make this have random_data and icsd_data as input
     def create_histogram(
         tag,
-        data,
-        labels,
+        data_icsd,  # rightly, falsely
+        data_random,  # rightly, falsely
         xlabel,
+        labels,
         is_int=False,
         only_proportions=False,
         min_is_zero=True,
-        fixed_min=None,
-        fixed_max=None,
-        weights=None,
+        fixed_x_min=None,
+        fixed_y_max=None,
+        weights_icsd=None,
+        weights_random=None,
     ):
-        # Data: rightly, falsely, random or only rightly, falsely
-
         # determine range on x axis:
         min = 10**9
         max = 0
 
-        for item in data:
+        for item in [
+            data_icsd[0] if data_icsd is not None else None,
+            data_icsd[1] if data_icsd is not None else None,
+            data_random[0] if data_random is not None else None,
+            data_random[1] if data_random is not None else None,
+        ]:
+
+            if item is None:
+                continue
+
             new_min = np.min(item)
             new_max = np.max(item)
 
@@ -495,11 +503,11 @@ if __name__ == "__main__":
             if new_max > max:
                 max = new_max
 
-        if fixed_max is not None:
-            max = fixed_max
+        if fixed_y_max is not None:
+            max = fixed_y_max
 
-        if fixed_min is not None:
-            min = fixed_min
+        if fixed_x_min is not None:
+            min = fixed_x_min
 
         if min_is_zero:
             min = 0
@@ -508,10 +516,9 @@ if __name__ == "__main__":
             bins = np.linspace(
                 min,
                 max,
-                bin_spacing_continuous,
+                N_bins_continuous,
             )
         else:
-
             bins = (
                 np.arange(
                     min, max + 2, 1 if (max - min) < 60 else int((max - min) / 60)
@@ -522,33 +529,33 @@ if __name__ == "__main__":
         bin_width = bins[1] - bins[0]
 
         hists = []
-        for i, item in enumerate(data):
-            if i == 2:  # random
-                hist, edges = np.histogram(item, bins, density=True)
-            else:
+
+        for i, data in enumerate([data_icsd, data_random]):
+
+            if data is None:
+                continue
+
+            weights = [weights_icsd, weights_random][i]
+
+            for j, item in enumerate(data):
                 hist, edges = np.histogram(
-                    item,
-                    bins,
-                    weights=weights[i]
-                    if weights is not None
-                    else None,  # for occupancies
+                    item, bins, weights=weights[j] if weights is not None else None
                 )
+                hists.append(hist)
 
-            hists.append(hist)
+            # to handle rightly and falsely:
+            total_hist = hists[-2] + hists[-1]
 
-        # to handle rightly and falsely:
-        total_hist = hists[0] + hists[1]
+            hists[-2] = hists[-2] / total_hist
+            hists[-1] = hists[-1] / total_hist
 
-        hists[0] = hists[0] / total_hist
-        hists[1] = hists[1] / total_hist
+            hists[-2] = np.nan_to_num(hists[-2])
+            hists[-1] = np.nan_to_num(hists[-1])
 
-        hists[0] = np.nan_to_num(hists[0])
-        hists[1] = np.nan_to_num(hists[1])
-
-        if not only_proportions:
-            total_hist = total_hist / (np.sum(total_hist) * bin_width)
-            hists[0] = hists[0] * total_hist
-            hists[1] = hists[1] * total_hist
+            if not only_proportions:  # scale with probability distribution
+                total_hist = total_hist / (np.sum(total_hist) * bin_width)
+                hists[-2] = hists[-2] * total_hist
+                hists[-1] = hists[-1] * total_hist
 
         # Figure size
         plt.figure()
@@ -561,67 +568,82 @@ if __name__ == "__main__":
         else:
             ax1.set_ylabel("proportion for each bin")
 
-        if only_proportions and len(data) > 2:
-            ax2 = ax1.twinx()
-            ax2.set_ylabel("probability density")
-            ax2.tick_params(axis="y", labelcolor="b")
-            ax2.yaxis.label.set_color("b")
+        counter = 0
+        for i, data in enumerate([data_icsd, data_random]):
 
-        # falsely
-        h1 = ax1.bar(
-            bins[:-1],
-            hists[1],
-            bottom=0,
-            color="r",
-            label=labels[1],
-            width=bin_width,
-            align="edge",
-        )
-        # rightly
-        h2 = ax1.bar(
-            bins[:-1],
-            hists[0],
-            bottom=hists[1],
-            color="g",
-            label=labels[0],
-            width=bin_width,
-            align="edge",
-        )
+            if data is None:
+                continue
 
-        if len(data) > 2:
-            # random
-            (h3,) = (ax1 if not only_proportions else ax2).step(
-                bins[:-1], hists[2], color="b", label=labels[2], where="post"
-            )
-            ax1.legend(loc="best", handles=[h1, h2, h3])
+            if i == 0:
 
-        else:
+                # falsely
+                h1 = ax1.bar(
+                    bins[:-1],
+                    hists[counter * 2 + 1],  # height
+                    bottom=0,  # bottom
+                    color="r",
+                    label=labels[counter * 2 + 1],
+                    width=bin_width,
+                    align="edge",
+                )
 
-            ax1.legend(loc="best", handles=[h1, h2])
+                # rightly
+                h2 = ax1.bar(
+                    bins[:-1],
+                    hists[counter * 2],  # height
+                    bottom=hists[counter * 2 + 1],  # bottom
+                    color="g",
+                    label=labels[counter * 2],
+                    width=bin_width,
+                    align="edge",
+                )
+
+            elif i == 1:
+
+                # middle (falsely):
+                ax1.step(
+                    bins[:-1],
+                    hists[counter * 2 + 1],
+                    color="b",
+                    label=labels[counter * 2 + 1],
+                    where="post",
+                )
+
+                # top (rightly):
+                ax1.step(
+                    bins[:-1],
+                    hists[counter * 2]
+                    + hists[counter * 2 + 1],  # top coordinate, not height
+                    color="b",
+                    label=labels[counter * 2],
+                    where="post",
+                )
+
+            counter += 1
 
         ax1.set_xlim(left=0, right=None)
         ax1.set_ylim(bottom=0, top=None)
-
-        if len(data) > 2 and only_proportions:
-            ax2.set_ylim(bottom=0, top=None)
 
         plt.tight_layout()
         plt.savefig(
             f"{out_base}{tag}{'_prop' if only_proportions else ''}.png",
             bbox_inches="tight",
         )
-        # plt.show()
+
+    # actual plotting:
 
     for flag in [True, False]:
         create_histogram(
             "volumes",
-            [icsd_rightly_volumes, icsd_falsely_volumes, random_volumes],
+            [icsd_rightly_volumes, icsd_falsely_volumes],
+            [random_rightly_volumes, random_falsely_volumes],
+            r"volume / $Å^3$",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            r"volume / $Å^3$",
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
@@ -630,13 +652,15 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "angles",
-            [icsd_rightly_angles, icsd_falsely_angles, random_angles],
+            [icsd_rightly_angles, icsd_falsely_angles],
+            [random_rightly_angles, random_falsely_angles],
+            r"angle / °",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            r"angle / °",
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
@@ -648,14 +672,15 @@ if __name__ == "__main__":
             [
                 icsd_rightly_denseness_factors,
                 icsd_falsely_denseness_factors,
-                random_denseness_factors,
             ],
+            [random_rightly_denseness_factors, random_falsely_denseness_factors],
+            "denseness factor",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            "denseness factor",
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
@@ -665,13 +690,15 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "corn_sizes",
-            [icsd_rightly_corn_sizes, icsd_falsely_corn_sizes, random_variations],
+            [icsd_rightly_corn_sizes, icsd_falsely_corn_sizes],
+            [random_rightly_corn_sizes, random_falsely_corn_sizes],
+            "corn size",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            "corn size",
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
@@ -680,13 +707,15 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "NO_wyckoffs",
-            [icsd_rightly_NO_wyckoffs, icsd_falsely_NO_wyckoffs, random_NO_wyckoffs],
+            [icsd_rightly_NO_wyckoffs, icsd_falsely_NO_wyckoffs],
+            [random_rightly_NO_wyckoffs, random_falsely_NO_wyckoffs],
+            "Number of set wyckoff sites",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            "Number of set wyckoff sites",
             is_int=True,
             only_proportions=flag,
             min_is_zero=True,
@@ -695,13 +724,15 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "NO_elements",
-            [icsd_rightly_NO_elements, icsd_falsely_NO_elements, random_NO_elements],
+            [icsd_rightly_NO_elements, icsd_falsely_NO_elements],
+            [random_rightly_NO_elements, random_falsely_NO_elements],
+            "Number of unique elements on wyckoff sites",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            "Number of unique elements on wyckoff sites",
             is_int=True,
             only_proportions=flag,
             min_is_zero=True,
@@ -713,14 +744,15 @@ if __name__ == "__main__":
             [
                 icsd_rightly_lattice_paras,
                 icsd_falsely_lattice_paras,
-                random_lattice_paras,
             ],
+            [random_rightly_lattice_paras, random_falsely_lattice_paras],
+            r"lattice parameter / $Å$",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            r"lattice parameter / $Å$",
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
@@ -730,15 +762,16 @@ if __name__ == "__main__":
         create_histogram(
             "occupancies_weighted",
             [icsd_rightly_occupancies, icsd_falsely_occupancies],
+            None,
+            "occupancy",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
             ],
-            "occupancy",
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
-            weights=[
+            weights_icsd=[
                 icsd_rightly_occupancies_weights,
                 icsd_falsely_occupancies_weights,
             ],
@@ -748,11 +781,12 @@ if __name__ == "__main__":
         create_histogram(
             "occupancies",
             [icsd_rightly_occupancies, icsd_falsely_occupancies],
+            None,
+            "occupancy",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
             ],
-            "occupancy",
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
@@ -764,14 +798,15 @@ if __name__ == "__main__":
             [
                 icsd_rightly_element_repetitions,
                 icsd_falsely_element_repetitions,
-                random_element_repetitions,
             ],
+            [random_rightly_element_repetitions, random_falsely_element_repetitions],
+            "Number of element repetitions on wyckoff sites",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            "Number of element repetitions on wyckoff sites",
             is_int=True,
             only_proportions=flag,
             min_is_zero=True,
@@ -783,14 +818,15 @@ if __name__ == "__main__":
             [
                 icsd_rightly_NO_atoms,
                 icsd_falsely_NO_atoms,
-                random_NO_atoms,
             ],
+            [random_rightly_NO_atoms, random_falsely_NO_atoms],
+            "Number of atoms in the unit cell",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
-                "randomly generated structures",
+                "Random correctly classified",
+                "Random incorrectly classified",
             ],
-            "Number of atoms in the unit cell",
             is_int=True,
             only_proportions=flag,
             min_is_zero=True,
