@@ -779,7 +779,7 @@ if __name__ == "__main__":
         plt.plot(xs, diffractogram)
         plt.show()
 
-    if True:
+    if False:
 
         # to load numba:
         get_random_xy_patterns(
@@ -948,3 +948,32 @@ if __name__ == "__main__":
         plt.savefig("timings_swipe.png", bbox_inches="tight")
         plt.show()
         """
+
+    if True:
+
+        (
+            probability_per_element,
+            probability_per_spg_per_wyckoff,
+            NO_wyckoffs_probability,
+            corrected_labels,
+            files_to_use_for_test_set,
+        ) = load_dataset_info()
+
+        patterns, labels = get_random_xy_patterns(
+            spgs=[15],
+            structures_per_spg=1,
+            wavelength=1.5406,
+            N=8501,
+            NO_corn_sizes=1,
+            two_theta_range=(5, 90),
+            max_NO_elements=10,
+            do_distance_checks=False,
+            do_merge_checks=False,
+            use_icsd_statistics=True,
+            probability_per_element=probability_per_element,
+            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+            max_volume=7000,
+            NO_wyckoffs_probability=None,
+            do_symmetry_checks=True,
+            set_NO_elements_to_max=True,
+        )
