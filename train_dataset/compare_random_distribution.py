@@ -28,10 +28,12 @@ if __name__ == "__main__":
             tag += "/" + "_".join([str(spg) for spg in spgs_to_analyze])
 
     else:
-        in_base = "classifier_spgs/runs_from_cluster/2-spgs-new_generation_max_volume/"
-        tag = "2-spgs-new_generation_max_volume"
 
-        spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
+        in_base = "classifier_spgs/03-03-2022_18-29-39_4-spgs_debug/"
+        tag = "4_spgs_debug"
+
+        spgs_to_analyze = [104, 176]  # TODO: Change back
+        # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
     show_sample_structures = False
     samples_to_show = 3
@@ -53,6 +55,7 @@ if __name__ == "__main__":
             random_labels,
             random_variations,
         ) = pickle.load(file)
+    random_labels = [spgs[index] for index in random_labels]
 
     with open(in_base + "rightly_falsely_icsd.pickle", "rb") as file:
         rightly_indices_icsd, falsely_indices_icsd = pickle.load(file)
@@ -425,7 +428,7 @@ if __name__ == "__main__":
 
             random_falsely_denseness_factors.extend(denseness_factors)
 
-            random_falsely_corn_sizes.extend(random_variations[index])
+            random_falsely_corn_sizes.append(random_variations[index])
             random_falsely_NO_elements.append(random_NO_elements[index])
             random_falsely_NO_wyckoffs.append(random_NO_wyckoffs[index])
             random_falsely_element_repetitions.extend(random_element_repetitions[index])
@@ -457,7 +460,7 @@ if __name__ == "__main__":
 
             random_rightly_denseness_factors.extend(denseness_factors)
 
-            random_rightly_corn_sizes.extend(random_variations[index])
+            random_rightly_corn_sizes.append(random_variations[index])
             random_rightly_NO_elements.append(random_NO_elements[index])
             random_rightly_NO_wyckoffs.append(random_NO_wyckoffs[index])
             random_rightly_element_repetitions.extend(random_element_repetitions[index])
@@ -602,18 +605,25 @@ if __name__ == "__main__":
 
                 # middle (falsely):
                 ax1.step(
-                    bins[:-1],
-                    hists[counter * 2 + 1],
-                    color="b",
+                    # bins[:-1],
+                    bins[:],
+                    # hists[counter * 2 + 1],
+                    np.append(hists[counter * 2 + 1], hists[counter * 2 + 1][-1]),
+                    color="blueviolet",
                     label=labels[counter * 2 + 1],
                     where="post",
                 )
 
                 # top (rightly):
                 ax1.step(
-                    bins[:-1],
-                    hists[counter * 2]
-                    + hists[counter * 2 + 1],  # top coordinate, not height
+                    # bins[:-1],
+                    bins[:],
+                    # hists[counter * 2]
+                    # + hists[counter * 2 + 1],  # top coordinate, not height
+                    np.append(
+                        (hists[counter * 2] + hists[counter * 2 + 1]),
+                        (hists[counter * 2] + hists[counter * 2 + 1])[-1],
+                    ),  # top coordinate, not height
                     color="b",
                     label=labels[counter * 2],
                     where="post",
@@ -621,9 +631,11 @@ if __name__ == "__main__":
 
             counter += 1
 
-        ax1.set_xlim(left=0, right=None)
+        if min_is_zero:
+            ax1.set_xlim(left=0, right=None)
         ax1.set_ylim(bottom=0, top=None)
 
+        plt.legend()
         plt.tight_layout()
         plt.savefig(
             f"{out_base}{tag}{'_prop' if only_proportions else ''}.png",
@@ -684,7 +696,6 @@ if __name__ == "__main__":
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
-            # fixed_max=10,
         )
 
     for flag in [True, False]:
@@ -701,7 +712,7 @@ if __name__ == "__main__":
             ],
             is_int=False,
             only_proportions=flag,
-            min_is_zero=True,
+            min_is_zero=False,
         )
 
     for flag in [True, False]:

@@ -693,11 +693,13 @@ if run_analysis_after_run:
     print("Starting analysis now...")
 
     if analysis_per_spg:
-        for spg in spgs:
-            subprocess.call(
-                f"python compare_random_distribution.py {out_base} {tag} {spg}",
-                shell=True,
-            )
+        for i, spg in enumerate(spgs):
+
+            if np.sum(val_y_match == i) > 0:
+                subprocess.call(
+                    f"python compare_random_distribution.py {out_base} {tag} {spg}",
+                    shell=True,
+                )
 
     spg_str = " ".join([str(spg) for spg in spgs])
     subprocess.call(
