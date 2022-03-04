@@ -146,6 +146,8 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
+    print(f"Processing ICSD: {len(icsd_crystals)} in total.")
+
     for i in range(0, len(icsd_variations)):
 
         is_pure, NO_wyckoffs, elements, occupancies = sim.get_wyckoff_info(
@@ -633,7 +635,11 @@ if __name__ == "__main__":
 
         if min_is_zero:
             ax1.set_xlim(left=0, right=None)
-        ax1.set_ylim(bottom=0, top=None)
+
+        if not only_proportions:
+            ax1.set_ylim(bottom=0, top=None)
+        else:
+            ax1.set_ylim(bottom=0, top=1.1)
 
         plt.legend()
         plt.tight_layout()
