@@ -9,9 +9,8 @@ from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
 import os
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-import copy
 
-from pymatgen.analysis.diffraction.xrd import XRDCalculator
+from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 
 # import warnings
 # with warnings.catch_warnings():
@@ -155,7 +154,7 @@ def generate_structure(
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
-    NO_wyckoffs_probability=None,
+    NO_wyckoffs_prob_per_spg=None,
     do_symmetry_checks=True,
     set_NO_elements_to_max=False,
     force_wyckoff_indices=True,
@@ -172,11 +171,19 @@ def generate_structure(
 
     if set_NO_elements_to_max:
         NO_elements = max_NO_elements
-    elif NO_wyckoffs_probability is None:
+    elif NO_wyckoffs_prob_per_spg is None:
         NO_elements = random.randint(1, max_NO_elements)
     else:
 
         while True:
+
+            NO_wyckoffs_probability = NO_wyckoffs_prob_per_spg[group_object.number]
+
+            if len(NO_wyckoffs_probability) == 0:
+                raise Exception(
+                    "Requested spg number with no probability entries in NO_wyckoffs_prob_per_spg."
+                ) # This should not happen!
+
             NO_elements = np.random.choice(
                 range(1, len(NO_wyckoffs_probability) + 1),
                 size=1,
@@ -419,7 +426,7 @@ def generate_structures(
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
-    NO_wyckoffs_probability=None,
+    NO_wyckoffs_prob_per_spg=None,
     do_symmetry_checks=True,
     set_NO_elements_to_max=False,
     force_wyckoff_indices=True,
@@ -456,7 +463,7 @@ def generate_structures(
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             max_volume=max_volume,
             return_original_pyxtal_object=return_original_pyxtal_object,
-            NO_wyckoffs_probability=NO_wyckoffs_probability,
+            NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
             do_symmetry_checks=do_symmetry_checks,
             set_NO_elements_to_max=set_NO_elements_to_max,
             force_wyckoff_indices=force_wyckoff_indices,
@@ -689,7 +696,7 @@ def load_dataset_info():
         NO_wyckoffs_prob_per_spg,
         corrected_labels,
         files_to_use_for_test_set,
-        represented_spgs # spgs represented in the statistics dataset (70%)
+        represented_spgs,  # spgs represented in the statistics dataset (70%)
     )
 
 
