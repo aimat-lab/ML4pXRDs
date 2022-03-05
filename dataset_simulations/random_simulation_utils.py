@@ -9,6 +9,9 @@ from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
 import os
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+import copy
+
+from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 # import warnings
 # with warnings.catch_warnings():
@@ -533,6 +536,16 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         try:
 
             # spg_number = sim_statistics.sim_labels[i][0]
+
+            # for site in crystal.sites:
+            #    if site.species_string == "D-" or site.species_string == "D+":
+            #        print("Oh")
+            #
+            #        calc = XRDCalculator(1.5)
+            #        calc.get_pattern(crystal)
+            #
+            # This error also manifests itself in the comparison script when trying to get the covalent
+            # radius of D (which is unknown element).
 
             struc = pyxtal()
             struc.from_seed(crystal)
