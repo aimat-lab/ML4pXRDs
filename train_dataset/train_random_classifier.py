@@ -174,7 +174,8 @@ icsd_metas_match_corrected_labels = icsd_metas_all.copy()
 
 assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
 
-# spgs = sorted(np.unique([item[0] for item in icsd_labels]))
+# Only train on spgs that are actually present in the ICSD:
+# spgs = sorted(np.unique([item[0] for item in icsd_labels_all]))
 
 for i in reversed(range(0, len(icsd_patterns_all))):
 

@@ -511,7 +511,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     counts_per_spg_per_wyckoff = {}
     counter_per_element = {}
 
-    NO_wyckoffs = []
+    NO_wyckoffs_per_spg = {}
 
     # pre-process the symmetry groups:
 
@@ -523,6 +523,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         counts_per_spg_per_wyckoff[spg_number] = {}
         for name in names:
             counts_per_spg_per_wyckoff[spg_number][name] = 0
+
+        NO_wyckoffs_per_spg[spg_number] = []
 
     # Analyse the statistics:
 
@@ -554,7 +556,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 struc.group.number
             )  # use the group as calculated by pyxtal for statistics; this should be fine.
 
-            NO_wyckoffs.append(len(struc.atom_sites))
+            NO_wyckoffs_per_spg[spg_number].append(len(struc.atom_sites))
 
         except Exception as ex:
 
@@ -574,7 +576,17 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             name = str(site.wp.multiplicity) + site.wp.letter
             counts_per_spg_per_wyckoff[spg_number][name] += 1
 
-    NO_wyckoffs_counts = np.bincount(NO_wyckoffs)
+    represented_spgs = []
+    NO_wyckoffs_prob_per_spg = {}
+    for spg in NO_wyckoffs_per_spg.keys():
+        if len(NO_wyckoffs_per_spg[spg]) > 0:
+
+            bincounted = np.bincount(NO_wyckoffs_per_spg[spg])
+
+            NO_wyckoffs_prob_per_spg[spg] = bincounted[1:] / np.sum(bincounted[1:])
+            represented_spgs.append(spg)
+        else:
+            NO_wyckoffs_prob_per_spg[spg] = []
 
     print(f"Took {time.time() - start} s to calculate the statistics.")
 
@@ -623,9 +635,10 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             (
                 counter_per_element,
                 counts_per_spg_per_wyckoff,
-                NO_wyckoffs_counts,
+                NO_wyckoffs_prob_per_spg,
                 corrected_labels,
                 files_to_use_for_test_set,
+                represented_spgs,
             ),
             file,
         )
@@ -639,9 +652,10 @@ def load_dataset_info():
         data = pickle.load(file)
         counter_per_element = data[0]
         counts_per_spg_per_wyckoff = data[1]
-        NO_wyckoffs_counts = data[2]
+        NO_wyckoffs_prob_per_spg = data[2]
         corrected_labels = data[3]
         files_to_use_for_test_set = data[4]
+        represented_spgs = data[5]
 
     for element in counter_per_element.keys():
         if element not in all_elements:
@@ -672,14 +686,47 @@ def load_dataset_info():
     return (
         probability_per_element,
         probability_per_spg_per_wyckoff,
-        NO_wyckoffs_counts[1:]
-        / np.sum(NO_wyckoffs_counts[1:]),  # NO_wyckoffs_probability
+        NO_wyckoffs_prob_per_spg,
         corrected_labels,
         files_to_use_for_test_set,
+        represented_spgs # spgs represented in the statistics dataset (70%)
     )
 
 
 if __name__ == "__main__":
+
+    if False:
+
+        (
+            probability_per_element,
+            probability_per_spg_per_wyckoff,
+            NO_wyckoffs_probability,
+            corrected_labels,
+            files_to_use_for_test_set,
+        ) = load_dataset_info()
+
+        for spg in range(1, 231):
+
+            print(spg)
+
+            generate_structures(
+                spg,
+                1,
+                100,
+                -1,
+                False,
+                None,
+                False,
+                True,
+                probability_per_element,
+                probability_per_spg_per_wyckoff,
+                7000,
+                False,
+                None,
+                True,
+                True,
+                True,
+            )
 
     if False:
 
