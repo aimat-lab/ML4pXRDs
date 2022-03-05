@@ -227,9 +227,10 @@ def generate_structure(
                 probability_per_spg_per_wyckoff,
                 max_volume,
                 return_original_pyxtal_object,
-                NO_wyckoffs_probability,
+                NO_wyckoffs_prob_per_spg,
                 do_symmetry_checks,
                 set_NO_elements_to_max,
+                force_wyckoff_indices=force_wyckoff_indices,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
