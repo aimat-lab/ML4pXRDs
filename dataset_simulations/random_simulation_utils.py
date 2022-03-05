@@ -179,10 +179,15 @@ def generate_structure(
 
             NO_wyckoffs_probability = NO_wyckoffs_prob_per_spg[group_object.number]
 
+            if np.sum(NO_wyckoffs_probability[0:max_NO_elements]) < 0.01:
+                raise Exception(
+                    "Requested spg number has very small probability <= max_NO_elements."
+                )
+
             if len(NO_wyckoffs_probability) == 0:
                 raise Exception(
                     "Requested spg number with no probability entries in NO_wyckoffs_prob_per_spg."
-                ) # This should not happen!
+                )  # This should not happen!
 
             NO_elements = np.random.choice(
                 range(1, len(NO_wyckoffs_probability) + 1),
@@ -506,12 +511,16 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         )
         sim_statistics.output_dir = path_to_patterns
 
-    sim_test.load(
-        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
-    )
-    sim_statistics.load(
-        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
-    )
+    # sim_test.load(
+    #    load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+    # )
+    # sim_statistics.load(
+    #    load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+    # )
+
+    # TODO: Change back!
+    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=2)
+    sim_statistics.load(load_patterns_angles_intensities=False, start=2, stop=4)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -735,18 +744,24 @@ if __name__ == "__main__":
                 True,
             )
 
-    if False:
+    if True:
 
         (
             probability_per_element,
             probability_per_spg_per_wyckoff,
-            NO_wyckoffs_probability,
+            NO_wyckoffs_prob_per_spg,
             corrected_labels,
             files_to_use_for_test_set,
+            represented_spgs,
         ) = load_dataset_info()
 
+        for i in reversed(range(len(represented_spgs))):
+            if np.sum(NO_wyckoffs_prob_per_spg[represented_spgs[i]][0:100]) <= 0.01:
+                print(f"Excluded spg {represented_spgs[i]}")
+                del represented_spgs[i]
+
         for i in range(0, 5):
-            for spg in range(1, 231):
+            for spg in represented_spgs:
 
                 print(spg)
                 structure, orig_pyxtal_obj = generate_structures(
@@ -762,25 +777,29 @@ if __name__ == "__main__":
                     probability_per_spg_per_wyckoff,
                     7000,
                     True,
-                    NO_wyckoffs_probability,
+                    NO_wyckoffs_prob_per_spg,
                     True,
                     False,
                     True,
                 )[0]
 
-                orig_NO_wyckoffs = len(orig_pyxtal_obj.atom_sites)
+                # orig_NO_wyckoffs = len(orig_pyxtal_obj.atom_sites)
 
-                pyxtal_obj = pyxtal()
-                pyxtal_obj.from_seed(structure)
+                # pyxtal_obj = pyxtal()
+                # pyxtal_obj.from_seed(structure)
 
-                new_NO_wyckoffs = len(pyxtal_obj.atom_sites)
+                # new_NO_wyckoffs = len(pyxtal_obj.atom_sites)
 
-                if orig_NO_wyckoffs != new_NO_wyckoffs:
-                    print("Ohoh")
-                    exit()
+                # if orig_NO_wyckoffs != new_NO_wyckoffs:
+                #    print("Ohoh")
+                #    exit()
 
-    if True:
+    if False:
         prepare_training()
+
+    if False:
+
+        data = load_dataset_info()
 
     if False:
         data = load_dataset_info()

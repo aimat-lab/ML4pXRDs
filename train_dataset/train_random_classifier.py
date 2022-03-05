@@ -38,8 +38,10 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
-NO_epochs = 200
+# batches_per_epoch = 1500 # TODO: Change back
+batches_per_epoch = 10
+# NO_epochs = 200 # TODO: Change back
+NO_epochs = 10
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -68,7 +70,7 @@ use_NO_wyckoffs_counts = True
 
 verbosity = 2
 
-local = False
+local = True  # TODO: Change back
 if local:
     NO_workers = 8
     verbosity = 1
@@ -101,14 +103,18 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 ) = load_dataset_info()
 
 if not use_icsd_statistics:
-    probability_per_element, probability_per_spg_per_wyckoff, NO_wyckoffs_counts = (
+    (
+        probability_per_element,
+        probability_per_spg_per_wyckoff,
+        NO_wyckoffs_prob_per_spg,
+    ) = (
         None,
         None,
         None,
     )
 
 if not use_NO_wyckoffs_counts:
-    NO_wyckoffs_counts = None
+    NO_wyckoffs_prob_per_spg = None
 
 # Construct validation sets
 # Used validation sets:
@@ -179,6 +185,17 @@ assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
 # spgs = sorted(np.unique([item[0] for item in icsd_labels_all]))
 # better:
 # spgs = represented_spgs
+
+for i in reversed(range(len(represented_spgs))):
+    if np.sum(NO_wyckoffs_prob_per_spg[represented_spgs[i]][0:100]) <= 0.01:
+        print(
+            f"Excluded spg {represented_spgs[i]} from represented_spgs due to low probability in NO_wyckoffs < 100."
+        )
+        del represented_spgs[i]
+
+for spg in spgs:
+    if spg not in represented_spgs:
+        raise Exception("Requested space group not represented in prepared statistics.")
 
 for i in reversed(range(0, len(icsd_patterns_all))):
 
