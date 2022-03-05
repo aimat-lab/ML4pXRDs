@@ -512,16 +512,12 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         )
         sim_statistics.output_dir = path_to_patterns
 
-    # sim_test.load(
-    #    load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
-    # )
-    # sim_statistics.load(
-    #    load_patterns_angles_intensities=False, start=files_to_use_for_test_set
-    # )
-
-    # TODO: Change back!
-    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=2)
-    sim_statistics.load(load_patterns_angles_intensities=False, start=2, stop=4)
+    sim_test.load(
+        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+    )
+    sim_statistics.load(
+        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+    )
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -745,7 +741,7 @@ if __name__ == "__main__":
                 True,
             )
 
-    if True:
+    if False:
 
         (
             probability_per_element,
@@ -795,7 +791,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
     if False:

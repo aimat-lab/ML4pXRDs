@@ -16,7 +16,7 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs_debug"
+tag = "2-spgs_test"
 description = ""
 
 if len(sys.argv) > 1:
@@ -38,10 +38,8 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-# batches_per_epoch = 1500 # TODO: Change back
-batches_per_epoch = 20
-# NO_epochs = 200 # TODO: Change back
-NO_epochs = 20
+batches_per_epoch = 1500
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -70,7 +68,7 @@ use_NO_wyckoffs_counts = True
 
 verbosity = 2
 
-local = True  # TODO: Change back
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
