@@ -94,9 +94,10 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 (
     probability_per_element,
     probability_per_spg_per_wyckoff,
-    NO_wyckoffs_probability,
+    NO_wyckoffs_prob_per_spg,
     corrected_labels,
     files_to_use_for_test_set,
+    represented_spgs,
 ) = load_dataset_info()
 
 if not use_icsd_statistics:
@@ -176,6 +177,8 @@ assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
 
 # Only train on spgs that are actually present in the ICSD:
 # spgs = sorted(np.unique([item[0] for item in icsd_labels_all]))
+# better:
+# spgs = represented_spgs
 
 for i in reversed(range(0, len(icsd_patterns_all))):
 
@@ -348,7 +351,7 @@ def batch_generator_with_additional(
         probability_per_element=probability_per_element,
         probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
         max_volume=generation_max_volume,
-        NO_wyckoffs_probability=NO_wyckoffs_probability,
+        NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
         do_symmetry_checks=do_symmetry_checks,
         force_wyckoff_indices=True,
     )
@@ -394,7 +397,7 @@ def batch_generator_queue(
                 probability_per_element=probability_per_element,
                 probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
                 max_volume=generation_max_volume,
-                NO_wyckoffs_probability=NO_wyckoffs_probability,
+                NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
                 do_symmetry_checks=do_symmetry_checks,
                 force_wyckoff_indices=True,
             )
