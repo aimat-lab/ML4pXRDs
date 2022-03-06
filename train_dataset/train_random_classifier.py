@@ -16,7 +16,7 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs_test"
+tag = "4-spgs_test"
 description = ""
 
 if len(sys.argv) > 1:
@@ -43,7 +43,7 @@ NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
-structures_per_spg = 10  # for (2,15) tuple
+structures_per_spg = 5  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
 do_distance_checks = False
@@ -75,12 +75,12 @@ if local:
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-spgs = [
-    2,
-    15,
-]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+# spgs = [
+#    2,
+#    15,
+# ]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
-# spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
+spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
 # as Park:
@@ -535,6 +535,7 @@ with file_writer.as_default():
     tf.summary.text("Parameters", data=params_txt, step=0)
 
 log_wait_timings = []
+test_timings = []
 
 log_ray_queue_size = []
 
@@ -554,6 +555,8 @@ class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
 
         if ((epoch + 1) % test_every_X_epochs) == 0:
+
+            start = time.time()
 
             log_ray_queue_size.append((epoch, queue.size()))
 
@@ -584,6 +587,8 @@ class CustomCallback(keras.callbacks.Callback):
             log_random_accuracy.append((epoch, scores_random[1]))
 
             log_gap_accuracy.append((epoch, scores_random[1] - scores_match[1]))
+
+            test_timings.append(time.time() - start)
 
 
 class CustomSequence(keras.utils.Sequence):
@@ -677,6 +682,9 @@ ray.shutdown()
 with file_writer.as_default():
     for i, value in enumerate(log_wait_timings):
         tf.summary.scalar("waiting time", data=value, step=i)
+
+    for i, value in enumerate(test_timings):
+        tf.summary.scalar("test time", data=value, step=i)
 
     for epoch, value in log_ray_queue_size:
         tf.summary.scalar("queue size", data=value, step=epoch)

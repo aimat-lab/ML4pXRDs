@@ -660,7 +660,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 def load_dataset_info():
 
     with open(
-        os.path.join(os.path.dirname(__file__), "prepared_training"), "rb"
+        os.path.join(os.path.dirname(__file__), "prepared_training"),
+        "rb",
     ) as file:
         data = pickle.load(file)
         counter_per_element = data[0]
@@ -741,7 +742,7 @@ if __name__ == "__main__":
                 True,
             )
 
-    if False:
+    if True:
 
         (
             probability_per_element,
@@ -791,7 +792,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
     if False:
