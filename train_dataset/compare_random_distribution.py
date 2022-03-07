@@ -633,13 +633,15 @@ if __name__ == "__main__":
 
             counter += 1
 
+        ymin, ymax = ax1.get_ylim() # get current limits
+
         if min_is_zero:
             ax1.set_xlim(left=0, right=None)
 
         if not only_proportions:
-            ax1.set_ylim(bottom=0, top=None)
+            ax1.set_ylim(bottom=-1 * ymax / 25, top=ymax)
         else:
-            ax1.set_ylim(bottom=0, top=1.1)
+            ax1.set_ylim(bottom=-0.1, top=1.1)
 
         plt.legend()
         plt.tight_layout()
