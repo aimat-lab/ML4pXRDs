@@ -16,7 +16,7 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "4-spgs_test"
+tag = "4-sps_test_logging"
 description = ""
 
 if len(sys.argv) > 1:
@@ -34,12 +34,14 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-run_analysis_after_run = True
+run_analysis_after_run = False  # TODO: Change back again.
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
-NO_epochs = 200
+# batches_per_epoch = 1500
+batches_per_epoch = 15  # TODO: Change back
+# NO_epochs = 200
+NO_epochs = 20  # TODO: Change back
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -709,6 +711,17 @@ with file_writer.as_default():
 
     for epoch, value in log_gap_accuracy:
         tf.summary.scalar("accuracy gap", data=value, step=epoch)
+
+# TODO: Remove again
+print("Gap accuracy")
+with np.printoptions(threshold=np.inf):
+    print(log_gap_accuracy)
+print("Accuracy match")
+with np.printoptions(threshold=np.inf):
+    print(log_match_accuracy)
+print("Accuracy random")
+with np.printoptions(threshold=np.inf):
+    print(log_random_accuracy)
 
 print("Training finished.")
 print("Output dir:")
