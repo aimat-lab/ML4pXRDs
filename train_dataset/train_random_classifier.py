@@ -39,9 +39,9 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 # batches_per_epoch = 1500
-batches_per_epoch = 15  # TODO: Change back
+batches_per_epoch = 1500  # TODO: Change back
 # NO_epochs = 200
-NO_epochs = 20  # TODO: Change back
+NO_epochs = 5  # TODO: Change back
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
