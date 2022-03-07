@@ -512,6 +512,9 @@ def get_random_xy_patterns(
     do_symmetry_checks=True,
     set_NO_elements_to_max=False,
     force_wyckoff_indices=True,
+    use_element_repetitions_instead_of_NO_wyckoffs=False,
+    NO_unique_elements_prob_per_spg=None,
+    NO_repetitions_prob_per_spg=None,
 ):
 
     result_patterns_y = []
@@ -542,6 +545,9 @@ def get_random_xy_patterns(
             do_symmetry_checks=do_symmetry_checks,
             set_NO_elements_to_max=set_NO_elements_to_max,
             force_wyckoff_indices=force_wyckoff_indices,
+            use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
+            NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
         )
 
         if do_print:

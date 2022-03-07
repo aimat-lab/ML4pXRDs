@@ -158,6 +158,9 @@ def generate_structure(
     do_symmetry_checks=True,
     set_NO_elements_to_max=False,
     force_wyckoff_indices=True,
+    use_element_repetitions_instead_of_NO_wyckoffs=False,
+    NO_unique_elements_prob_per_spg=None,
+    NO_repetitions_prob_per_spg=None,
 ):
 
     if use_icsd_statistics and (
@@ -165,38 +168,57 @@ def generate_structure(
     ):
         raise Exception("Statistics data needed if use_icsd_statistics = True.")
 
+    if use_element_repetitions_instead_of_NO_wyckoffs and (
+        NO_unique_elements_prob_per_spg is None or NO_repetitions_prob_per_spg is None
+    ):
+        raise Exception(
+            "Statistics data needed if use_element_repetitions_instead_of_NO_wyckoffs = True."
+        )
+
     if seed != -1:
         np.random.seed(seed)
         random.seed(seed)
 
-    if set_NO_elements_to_max:
-        NO_elements = max_NO_elements
-    elif NO_wyckoffs_prob_per_spg is None:
-        NO_elements = random.randint(1, max_NO_elements)
+    if not use_element_repetitions_instead_of_NO_wyckoffs:
+
+        if set_NO_elements_to_max:
+            NO_elements = max_NO_elements
+        elif NO_wyckoffs_prob_per_spg is None:
+            NO_elements = random.randint(1, max_NO_elements)
+        else:
+
+            while True:
+
+                NO_wyckoffs_probability = NO_wyckoffs_prob_per_spg[group_object.number]
+
+                if np.sum(NO_wyckoffs_probability[0:max_NO_elements]) < 0.01:
+                    raise Exception(
+                        "Requested spg number has very small probability <= max_NO_elements."
+                    )
+
+                if len(NO_wyckoffs_probability) == 0:
+                    raise Exception(
+                        "Requested spg number with no probability entries in NO_wyckoffs_prob_per_spg."
+                    )  # This should not happen!
+
+                NO_elements = np.random.choice(
+                    range(1, len(NO_wyckoffs_probability) + 1),
+                    size=1,
+                    p=NO_wyckoffs_probability,
+                )[0]
+
+                if NO_elements <= max_NO_elements:
+                    break
+
     else:
 
-        while True:
+        # pick number of unique elements:
 
-            NO_wyckoffs_probability = NO_wyckoffs_prob_per_spg[group_object.number]
-
-            if np.sum(NO_wyckoffs_probability[0:max_NO_elements]) < 0.01:
-                raise Exception(
-                    "Requested spg number has very small probability <= max_NO_elements."
-                )
-
-            if len(NO_wyckoffs_probability) == 0:
-                raise Exception(
-                    "Requested spg number with no probability entries in NO_wyckoffs_prob_per_spg."
-                )  # This should not happen!
-
-            NO_elements = np.random.choice(
-                range(1, len(NO_wyckoffs_probability) + 1),
-                size=1,
-                p=NO_wyckoffs_probability,
-            )[0]
-
-            if NO_elements <= max_NO_elements:
-                break
+        NO_unique_elements = np.random.choice(
+            range(1, len(NO_unique_elements_prob_per_spg[group_object.number]) + 1),
+            size=1,
+            p=NO_unique_elements_prob_per_spg[group_object.number],
+        )[0]
 
     tries_counter = 0
 
@@ -207,7 +229,7 @@ def generate_structure(
         if tries_counter > 20:
 
             print(
-                f"Failed generating crystal of spg {group_object.number} with {NO_elements} set wyckoff positions 10 times. Choosing new NO_elements now."
+                f"Failed generating crystal of spg {group_object.number} with {NO_elements} set wyckoff positions 10 times. Choosing new NO_elements / element repetitions now."
             )
 
             return generate_structure(
@@ -231,6 +253,9 @@ def generate_structure(
                 do_symmetry_checks,
                 set_NO_elements_to_max,
                 force_wyckoff_indices=force_wyckoff_indices,
+                use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
+                NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+                NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -241,13 +266,28 @@ def generate_structure(
         chosen_wyckoff_letters = []
         chosen_wyckoff_indices = []
 
-        for i in range(0, NO_elements):
+        set_wyckoffs_counter = 0
+
+        unique_elements_counter = 0
+
+        current_element = None
+        current_picked_repetition = None
+        current_repetition_counter = 0
+
+        while True:
+            if not use_element_repetitions_instead_of_NO_wyckoffs:
+                if set_wyckoffs_counter >= NO_elements:
+                    break
 
             counter_collisions = 0
             while True:
 
                 if counter_collisions > 30:
-                    print("More than 30 collisions setting one atom.", flush=True)
+                    print(
+                        "More than 30 collisions setting one atom.", flush=True
+                    )  # TODO: What to do in this case here?
+                    # TODO: Is the loop and everything still all OK? Breaks and continues etc.?
+
                     break  # try to set the next atom and skip the current one
 
                 if not use_icsd_statistics:
@@ -286,20 +326,53 @@ def generate_structure(
                 ):
                     counter_collisions += 1
                     # print(f"{counter_collisions} collisions.", flush=True)
-                    continue
+                    continue  # try again
 
                 number_of_atoms_per_site[chosen_index] += 1
 
-                if not use_icsd_statistics:
-                    chosen_elements.append(random.choice(all_elements))
-                else:
-                    chosen_element = np.random.choice(
-                        list(probability_per_element.keys()),
-                        1,
-                        p=list(probability_per_element.values()),
-                    )[0]
+                if not use_element_repetitions_instead_of_NO_wyckoffs:
+                    if not use_icsd_statistics:
+                        chosen_elements.append(random.choice(all_elements))
+                    else:
+                        chosen_element = np.random.choice(
+                            list(probability_per_element.keys()),
+                            1,
+                            p=list(probability_per_element.values()),
+                        )[0]
 
-                    chosen_elements.append(chosen_element)
+                        chosen_elements.append(chosen_element)
+                else:
+
+                    if unique_elements_counter < NO_unique_elements and (
+                        current_repetition_counter == current_picked_repetition
+                        or current_picked_repetition is None
+                    ):
+
+                        current_picked_repetition = np.random.choice(
+                            list(
+                                NO_repetitions_prob_per_spg[group_object.number].keys()
+                            ),
+                            1,
+                            p=list(
+                                NO_repetitions_prob_per_spg[
+                                    group_object.number
+                                ].values()
+                            ),
+                        )[0]
+                        current_repetition_counter = 1
+                        current_element = np.random.choice(
+                            list(probability_per_element.keys()),
+                            1,
+                            p=list(probability_per_element.values()),
+                        )[0]
+
+                        unique_elements_counter += 1
+
+                    else:
+
+                        current_repetition_counter += 1
+
+                    chosen_elements.append(current_element)
 
                 chosen_numbers.append(multiplicities[chosen_index])
                 chosen_wyckoff_positions.append([names[chosen_index]])
@@ -307,6 +380,8 @@ def generate_structure(
                 chosen_wyckoff_indices.append(chosen_index)
 
                 break
+
+            set_wyckoffs_counter += 1
 
         my_crystal = pyxtal()
 
@@ -436,6 +511,9 @@ def generate_structures(
     do_symmetry_checks=True,
     set_NO_elements_to_max=False,
     force_wyckoff_indices=True,
+    use_element_repetitions_instead_of_NO_wyckoffs=False,
+    NO_unique_elements_prob_per_spg=None,
+    NO_repetitions_prob_per_spg=None,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -473,6 +551,9 @@ def generate_structures(
             do_symmetry_checks=do_symmetry_checks,
             set_NO_elements_to_max=set_NO_elements_to_max,
             force_wyckoff_indices=force_wyckoff_indices,
+            use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
+            NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
         )
         for i in range(0, N)
     ]
