@@ -68,6 +68,8 @@ validation_max_NO_wyckoffs = 100  # None possible
 do_symmetry_checks = True
 use_NO_wyckoffs_counts = True
 
+use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
+
 verbosity = 2
 
 local = True
@@ -94,12 +96,14 @@ angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 
 (
-    probability_per_element,
+    probability_per_spg_per_element,
     probability_per_spg_per_wyckoff,
     NO_wyckoffs_prob_per_spg,
     corrected_labels,
     files_to_use_for_test_set,
     represented_spgs,
+    NO_unique_elements_prob_per_spg,
+    NO_repetitions_prob_per_spg,
 ) = load_dataset_info()
 
 if not use_icsd_statistics:
@@ -115,6 +119,10 @@ if not use_icsd_statistics:
 
 if not use_NO_wyckoffs_counts:
     NO_wyckoffs_prob_per_spg = None
+
+if not use_element_repetitions:
+    NO_unique_elements_prob_per_spg = None
+    NO_repetitions_prob_per_spg = None
 
 # Construct validation sets
 # Used validation sets:
@@ -365,12 +373,15 @@ def batch_generator_with_additional(
         do_distance_checks=do_distance_checks,
         do_merge_checks=do_merge_checks,
         use_icsd_statistics=use_icsd_statistics,
-        probability_per_element=probability_per_element,
+        probability_per_spg_per_element=probability_per_spg_per_element,
         probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
         max_volume=generation_max_volume,
         NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
         do_symmetry_checks=do_symmetry_checks,
         force_wyckoff_indices=True,
+        use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions,
+        NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
     )
 
     # Set the label to the right index:
@@ -411,12 +422,15 @@ def batch_generator_queue(
                 do_distance_checks=do_distance_checks,
                 do_merge_checks=do_merge_checks,
                 use_icsd_statistics=use_icsd_statistics,
-                probability_per_element=probability_per_element,
+                probability_per_spg_per_element=probability_per_spg_per_element,
                 probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
                 max_volume=generation_max_volume,
                 NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
                 do_symmetry_checks=do_symmetry_checks,
                 force_wyckoff_indices=True,
+                use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions,
+                NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+                NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
             )
 
             patterns, labels = shuffle(patterns, labels)

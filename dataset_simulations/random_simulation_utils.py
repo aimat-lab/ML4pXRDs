@@ -150,7 +150,7 @@ def generate_structure(
     fixed_volume=None,
     do_merge_checks=True,
     use_icsd_statistics=False,
-    probability_per_element=None,
+    probability_per_spg_per_element=None,
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
@@ -164,7 +164,8 @@ def generate_structure(
 ):
 
     if use_icsd_statistics and (
-        probability_per_element is None or probability_per_spg_per_wyckoff is None
+        probability_per_spg_per_element is None
+        or probability_per_spg_per_wyckoff is None
     ):
         raise Exception("Statistics data needed if use_icsd_statistics = True.")
 
@@ -245,7 +246,7 @@ def generate_structure(
                 fixed_volume,
                 do_merge_checks,
                 use_icsd_statistics,
-                probability_per_element,
+                probability_per_spg_per_element,
                 probability_per_spg_per_wyckoff,
                 max_volume,
                 return_original_pyxtal_object,
@@ -335,9 +336,17 @@ def generate_structure(
                         chosen_elements.append(random.choice(all_elements))
                     else:
                         chosen_element = np.random.choice(
-                            list(probability_per_element.keys()),
+                            list(
+                                probability_per_spg_per_element[
+                                    group_object.number
+                                ].keys()
+                            ),
                             1,
-                            p=list(probability_per_element.values()),
+                            p=list(
+                                probability_per_spg_per_element[
+                                    group_object.number
+                                ].values()
+                            ),
                         )[0]
 
                         chosen_elements.append(chosen_element)
@@ -361,9 +370,17 @@ def generate_structure(
                         )[0]
                         current_repetition_counter = 1
                         current_element = np.random.choice(
-                            list(probability_per_element.keys()),
+                            list(
+                                probability_per_spg_per_element[
+                                    group_object.number
+                                ].keys()
+                            ),
                             1,
-                            p=list(probability_per_element.values()),
+                            p=list(
+                                probability_per_spg_per_element[
+                                    group_object.number
+                                ].values()
+                            ),
                         )[0]
 
                         unique_elements_counter += 1
@@ -503,7 +520,7 @@ def generate_structures(
     fixed_volume=None,
     do_merge_checks=True,
     use_icsd_statistics=False,
-    probability_per_element=None,
+    probability_per_spg_per_element=None,
     probability_per_spg_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
@@ -543,7 +560,7 @@ def generate_structures(
             fixed_volume=fixed_volume,
             do_merge_checks=do_merge_checks,
             use_icsd_statistics=use_icsd_statistics,
-            probability_per_element=probability_per_element,
+            probability_per_spg_per_element=probability_per_spg_per_element,
             probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
             max_volume=max_volume,
             return_original_pyxtal_object=return_original_pyxtal_object,
