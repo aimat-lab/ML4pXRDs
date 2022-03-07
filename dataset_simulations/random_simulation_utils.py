@@ -213,7 +213,7 @@ def generate_structure(
 
     else:
 
-        # pick number of unique elements:
+        # pick number of unique elements to sample:
 
         NO_unique_elements = np.random.choice(
             range(1, len(NO_unique_elements_prob_per_spg[group_object.number]) + 1),
@@ -225,8 +225,8 @@ def generate_structure(
 
     while True:
 
-        # If trying 20 times to generate a crystal with the given NO_elements fails, then pick a new
-        # NO_elements and return that. This should always return at some point.
+        # If trying 20 times to generate a crystal with the given NO_elements / element repetitions fails, then pick a new
+        # NO_elements / element repetitions and return that. This should always return at some point.
         if tries_counter > 20:
 
             print(
@@ -270,26 +270,17 @@ def generate_structure(
         set_wyckoffs_counter = 0
 
         unique_elements_counter = 0
-
         current_element = None
         current_picked_repetition = None
         current_repetition_counter = 0
 
-        while True:
+        while True:  # for
             if not use_element_repetitions_instead_of_NO_wyckoffs:
                 if set_wyckoffs_counter >= NO_elements:
                     break
 
             counter_collisions = 0
             while True:
-
-                if counter_collisions > 30:
-                    print(
-                        "More than 30 collisions setting one atom.", flush=True
-                    )  # TODO: What to do in this case here?
-                    # TODO: Is the loop and everything still all OK? Breaks and continues etc.?
-
-                    break  # try to set the next atom and skip the current one
 
                 if not use_icsd_statistics:
                     chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
@@ -398,7 +389,8 @@ def generate_structure(
 
                 break
 
-            set_wyckoffs_counter += 1
+            if not use_element_repetitions_instead_of_NO_wyckoffs:
+                set_wyckoffs_counter += 1
 
         my_crystal = pyxtal()
 
@@ -635,7 +627,6 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     counter_per_spg_per_element = {}
 
     NO_wyckoffs_per_spg = {}
-
     NO_unique_elements_per_spg = {}
     NO_repetitions_per_spg = {}
 
@@ -700,7 +691,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 elements_unique = np.unique(elements)
 
                 for el in elements_unique:
-                    if "+" in el or "-" in el or "." in el:
+                    if "+" in el or "-" in el or "." in el or "," in el:
                         print("Ohoh")
 
                 NO_unique_elements_per_spg[spg_number].append(len(elements_unique))
@@ -708,7 +699,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 reps = []
                 for el in elements_unique:
                     reps.append(np.sum(np.array(elements) == el))
-                NO_repetitions_per_spg[spg_number].append(reps)
+                NO_repetitions_per_spg[spg_number].extend(reps)
 
         except Exception as ex:
 

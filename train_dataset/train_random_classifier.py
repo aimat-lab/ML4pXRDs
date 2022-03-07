@@ -544,6 +544,7 @@ params_txt = (
     f"spgs: {str(spgs)}  \n  \n"
     f"do_symmetry_checks: {str(do_symmetry_checks)}  \n  \n"
     f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)} \n \n \n"
+    f"use_element_repetitions: {str(use_element_repetitions)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
