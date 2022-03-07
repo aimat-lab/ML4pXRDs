@@ -633,7 +633,7 @@ if __name__ == "__main__":
 
             counter += 1
 
-        ymin, ymax = ax1.get_ylim() # get current limits
+        ymin, ymax = ax1.get_ylim()  # get current limits
 
         if min_is_zero:
             ax1.set_xlim(left=0, right=None)

@@ -41,7 +41,7 @@ test_every_X_epochs = 1
 # batches_per_epoch = 1500
 batches_per_epoch = 1500  # TODO: Change back
 # NO_epochs = 200
-NO_epochs = 5  # TODO: Change back
+NO_epochs = 1  # TODO: Change back
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -70,7 +70,7 @@ use_NO_wyckoffs_counts = True
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -299,9 +299,6 @@ val_y_match = []
 for i, label in enumerate(icsd_labels_match):
     val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
 val_y_match = np.array(val_y_match)
-
-print(np.sum(val_y_match == 1))  # TODO: Change back
-exit()
 
 val_x_match = []
 for pattern in icsd_patterns_match:
@@ -576,6 +573,12 @@ class CustomCallback(keras.callbacks.Callback):
             scores_random = self.model.evaluate(
                 x=val_x_random, y=val_y_random, verbose=0
             )
+
+            # TODO: Change back!
+            print(scores_all)
+            print(scores_match)
+            print(scores_match_correct_spgs)
+            print(scores_random)
 
             assert metric_names[0] == "loss"
 

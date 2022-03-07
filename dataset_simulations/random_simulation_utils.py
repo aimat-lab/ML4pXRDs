@@ -480,6 +480,18 @@ def generate_structures(
     return result
 
 
+def get_wyckoff_info(pyxtal_crystal):
+    # returns: Number of set wyckoffs, elements
+
+    elements = []
+
+    for site in pyxtal_crystal.atom_sites:
+        specie_str = str(site.specie)
+        elements.append(specie_str)
+
+    return len(pyxtal_crystal.atom_sites), elements
+
+
 def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
     spgs = range(1, 231)
@@ -522,9 +534,12 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     # Calculate the statistics from the sim_statistics part of the simulation:
 
     counts_per_spg_per_wyckoff = {}
-    counter_per_element = {}
+    counter_per_spg_per_element = {}
 
     NO_wyckoffs_per_spg = {}
+
+    NO_unique_elements_per_spg = {}
+    NO_repetitions_per_spg = {}
 
     # pre-process the symmetry groups:
 
@@ -538,6 +553,10 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             counts_per_spg_per_wyckoff[spg_number][name] = 0
 
         NO_wyckoffs_per_spg[spg_number] = []
+        NO_unique_elements_per_spg[spg_number] = []
+        NO_repetitions_per_spg[spg_number] = []
+
+        counter_per_spg_per_element[spg_number] = {}
 
     # Analyse the statistics:
 
@@ -571,6 +590,28 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
             NO_wyckoffs_per_spg[spg_number].append(len(struc.atom_sites))
 
+            success = True
+            try:
+                NO_wyckoffs, elements = get_wyckoff_info(struc)
+            except Exception as ex:
+                print(ex)
+                success = False
+
+            if success:
+
+                elements_unique = np.unique(elements)
+
+                for el in elements_unique:
+                    if "+" in el or "-" in el or "." in el:
+                        print("Ohoh")
+
+                NO_unique_elements_per_spg[spg_number].append(len(elements_unique))
+
+                reps = []
+                for el in elements_unique:
+                    reps.append(np.sum(np.array(elements) == el))
+                NO_repetitions_per_spg[spg_number].append(reps)
+
         except Exception as ex:
 
             print(f"Error reading structure:")
@@ -581,25 +622,42 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         for site in struc.atom_sites:
 
             specie_str = str(site.specie)
-            if specie_str in counter_per_element:
-                counter_per_element[specie_str] += 1
+            if specie_str in counter_per_spg_per_element[spg_number].keys():
+                counter_per_spg_per_element[spg_number][specie_str] += 1
             else:
-                counter_per_element[specie_str] = 1
+                counter_per_spg_per_element[spg_number][specie_str] = 1
 
             name = str(site.wp.multiplicity) + site.wp.letter
             counts_per_spg_per_wyckoff[spg_number][name] += 1
 
     represented_spgs = []
     NO_wyckoffs_prob_per_spg = {}
+
+    NO_unique_elements_prob_per_spg = {}
+    NO_repetitions_prob_per_spg = {}
+
     for spg in NO_wyckoffs_per_spg.keys():
         if len(NO_wyckoffs_per_spg[spg]) > 0:
 
-            bincounted = np.bincount(NO_wyckoffs_per_spg[spg])
+            bincounted_NO_wyckoffs = np.bincount(NO_wyckoffs_per_spg[spg])
+            bincounted_NO_unique_elements = np.bincount(NO_unique_elements_per_spg[spg])
+            bincounted_NO_repetitions = np.bincount(NO_repetitions_per_spg[spg])
 
-            NO_wyckoffs_prob_per_spg[spg] = bincounted[1:] / np.sum(bincounted[1:])
+            NO_wyckoffs_prob_per_spg[spg] = bincounted_NO_wyckoffs[1:] / np.sum(
+                bincounted_NO_wyckoffs[1:]
+            )
+            NO_unique_elements_prob_per_spg[spg] = bincounted_NO_unique_elements[
+                1:
+            ] / np.sum(bincounted_NO_unique_elements[1:])
+            NO_repetitions_prob_per_spg[spg] = bincounted_NO_repetitions[1:] / np.sum(
+                bincounted_NO_repetitions[1:]
+            )
+
             represented_spgs.append(spg)
         else:
             NO_wyckoffs_prob_per_spg[spg] = []
+            NO_unique_elements_prob_per_spg[spg] = []
+            NO_repetitions_prob_per_spg[spg] = []
 
     print(f"Took {time.time() - start} s to calculate the statistics.")
 
@@ -646,12 +704,14 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     with open("prepared_training", "wb") as file:
         pickle.dump(
             (
-                counter_per_element,
+                counter_per_spg_per_element,
                 counts_per_spg_per_wyckoff,
                 NO_wyckoffs_prob_per_spg,
                 corrected_labels,
                 files_to_use_for_test_set,
                 represented_spgs,
+                NO_unique_elements_prob_per_spg,
+                NO_repetitions_prob_per_spg,
             ),
             file,
         )
@@ -664,24 +724,28 @@ def load_dataset_info():
         "rb",
     ) as file:
         data = pickle.load(file)
-        counter_per_element = data[0]
+        counter_per_spg_per_element = data[0]
         counts_per_spg_per_wyckoff = data[1]
         NO_wyckoffs_prob_per_spg = data[2]
         corrected_labels = data[3]
         files_to_use_for_test_set = data[4]
         represented_spgs = data[5]
+        NO_unique_elements_prob_per_spg = data[6]
+        NO_repetitions_prob_per_spg = data[7]
 
-    for element in counter_per_element.keys():
-        if element not in all_elements:
-            raise Exception(f"Element {element} not supported.")
+    for spg in counter_per_spg_per_element.keys():
+        for element in counter_per_spg_per_element[spg].keys():
+            if element not in all_elements:
+                raise Exception(f"Element {element} not supported.")
 
-    # convert to relative entries
-    total = 0
-    for key in counter_per_element.keys():
-        total += counter_per_element[key]
-    for key in counter_per_element.keys():
-        counter_per_element[key] /= total
-    probability_per_element = counter_per_element
+        # convert to relative entries
+        total = 0
+        for key in counter_per_spg_per_element[spg].keys():
+            total += counter_per_spg_per_element[spg][key]
+        for key in counter_per_spg_per_element[spg].keys():
+            counter_per_spg_per_element[spg][key] /= total
+
+    probability_per_spg_per_element = counter_per_spg_per_element
 
     for spg in counts_per_spg_per_wyckoff.keys():
         total = 0
@@ -694,16 +758,17 @@ def load_dataset_info():
                 counts_per_spg_per_wyckoff[spg][wyckoff_site] = 1 / len(
                     counts_per_spg_per_wyckoff[spg].keys()
                 )
-
     probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff
 
     return (
-        probability_per_element,
+        probability_per_spg_per_element,
         probability_per_spg_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
         corrected_labels,
         files_to_use_for_test_set,
         represented_spgs,  # spgs represented in the statistics dataset (70%)
+        NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg,
     )
 
 
