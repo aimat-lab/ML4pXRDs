@@ -300,6 +300,9 @@ for i, label in enumerate(icsd_labels_match):
     val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
 val_y_match = np.array(val_y_match)
 
+print(np.sum(val_y_match == 1))  # TODO: Change back
+exit()
+
 val_x_match = []
 for pattern in icsd_patterns_match:
     for sub_pattern in pattern:
