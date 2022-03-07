@@ -275,12 +275,20 @@ def generate_structure(
         current_repetition_counter = 0
 
         while True:  # for
+
+            # break conditions:
             if not use_element_repetitions_instead_of_NO_wyckoffs:
                 if set_wyckoffs_counter >= NO_elements:
+                    break
+            else:
+                if unique_elements_counter >= NO_unique_elements:
                     break
 
             counter_collisions = 0
             while True:
+
+                if counter_collisions > 50:
+                    print("More than 50 collisions setting an atom")
 
                 if not use_icsd_statistics:
                     chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
@@ -317,7 +325,6 @@ def generate_structure(
                     and int(number_of_atoms_per_site[chosen_index]) == 1
                 ):
                     counter_collisions += 1
-                    # print(f"{counter_collisions} collisions.", flush=True)
                     continue  # try again
 
                 number_of_atoms_per_site[chosen_index] += 1
@@ -343,7 +350,7 @@ def generate_structure(
                         chosen_elements.append(chosen_element)
                 else:
 
-                    if unique_elements_counter < NO_unique_elements and (
+                    if (
                         current_repetition_counter == current_picked_repetition
                         or current_picked_repetition is None
                     ):
