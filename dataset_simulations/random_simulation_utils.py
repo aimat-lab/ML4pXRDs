@@ -229,9 +229,14 @@ def generate_structure(
         # NO_elements / element repetitions and return that. This should always return at some point.
         if tries_counter > 20:
 
-            print(
-                f"Failed generating crystal of spg {group_object.number} with {NO_elements} set wyckoff positions 10 times. Choosing new NO_elements / element repetitions now."
-            )
+            if not use_element_repetitions_instead_of_NO_wyckoffs:
+                print(
+                    f"Failed generating crystal of spg {group_object.number} with {NO_elements} set wyckoff positions 10 times. Choosing new NO_elements repetitions now."
+                )
+            else:
+                print(
+                    f"Failed generating crystal of spg {group_object.number} with {NO_unique_elements} unique elements 10 times. Choosing new element repetitions now."
+                )
 
             return generate_structure(
                 _,
@@ -356,16 +361,15 @@ def generate_structure(
                     ):
 
                         current_picked_repetition = np.random.choice(
-                            list(
-                                NO_repetitions_prob_per_spg[group_object.number].keys()
+                            range(
+                                1,
+                                len(NO_repetitions_prob_per_spg[group_object.number])
+                                + 1,
                             ),
                             1,
-                            p=list(
-                                NO_repetitions_prob_per_spg[
-                                    group_object.number
-                                ].values()
-                            ),
+                            p=list(NO_repetitions_prob_per_spg[group_object.number]),
                         )[0]
+
                         current_repetition_counter = 1
                         current_element = np.random.choice(
                             list(
@@ -431,7 +435,15 @@ def generate_structure(
             if not volume_ok:
                 tries_counter += 1
 
-                print(f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})")
+                if not use_element_repetitions_instead_of_NO_wyckoffs:
+                    print(
+                        f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
+                    )
+                else:
+                    print(
+                        f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
+                    )
+
                 continue
 
         except Exception as ex:
@@ -477,9 +489,15 @@ def generate_structure(
 
                 checked_spg = analyzer.get_space_group_number()
                 if checked_spg != group_object.number:
-                    print(
-                        f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; NO_elements: {NO_elements}"
-                    )
+
+                    if not use_element_repetitions_instead_of_NO_wyckoffs:
+                        print(
+                            f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; NO_elements: {NO_elements}"
+                        )
+                    else:
+                        print(
+                            f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; Number of unique elements: {NO_unique_elements}"
+                        )
 
                     tries_counter += 1
 
@@ -621,12 +639,16 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         )
         sim_statistics.output_dir = path_to_patterns
 
-    sim_test.load(
-        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
-    )
-    sim_statistics.load(
-        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
-    )
+    # TODO: Change back
+    # sim_test.load(
+    #    load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+    # )
+    # sim_statistics.load(
+    #    load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+    # )
+
+    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=2)
+    sim_statistics.load(load_patterns_angles_intensities=False, start=2, stop=4)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -870,17 +892,19 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
-
+    if True:
         (
-            probability_per_element,
+            probability_per_spg_per_element,
             probability_per_spg_per_wyckoff,
-            NO_wyckoffs_probability,
+            NO_wyckoffs_prob_per_spg,
             corrected_labels,
             files_to_use_for_test_set,
+            represented_spgs,
+            NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg,
         ) = load_dataset_info()
 
-        for spg in range(1, 231):
+        for spg in represented_spgs:
 
             print(spg)
 
@@ -893,17 +917,20 @@ if __name__ == "__main__":
                 None,
                 False,
                 True,
-                probability_per_element,
+                probability_per_spg_per_element,
                 probability_per_spg_per_wyckoff,
                 7000,
                 False,
-                None,
+                NO_wyckoffs_prob_per_spg,
+                True,
+                False,
                 True,
                 True,
-                True,
+                NO_unique_elements_prob_per_spg,
+                NO_repetitions_prob_per_spg,
             )
 
-    if True:
+    if False:
 
         (
             probability_per_element,
