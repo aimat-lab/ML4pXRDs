@@ -16,7 +16,7 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "4-sps_test_logging"
+tag = "2-spgs"
 description = ""
 
 if len(sys.argv) > 1:
@@ -34,14 +34,12 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-run_analysis_after_run = False  # TODO: Change back again.
+run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-# batches_per_epoch = 1500
-batches_per_epoch = 1500  # TODO: Change back
-# NO_epochs = 200
-NO_epochs = 1  # TODO: Change back
+batches_per_epoch = 1500
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -589,12 +587,6 @@ class CustomCallback(keras.callbacks.Callback):
                 x=val_x_random, y=val_y_random, verbose=0
             )
 
-            # TODO: Change back!
-            print(scores_all)
-            print(scores_match)
-            print(scores_match_correct_spgs)
-            print(scores_random)
-
             assert metric_names[0] == "loss"
 
             log_all_loss.append((epoch, scores_all[0]))
@@ -636,8 +628,6 @@ model.fit(
     x=sequence,
     epochs=NO_epochs,
     batch_size=batches_per_epoch,
-    validation_data=(val_x_match, val_y_match),  # TODO: Remove this later when it fits
-    validation_freq=test_every_X_epochs,
     callbacks=[tb_callback, CustomCallback()],
     verbose=verbosity,
     workers=1,
@@ -732,17 +722,6 @@ with file_writer.as_default():
 
     for epoch, value in log_gap_accuracy:
         tf.summary.scalar("accuracy gap", data=value, step=epoch)
-
-# TODO: Remove again
-print("Gap accuracy")
-with np.printoptions(threshold=np.inf):
-    print(log_gap_accuracy)
-print("Accuracy match")
-with np.printoptions(threshold=np.inf):
-    print(log_match_accuracy)
-print("Accuracy random")
-with np.printoptions(threshold=np.inf):
-    print(log_random_accuracy)
 
 print("Training finished.")
 print("Output dir:")
