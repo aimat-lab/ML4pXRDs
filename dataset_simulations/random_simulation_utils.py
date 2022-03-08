@@ -403,6 +403,13 @@ def generate_structure(
             if not use_element_repetitions_instead_of_NO_wyckoffs:
                 set_wyckoffs_counter += 1
 
+        if use_element_repetitions_instead_of_NO_wyckoffs:
+            if len(chosen_numbers) > max_NO_elements:
+                print(
+                    f"Too many total number of set wyckoff sites for spg {group_object.number}, regenerating..."
+                )
+                continue  # but do not increase tries_counter, this is totally fine and expected!
+
         my_crystal = pyxtal()
 
         try:
