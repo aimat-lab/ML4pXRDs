@@ -511,6 +511,7 @@ def generate_structure(
                     continue
 
         except Exception as ex:
+
             print(flush=True)
             print(ex, flush=True)
             print(group_object.number, flush=True)

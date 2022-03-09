@@ -16,7 +16,7 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs"
+tag = "2-spgs-repetition"
 description = ""
 
 if len(sys.argv) > 1:
@@ -70,7 +70,7 @@ use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -550,20 +550,6 @@ with file_writer.as_default():
     tf.summary.text("Parameters", data=params_txt, step=0)
 
 log_wait_timings = []
-test_timings = []
-
-log_ray_queue_size = []
-
-log_all_loss = []
-log_match_loss = []
-log_match_correct_spgs_loss = []
-log_random_loss = []
-
-log_all_accuracy = []
-log_match_accuracy = []
-log_match_correct_spgs_accuracy = []
-log_random_accuracy = []
-log_gap_accuracy = []
 
 
 class CustomCallback(keras.callbacks.Callback):
@@ -573,37 +559,49 @@ class CustomCallback(keras.callbacks.Callback):
 
             start = time.time()
 
-            log_ray_queue_size.append((epoch, queue.size()))
+            with file_writer.as_default():
 
-            # gather metric names form model
-            metric_names = [metric.name for metric in self.model.metrics]
+                tf.summary.scalar("queue size", data=queue.size(), step=epoch)
 
-            scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
-            scores_match = self.model.evaluate(x=val_x_match, y=val_y_match, verbose=0)
-            scores_match_correct_spgs = self.model.evaluate(
-                x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
-            )
-            scores_random = self.model.evaluate(
-                x=val_x_random, y=val_y_random, verbose=0
-            )
+                # gather metric names form model
+                metric_names = [metric.name for metric in self.model.metrics]
 
-            assert metric_names[0] == "loss"
+                scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
+                scores_match = self.model.evaluate(
+                    x=val_x_match, y=val_y_match, verbose=0
+                )
+                scores_match_correct_spgs = self.model.evaluate(
+                    x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
+                )
+                scores_random = self.model.evaluate(
+                    x=val_x_random, y=val_y_random, verbose=0
+                )
 
-            log_all_loss.append((epoch, scores_all[0]))
-            log_match_loss.append((epoch, scores_match[0]))
-            log_match_correct_spgs_loss.append((epoch, scores_match_correct_spgs[0]))
-            log_random_loss.append((epoch, scores_random[0]))
+                assert metric_names[0] == "loss"
 
-            log_all_accuracy.append((epoch, scores_all[1]))
-            log_match_accuracy.append((epoch, scores_match[1]))
-            log_match_correct_spgs_accuracy.append(
-                (epoch, scores_match_correct_spgs[1])
-            )
-            log_random_accuracy.append((epoch, scores_random[1]))
+                tf.summary.scalar("loss all", data=scores_all[0], step=epoch)
+                tf.summary.scalar("loss match", data=scores_match[0], step=epoch)
+                tf.summary.scalar(
+                    "loss match_correct_spgs",
+                    data=scores_match_correct_spgs[0],
+                    step=epoch,
+                )
+                tf.summary.scalar("loss random", data=scores_random[0], step=epoch)
 
-            log_gap_accuracy.append((epoch, scores_random[1] - scores_match[1]))
+                tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
+                tf.summary.scalar("accuracy match", data=scores_match[1], step=epoch)
+                tf.summary.scalar(
+                    "accuracy match_correct_spgs",
+                    data=scores_match_correct_spgs[1],
+                    step=epoch,
+                )
+                tf.summary.scalar("accuracy random", data=scores_random[1], step=epoch)
 
-            test_timings.append(time.time() - start)
+                tf.summary.scalar(
+                    "accuracy gap", data=scores_random[1] - scores_match[1], step=epoch
+                )
+
+                tf.summary.scalar("test time", data=time.time() - start, step=epoch)
 
 
 class CustomSequence(keras.utils.Sequence):
@@ -690,38 +688,9 @@ with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
 
 ray.shutdown()
 
-# log all the stored info to tensorboard:
-
 with file_writer.as_default():
     for i, value in enumerate(log_wait_timings):
         tf.summary.scalar("waiting time", data=value, step=i)
-
-    for i, value in enumerate(test_timings):
-        tf.summary.scalar("test time", data=value, step=i)
-
-    for epoch, value in log_ray_queue_size:
-        tf.summary.scalar("queue size", data=value, step=epoch)
-
-    for epoch, value in log_all_loss:
-        tf.summary.scalar("loss all", data=value, step=epoch)
-    for epoch, value in log_match_loss:
-        tf.summary.scalar("loss match", data=value, step=epoch)
-    for epoch, value in log_match_correct_spgs_loss:
-        tf.summary.scalar("loss match_correct_spgs", data=value, step=epoch)
-    for epoch, value in log_random_loss:
-        tf.summary.scalar("loss random", data=value, step=epoch)
-
-    for epoch, value in log_all_accuracy:
-        tf.summary.scalar("accuracy all", data=value, step=epoch)
-    for epoch, value in log_match_accuracy:
-        tf.summary.scalar("accuracy match", data=value, step=epoch)
-    for epoch, value in log_match_correct_spgs_accuracy:
-        tf.summary.scalar("accuracy match_correct_spgs", data=value, step=epoch)
-    for epoch, value in log_random_accuracy:
-        tf.summary.scalar("accuracy random", data=value, step=epoch)
-
-    for epoch, value in log_gap_accuracy:
-        tf.summary.scalar("accuracy gap", data=value, step=epoch)
 
 print("Training finished.")
 print("Output dir:")
