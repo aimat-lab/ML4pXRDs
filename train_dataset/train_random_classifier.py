@@ -39,15 +39,17 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
-NO_epochs = 1000
+# batches_per_epoch = 1500
+batches_per_epoch = 100  # TODO: Change back
+# NO_epochs = 1000
+NO_epochs = 1  # TODO: Change back
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 structures_per_spg = 10  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
-do_distance_checks = False
+do_distance_checks = True  # TODO: Watch out, this has changed!
 do_merge_checks = False
 use_icsd_statistics = True
 
@@ -71,7 +73,7 @@ use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -340,14 +342,14 @@ val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match = np.expand_dims(val_x_match, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 
-#temp_dir = out_base + "ray_log"
+# temp_dir = out_base + "ray_log"
 
 if not local:
-    #ray.init(address="auto", include_dashboard=False, _temp_dir=temp_dir)
+    # ray.init(address="auto", include_dashboard=False, _temp_dir=temp_dir)
     # ray.init(include_dashboard=True, num_cpus=NO_workers)
     ray.init(address="auto", include_dashboard=False)
 else:
-    #ray.init(include_dashboard=False, _temp_dir=temp_dir)
+    # ray.init(include_dashboard=False, _temp_dir=temp_dir)
     ray.init(include_dashboard=False)
 
 print()

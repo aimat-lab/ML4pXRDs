@@ -161,6 +161,7 @@ def generate_structure(
     use_element_repetitions_instead_of_NO_wyckoffs=False,
     NO_unique_elements_prob_per_spg=None,
     NO_repetitions_prob_per_spg=None,
+    verbose=False,
 ):
 
     if use_icsd_statistics and (
@@ -220,6 +221,9 @@ def generate_structure(
             size=1,
             p=NO_unique_elements_prob_per_spg[group_object.number],
         )[0]
+
+        if verbose:
+            print(f"NO_unique_elements: {NO_unique_elements}")
 
     tries_counter = 0
 
@@ -416,6 +420,9 @@ def generate_structure(
                 )
                 continue  # but do not increase tries_counter, this is totally fine and expected!
 
+        if verbose:
+            print(f"Number of chosen wyckoff sites: {len(chosen_numbers)}")
+
         my_crystal = pyxtal()
 
         try:
@@ -443,6 +450,7 @@ def generate_structure(
                 fixed_volume=fixed_volume,
                 do_merge_checks=do_merge_checks,
                 max_volume=max_volume,
+                max_count=5,
             )
 
             if not volume_ok:
@@ -562,6 +570,7 @@ def generate_structures(
     use_element_repetitions_instead_of_NO_wyckoffs=False,
     NO_unique_elements_prob_per_spg=None,
     NO_repetitions_prob_per_spg=None,
+    verbose=False,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -602,6 +611,7 @@ def generate_structures(
             use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
             NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
+            verbose=verbose,
         )
         for i in range(0, N)
     ]
@@ -914,32 +924,34 @@ if __name__ == "__main__":
             NO_repetitions_prob_per_spg,
         ) = load_dataset_info()
 
-        for spg in represented_spgs:
-            # for spg in [2]:
+        for i in range(0, 20 * 100):
+            # for spg in represented_spgs:
+            for spg in [2, 15]:
+                # for spg in [2]:
 
-            print(spg)
+                print(spg)
 
-            generate_structures(
-                spg,
-                1,
-                100,
-                -1,
-                False,
-                None,
-                False,
-                True,
-                probability_per_spg_per_element,
-                probability_per_spg_per_wyckoff,
-                7000,
-                False,
-                NO_wyckoffs_prob_per_spg,
-                True,
-                False,
-                True,
-                True,
-                NO_unique_elements_prob_per_spg,
-                NO_repetitions_prob_per_spg,
-            )
+                generate_structures(
+                    spg,
+                    1,
+                    100,
+                    -1,
+                    True,  # distance checks enabled!
+                    None,
+                    False,
+                    True,
+                    probability_per_spg_per_element,
+                    probability_per_spg_per_wyckoff,
+                    7000,
+                    False,
+                    NO_wyckoffs_prob_per_spg,
+                    True,
+                    False,
+                    True,
+                    True,
+                    NO_unique_elements_prob_per_spg,
+                    NO_repetitions_prob_per_spg,
+                )
 
     if False:
 
