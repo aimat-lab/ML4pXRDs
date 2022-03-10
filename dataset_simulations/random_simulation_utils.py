@@ -371,19 +371,25 @@ def generate_structure(
                         )[0]
 
                         current_repetition_counter = 1
-                        current_element = np.random.choice(
-                            list(
-                                probability_per_spg_per_element[
-                                    group_object.number
-                                ].keys()
-                            ),
-                            1,
-                            p=list(
-                                probability_per_spg_per_element[
-                                    group_object.number
-                                ].values()
-                            ),
-                        )[0]
+
+                        while True:
+
+                            current_element = np.random.choice(
+                                list(
+                                    probability_per_spg_per_element[
+                                        group_object.number
+                                    ].keys()
+                                ),
+                                1,
+                                p=list(
+                                    probability_per_spg_per_element[
+                                        group_object.number
+                                    ].values()
+                                ),
+                            )[0]
+
+                            if current_element not in chosen_elements:
+                                break
 
                         unique_elements_counter += 1
 
@@ -896,7 +902,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_wyckoff,
@@ -909,6 +915,7 @@ if __name__ == "__main__":
         ) = load_dataset_info()
 
         for spg in represented_spgs:
+            # for spg in [2]:
 
             print(spg)
 
@@ -984,12 +991,13 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
     if False:
 
         data = load_dataset_info()
+        print()
 
     if False:
         data = load_dataset_info()
