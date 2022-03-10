@@ -926,7 +926,7 @@ if __name__ == "__main__":
 
         for i in range(0, 20 * 100):
             # for spg in represented_spgs:
-            for spg in [2, 15]:
+            for spg in represented_spgs:
                 # for spg in [2]:
 
                 print(spg)

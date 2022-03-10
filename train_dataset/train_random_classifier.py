@@ -17,8 +17,8 @@ import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import subprocess
 
-tag = "2-spgs-repetitions_no_return"
-description = "Do not return elements to the bags."
+tag = "2-spgs-repetitions_no_return_distance_checks"
+description = "Do not return elements to the bags. Do distance checks."
 
 if len(sys.argv) > 1:
     out_base = sys.argv[1] + "/"
@@ -39,17 +39,15 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-# batches_per_epoch = 1500
-batches_per_epoch = 100  # TODO: Change back
-# NO_epochs = 1000
-NO_epochs = 1  # TODO: Change back
+batches_per_epoch = 1500
+NO_epochs = 1000
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 structures_per_spg = 10  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
-do_distance_checks = True  # TODO: Watch out, this has changed!
+do_distance_checks = True
 do_merge_checks = False
 use_icsd_statistics = True
 
@@ -73,7 +71,7 @@ use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
