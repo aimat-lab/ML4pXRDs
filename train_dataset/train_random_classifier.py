@@ -340,13 +340,15 @@ val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match = np.expand_dims(val_x_match, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 
-temp_dir = out_base + "ray_log"
+#temp_dir = out_base + "ray_log"
 
 if not local:
-    ray.init(address="auto", include_dashboard=False, _temp_dir=temp_dir)
+    #ray.init(address="auto", include_dashboard=False, _temp_dir=temp_dir)
     # ray.init(include_dashboard=True, num_cpus=NO_workers)
+    ray.init(address="auto", include_dashboard=False)
 else:
-    ray.init(include_dashboard=False, _temp_dir=temp_dir)
+    #ray.init(include_dashboard=False, _temp_dir=temp_dir)
+    ray.init(include_dashboard=False)
 
 print()
 print(ray.cluster_resources())
