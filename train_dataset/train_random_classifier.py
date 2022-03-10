@@ -341,7 +341,6 @@ val_x_match = np.expand_dims(val_x_match, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 
 temp_dir = out_base + "ray_log"
-os.system("mkdir -p " + temp_dir)
 
 if not local:
     ray.init(address="auto", include_dashboard=False, _temp_dir=temp_dir)
