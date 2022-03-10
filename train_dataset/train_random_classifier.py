@@ -15,6 +15,7 @@ from datetime import datetime
 import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+import subprocess
 
 tag = "2-spgs-repetitions_no_return"
 description = "Do not return elements to the bags."
@@ -522,9 +523,14 @@ tb_callback = keras.callbacks.TensorBoard(out_base + "tuner_tb")
 # log parameters to tensorboard
 file_writer = tf.summary.create_file_writer(out_base + "metrics")
 
+git_revision_hash = (
+    subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
+)
+
 params_txt = (
     f"tag: {tag}  \n"
     f"description: {description}  \n  \n"
+    f"git hash: {git_revision_hash}  \n  \n"
     f"batches_per_epoch: {batches_per_epoch}  \n"
     f"NO_epochs: {NO_epochs}  \n"
     f"structures_per_spg: {structures_per_spg}  \n"
