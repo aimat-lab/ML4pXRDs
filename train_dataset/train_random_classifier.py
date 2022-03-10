@@ -16,8 +16,8 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs-repetition"
-description = ""
+tag = "2-spgs-repetitions_no_return"
+description = "Do not return elements to the bags."
 
 if len(sys.argv) > 1:
     out_base = sys.argv[1] + "/"
@@ -39,7 +39,7 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 200
+NO_epochs = 1000
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
