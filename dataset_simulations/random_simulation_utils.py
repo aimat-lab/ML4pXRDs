@@ -160,7 +160,7 @@ def generate_structure(
     force_wyckoff_indices=True,
     use_element_repetitions_instead_of_NO_wyckoffs=False,
     NO_unique_elements_prob_per_spg=None,
-    NO_repetitions_prob_per_spg=None,
+    NO_repetitions_prob_per_spg_per_element=None,
     verbose=False,
 ):
 
@@ -171,7 +171,8 @@ def generate_structure(
         raise Exception("Statistics data needed if use_icsd_statistics = True.")
 
     if use_element_repetitions_instead_of_NO_wyckoffs and (
-        NO_unique_elements_prob_per_spg is None or NO_repetitions_prob_per_spg is None
+        NO_unique_elements_prob_per_spg is None
+        or NO_repetitions_prob_per_spg_per_element is None
     ):
         raise Exception(
             "Statistics data needed if use_element_repetitions_instead_of_NO_wyckoffs = True."
@@ -265,7 +266,7 @@ def generate_structure(
                 force_wyckoff_indices=force_wyckoff_indices,
                 use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
                 NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
-                NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
+                NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -364,18 +365,6 @@ def generate_structure(
                         or current_picked_repetition is None
                     ):
 
-                        current_picked_repetition = np.random.choice(
-                            range(
-                                1,
-                                len(NO_repetitions_prob_per_spg[group_object.number])
-                                + 1,
-                            ),
-                            1,
-                            p=list(NO_repetitions_prob_per_spg[group_object.number]),
-                        )[0]
-
-                        current_repetition_counter = 1
-
                         while True:
 
                             current_element = np.random.choice(
@@ -394,6 +383,25 @@ def generate_structure(
 
                             if current_element not in chosen_elements:
                                 break
+
+                        current_picked_repetition = np.random.choice(
+                            range(
+                                1,
+                                len(
+                                    NO_repetitions_prob_per_spg_per_element[
+                                        group_object.number
+                                    ][current_element]
+                                )
+                                + 1,
+                            ),
+                            1,
+                            p=list(
+                                NO_repetitions_prob_per_spg_per_element[
+                                    group_object.number
+                                ][current_element]
+                            ),
+                        )[0]
+                        current_repetition_counter = 1
 
                         unique_elements_counter += 1
 
@@ -569,7 +577,7 @@ def generate_structures(
     force_wyckoff_indices=True,
     use_element_repetitions_instead_of_NO_wyckoffs=False,
     NO_unique_elements_prob_per_spg=None,
-    NO_repetitions_prob_per_spg=None,
+    NO_repetitions_prob_per_spg_per_element=None,
     verbose=False,
 ):
 
@@ -610,7 +618,7 @@ def generate_structures(
             force_wyckoff_indices=force_wyckoff_indices,
             use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
             NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
-            NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
+            NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             verbose=verbose,
         )
         for i in range(0, N)
@@ -882,7 +890,7 @@ def load_dataset_info():
         files_to_use_for_test_set = data[4]
         represented_spgs = data[5]
         NO_unique_elements_prob_per_spg = data[6]
-        NO_repetitions_prob_per_spg = data[7]
+        NO_repetitions_prob_per_spg_per_element = data[7]
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -919,7 +927,7 @@ def load_dataset_info():
         files_to_use_for_test_set,
         represented_spgs,  # spgs represented in the statistics dataset (70%)
         NO_unique_elements_prob_per_spg,
-        NO_repetitions_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element,
     )
 
 

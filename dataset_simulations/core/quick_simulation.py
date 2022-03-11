@@ -514,7 +514,7 @@ def get_random_xy_patterns(
     force_wyckoff_indices=True,
     use_element_repetitions_instead_of_NO_wyckoffs=False,
     NO_unique_elements_prob_per_spg=None,
-    NO_repetitions_prob_per_spg=None,
+    NO_repetitions_prob_per_spg_per_element=None,
 ):
 
     result_patterns_y = []
@@ -547,7 +547,7 @@ def get_random_xy_patterns(
             force_wyckoff_indices=force_wyckoff_indices,
             use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
             NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
-            NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
+            NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         )
 
         if do_print:

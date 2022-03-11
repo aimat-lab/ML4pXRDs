@@ -102,7 +102,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
     files_to_use_for_test_set,
     represented_spgs,
     NO_unique_elements_prob_per_spg,
-    NO_repetitions_prob_per_spg,
+    NO_repetitions_prob_per_spg_per_element,
 ) = load_dataset_info()
 
 if not use_icsd_statistics:
@@ -121,7 +121,7 @@ if not use_NO_wyckoffs_counts:
 
 if not use_element_repetitions:
     NO_unique_elements_prob_per_spg = None
-    NO_repetitions_prob_per_spg = None
+    NO_repetitions_prob_per_spg_per_element = None
 
 # Construct validation sets
 # Used validation sets:
@@ -427,7 +427,7 @@ def batch_generator_with_additional(
         force_wyckoff_indices=True,
         use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions,
         NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
-        NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
     )
 
     # Set the label to the right index:
@@ -476,7 +476,7 @@ def batch_generator_queue(
                 force_wyckoff_indices=True,
                 use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions,
                 NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
-                NO_repetitions_prob_per_spg=NO_repetitions_prob_per_spg,
+                NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             )
 
             patterns, labels = shuffle(patterns, labels)
