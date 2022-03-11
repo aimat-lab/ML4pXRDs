@@ -237,10 +237,10 @@ NO_wyckoffs_cached = {}
 for i in reversed(range(0, len(icsd_patterns_match))):
 
     if validation_max_NO_wyckoffs is not None:
-        _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas_match[i][0])
+        is_pure, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas_match[i][0])
 
         if icsd_metas_match[i][0] not in NO_wyckoffs_cached.keys():
-            NO_wyckoffs_cached[icsd_metas_match[i][0]] = NO_wyckoffs
+            NO_wyckoffs_cached[icsd_metas_match[i][0]] = is_pure, NO_wyckoffs
 
     if (
         validation_max_volume is not None
@@ -255,15 +255,25 @@ for i in reversed(range(0, len(icsd_patterns_match))):
         del icsd_crystals_match[i]
         del icsd_metas_match[i]
 
+icsd_patterns_match_corrected_labels_pure = icsd_patterns_match_corrected_labels.copy()
+icsd_labels_match_corrected_labels_pure = icsd_labels_match_corrected_labels.copy()
+icsd_variations_match_corrected_labels_pure = (
+    icsd_variations_match_corrected_labels.copy()
+)
+icsd_crystals_match_corrected_labels_pure = icsd_crystals_match_corrected_labels.copy()
+icsd_metas_match_corrected_labels_pure = icsd_metas_match_corrected_labels.copy()
+
 for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 
     if validation_max_NO_wyckoffs is not None:
         if icsd_metas_match_corrected_labels[i][0] not in NO_wyckoffs_cached.keys():
-            _, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(
+            is_pure, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(
                 icsd_metas_match_corrected_labels[i][0]
             )
         else:
-            NO_wyckoffs = NO_wyckoffs_cached[icsd_metas_match_corrected_labels[i][0]]
+            is_pure, NO_wyckoffs = NO_wyckoffs_cached[
+                icsd_metas_match_corrected_labels[i][0]
+            ]
 
     if (
         validation_max_volume is not None
@@ -277,6 +287,25 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
         del icsd_variations_match_corrected_labels[i]
         del icsd_crystals_match_corrected_labels[i]
         del icsd_metas_match_corrected_labels[i]
+
+    if (
+        (
+            validation_max_volume is not None
+            and icsd_crystals_match_corrected_labels_pure[i].volume
+            > validation_max_volume
+        )
+        or (
+            validation_max_NO_wyckoffs is not None
+            and NO_wyckoffs > validation_max_NO_wyckoffs
+        )
+        or not is_pure
+    ):
+
+        del icsd_patterns_match_corrected_labels_pure[i]
+        del icsd_labels_match_corrected_labels_pure[i]
+        del icsd_variations_match_corrected_labels_pure[i]
+        del icsd_crystals_match_corrected_labels_pure[i]
+        del icsd_metas_match_corrected_labels_pure[i]
 
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)
@@ -322,6 +351,16 @@ for pattern in icsd_patterns_match_corrected_labels:
     for sub_pattern in pattern:
         val_x_match_correct_spgs.append(sub_pattern)
 
+val_y_match_correct_spgs_pure = []
+for i, label in enumerate(icsd_labels_match_corrected_labels_pure):
+    val_y_match_correct_spgs_pure.extend([spgs.index(label)] * n_patterns_per_crystal)
+val_y_match_correct_spgs_pure = np.array(val_y_match_correct_spgs_pure)
+
+val_x_match_correct_spgs_pure = []
+for pattern in icsd_patterns_match_corrected_labels_pure:
+    for sub_pattern in pattern:
+        val_x_match_correct_spgs_pure.append(sub_pattern)
+
 print("Numbers in validation set (that matches sim parameters):")
 for i in range(0, len(spgs)):
     print(f"Spg {spgs[i]} : {np.sum(val_y_match==i)}")
@@ -332,13 +371,17 @@ assert not np.any(np.isnan(val_x_match))
 assert not np.any(np.isnan(val_y_match))
 assert not np.any(np.isnan(val_x_match_correct_spgs))
 assert not np.any(np.isnan(val_y_match_correct_spgs))
+assert not np.any(np.isnan(val_x_match_correct_spgs_pure))
+assert not np.any(np.isnan(val_y_match_correct_spgs_pure))
 assert len(val_x_all) == len(val_y_all)
 assert len(val_x_match) == len(val_y_match)
 assert len(val_x_match_correct_spgs) == len(val_y_match_correct_spgs)
+assert len(val_x_match_correct_spgs_pure) == len(val_y_match_correct_spgs_pure)
 
 val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match = np.expand_dims(val_x_match, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
+val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 
 # temp_dir = out_base + "ray_log"
 
@@ -583,6 +626,11 @@ class CustomCallback(keras.callbacks.Callback):
                 scores_match_correct_spgs = self.model.evaluate(
                     x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
                 )
+                scores_match_correct_spgs_pure = self.model.evaluate(
+                    x=val_x_match_correct_spgs_pure,
+                    y=val_y_match_correct_spgs_pure,
+                    verbose=0,
+                )
                 scores_random = self.model.evaluate(
                     x=val_x_random, y=val_y_random, verbose=0
                 )
@@ -596,6 +644,11 @@ class CustomCallback(keras.callbacks.Callback):
                     data=scores_match_correct_spgs[0],
                     step=epoch,
                 )
+                tf.summary.scalar(
+                    "loss match_correct_spgs_pure",
+                    data=scores_match_correct_spgs_pure[0],
+                    step=epoch,
+                )
                 tf.summary.scalar("loss random", data=scores_random[0], step=epoch)
 
                 tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
@@ -603,6 +656,11 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar(
                     "accuracy match_correct_spgs",
                     data=scores_match_correct_spgs[1],
+                    step=epoch,
+                )
+                tf.summary.scalar(
+                    "accuracy match_correct_spgs_pure",
+                    data=scores_match_correct_spgs_pure[1],
                     step=epoch,
                 )
                 tf.summary.scalar("accuracy random", data=scores_random[1], step=epoch)
