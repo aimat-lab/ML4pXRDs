@@ -677,7 +677,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
     NO_wyckoffs_per_spg = {}
     NO_unique_elements_per_spg = {}
-    NO_repetitions_per_spg = {}
+    NO_repetitions_per_spg_per_element = {}
 
     # pre-process the symmetry groups:
 
@@ -692,7 +692,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
         NO_wyckoffs_per_spg[spg_number] = []
         NO_unique_elements_per_spg[spg_number] = []
-        NO_repetitions_per_spg[spg_number] = []
+        NO_repetitions_per_spg_per_element[spg_number] = {}
 
         counter_per_spg_per_element[spg_number] = {}
 
@@ -745,10 +745,13 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
                 NO_unique_elements_per_spg[spg_number].append(len(elements_unique))
 
-                reps = []
                 for el in elements_unique:
-                    reps.append(np.sum(np.array(elements) == el))
-                NO_repetitions_per_spg[spg_number].extend(reps)
+                    reps = np.sum(np.array(elements) == el)
+
+                    if el in NO_repetitions_per_spg_per_element[spg_number].keys():
+                        NO_repetitions_per_spg_per_element[spg_number][el].append(reps)
+                    else:
+                        NO_repetitions_per_spg_per_element[spg_number][el] = [reps]
 
         except Exception as ex:
 
@@ -772,14 +775,13 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     NO_wyckoffs_prob_per_spg = {}
 
     NO_unique_elements_prob_per_spg = {}
-    NO_repetitions_prob_per_spg = {}
+    NO_repetitions_prob_per_spg_per_element = {}
 
     for spg in NO_wyckoffs_per_spg.keys():
         if len(NO_wyckoffs_per_spg[spg]) > 0:
 
             bincounted_NO_wyckoffs = np.bincount(NO_wyckoffs_per_spg[spg])
             bincounted_NO_unique_elements = np.bincount(NO_unique_elements_per_spg[spg])
-            bincounted_NO_repetitions = np.bincount(NO_repetitions_per_spg[spg])
 
             NO_wyckoffs_prob_per_spg[spg] = bincounted_NO_wyckoffs[1:] / np.sum(
                 bincounted_NO_wyckoffs[1:]
@@ -787,15 +789,26 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             NO_unique_elements_prob_per_spg[spg] = bincounted_NO_unique_elements[
                 1:
             ] / np.sum(bincounted_NO_unique_elements[1:])
-            NO_repetitions_prob_per_spg[spg] = bincounted_NO_repetitions[1:] / np.sum(
-                bincounted_NO_repetitions[1:]
-            )
+
+            NO_repetitions_prob_per_spg_per_element[spg] = {}
+
+            for el in NO_repetitions_per_spg_per_element[spg].keys():
+
+                bincounted_NO_repetitions = np.bincount(
+                    NO_repetitions_per_spg_per_element[spg][el]
+                )
+
+                NO_repetitions_prob_per_spg_per_element[spg][
+                    el
+                ] = bincounted_NO_repetitions[1:] / np.sum(
+                    bincounted_NO_repetitions[1:]
+                )
 
             represented_spgs.append(spg)
         else:
             NO_wyckoffs_prob_per_spg[spg] = []
             NO_unique_elements_prob_per_spg[spg] = []
-            NO_repetitions_prob_per_spg[spg] = []
+            NO_repetitions_prob_per_spg_per_element[spg] = {}
 
     print(f"Took {time.time() - start} s to calculate the statistics.")
 
@@ -849,7 +862,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 files_to_use_for_test_set,
                 represented_spgs,
                 NO_unique_elements_prob_per_spg,
-                NO_repetitions_prob_per_spg,
+                NO_repetitions_prob_per_spg_per_element,
             ),
             file,
         )

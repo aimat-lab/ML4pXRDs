@@ -12,6 +12,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.ase import AseAtomsAdaptor
 from ase.visualize import view
 
+
 if __name__ == "__main__":
 
     if len(sys.argv) > 2:
@@ -870,6 +871,3 @@ if __name__ == "__main__":
     # Only the general wyckoff position is needed to generate all the coordinates.
 
     ################# Analysing additional structural features (Magpie) ################
-
-    def plot_magpie_features(crystal_lists, label_per_list):
-        pass
