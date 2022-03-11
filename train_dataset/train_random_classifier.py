@@ -523,6 +523,13 @@ for i in range(NO_random_swipes):
 results = ray.get(object_refs)
 # results = object_refs
 
+print("Sizes of validation sets:")
+print(f"all: {len(icsd_labels_all)} * 5")
+print(f"match: {len(icsd_labels_match)} * 5")
+print(f"match_correct_spgs: {len(icsd_labels_match_corrected_labels)} * 5")
+print(f"match_correct_spgs_pure: {len(icsd_labels_match_corrected_labels_pure)} * 5")
+print(f"random: {len(results)}")
+
 val_x_random = []
 val_y_random = []
 
