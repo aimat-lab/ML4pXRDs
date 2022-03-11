@@ -296,8 +296,13 @@ def generate_structure(
 
             counter_collisions = 0
             while True:
-                if counter_collisions > 50:
-                    print("More than 50 collisions setting an atom")
+                if counter_collisions > 100:
+                    print(
+                        "More than 100 collisions setting an atom, continuing with next unique element."
+                    )
+
+                    current_repetition_counter = current_picked_repetition  # force that loop goes to next unique element
+                    break
 
                 if not use_element_repetitions_instead_of_NO_wyckoffs:
                     if not use_icsd_statistics:
@@ -742,8 +747,6 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 struc.group.number
             )  # use the group as calculated by pyxtal for statistics; this should be fine.
 
-            NO_wyckoffs_per_spg[spg_number].append(len(struc.atom_sites))
-
             success = True
             try:
                 NO_wyckoffs, elements = get_wyckoff_info(struc)
@@ -754,6 +757,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             except Exception as ex:
                 print(ex)
                 success = False
+
+            NO_wyckoffs_per_spg[spg_number].append(len(struc.atom_sites))
 
             if success:
 
@@ -953,7 +958,9 @@ def load_dataset_info():
         )
 
     return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn (no correlations considered!); This is the main assumption of my work.
+        # There are no correlations in coordinate space and no correlations in setting the wyckoff sites.
         # P(wyckoff, element) = P(wyckoff|element)P(element)
+        # We just want to resemble the occupation of wyckoff sites realistically.
         probability_per_spg_per_element,
         probability_per_spg_per_element_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
@@ -967,7 +974,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1058,7 +1065,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
     if False:
