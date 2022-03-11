@@ -956,30 +956,39 @@ if __name__ == "__main__":
         """
 
     if True:
-
         (
-            probability_per_element,
+            probability_per_spg_per_element,
             probability_per_spg_per_wyckoff,
-            NO_wyckoffs_probability,
+            NO_wyckoffs_prob_per_spg,
             corrected_labels,
             files_to_use_for_test_set,
+            represented_spgs,  # spgs represented in the statistics dataset (70%)
+            NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg,
         ) = load_dataset_info()
 
         patterns, labels = get_random_xy_patterns(
-            spgs=[15],
-            structures_per_spg=1,
-            wavelength=1.5406,
-            N=8501,
-            NO_corn_sizes=1,
-            two_theta_range=(5, 90),
-            max_NO_elements=10,
-            do_distance_checks=False,
-            do_merge_checks=False,
-            use_icsd_statistics=True,
-            probability_per_element=probability_per_element,
-            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
-            max_volume=7000,
-            NO_wyckoffs_probability=None,
-            do_symmetry_checks=True,
-            set_NO_elements_to_max=True,
+            [15],
+            1,
+            1.5,
+            9000,
+            1,
+            (0, 90),
+            100,
+            False,
+            False,
+            True,
+            None,
+            False,
+            True,
+            probability_per_spg_per_element,
+            probability_per_spg_per_wyckoff,
+            7000,
+            NO_wyckoffs_prob_per_spg,
+            True,
+            False,
+            True,
+            True,
+            NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg,
         )
