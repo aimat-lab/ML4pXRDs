@@ -289,6 +289,7 @@ if __name__ == "__main__":
 
         return denseness_factors
 
+    icsd_falsely_crystals = []
     icsd_falsely_volumes = []
     icsd_falsely_angles = []
     icsd_falsely_denseness_factors = []
@@ -301,6 +302,7 @@ if __name__ == "__main__":
     icsd_falsely_element_repetitions = []
     icsd_falsely_NO_atoms = []
 
+    icsd_rightly_crystals = []
     icsd_rightly_volumes = []
     icsd_rightly_angles = []
     icsd_rightly_denseness_factors = []
@@ -313,6 +315,7 @@ if __name__ == "__main__":
     icsd_rightly_element_repetitions = []
     icsd_rightly_NO_atoms = []
 
+    random_rightly_crystals = []
     random_rightly_volumes = []
     random_rightly_angles = []
     random_rightly_denseness_factors = []
@@ -323,6 +326,7 @@ if __name__ == "__main__":
     random_rightly_element_repetitions = []
     random_rightly_NO_atoms = []
 
+    random_falsely_crystals = []
     random_falsely_volumes = []
     random_falsely_angles = []
     random_falsely_denseness_factors = []
@@ -340,6 +344,8 @@ if __name__ == "__main__":
         if spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze:
 
             structure = icsd_crystals[index]
+
+            icsd_falsely_crystals.append(structure)
 
             volume = structure.volume
 
@@ -376,6 +382,8 @@ if __name__ == "__main__":
 
             structure = icsd_crystals[index]
 
+            icsd_rightly_crystals.append(structure)
+
             volume = structure.volume
 
             denseness_factors = get_denseness_factors(structure)
@@ -406,6 +414,8 @@ if __name__ == "__main__":
     for index in falsely_indices_random:
 
         structure = random_crystals[index]
+
+        random_falsely_crystals.append(structure)
 
         if spgs_to_analyze is None or random_labels[index] in spgs_to_analyze:
 
@@ -438,6 +448,8 @@ if __name__ == "__main__":
     for index in rightly_indices_random:
 
         structure = random_crystals[index]
+
+        random_rightly_crystals.append(structure)
 
         if spgs_to_analyze is None or random_labels[index] in spgs_to_analyze:
 
@@ -856,3 +868,8 @@ if __name__ == "__main__":
     # The general wyckoff site is always written in the cif file!
     # This is because the special ones are only special cases of the general wyckoff position!
     # Only the general wyckoff position is needed to generate all the coordinates.
+
+    ################# Analysing additional structural features (Magpie) ################
+
+    def plot_magpie_features(crystal_lists, label_per_list):
+        pass
