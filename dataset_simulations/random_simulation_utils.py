@@ -751,7 +751,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             try:
                 NO_wyckoffs, elements = get_wyckoff_info(struc)
 
-                if NO_wyckoffs > 100:
+                if NO_wyckoffs > 100 or crystal.volume > 7000:
                     continue
 
             except Exception as ex:
