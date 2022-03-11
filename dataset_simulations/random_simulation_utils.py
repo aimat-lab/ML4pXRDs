@@ -685,8 +685,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     # )
 
     # TODO: Change back
-    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=1)
-    sim_statistics.load(load_patterns_angles_intensities=False, start=1, stop=2)
+    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=3)
+    sim_statistics.load(load_patterns_angles_intensities=False, start=3, stop=6)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -747,6 +747,10 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             success = True
             try:
                 NO_wyckoffs, elements = get_wyckoff_info(struc)
+
+                if NO_wyckoffs > 100:
+                    continue
+
             except Exception as ex:
                 print(ex)
                 success = False
@@ -966,7 +970,7 @@ if __name__ == "__main__":
     if False:
         (
             probability_per_spg_per_element,
-            probability_per_spg_per_wyckoff,
+            probability_per_spg_per_element_per_wyckoff,
             NO_wyckoffs_prob_per_spg,
             corrected_labels,
             files_to_use_for_test_set,
@@ -975,7 +979,7 @@ if __name__ == "__main__":
             NO_repetitions_prob_per_spg,
         ) = load_dataset_info()
 
-        for i in range(0, 20 * 100):
+        for i in range(0, 2):
             # for spg in represented_spgs:
             for spg in represented_spgs:
                 # for spg in [2]:
@@ -992,7 +996,7 @@ if __name__ == "__main__":
                     False,
                     True,
                     probability_per_spg_per_element,
-                    probability_per_spg_per_wyckoff,
+                    probability_per_spg_per_element_per_wyckoff,
                     7000,
                     False,
                     NO_wyckoffs_prob_per_spg,
@@ -1054,10 +1058,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
-    if True:
+    if False:
 
         data = load_dataset_info()
         print()
