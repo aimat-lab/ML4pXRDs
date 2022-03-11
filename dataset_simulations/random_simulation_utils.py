@@ -151,7 +151,7 @@ def generate_structure(
     do_merge_checks=True,
     use_icsd_statistics=False,
     probability_per_spg_per_element=None,
-    probability_per_spg_per_wyckoff=None,
+    probability_per_spg_per_element_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
     NO_wyckoffs_prob_per_spg=None,
@@ -166,7 +166,7 @@ def generate_structure(
 
     if use_icsd_statistics and (
         probability_per_spg_per_element is None
-        or probability_per_spg_per_wyckoff is None
+        or probability_per_spg_per_element_per_wyckoff is None
     ):
         raise Exception("Statistics data needed if use_icsd_statistics = True.")
 
@@ -257,7 +257,7 @@ def generate_structure(
                 do_merge_checks,
                 use_icsd_statistics,
                 probability_per_spg_per_element,
-                probability_per_spg_per_wyckoff,
+                probability_per_spg_per_element_per_wyckoff,
                 max_volume,
                 return_original_pyxtal_object,
                 NO_wyckoffs_prob_per_spg,
@@ -296,48 +296,8 @@ def generate_structure(
 
             counter_collisions = 0
             while True:
-
                 if counter_collisions > 50:
                     print("More than 50 collisions setting an atom")
-
-                if not use_icsd_statistics:
-                    chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
-                else:
-                    probability_per_wyckoff = probability_per_spg_per_wyckoff[
-                        group_object.number
-                    ]
-
-                    chosen_wyckoff = np.random.choice(
-                        list(probability_per_wyckoff.keys()),
-                        1,
-                        p=list(probability_per_wyckoff.values()),
-                    )[0]
-                    chosen_index = names.index(chosen_wyckoff)
-
-                """
-                # always first choose the general Wyckoff site:
-                chosen_index = (
-                    random.randint(0, len(number_of_atoms) - 1) if i > 0 else 0
-                )
-                """
-
-                """ See this from the documentation
-                PyXtal starts with the largest available WP, which is the general position of the space group.
-                If the number of atoms required is equal to or greater than the size of the general position,
-                the algorithm proceeds. If fewer atoms are needed, the next largest WP (or set of WP’s) is
-                chosen, in order of descending multiplicity. This is done to ensure that larger positions are
-                preferred over smaller ones; this reflects the greater prevalence of larger multiplicities
-                both statistically and in nature.
-                """
-
-                if (
-                    dofs[chosen_index] == 0
-                    and int(number_of_atoms_per_site[chosen_index]) == 1
-                ):
-                    counter_collisions += 1
-                    continue  # try again
-
-                number_of_atoms_per_site[chosen_index] += 1
 
                 if not use_element_repetitions_instead_of_NO_wyckoffs:
                     if not use_icsd_statistics:
@@ -410,6 +370,52 @@ def generate_structure(
                         current_repetition_counter += 1
 
                     chosen_elements.append(current_element)
+
+                if not use_icsd_statistics:
+                    chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
+                else:
+                    probability_per_wyckoff = (
+                        probability_per_spg_per_element_per_wyckoff[
+                            group_object.number
+                        ][current_element]
+                    )
+
+                    chosen_wyckoff = np.random.choice(
+                        list(probability_per_wyckoff.keys()),
+                        1,
+                        p=list(probability_per_wyckoff.values()),
+                    )[0]
+                    chosen_index = names.index(chosen_wyckoff)
+
+                """
+                # always first choose the general Wyckoff site:
+                chosen_index = (
+                    random.randint(0, len(number_of_atoms) - 1) if i > 0 else 0
+                )
+                """
+
+                """ See this from the documentation
+                PyXtal starts with the largest available WP, which is the general position of the space group.
+                If the number of atoms required is equal to or greater than the size of the general position,
+                the algorithm proceeds. If fewer atoms are needed, the next largest WP (or set of WP’s) is
+                chosen, in order of descending multiplicity. This is done to ensure that larger positions are
+                preferred over smaller ones; this reflects the greater prevalence of larger multiplicities
+                both statistically and in nature.
+                """
+
+                if (
+                    dofs[chosen_index] == 0
+                    and int(number_of_atoms_per_site[chosen_index]) == 1
+                ):
+                    counter_collisions += 1
+
+                    # need to reset the changes that were made above, since this didn't work out:
+                    chosen_elements.pop()
+                    current_repetition_counter -= 1
+
+                    continue  # try again
+
+                number_of_atoms_per_site[chosen_index] += 1
 
                 chosen_numbers.append(multiplicities[chosen_index])
                 chosen_wyckoff_positions.append([names[chosen_index]])
@@ -568,7 +574,7 @@ def generate_structures(
     do_merge_checks=True,
     use_icsd_statistics=False,
     probability_per_spg_per_element=None,
-    probability_per_spg_per_wyckoff=None,
+    probability_per_spg_per_element_per_wyckoff=None,
     max_volume=None,
     return_original_pyxtal_object=False,
     NO_wyckoffs_prob_per_spg=None,
@@ -609,7 +615,7 @@ def generate_structures(
             do_merge_checks=do_merge_checks,
             use_icsd_statistics=use_icsd_statistics,
             probability_per_spg_per_element=probability_per_spg_per_element,
-            probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+            probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
             max_volume=max_volume,
             return_original_pyxtal_object=return_original_pyxtal_object,
             NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
@@ -671,16 +677,20 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         )
         sim_statistics.output_dir = path_to_patterns
 
-    sim_test.load(
-        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
-    )
-    sim_statistics.load(
-        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
-    )
+    # sim_test.load(
+    #    load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+    # )
+    # sim_statistics.load(
+    #    load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+    # )
+
+    # TODO: Change back
+    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=1)
+    sim_statistics.load(load_patterns_angles_intensities=False, start=1, stop=2)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
-    counts_per_spg_per_wyckoff = {}
+    counts_per_spg_per_element_per_wyckoff = {}
     counter_per_spg_per_element = {}
 
     NO_wyckoffs_per_spg = {}
@@ -691,12 +701,10 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
     for spg_number in spgs:
 
-        group = Group(spg_number, dim=3)
-        names = [(str(x.multiplicity) + x.letter) for x in group]
+        # group = Group(spg_number, dim=3)
+        # names = [(str(x.multiplicity) + x.letter) for x in group]
 
-        counts_per_spg_per_wyckoff[spg_number] = {}
-        for name in names:
-            counts_per_spg_per_wyckoff[spg_number][name] = 0
+        counts_per_spg_per_element_per_wyckoff[spg_number] = {}
 
         NO_wyckoffs_per_spg[spg_number] = []
         NO_unique_elements_per_spg[spg_number] = []
@@ -777,7 +785,24 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 counter_per_spg_per_element[spg_number][specie_str] = 1
 
             name = str(site.wp.multiplicity) + site.wp.letter
-            counts_per_spg_per_wyckoff[spg_number][name] += 1
+
+            if specie_str in counts_per_spg_per_element_per_wyckoff[spg_number].keys():
+                if (
+                    name
+                    in counts_per_spg_per_element_per_wyckoff[spg_number][
+                        specie_str
+                    ].keys()
+                ):
+                    counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][
+                        name
+                    ] += 1
+                else:
+                    counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][
+                        name
+                    ] = 1
+            else:
+                counts_per_spg_per_element_per_wyckoff[spg_number][specie_str] = {}
+                counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][name] = 1
 
     represented_spgs = []
     NO_wyckoffs_prob_per_spg = {}
@@ -864,7 +889,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         pickle.dump(
             (
                 counter_per_spg_per_element,
-                counts_per_spg_per_wyckoff,
+                counts_per_spg_per_element_per_wyckoff,
                 NO_wyckoffs_prob_per_spg,
                 corrected_labels,
                 files_to_use_for_test_set,
@@ -884,7 +909,7 @@ def load_dataset_info():
     ) as file:
         data = pickle.load(file)
         counter_per_spg_per_element = data[0]
-        counts_per_spg_per_wyckoff = data[1]
+        counts_per_spg_per_element_per_wyckoff = data[1]
         NO_wyckoffs_prob_per_spg = data[2]
         corrected_labels = data[3]
         files_to_use_for_test_set = data[4]
@@ -906,22 +931,27 @@ def load_dataset_info():
 
     probability_per_spg_per_element = counter_per_spg_per_element
 
-    for spg in counts_per_spg_per_wyckoff.keys():
-        total = 0
-        for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
-            total += counts_per_spg_per_wyckoff[spg][wyckoff_site]
-        for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
-            if total > 0:
-                counts_per_spg_per_wyckoff[spg][wyckoff_site] /= total
-            else:  # if no observations are present in the ICSD, make it evenly distributed
-                counts_per_spg_per_wyckoff[spg][wyckoff_site] = 1 / len(
-                    counts_per_spg_per_wyckoff[spg].keys()
-                )
-    probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff
+    for spg in counts_per_spg_per_element_per_wyckoff.keys():
+        for el in counts_per_spg_per_element_per_wyckoff[spg].keys():
+            total = 0
+            for wyckoff_site in counts_per_spg_per_element_per_wyckoff[spg][el].keys():
+                total += counts_per_spg_per_element_per_wyckoff[spg][el][wyckoff_site]
 
-    return (
+            for wyckoff_site in counts_per_spg_per_element_per_wyckoff[spg][el].keys():
+                if total > 0:
+                    counts_per_spg_per_element_per_wyckoff[spg][el][
+                        wyckoff_site
+                    ] /= total
+                else:
+                    counts_per_spg_per_element_per_wyckoff[spg][el][wyckoff_site] = 0
+        probability_per_spg_per_element_per_wyckoff = (
+            counts_per_spg_per_element_per_wyckoff
+        )
+
+    return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn (no correlations considered!); This is the main assumption of my work.
+        # P(wyckoff, element) = P(wyckoff|element)P(element)
         probability_per_spg_per_element,
-        probability_per_spg_per_wyckoff,
+        probability_per_spg_per_element_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
         corrected_labels,
         files_to_use_for_test_set,
@@ -933,7 +963,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_wyckoff,
@@ -1027,7 +1057,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if False:
+    if True:
 
         data = load_dataset_info()
         print()

@@ -96,7 +96,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 
 (
     probability_per_spg_per_element,
-    probability_per_spg_per_wyckoff,
+    probability_per_spg_per_element_per_wyckoff,
     NO_wyckoffs_prob_per_spg,
     corrected_labels,
     files_to_use_for_test_set,
@@ -108,7 +108,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
 if not use_icsd_statistics:
     (
         probability_per_element,
-        probability_per_spg_per_wyckoff,
+        probability_per_spg_per_element_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
     ) = (
         None,
@@ -420,7 +420,7 @@ def batch_generator_with_additional(
         do_merge_checks=do_merge_checks,
         use_icsd_statistics=use_icsd_statistics,
         probability_per_spg_per_element=probability_per_spg_per_element,
-        probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+        probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
         max_volume=generation_max_volume,
         NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
         do_symmetry_checks=do_symmetry_checks,
@@ -469,7 +469,7 @@ def batch_generator_queue(
                 do_merge_checks=do_merge_checks,
                 use_icsd_statistics=use_icsd_statistics,
                 probability_per_spg_per_element=probability_per_spg_per_element,
-                probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+                probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
                 max_volume=generation_max_volume,
                 NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
                 do_symmetry_checks=do_symmetry_checks,
