@@ -17,8 +17,8 @@ import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import subprocess
 
-tag = "2-spgs-repetitions_no_return_distance_checks"
-description = "Do not return elements to the bags. Do distance checks."
+tag = "2-spgs-repetitions_per_element"
+description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element."
 
 if len(sys.argv) > 1:
     out_base = sys.argv[1] + "/"
