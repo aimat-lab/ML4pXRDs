@@ -296,9 +296,9 @@ def generate_structure(
 
             counter_collisions = 0
             while True:
-                if counter_collisions > 100:
+                if counter_collisions > 50:
                     print(
-                        "More than 100 collisions setting an atom, continuing with next unique element."
+                        "More than 50 collisions setting an atom, continuing with next unique element."
                     )
 
                     current_repetition_counter = current_picked_repetition  # force that loop goes to next unique element
@@ -690,8 +690,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     # )
 
     # TODO: Change back
-    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=3)
-    sim_statistics.load(load_patterns_angles_intensities=False, start=3, stop=6)
+    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=10)
+    sim_statistics.load(load_patterns_angles_intensities=False, start=10, stop=20)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -957,10 +957,13 @@ def load_dataset_info():
             counts_per_spg_per_element_per_wyckoff
         )
 
-    return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn (no correlations considered!); This is the main assumption of my work.
-        # There are no correlations in coordinate space and no correlations in setting the wyckoff sites.
+    return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn.
+        # The only correlation considered is having multiple elements of the same type (less spread in number of unique elements).
+        # This is the main assumption of my work.
+        # There are no correlations in coordinate space.
         # P(wyckoff, element) = P(wyckoff|element)P(element)
-        # We just want to resemble the occupation of wyckoff sites realistically.
+        # We just want to resemble the occupation of wyckoff sites realistically in the most straightforward way.
+        # More than that is not needed for merely extracting symmetry information.
         probability_per_spg_per_element,
         probability_per_spg_per_element_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
@@ -974,7 +977,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1065,7 +1068,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
     if False:
