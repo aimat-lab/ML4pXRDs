@@ -973,7 +973,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1065,7 +1065,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
     if False:

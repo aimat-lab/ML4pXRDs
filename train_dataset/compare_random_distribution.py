@@ -30,10 +30,10 @@ if __name__ == "__main__":
 
     else:
 
-        in_base = "classifier_spgs/03-03-2022_18-29-39_4-spgs_debug/"
-        tag = "4_spgs_debug"
+        in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
+        tag = "temp"
 
-        spgs_to_analyze = [104, 176]  # TODO: Change back
+        spgs_to_analyze = [2, 15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
     show_sample_structures = False
