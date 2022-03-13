@@ -574,6 +574,7 @@ class Simulation:
             wyckoff_str = ""
             elements = []
             occupancies = []
+            wyckoffs_per_element = {}
 
             for line in file:
                 """Example entry
@@ -599,6 +600,12 @@ class Simulation:
                         element = re.sub(r"\d*\+?$", "", element)
                         element = re.sub(r"\d*\-?$", "", element)
 
+                        wyckoff_name = columns[2] + columns[3]
+                        if element not in wyckoffs_per_element.keys():
+                            wyckoffs_per_element[element] = [wyckoff_name]
+                        else:
+                            wyckoffs_per_element[element].append(wyckoff_name)
+
                         elements.append(element)
                         occupancies.append(occ)
 
@@ -611,7 +618,23 @@ class Simulation:
                         wyckoff_str += line.strip() + "\n"
 
                     else:
-                        return is_pure, counter, elements, occupancies
+                        wyckoff_repetitions = []
+
+                        for key in wyckoffs_per_element.keys():
+                            wyckoffs_unique = np.unique(wyckoffs_per_element[key])
+
+                            for item in wyckoffs_unique:
+                                wyckoff_repetitions.append(
+                                    np.sum(np.array(wyckoffs_per_element[key]) == item)
+                                )
+
+                        return (
+                            is_pure,
+                            counter,
+                            elements,
+                            occupancies,
+                            wyckoff_repetitions,
+                        )
 
                 if "_atom_site_occupancy" in line or "_atom_site_occupance" in line:
                     counting = True

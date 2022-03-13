@@ -40,7 +40,7 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 1000
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -237,7 +237,9 @@ NO_wyckoffs_cached = {}
 for i in reversed(range(0, len(icsd_patterns_match))):
 
     if validation_max_NO_wyckoffs is not None:
-        is_pure, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(icsd_metas_match[i][0])
+        is_pure, NO_wyckoffs, _, _, _ = icsd_sim.get_wyckoff_info(
+            icsd_metas_match[i][0]
+        )
 
         if icsd_metas_match[i][0] not in NO_wyckoffs_cached.keys():
             NO_wyckoffs_cached[icsd_metas_match[i][0]] = is_pure, NO_wyckoffs
@@ -267,7 +269,7 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 
     if validation_max_NO_wyckoffs is not None:
         if icsd_metas_match_corrected_labels[i][0] not in NO_wyckoffs_cached.keys():
-            is_pure, NO_wyckoffs, _, _ = icsd_sim.get_wyckoff_info(
+            is_pure, NO_wyckoffs, _, _, _ = icsd_sim.get_wyckoff_info(
                 icsd_metas_match_corrected_labels[i][0]
             )
         else:

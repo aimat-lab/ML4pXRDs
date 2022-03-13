@@ -133,6 +133,7 @@ if __name__ == "__main__":
     icsd_occupancies = []
     icsd_occupancies_weights = []
     icsd_element_repetitions = []
+    icsd_wyckoff_repetitions = []
 
     # Just for the icsd meta-data (ids):
     jobid = os.getenv("SLURM_JOB_ID")
@@ -151,9 +152,13 @@ if __name__ == "__main__":
 
     for i in range(0, len(icsd_variations)):
 
-        is_pure, NO_wyckoffs, elements, occupancies = sim.get_wyckoff_info(
-            icsd_metas[i][0]
-        )
+        (
+            is_pure,
+            NO_wyckoffs,
+            elements,
+            occupancies,
+            wyckoff_repetitions,
+        ) = sim.get_wyckoff_info(icsd_metas[i][0])
 
         elements_unique = np.unique(elements)
 
@@ -162,9 +167,12 @@ if __name__ == "__main__":
         icsd_occupancies.append(occupancies)
         icsd_occupancies_weights.append([1 / len(occupancies)] * len(occupancies))
 
+        icsd_wyckoff_repetitions.append(wyckoff_repetitions)
+
         reps = []
         for el in elements_unique:
             reps.append(np.sum(np.array(elements) == el))
+
         icsd_element_repetitions.append(reps)
 
     # preprocess random data:
@@ -177,15 +185,35 @@ if __name__ == "__main__":
 
         elements = []
 
+        wyckoffs_per_element = {}
+
         for site in struc.atom_sites:
             specie_str = str(site.specie)
             elements.append(specie_str)
 
-        return len(struc.atom_sites), elements
+            wyckoff_name = f"{site.wp.multiplicity}{site.wp.letter}"
+
+            if specie_str not in wyckoffs_per_element.keys():
+                wyckoffs_per_element[specie_str] = [wyckoff_name]
+            else:
+                wyckoffs_per_element[specie_str].append(wyckoff_name)
+
+        wyckoff_repetitions = []
+
+        for key in wyckoffs_per_element.keys():
+            wyckoffs_unique = np.unique(wyckoffs_per_element[key])
+
+            for item in wyckoffs_unique:
+                wyckoff_repetitions.append(
+                    np.sum(np.array(wyckoffs_per_element[key]) == item)
+                )
+
+        return len(struc.atom_sites), elements, wyckoff_repetitions
 
     random_NO_wyckoffs = []
     random_NO_elements = []
     random_element_repetitions = []
+    random_wyckoff_repetitions = []
 
     for i in range(0, len(random_variations)):
 
@@ -193,7 +221,9 @@ if __name__ == "__main__":
 
         success = True
         try:
-            NO_wyckoffs, elements = get_wyckoff_info(random_crystals[i])
+            NO_wyckoffs, elements, wyckoff_repetitions = get_wyckoff_info(
+                random_crystals[i]
+            )
         except Exception as ex:
             print(ex)
             success = False
@@ -210,11 +240,14 @@ if __name__ == "__main__":
                 reps.append(np.sum(np.array(elements) == el))
             random_element_repetitions.append(reps)
 
+            random_wyckoff_repetitions.append(wyckoff_repetitions)
+
         else:
 
             random_NO_wyckoffs.append(None)
             random_NO_elements.append(None)
             random_element_repetitions.append(None)
+            random_wyckoff_repetitions.append(None)
 
     ############## Calculate histograms:
 
@@ -302,6 +335,7 @@ if __name__ == "__main__":
     icsd_falsely_occupancies_weights = []
     icsd_falsely_element_repetitions = []
     icsd_falsely_NO_atoms = []
+    icsd_falsely_wyckoff_repetitions = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -315,6 +349,7 @@ if __name__ == "__main__":
     icsd_rightly_occupancies_weights = []
     icsd_rightly_element_repetitions = []
     icsd_rightly_NO_atoms = []
+    icsd_rightly_wyckoff_repetitions = []
 
     random_rightly_crystals = []
     random_rightly_volumes = []
@@ -326,6 +361,7 @@ if __name__ == "__main__":
     random_rightly_NO_elements = []
     random_rightly_element_repetitions = []
     random_rightly_NO_atoms = []
+    random_rightly_wyckoff_repetitions = []
 
     random_falsely_crystals = []
     random_falsely_volumes = []
@@ -337,6 +373,7 @@ if __name__ == "__main__":
     random_falsely_NO_elements = []
     random_falsely_element_repetitions = []
     random_falsely_NO_atoms = []
+    random_falsely_wyckoff_repetitions = []
 
     for i in falsely_indices_icsd:
 
@@ -375,6 +412,8 @@ if __name__ == "__main__":
 
             icsd_falsely_denseness_factors.extend(denseness_factors)
 
+            icsd_falsely_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
+
     for i in rightly_indices_icsd:
 
         index = int(i / 5)
@@ -412,6 +451,8 @@ if __name__ == "__main__":
 
             icsd_rightly_denseness_factors.extend(denseness_factors)
 
+            icsd_rightly_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
+
     for index in falsely_indices_random:
 
         structure = random_crystals[index]
@@ -446,6 +487,8 @@ if __name__ == "__main__":
             random_falsely_NO_wyckoffs.append(random_NO_wyckoffs[index])
             random_falsely_element_repetitions.extend(random_element_repetitions[index])
 
+            random_falsely_wyckoff_repetitions.extend(random_wyckoff_repetitions[index])
+
     for index in rightly_indices_random:
 
         structure = random_crystals[index]
@@ -479,6 +522,8 @@ if __name__ == "__main__":
             random_rightly_NO_elements.append(random_NO_elements[index])
             random_rightly_NO_wyckoffs.append(random_NO_wyckoffs[index])
             random_rightly_element_repetitions.extend(random_element_repetitions[index])
+
+            random_rightly_wyckoff_repetitions.extend(random_wyckoff_repetitions[index])
 
     ################# hist plotting ################
 
@@ -833,6 +878,26 @@ if __name__ == "__main__":
             ],
             [random_rightly_element_repetitions, random_falsely_element_repetitions],
             "Number of element repetitions on wyckoff sites",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=True,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "wyckoff_repetitions",
+            [
+                icsd_rightly_wyckoff_repetitions,
+                icsd_falsely_wyckoff_repetitions,
+            ],
+            [random_rightly_wyckoff_repetitions, random_falsely_wyckoff_repetitions],
+            "Number of wyckoff repetitions per element",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
