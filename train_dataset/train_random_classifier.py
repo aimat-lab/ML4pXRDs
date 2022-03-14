@@ -16,8 +16,8 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs-repetitions_per_element-wyckoff_prob_per_element"
-description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element."
+tag = "2-spgs-repetitions_per_element-wyckoff_prob_per_element_dropout"
+description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element. Use dropout."
 
 if len(sys.argv) > 1:
     out_base = sys.argv[1] + "/"
@@ -67,6 +67,8 @@ do_symmetry_checks = True
 use_NO_wyckoffs_counts = True
 
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
+
+use_dropout = True
 
 verbosity = 2
 
@@ -604,6 +606,7 @@ params_txt = (
     f"do_symmetry_checks: {str(do_symmetry_checks)}  \n  \n"
     f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)} \n \n \n"
     f"use_element_repetitions: {str(use_element_repetitions)} \n \n \n"
+    f"use_dropout: {str(use_dropout)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
@@ -696,7 +699,7 @@ class CustomSequence(keras.utils.Sequence):
 
 sequence = CustomSequence(batches_per_epoch)
 
-model = build_model_park(None, N, len(spgs))
+model = build_model_park(None, N, len(spgs), use_dropout=use_dropout)
 
 model.fit(
     x=sequence,

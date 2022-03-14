@@ -17,7 +17,9 @@ class BinaryAccuracy(tfm.BinaryAccuracy):
             super(BinaryAccuracy, self).update_state(y_true, y_pred, sample_weight)
 
 
-def build_model_park(hp=None, number_of_input_values=9018, number_of_output_labels=2):
+def build_model_park(
+    hp=None, number_of_input_values=9018, number_of_output_labels=2, use_dropout=False
+):
 
     # From Park:
     # They actually train for 5000 epochs and batch size 1000 in the original paper
@@ -33,27 +35,40 @@ def build_model_park(hp=None, number_of_input_values=9018, number_of_output_labe
         )
     )  # add convolution layer
     model.add(keras.layers.Activation("relu"))  # activation
-    # model.add(keras.layers.Dropout(0.3))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
     model.add(keras.layers.AveragePooling1D(pool_size=3, strides=2))  # pooling layer
 
     model.add(keras.layers.Convolution1D(80, 50, strides=5, padding="same"))
     model.add(keras.layers.Activation("relu"))
-    # model.add(keras.layers.Dropout(0.3))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
     model.add(keras.layers.AveragePooling1D(pool_size=3, strides=None))
 
     model.add(keras.layers.Convolution1D(80, 25, strides=2, padding="same"))
     model.add(keras.layers.Activation("relu"))
 
-    # model.add(keras.layers.Dropout(0.3))
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
 
     model.add(keras.layers.AveragePooling1D(pool_size=3, strides=None))
     model.add(keras.layers.Flatten())
     model.add(keras.layers.Dense(700))  # This is the smaller Park version!
     model.add(keras.layers.Activation("relu"))
-    # model.add(keras.layers.Dropout(0.5))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
     model.add(keras.layers.Dense(70))
     model.add(keras.layers.Activation("relu"))
-    # model.add(keras.layers.Dropout(0.5))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
     model.add(
         keras.layers.Dense(
             1 if (number_of_output_labels == 2) else number_of_output_labels
