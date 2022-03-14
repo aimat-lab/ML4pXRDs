@@ -40,7 +40,7 @@ def get_magpie_features(crystals):
 
             lookup_dict = LookUpData.element_ids
             if atom.species_string not in lookup_dict.keys():
-                raise Exception("Oh")
+                return None
 
             if atom.species_string in atoms_per_element.keys():
                 atoms_per_element[atom.species_string].append(atom)
@@ -60,36 +60,47 @@ def get_magpie_features(crystals):
 
         entry = CrystalStructureEntry(cell, "", None)
 
-        generator = EffectiveCoordinationNumberAttributeGenerator()
+        generator = (
+            EffectiveCoordinationNumberAttributeGenerator()
+        )  # weighted by face size
         result = generator.generate_features([entry])
-        print(result)
+        # print(result)
+        mean_effective_coord_number = result["mean_Coordination"][0]
 
         generator = CoordinationNumberAttributeGenerator()
         result = generator.generate_features([entry])
-        print(result)
+        mean_coord_number = result["mean_Coordination"][0]
 
         generator = StoichiometricAttributeGenerator()
         result = generator.generate_features([entry])
-        print(result)
+        L2_norm = result["Comp_L2Norm"][0]
+        L3_norm = result["Comp_L3Norm"][0]
 
         generator = PackingEfficiencyAttributeGenerator()
         result = generator.generate_features([entry])
-        print(result)
+        max_packing_efficiency = result["MaxPackingEfficiency"][0]
 
         generator = StructuralHeterogeneityAttributeGenerator()
         result = generator.generate_features([entry])
-        print(result)
+        mean_bond_length_variation = result["mean_BondLengthVariation"][0]
 
-        generator = PRDFAttributeGenerator()
-        result = generator.generate_features([entry])
-        print(result)
+        # generator = PRDFAttributeGenerator()
+        # generator.set_elements([entry])
+        # result = generator.generate_features([entry])
+        # print(result)
 
-        print()
+        return (
+            mean_effective_coord_number,
+            mean_coord_number,
+            L2_norm,
+            L3_norm,
+            max_packing_efficiency,
+            mean_bond_length_variation,
+        )
 
 
 if __name__ == "__main__":
 
-    test_0 = generate_structures(15, 10)
-    test_1 = generate_structures(15, 10)
+    test_0 = generate_structures(15, 1)
 
-    get_magpie_features([test_0, test_1], ["test_0", "test_1"])
+    get_magpie_features(test_0)
