@@ -37,6 +37,8 @@ if __name__ == "__main__":
         spgs_to_analyze = [2, 15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
+    compute_magpie_features = False
+
     show_sample_structures = False
     samples_to_show = 3
     counter_shown_icsd_samples = 0
@@ -419,17 +421,18 @@ if __name__ == "__main__":
 
             icsd_falsely_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
-            if not np.any(icsd_occupancies[index] != 1.0):
-                try:
-                    magpie_features = get_magpie_features(structure)
-                    if (
-                        len(icsd_falsely_magpie_features) < 200
-                        and magpie_features is not None
-                    ):  # limit the amount of computations
-                        icsd_falsely_magpie_features.append(magpie_features)
-                except Exception as ex:
-                    print("Error calculating magpie features.")
-                    print(ex)
+            if compute_magpie_features:
+                if not np.any(icsd_occupancies[index] != 1.0):
+                    try:
+                        magpie_features = get_magpie_features(structure)
+                        if (
+                            len(icsd_falsely_magpie_features) < 200
+                            and magpie_features is not None
+                        ):  # limit the amount of computations
+                            icsd_falsely_magpie_features.append(magpie_features)
+                    except Exception as ex:
+                        print("Error calculating magpie features.")
+                        print(ex)
 
     for i in rightly_indices_icsd:
 
@@ -470,17 +473,18 @@ if __name__ == "__main__":
 
             icsd_rightly_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
-            if not np.any(icsd_occupancies[index] != 1.0):
-                try:
-                    magpie_features = get_magpie_features(structure)
-                    if (
-                        len(icsd_rightly_magpie_features) < 200
-                        and magpie_features is not None
-                    ):  # limit the amount of computations
-                        icsd_rightly_magpie_features.append(magpie_features)
-                except Exception as ex:
-                    print("Error calculating magpie features.")
-                    print(ex)
+            if compute_magpie_features:
+                if not np.any(icsd_occupancies[index] != 1.0):
+                    try:
+                        magpie_features = get_magpie_features(structure)
+                        if (
+                            len(icsd_rightly_magpie_features) < 200
+                            and magpie_features is not None
+                        ):  # limit the amount of computations
+                            icsd_rightly_magpie_features.append(magpie_features)
+                    except Exception as ex:
+                        print("Error calculating magpie features.")
+                        print(ex)
 
     for index in falsely_indices_random:
 
@@ -518,16 +522,17 @@ if __name__ == "__main__":
 
             random_falsely_wyckoff_repetitions.extend(random_wyckoff_repetitions[index])
 
-            try:
-                magpie_features = get_magpie_features(structure)
-                if (
-                    len(random_falsely_magpie_features) < 200
-                    and magpie_features is not None
-                ):  # limit the amount of computations
-                    random_falsely_magpie_features.append(magpie_features)
-            except Exception as ex:
-                print("Error calculating magpie features.")
-                print(ex)
+            if compute_magpie_features:
+                try:
+                    magpie_features = get_magpie_features(structure)
+                    if (
+                        len(random_falsely_magpie_features) < 200
+                        and magpie_features is not None
+                    ):  # limit the amount of computations
+                        random_falsely_magpie_features.append(magpie_features)
+                except Exception as ex:
+                    print("Error calculating magpie features.")
+                    print(ex)
 
     for index in rightly_indices_random:
 
@@ -565,16 +570,17 @@ if __name__ == "__main__":
 
             random_rightly_wyckoff_repetitions.extend(random_wyckoff_repetitions[index])
 
-            try:
-                magpie_features = get_magpie_features(structure)
-                if (
-                    len(random_rightly_magpie_features) < 200
-                    and magpie_features is not None
-                ):  # limit the amount of computations
-                    random_rightly_magpie_features.append(magpie_features)
-            except Exception as ex:
-                print("Error calculating magpie features.")
-                print(ex)
+            if compute_magpie_features:
+                try:
+                    magpie_features = get_magpie_features(structure)
+                    if (
+                        len(random_rightly_magpie_features) < 200
+                        and magpie_features is not None
+                    ):  # limit the amount of computations
+                        random_rightly_magpie_features.append(magpie_features)
+                except Exception as ex:
+                    print("Error calculating magpie features.")
+                    print(ex)
 
     ################# hist plotting ################
 
@@ -998,140 +1004,142 @@ if __name__ == "__main__":
     # max_packing_efficiency,
     # mean_bond_length_variation,
 
-    for flag in [True, False]:
-        create_histogram(
-            "mean_effective_coord_number",
-            [
-                [item[0] for item in icsd_rightly_magpie_features],
-                [item[0] for item in icsd_falsely_magpie_features],
-            ],
-            [
-                [item[0] for item in random_rightly_magpie_features],
-                [item[0] for item in random_falsely_magpie_features],
-            ],
-            r"mean effective coordination number",
-            [
-                "ICSD correctly classified",
-                "ICSD incorrectly classified",
-                "Random correctly classified",
-                "Random incorrectly classified",
-            ],
-            is_int=False,
-            only_proportions=flag,
-            N_bins_continuous=12,
-        )
+    if compute_magpie_features:
 
-    for flag in [True, False]:
-        create_histogram(
-            "mean_coord_number",
-            [
-                [item[1] for item in icsd_rightly_magpie_features],
-                [item[1] for item in icsd_falsely_magpie_features],
-            ],
-            [
-                [item[1] for item in random_rightly_magpie_features],
-                [item[1] for item in random_falsely_magpie_features],
-            ],
-            r"mean coordination number",
-            [
-                "ICSD correctly classified",
-                "ICSD incorrectly classified",
-                "Random correctly classified",
-                "Random incorrectly classified",
-            ],
-            is_int=False,
-            only_proportions=flag,
-            N_bins_continuous=12,
-        )
+        for flag in [True, False]:
+            create_histogram(
+                "mean_effective_coord_number",
+                [
+                    [item[0] for item in icsd_rightly_magpie_features],
+                    [item[0] for item in icsd_falsely_magpie_features],
+                ],
+                [
+                    [item[0] for item in random_rightly_magpie_features],
+                    [item[0] for item in random_falsely_magpie_features],
+                ],
+                r"mean effective coordination number",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                N_bins_continuous=12,
+            )
 
-    for flag in [True, False]:
-        create_histogram(
-            "stoichometry_L2_norm",
-            [
-                [item[2] for item in icsd_rightly_magpie_features],
-                [item[2] for item in icsd_falsely_magpie_features],
-            ],
-            [
-                [item[2] for item in random_rightly_magpie_features],
-                [item[2] for item in random_falsely_magpie_features],
-            ],
-            r"stoichometry L2 norm",
-            [
-                "ICSD correctly classified",
-                "ICSD incorrectly classified",
-                "Random correctly classified",
-                "Random incorrectly classified",
-            ],
-            is_int=False,
-            only_proportions=flag,
-            N_bins_continuous=12,
-        )
+        for flag in [True, False]:
+            create_histogram(
+                "mean_coord_number",
+                [
+                    [item[1] for item in icsd_rightly_magpie_features],
+                    [item[1] for item in icsd_falsely_magpie_features],
+                ],
+                [
+                    [item[1] for item in random_rightly_magpie_features],
+                    [item[1] for item in random_falsely_magpie_features],
+                ],
+                r"mean coordination number",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                N_bins_continuous=12,
+            )
 
-    for flag in [True, False]:
-        create_histogram(
-            "stoichometry_L3_norm",
-            [
-                [item[3] for item in icsd_rightly_magpie_features],
-                [item[3] for item in icsd_falsely_magpie_features],
-            ],
-            [
-                [item[3] for item in random_rightly_magpie_features],
-                [item[3] for item in random_falsely_magpie_features],
-            ],
-            r"stoichometry L3 norm",
-            [
-                "ICSD correctly classified",
-                "ICSD incorrectly classified",
-                "Random correctly classified",
-                "Random incorrectly classified",
-            ],
-            is_int=False,
-            only_proportions=flag,
-            N_bins_continuous=12,
-        )
+        for flag in [True, False]:
+            create_histogram(
+                "stoichometry_L2_norm",
+                [
+                    [item[2] for item in icsd_rightly_magpie_features],
+                    [item[2] for item in icsd_falsely_magpie_features],
+                ],
+                [
+                    [item[2] for item in random_rightly_magpie_features],
+                    [item[2] for item in random_falsely_magpie_features],
+                ],
+                r"stoichometry L2 norm",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                N_bins_continuous=12,
+            )
 
-    for flag in [True, False]:
-        create_histogram(
-            "max_packing_efficiency",
-            [
-                [item[4] for item in icsd_rightly_magpie_features],
-                [item[4] for item in icsd_falsely_magpie_features],
-            ],
-            [
-                [item[4] for item in random_rightly_magpie_features],
-                [item[4] for item in random_falsely_magpie_features],
-            ],
-            r"max packing efficiency",
-            [
-                "ICSD correctly classified",
-                "ICSD incorrectly classified",
-                "Random correctly classified",
-                "Random incorrectly classified",
-            ],
-            is_int=False,
-            only_proportions=flag,
-            N_bins_continuous=12,
-        )
+        for flag in [True, False]:
+            create_histogram(
+                "stoichometry_L3_norm",
+                [
+                    [item[3] for item in icsd_rightly_magpie_features],
+                    [item[3] for item in icsd_falsely_magpie_features],
+                ],
+                [
+                    [item[3] for item in random_rightly_magpie_features],
+                    [item[3] for item in random_falsely_magpie_features],
+                ],
+                r"stoichometry L3 norm",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                N_bins_continuous=12,
+            )
 
-    for flag in [True, False]:
-        create_histogram(
-            "mean_bond_length_variation",
-            [
-                [item[5] for item in icsd_rightly_magpie_features],
-                [item[5] for item in icsd_falsely_magpie_features],
-            ],
-            [
-                [item[5] for item in random_rightly_magpie_features],
-                [item[5] for item in random_falsely_magpie_features],
-            ],
-            r"mean bond length variation",
-            [
-                "ICSD correctly classified",
-                "ICSD incorrectly classified",
-                "Random correctly classified",
-                "Random incorrectly classified",
-            ],
-            is_int=False,
-            only_proportions=flag,
-            N_bins_continuous=12,
-        )
+        for flag in [True, False]:
+            create_histogram(
+                "max_packing_efficiency",
+                [
+                    [item[4] for item in icsd_rightly_magpie_features],
+                    [item[4] for item in icsd_falsely_magpie_features],
+                ],
+                [
+                    [item[4] for item in random_rightly_magpie_features],
+                    [item[4] for item in random_falsely_magpie_features],
+                ],
+                r"max packing efficiency",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                N_bins_continuous=12,
+            )
+
+        for flag in [True, False]:
+            create_histogram(
+                "mean_bond_length_variation",
+                [
+                    [item[5] for item in icsd_rightly_magpie_features],
+                    [item[5] for item in icsd_falsely_magpie_features],
+                ],
+                [
+                    [item[5] for item in random_rightly_magpie_features],
+                    [item[5] for item in random_falsely_magpie_features],
+                ],
+                r"mean bond length variation",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                N_bins_continuous=12,
+            )
