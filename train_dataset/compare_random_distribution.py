@@ -37,7 +37,7 @@ if __name__ == "__main__":
         spgs_to_analyze = [2, 15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
-    compute_magpie_features = False
+    compute_magpie_features = True
 
     show_sample_structures = False
     samples_to_show = 3
@@ -382,6 +382,8 @@ if __name__ == "__main__":
     random_falsely_wyckoff_repetitions = []
     random_falsely_magpie_features = []
 
+    print("Started processing falsely_indices_icsd")
+
     for i in falsely_indices_icsd:
 
         index = int(i / 5)
@@ -422,11 +424,8 @@ if __name__ == "__main__":
             icsd_falsely_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
             if compute_magpie_features:
-                if not np.any(icsd_occupancies[index] != 1.0):
+                if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
-
-                        print("Did it", flush=True)
-
                         magpie_features = get_magpie_features(structure)
 
                         if (
@@ -440,6 +439,8 @@ if __name__ == "__main__":
                     except Exception as ex:
                         print("Error calculating magpie features.")
                         print(ex)
+
+    print("Started processing rightly_indices_icsd")
 
     for i in rightly_indices_icsd:
 
@@ -481,7 +482,7 @@ if __name__ == "__main__":
             icsd_rightly_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
             if compute_magpie_features:
-                if not np.any(icsd_occupancies[index] != 1.0):
+                if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
                         magpie_features = get_magpie_features(structure)
                         if (
@@ -494,6 +495,8 @@ if __name__ == "__main__":
                     except Exception as ex:
                         print("Error calculating magpie features.")
                         print(ex)
+
+    print("Started processing falsely_indices_random")
 
     for index in falsely_indices_random:
 
@@ -545,6 +548,8 @@ if __name__ == "__main__":
                 except Exception as ex:
                     print("Error calculating magpie features.")
                     print(ex)
+
+    print("Started processing rightly_indices_random")
 
     for index in rightly_indices_random:
 

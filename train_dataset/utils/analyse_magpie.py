@@ -13,6 +13,7 @@ from magpie_python import StructuralHeterogeneityAttributeGenerator
 from magpie_python import PRDFAttributeGenerator
 
 from pyxtal.database.element import Element
+import re
 
 
 def get_magpie_features(crystal):
@@ -35,16 +36,18 @@ def get_magpie_features(crystal):
     atoms_per_element = {}
 
     for atom in crystal:
+        specie = re.sub(r"\d*[,.]?\d*\+?$", "", atom.species_string)
+        specie = re.sub(r"\d*[,.]?\d*\-?$", "", specie)
 
         lookup_dict = LookUpData.element_ids
-        if atom.species_string not in lookup_dict.keys():
-            print(f"Species {atom.species_string} not in lookup_dict.")
+        if specie not in lookup_dict.keys():
+            print(f"Species {specie} not in lookup_dict.")
             return None
 
-        if atom.species_string in atoms_per_element.keys():
-            atoms_per_element[atom.species_string].append(atom)
+        if specie in atoms_per_element.keys():
+            atoms_per_element[specie].append(atom)
         else:
-            atoms_per_element[atom.species_string] = [atom]
+            atoms_per_element[specie] = [atom]
 
     for i, key in enumerate(atoms_per_element.keys()):
 
