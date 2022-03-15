@@ -20,15 +20,11 @@ tag = "2-spgs-repetitions_per_element-wyckoff_prob_per_element_dropout"
 description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element. Use dropout."
 
 if len(sys.argv) > 1:
-    out_base = sys.argv[1] + "/"
+    date_time = sys.argv[1]  # get it from the bash script
+    out_base = "classifier_spgs/" + date_time + "/"
 else:
-    out_base = (
-        "classifier_spgs/"
-        + datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-        + "_"
-        + tag
-        + "/"
-    )
+    date_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    out_base = "classifier_spgs/" + date_time + "_" + tag + "/"
 
 os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
@@ -784,12 +780,12 @@ if run_analysis_after_run:
 
             if np.sum(val_y_match == i) > 0:
                 subprocess.call(
-                    f"python compare_random_distribution.py {out_base} {tag} {spg}",
+                    f"python compare_random_distribution.py {out_base} {date_time}_{tag} {spg}",
                     shell=True,
                 )
 
     spg_str = " ".join([str(spg) for spg in spgs])
     subprocess.call(
-        f"python compare_random_distribution.py {out_base} {tag} {spg_str}",
+        f"python compare_random_distribution.py {out_base} {date_time}_{tag} {spg_str}",
         shell=True,
     )
