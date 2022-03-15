@@ -66,7 +66,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if True:  # TODO: Change back
+    if False:
         random_crystals = random_crystals[0:300]
         random_labels = random_labels[0:300]
         random_variations = random_variations[0:300]
@@ -419,16 +419,17 @@ if __name__ == "__main__":
 
             icsd_falsely_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
-            try:
-                magpie_features = get_magpie_features(structure)
-                if (
-                    len(icsd_falsely_magpie_features) < 200
-                    and magpie_features is not None
-                ):  # limit the amount of computations
-                    icsd_falsely_magpie_features.append(magpie_features)
-            except Exception as ex:
-                print("Error calculating magpie features.")
-                print(ex)
+            if not np.any(icsd_occupancies[index] != 1.0):
+                try:
+                    magpie_features = get_magpie_features(structure)
+                    if (
+                        len(icsd_falsely_magpie_features) < 200
+                        and magpie_features is not None
+                    ):  # limit the amount of computations
+                        icsd_falsely_magpie_features.append(magpie_features)
+                except Exception as ex:
+                    print("Error calculating magpie features.")
+                    print(ex)
 
     for i in rightly_indices_icsd:
 
@@ -469,16 +470,17 @@ if __name__ == "__main__":
 
             icsd_rightly_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
-            try:
-                magpie_features = get_magpie_features(structure)
-                if (
-                    len(icsd_rightly_magpie_features) < 200
-                    and magpie_features is not None
-                ):  # limit the amount of computations
-                    icsd_rightly_magpie_features.append(magpie_features)
-            except Exception as ex:
-                print("Error calculating magpie features.")
-                print(ex)
+            if not np.any(icsd_occupancies[index] != 1.0):
+                try:
+                    magpie_features = get_magpie_features(structure)
+                    if (
+                        len(icsd_rightly_magpie_features) < 200
+                        and magpie_features is not None
+                    ):  # limit the amount of computations
+                        icsd_rightly_magpie_features.append(magpie_features)
+                except Exception as ex:
+                    print("Error calculating magpie features.")
+                    print(ex)
 
     for index in falsely_indices_random:
 
