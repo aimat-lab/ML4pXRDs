@@ -37,7 +37,7 @@ if __name__ == "__main__":
         spgs_to_analyze = [2, 15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
-    compute_magpie_features = True
+    compute_magpie_features = False
 
     show_sample_structures = False
     samples_to_show = 3
@@ -426,15 +426,15 @@ if __name__ == "__main__":
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
-                        magpie_features = get_magpie_features(structure)
+                        if len(icsd_falsely_magpie_features) < 200:
+                            magpie_features = get_magpie_features(structure)
 
-                        if (
-                            len(icsd_falsely_magpie_features) < 200
-                            and magpie_features is not None
-                        ):  # limit the amount of computations
-                            icsd_falsely_magpie_features.append(magpie_features)
+                            if (
+                                magpie_features is not None
+                            ):  # limit the amount of computations
+                                icsd_falsely_magpie_features.append(magpie_features)
 
-                            print(f"{len(icsd_falsely_magpie_features)} of 200")
+                                print(f"{len(icsd_falsely_magpie_features)} of 200")
 
                     except Exception as ex:
                         print("Error calculating magpie features.")
@@ -484,14 +484,14 @@ if __name__ == "__main__":
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
-                        magpie_features = get_magpie_features(structure)
-                        if (
-                            len(icsd_rightly_magpie_features) < 200
-                            and magpie_features is not None
-                        ):  # limit the amount of computations
-                            icsd_rightly_magpie_features.append(magpie_features)
+                        if len(icsd_rightly_magpie_features) < 200:
+                            magpie_features = get_magpie_features(structure)
+                            if (
+                                magpie_features is not None
+                            ):  # limit the amount of computations
+                                icsd_rightly_magpie_features.append(magpie_features)
 
-                            print(f"{len(icsd_rightly_magpie_features)} of 200")
+                                print(f"{len(icsd_rightly_magpie_features)} of 200")
                     except Exception as ex:
                         print("Error calculating magpie features.")
                         print(ex)
@@ -536,14 +536,16 @@ if __name__ == "__main__":
 
             if compute_magpie_features:
                 try:
-                    magpie_features = get_magpie_features(structure)
                     if (
                         len(random_falsely_magpie_features) < 200
-                        and magpie_features is not None
                     ):  # limit the amount of computations
-                        random_falsely_magpie_features.append(magpie_features)
 
-                        print(f"{len(random_falsely_magpie_features)} of 200")
+                        magpie_features = get_magpie_features(structure)
+
+                        if magpie_features is not None:
+                            random_falsely_magpie_features.append(magpie_features)
+
+                            print(f"{len(random_falsely_magpie_features)} of 200")
 
                 except Exception as ex:
                     print("Error calculating magpie features.")
@@ -589,12 +591,14 @@ if __name__ == "__main__":
 
             if compute_magpie_features:
                 try:
-                    magpie_features = get_magpie_features(structure)
                     if (
                         len(random_rightly_magpie_features) < 200
-                        and magpie_features is not None
                     ):  # limit the amount of computations
-                        random_rightly_magpie_features.append(magpie_features)
+
+                        magpie_features = get_magpie_features(structure)
+
+                        if magpie_features is not None:
+                            random_rightly_magpie_features.append(magpie_features)
 
                         print(f"{len(random_rightly_magpie_features)} of 200")
 

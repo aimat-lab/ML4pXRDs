@@ -781,13 +781,12 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
             continue
 
+        specie_strs = []
+
         for site in struc.atom_sites:
 
             specie_str = str(site.specie)
-            if specie_str in counter_per_spg_per_element[spg_number].keys():
-                counter_per_spg_per_element[spg_number][specie_str] += 1
-            else:
-                counter_per_spg_per_element[spg_number][specie_str] = 1
+            specie_strs.append(specie_str)
 
             name = str(site.wp.multiplicity) + site.wp.letter
 
@@ -808,6 +807,12 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             else:
                 counts_per_spg_per_element_per_wyckoff[spg_number][specie_str] = {}
                 counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][name] = 1
+
+        for specie_str in np.unique(specie_strs):
+            if specie_str in counter_per_spg_per_element[spg_number].keys():
+                counter_per_spg_per_element[spg_number][specie_str] += 1
+            else:
+                counter_per_spg_per_element[spg_number][specie_str] = 1
 
     represented_spgs = []
     NO_wyckoffs_prob_per_spg = {}
@@ -973,7 +978,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1065,7 +1070,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
     if False:
