@@ -424,12 +424,19 @@ if __name__ == "__main__":
             if compute_magpie_features:
                 if not np.any(icsd_occupancies[index] != 1.0):
                     try:
+
+                        print("Did it", flush=True)
+
                         magpie_features = get_magpie_features(structure)
+
                         if (
                             len(icsd_falsely_magpie_features) < 200
                             and magpie_features is not None
                         ):  # limit the amount of computations
                             icsd_falsely_magpie_features.append(magpie_features)
+
+                            print(f"{len(icsd_falsely_magpie_features)} of 200")
+
                     except Exception as ex:
                         print("Error calculating magpie features.")
                         print(ex)
@@ -482,6 +489,8 @@ if __name__ == "__main__":
                             and magpie_features is not None
                         ):  # limit the amount of computations
                             icsd_rightly_magpie_features.append(magpie_features)
+
+                            print(f"{len(icsd_rightly_magpie_features)} of 200")
                     except Exception as ex:
                         print("Error calculating magpie features.")
                         print(ex)
@@ -530,6 +539,9 @@ if __name__ == "__main__":
                         and magpie_features is not None
                     ):  # limit the amount of computations
                         random_falsely_magpie_features.append(magpie_features)
+
+                        print(f"{len(random_falsely_magpie_features)} of 200")
+
                 except Exception as ex:
                     print("Error calculating magpie features.")
                     print(ex)
@@ -578,6 +590,9 @@ if __name__ == "__main__":
                         and magpie_features is not None
                     ):  # limit the amount of computations
                         random_rightly_magpie_features.append(magpie_features)
+
+                        print(f"{len(random_rightly_magpie_features)} of 200")
+
                 except Exception as ex:
                     print("Error calculating magpie features.")
                     print(ex)

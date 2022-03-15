@@ -38,6 +38,7 @@ def get_magpie_features(crystal):
 
         lookup_dict = LookUpData.element_ids
         if atom.species_string not in lookup_dict.keys():
+            print(f"Species {atom.species_string} not in lookup_dict.")
             return None
 
         if atom.species_string in atoms_per_element.keys():
