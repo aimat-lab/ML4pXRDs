@@ -659,17 +659,17 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
     if jobid is not None and jobid != "":
         sim_test = Simulation(
-            "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
-            "/home/ws/uvgnh/Databases/ICSD/cif/",
+            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+            os.path.expanduser("~/Databases/ICSD/cif/"),
         )
         sim_test.output_dir = path_to_patterns
 
         sim_statistics = Simulation(
-            "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
-            "/home/ws/uvgnh/Databases/ICSD/cif/",
+            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+            os.path.expanduser("~/Databases/ICSD/cif/"),
         )
         sim_statistics.output_dir = path_to_patterns
-    else:
+    else:  # local
         sim_test = Simulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",

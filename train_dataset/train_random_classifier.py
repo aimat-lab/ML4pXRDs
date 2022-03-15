@@ -135,11 +135,11 @@ path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is not None and jobid != "":
     icsd_sim = Simulation(
-        "/home/ws/uvgnh/Databases/ICSD/ICSD_data_from_API.csv",
-        "/home/ws/uvgnh/Databases/ICSD/cif/",
+        os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+        os.path.expanduser("~/Databases/ICSD/cif/"),
     )
     icsd_sim.output_dir = path_to_patterns
-else:
+else:  # local
     icsd_sim = Simulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",

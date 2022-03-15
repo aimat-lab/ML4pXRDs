@@ -82,7 +82,7 @@ if __name__ == "__main__":
             os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
             os.path.expanduser("~/Databases/ICSD/cif/"),
         )
-    else:
+    else:  # local
         simulation = ICSDSimulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
