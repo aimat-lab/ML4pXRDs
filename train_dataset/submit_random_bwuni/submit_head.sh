@@ -6,6 +6,7 @@
 #SBATCH --partition=gpu_8
 #SBATCH --job-name=random_head
 #SBATCH --time=48:00:00
+#SBATCH --gres=gpu:1
 
 source ~/mambaforge/etc/profile.d/conda.sh
 conda activate tf
