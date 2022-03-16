@@ -1,5 +1,7 @@
 import sys
 import os
+
+from sympy import comp
 from dataset_simulations.random_simulation import Simulation
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,7 +39,7 @@ if __name__ == "__main__":
         spgs_to_analyze = [2, 15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
-    compute_magpie_features = False
+    compute_magpie_features = True  # TODO: Change back
 
     show_sample_structures = False
     samples_to_show = 3
@@ -384,6 +386,28 @@ if __name__ == "__main__":
 
     print("Started processing falsely_indices_icsd")
 
+    total_samples_magpie = 500
+    samples_magpie_icsd_falsely = (
+        total_samples_magpie
+        * len(falsely_indices_icsd)
+        / (len(falsely_indices_icsd) + len(rightly_indices_icsd))
+    )
+    samples_magpie_icsd_rightly = (
+        total_samples_magpie
+        * len(rightly_indices_icsd)
+        / (len(falsely_indices_icsd) + len(rightly_indices_icsd))
+    )
+    samples_magpie_random_falsely = (
+        total_samples_magpie
+        * len(falsely_indices_random)
+        / (len(falsely_indices_random) + len(rightly_indices_random))
+    )
+    samples_magpie_random_rightly = (
+        total_samples_magpie
+        * len(rightly_indices_random)
+        / (len(falsely_indices_random) + len(rightly_indices_random))
+    )
+
     for i in falsely_indices_icsd:
 
         index = int(i / 5)
@@ -426,7 +450,11 @@ if __name__ == "__main__":
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
-                        if len(icsd_falsely_magpie_features) < 200:
+                        # Make sure that the proportions are kept correct:
+                        if (
+                            len(icsd_falsely_magpie_features)
+                            < samples_magpie_icsd_falsely
+                        ):
                             magpie_features = get_magpie_features(structure)
 
                             if (
@@ -434,11 +462,17 @@ if __name__ == "__main__":
                             ):  # limit the amount of computations
                                 icsd_falsely_magpie_features.append(magpie_features)
 
-                                print(f"{len(icsd_falsely_magpie_features)} of 200")
+                                print(
+                                    f"{len(icsd_falsely_magpie_features)} of {samples_magpie_icsd_falsely}"
+                                )
 
                     except Exception as ex:
                         print("Error calculating magpie features.")
                         print(ex)
+
+    if compute_magpie_features:
+        if len(icsd_falsely_magpie_features) != (int(samples_magpie_icsd_falsely) + 1):
+            raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing rightly_indices_icsd")
 
@@ -484,17 +518,26 @@ if __name__ == "__main__":
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
-                        if len(icsd_rightly_magpie_features) < 200:
+                        if (
+                            len(icsd_rightly_magpie_features)
+                            < samples_magpie_icsd_rightly
+                        ):
                             magpie_features = get_magpie_features(structure)
                             if (
                                 magpie_features is not None
                             ):  # limit the amount of computations
                                 icsd_rightly_magpie_features.append(magpie_features)
 
-                                print(f"{len(icsd_rightly_magpie_features)} of 200")
+                                print(
+                                    f"{len(icsd_rightly_magpie_features)} of {samples_magpie_icsd_rightly}"
+                                )
                     except Exception as ex:
                         print("Error calculating magpie features.")
                         print(ex)
+
+    if compute_magpie_features:
+        if len(icsd_rightly_magpie_features) != (int(samples_magpie_icsd_rightly) + 1):
+            raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing falsely_indices_random")
 
@@ -537,7 +580,8 @@ if __name__ == "__main__":
             if compute_magpie_features:
                 try:
                     if (
-                        len(random_falsely_magpie_features) < 200
+                        len(random_falsely_magpie_features)
+                        < samples_magpie_random_falsely
                     ):  # limit the amount of computations
 
                         magpie_features = get_magpie_features(structure)
@@ -545,11 +589,19 @@ if __name__ == "__main__":
                         if magpie_features is not None:
                             random_falsely_magpie_features.append(magpie_features)
 
-                            print(f"{len(random_falsely_magpie_features)} of 200")
+                            print(
+                                f"{len(random_falsely_magpie_features)} of {samples_magpie_random_falsely}"
+                            )
 
                 except Exception as ex:
                     print("Error calculating magpie features.")
                     print(ex)
+
+    if compute_magpie_features:
+        if len(random_falsely_magpie_features) != (
+            int(samples_magpie_random_falsely) + 1
+        ):
+            raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing rightly_indices_random")
 
@@ -592,7 +644,8 @@ if __name__ == "__main__":
             if compute_magpie_features:
                 try:
                     if (
-                        len(random_rightly_magpie_features) < 200
+                        len(random_rightly_magpie_features)
+                        < samples_magpie_random_rightly
                     ):  # limit the amount of computations
 
                         magpie_features = get_magpie_features(structure)
@@ -600,11 +653,19 @@ if __name__ == "__main__":
                         if magpie_features is not None:
                             random_rightly_magpie_features.append(magpie_features)
 
-                        print(f"{len(random_rightly_magpie_features)} of 200")
+                        print(
+                            f"{len(random_rightly_magpie_features)} of {samples_magpie_random_rightly}"
+                        )
 
                 except Exception as ex:
                     print("Error calculating magpie features.")
                     print(ex)
+
+    if compute_magpie_features:
+        if len(random_rightly_magpie_features) != (
+            int(samples_magpie_random_rightly) + 1
+        ):
+            raise Exception("total_samples_magpie was set too high.")
 
     ################# hist plotting ################
 
