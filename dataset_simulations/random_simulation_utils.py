@@ -953,6 +953,8 @@ def load_dataset_info():
         NO_repetitions_prob_per_spg_per_element = data[7]
         denseness_factors = data[8]
 
+    denseness_factors = [item for item in denseness_factors if item is not None]
+
     denseness_factors_density = kde.gaussian_kde(denseness_factors)
     grid = np.linspace(min(denseness_factors), max(denseness_factors), 1000)
     plt.figure()
@@ -1104,10 +1106,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
-    if False:
+    if True:
 
         data = load_dataset_info()
         print()
