@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
     ############## Calculate histograms:
 
-    def get_denseness_factor_ran(structure):
+    def get_denseness_factor(structure):
 
         try:
 
@@ -301,9 +301,10 @@ if __name__ == "__main__":
 
                         occupancy = 1.0
 
-                    r = random.uniform(
-                        Element(specie).covalent_radius, Element(specie).vdw_radius
-                    )
+                    r = (
+                        Element(specie).covalent_radius + Element(specie).vdw_radius
+                    ) / 2
+
                     calculated_volume += 4 / 3 * np.pi * r**3 * occupancy
 
             return actual_volume / calculated_volume
@@ -316,17 +317,6 @@ if __name__ == "__main__":
             # For D and Am exceptions are OK
 
             return None
-
-    def get_denseness_factors(structure):
-
-        denseness_factors = []
-        for i in range(0, 10):
-            denseness_factor = get_denseness_factor_ran(structure)
-
-            if denseness_factor is not None:
-                denseness_factors.append(denseness_factor)
-
-        return denseness_factors
 
     icsd_falsely_crystals = []
     icsd_falsely_volumes = []
@@ -420,7 +410,7 @@ if __name__ == "__main__":
 
             volume = structure.volume
 
-            denseness_factors = get_denseness_factors(structure)
+            denseness_factor = get_denseness_factor(structure)
 
             icsd_falsely_NO_atoms.append(len(structure.frac_coords))
 
@@ -443,7 +433,8 @@ if __name__ == "__main__":
             icsd_falsely_lattice_paras.append(structure.lattice.b)
             icsd_falsely_lattice_paras.append(structure.lattice.c)
 
-            icsd_falsely_denseness_factors.extend(denseness_factors)
+            if denseness_factor is not None:
+                icsd_falsely_denseness_factors.append(denseness_factor)
 
             icsd_falsely_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
@@ -488,7 +479,7 @@ if __name__ == "__main__":
 
             volume = structure.volume
 
-            denseness_factors = get_denseness_factors(structure)
+            denseness_factor = get_denseness_factor(structure)
 
             icsd_rightly_NO_atoms.append(len(structure.frac_coords))
 
@@ -511,7 +502,8 @@ if __name__ == "__main__":
             icsd_rightly_lattice_paras.append(structure.lattice.b)
             icsd_rightly_lattice_paras.append(structure.lattice.c)
 
-            icsd_rightly_denseness_factors.extend(denseness_factors)
+            if denseness_factor is not None:
+                icsd_rightly_denseness_factors.append(denseness_factor)
 
             icsd_rightly_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
@@ -551,7 +543,7 @@ if __name__ == "__main__":
 
             volume = structure.volume
 
-            denseness_factors = get_denseness_factors(structure)
+            denseness_factor = get_denseness_factor(structure)
 
             random_falsely_NO_atoms.append(len(structure.frac_coords))
 
@@ -568,7 +560,8 @@ if __name__ == "__main__":
             random_falsely_lattice_paras.append(structure.lattice.b)
             random_falsely_lattice_paras.append(structure.lattice.c)
 
-            random_falsely_denseness_factors.extend(denseness_factors)
+            if denseness_factor is not None:
+                random_falsely_denseness_factors.append(denseness_factor)
 
             random_falsely_corn_sizes.append(random_variations[index])
             random_falsely_NO_elements.append(random_NO_elements[index])
@@ -615,7 +608,7 @@ if __name__ == "__main__":
 
             volume = structure.volume
 
-            denseness_factors = get_denseness_factors(structure)
+            denseness_factor = get_denseness_factor(structure)
 
             random_rightly_NO_atoms.append(len(structure.frac_coords))
 
@@ -632,7 +625,8 @@ if __name__ == "__main__":
             random_rightly_lattice_paras.append(structure.lattice.b)
             random_rightly_lattice_paras.append(structure.lattice.c)
 
-            random_rightly_denseness_factors.extend(denseness_factors)
+            if denseness_factor is not None:
+                random_rightly_denseness_factors.append(denseness_factor)
 
             random_rightly_corn_sizes.append(random_variations[index])
             random_rightly_NO_elements.append(random_NO_elements[index])
