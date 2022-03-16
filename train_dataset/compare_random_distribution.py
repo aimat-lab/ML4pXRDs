@@ -5,10 +5,8 @@ from sympy import comp
 from dataset_simulations.random_simulation import Simulation
 import numpy as np
 import matplotlib.pyplot as plt
-from pyxtal.database.element import Element
 import pickle
 from pyxtal import pyxtal
-import re
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.ase import AseAtomsAdaptor
 from ase.visualize import view

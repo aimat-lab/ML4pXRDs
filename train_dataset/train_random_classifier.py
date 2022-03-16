@@ -105,7 +105,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
     represented_spgs,
     NO_unique_elements_prob_per_spg,
     NO_repetitions_prob_per_spg_per_element,
-    denseness_factors_density,
+    denseness_factors_density_per_spg,
 ) = load_dataset_info()
 
 if not use_icsd_statistics:
@@ -127,7 +127,7 @@ if not use_element_repetitions:
     NO_repetitions_prob_per_spg_per_element = None
 
 if not use_denseness_factors_density:
-    denseness_factors_density = None
+    denseness_factors_density_per_spg = None
 
 # Construct validation sets
 # Used validation sets:
@@ -436,7 +436,7 @@ def batch_generator_with_additional(
         use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions,
         NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
-        denseness_factors_density=denseness_factors_density,
+        denseness_factors_density_per_spg=denseness_factors_density_per_spg,
     )
 
     # Set the label to the right index:
@@ -486,7 +486,7 @@ def batch_generator_queue(
                 use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions,
                 NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
-                denseness_factors_density=denseness_factors_density,
+                denseness_factors_density_per_spg=denseness_factors_density_per_spg,
             )
 
             patterns, labels = shuffle(patterns, labels)

@@ -164,7 +164,7 @@ def generate_structure(
     NO_unique_elements_prob_per_spg=None,
     NO_repetitions_prob_per_spg_per_element=None,
     verbose=False,
-    denseness_factors_density=None,
+    denseness_factors_density_per_spg=None,
 ):
 
     if use_icsd_statistics and (
@@ -271,7 +271,7 @@ def generate_structure(
                 NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 verbose=verbose,
-                denseness_factors_density=denseness_factors_density,
+                denseness_factors_density_per_spg=denseness_factors_density_per_spg,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -451,10 +451,12 @@ def generate_structure(
 
         try:
 
-            if denseness_factors_density is None:
+            if denseness_factors_density_per_spg is None:
                 factor = np.random.uniform(0.7, 2.2)
             else:
-                factor = denseness_factors_density.resample(1)[0, 0]
+                factor = denseness_factors_density_per_spg[
+                    group_object.number
+                ].resample(1)[0, 0]
 
             # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
             volume_ok = my_crystal.from_random(
@@ -598,7 +600,7 @@ def generate_structures(
     NO_unique_elements_prob_per_spg=None,
     NO_repetitions_prob_per_spg_per_element=None,
     verbose=False,
-    denseness_factors_density=None,
+    denseness_factors_density_per_spg=None,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -640,7 +642,7 @@ def generate_structures(
             NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             verbose=verbose,
-            denseness_factors_density=denseness_factors_density,
+            denseness_factors_density_per_spg=denseness_factors_density_per_spg,
         )
         for i in range(0, N)
     ]
@@ -692,16 +694,12 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         )
         sim_statistics.output_dir = path_to_patterns
 
-    # sim_test.load(
-    #    load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
-    # )
-    # sim_statistics.load(
-    #    load_patterns_angles_intensities=False, start=files_to_use_for_test_set
-    # )
-
-    # TODO: Change back
-    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=10)
-    sim_statistics.load(load_patterns_angles_intensities=False, start=10, stop=20)
+    sim_test.load(
+       load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+    )
+    sim_statistics.load(
+       load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+    )
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -712,7 +710,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     NO_unique_elements_per_spg = {}
     NO_repetitions_per_spg_per_element = {}
 
-    denseness_factors = []
+    denseness_factors_per_spg = {}
 
     # pre-process the symmetry groups:
 
@@ -728,6 +726,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         NO_repetitions_per_spg_per_element[spg_number] = {}
 
         counter_per_spg_per_element[spg_number] = {}
+
+        denseness_factors_per_spg[spg_number] = []
 
     # Analyse the statistics:
 
@@ -752,6 +752,11 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             # This error also manifests itself in the comparison script when trying to get the covalent
             # radius of D (which is unknown element).
 
+            # Get conventional structure
+            analyzer = SpacegroupAnalyzer(crystal)
+            conv = analyzer.get_conventional_standard_structure()
+            crystal = conv
+
             struc = pyxtal()
             struc.from_seed(crystal)
 
@@ -761,10 +766,26 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
             success = True
             try:
-                NO_wyckoffs, elements = get_wyckoff_info(struc)
+
+                _, NO_wyckoffs, _, _, _ = sim_statistics.get_wyckoff_info(
+                    sim_statistics.sim_metas[i][0]
+                )
+
+                # if NO_wyckoffs != NO_wyckoffs_meta:
+                #    print(
+                #        "Oh ##########################################################"
+                #    )
+
+                if (
+                    np.any(np.isnan(sim_statistics.sim_variations[i][0]))
+                    or sim_statistics.sim_labels[i][0] not in spgs
+                ):
+                    continue
 
                 if NO_wyckoffs > 100 or crystal.volume > 7000:
                     continue
+
+                NO_wyckoffs, elements = get_wyckoff_info(struc)
 
             except Exception as ex:
                 print(ex)
@@ -774,7 +795,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
             try:
                 denseness_factor = get_denseness_factor(crystal)
-                denseness_factors.append(denseness_factor)
+                denseness_factors_per_spg[spg_number].append(denseness_factor)
             except Exception as ex:
 
                 print("Exception while calculating denseness factor.")
@@ -800,7 +821,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
         except Exception as ex:
 
-            print(f"Error reading structure:")
+            print(f"Error processing structure:")
             print(ex)
 
             continue
@@ -930,7 +951,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 represented_spgs,
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element,
-                denseness_factors,
+                denseness_factors_per_spg,
             ),
             file,
         )
@@ -951,16 +972,33 @@ def load_dataset_info():
         represented_spgs = data[5]
         NO_unique_elements_prob_per_spg = data[6]
         NO_repetitions_prob_per_spg_per_element = data[7]
-        denseness_factors = data[8]
+        denseness_factors_per_spg = data[8]
 
-    denseness_factors = [item for item in denseness_factors if item is not None]
+    denseness_factors_density_per_spg = {}
 
-    denseness_factors_density = kde.gaussian_kde(denseness_factors)
-    grid = np.linspace(min(denseness_factors), max(denseness_factors), 1000)
-    plt.figure()
-    plt.plot(grid, denseness_factors_density(grid))
-    plt.hist(denseness_factors, density=True, bins=60)
-    plt.savefig("denseness_factors_fit.png")
+    for spg in denseness_factors_per_spg.keys():
+
+        denseness_factors_per_spg[spg] = [
+            item for item in denseness_factors_per_spg[spg] if item is not None
+        ]
+
+        if len(denseness_factors_per_spg[spg]) > 1:
+            denseness_factors_density = kde.gaussian_kde(denseness_factors_per_spg[spg])
+        else:
+            denseness_factors_density = None
+
+        denseness_factors_density_per_spg[spg] = denseness_factors_density
+
+        # if spg == 2 or spg == 15 or spg == 14 or spg == 129 or spg == 176:
+        #    grid = np.linspace(
+        #        min(denseness_factors_per_spg[spg]),
+        #        max(denseness_factors_per_spg[spg]),
+        #        1000,
+        #    )
+        #    plt.figure()
+        #    plt.plot(grid, denseness_factors_density(grid))
+        #    plt.hist(denseness_factors_per_spg[spg], density=True, bins=60)
+        #    plt.savefig(f"denseness_factors_fit_{spg}.png")
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -1008,7 +1046,7 @@ def load_dataset_info():
         represented_spgs,  # spgs represented in the statistics dataset (70%)
         NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element,
-        denseness_factors_density,
+        denseness_factors_density_per_spg,
     )
 
 
@@ -1106,10 +1144,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
-    if True:
+    if False:
 
         data = load_dataset_info()
         print()
