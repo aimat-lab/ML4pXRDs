@@ -9,6 +9,8 @@ from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
 import os
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from train_dataset.compare_random_distribution import get_denseness_factor
+from scipy.stats import kde
 
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 
@@ -698,6 +700,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     NO_unique_elements_per_spg = {}
     NO_repetitions_per_spg_per_element = {}
 
+    denseness_factors = []
+
     # pre-process the symmetry groups:
 
     for spg_number in spgs:
@@ -755,6 +759,14 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 success = False
 
             NO_wyckoffs_per_spg[spg_number].append(len(struc.atom_sites))
+
+            try:
+                denseness_factor = get_denseness_factor(crystal)
+                denseness_factors.append(denseness_factor)
+            except Exception as ex:
+
+                print("Exception while calculating denseness factor.")
+                print(ex)
 
             if success:
 
@@ -853,6 +865,13 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             NO_unique_elements_prob_per_spg[spg] = []
             NO_repetitions_prob_per_spg_per_element[spg] = {}
 
+    denseness_factors_density = kde.gaussian_kde(denseness_factors)
+    grid = np.linspace(min(denseness_factors), max(denseness_factors), 1000)
+    plt.figure()
+    plt.plot(grid, denseness_factors_density(grid))
+    plt.hist(denseness_factors, density=True, bins=60)
+    plt.savefig("denseness_factors_fit.png")
+
     print(f"Took {time.time() - start} s to calculate the statistics.")
 
     print("Processing test dataset...")
@@ -906,6 +925,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 represented_spgs,
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element,
+                denseness_factors_density,
             ),
             file,
         )
@@ -926,6 +946,7 @@ def load_dataset_info():
         represented_spgs = data[5]
         NO_unique_elements_prob_per_spg = data[6]
         NO_repetitions_prob_per_spg_per_element = data[7]
+        denseness_factors_density = data[8]
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -973,6 +994,7 @@ def load_dataset_info():
         represented_spgs,  # spgs represented in the statistics dataset (70%)
         NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element,
+        denseness_factors_density,
     )
 
 
