@@ -16,8 +16,8 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs-repetitions_per_element-wyckoff_prob_per_element_no_distance_checks"
-description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element. No distance checks."
+tag = "2-spgs-repetitions_per_element-wyckoff_prob_per_element_unique_element_list"
+description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element. Unique element list."
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -42,12 +42,12 @@ NO_epochs = 200
 structures_per_spg = 10  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
-do_distance_checks = False
+do_distance_checks = True
 do_merge_checks = False
 use_icsd_statistics = True
 
-# NO_workers = 127 + 127 + 14  # for cluster
-NO_workers = 40 * 5 + 5  # for bwuni
+NO_workers = 127 + 127 + 14  # for int-nano cluster
+# NO_workers = 40 * 5 + 5  # for bwuni
 queue_size = 200
 queue_size_tf = 100
 
