@@ -164,6 +164,7 @@ def generate_structure(
     NO_unique_elements_prob_per_spg=None,
     NO_repetitions_prob_per_spg_per_element=None,
     verbose=False,
+    denseness_factors_density=None,
 ):
 
     if use_icsd_statistics and (
@@ -269,6 +270,8 @@ def generate_structure(
                 use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
                 NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+                verbose=verbose,
+                denseness_factors_density=denseness_factors_density,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -448,6 +451,11 @@ def generate_structure(
 
         try:
 
+            if denseness_factors_density is None:
+                factor = np.random.uniform(0.7, 2.2)
+            else:
+                factor = denseness_factors_density.resample(1)[0, 0]
+
             # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
             volume_ok = my_crystal.from_random(
                 wyckoff_indices_per_specie=chosen_wyckoff_indices
@@ -464,9 +472,7 @@ def generate_structure(
                 # factor=np.random.uniform(0.7, 5.0),
                 # factor=np.random.uniform(0.7, 3.0),
                 # factor=np.random.uniform(0.7, 1.2),
-                factor=np.random.uniform(
-                    0.7, 2.2
-                ),  # trying to match the denseness factor distribution of ICSD
+                factor=factor,
                 do_distance_checks=do_distance_checks,
                 fixed_volume=fixed_volume,
                 do_merge_checks=do_merge_checks,
@@ -592,6 +598,7 @@ def generate_structures(
     NO_unique_elements_prob_per_spg=None,
     NO_repetitions_prob_per_spg_per_element=None,
     verbose=False,
+    denseness_factors_density=None,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -633,6 +640,7 @@ def generate_structures(
             NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             verbose=verbose,
+            denseness_factors_density=denseness_factors_density
         )
         for i in range(0, N)
     ]
