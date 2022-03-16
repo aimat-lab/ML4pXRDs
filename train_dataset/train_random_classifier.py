@@ -30,8 +30,8 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-run_analysis_after_run = False  # TODO: Change back
-analysis_per_spg = True
+run_analysis_after_run = True
+analysis_per_spg = True  # TODO: Change back
 
 test_every_X_epochs = 1
 # batches_per_epoch = 1500

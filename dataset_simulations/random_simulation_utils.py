@@ -700,8 +700,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
     # )
 
     # TODO: Change back
-    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=2)
-    sim_statistics.load(load_patterns_angles_intensities=False, start=2, stop=4)
+    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=10)
+    sim_statistics.load(load_patterns_angles_intensities=False, start=10, stop=20)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -877,13 +877,6 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             NO_unique_elements_prob_per_spg[spg] = []
             NO_repetitions_prob_per_spg_per_element[spg] = {}
 
-    denseness_factors_density = kde.gaussian_kde(denseness_factors)
-    grid = np.linspace(min(denseness_factors), max(denseness_factors), 1000)
-    plt.figure()
-    plt.plot(grid, denseness_factors_density(grid))
-    plt.hist(denseness_factors, density=True, bins=60)
-    plt.savefig("denseness_factors_fit.png")
-
     print(f"Took {time.time() - start} s to calculate the statistics.")
 
     print("Processing test dataset...")
@@ -937,7 +930,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 represented_spgs,
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element,
-                denseness_factors_density,
+                denseness_factors,
             ),
             file,
         )
@@ -958,7 +951,14 @@ def load_dataset_info():
         represented_spgs = data[5]
         NO_unique_elements_prob_per_spg = data[6]
         NO_repetitions_prob_per_spg_per_element = data[7]
-        denseness_factors_density = data[8]
+        denseness_factors = data[8]
+
+    denseness_factors_density = kde.gaussian_kde(denseness_factors)
+    grid = np.linspace(min(denseness_factors), max(denseness_factors), 1000)
+    plt.figure()
+    plt.plot(grid, denseness_factors_density(grid))
+    plt.hist(denseness_factors, density=True, bins=60)
+    plt.savefig("denseness_factors_fit.png")
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
