@@ -1,3 +1,4 @@
+from train_dataset.utils.denseness_factor import get_denseness_factor
 from pyxtal import pyxtal
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +10,6 @@ from dataset_simulations.simulation import Simulation
 from pymatgen.io.cif import CifParser
 import os
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from train_dataset.compare_random_distribution import get_denseness_factor
 from scipy.stats import kde
 
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
@@ -640,7 +640,7 @@ def generate_structures(
             NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             verbose=verbose,
-            denseness_factors_density=denseness_factors_density
+            denseness_factors_density=denseness_factors_density,
         )
         for i in range(0, N)
     ]
@@ -692,12 +692,16 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         )
         sim_statistics.output_dir = path_to_patterns
 
-    sim_test.load(
-        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
-    )
-    sim_statistics.load(
-        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
-    )
+    # sim_test.load(
+    #    load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+    # )
+    # sim_statistics.load(
+    #    load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+    # )
+
+    # TODO: Change back
+    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=2)
+    sim_statistics.load(load_patterns_angles_intensities=False, start=2, stop=4)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
