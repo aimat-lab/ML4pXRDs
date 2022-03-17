@@ -16,8 +16,8 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs-repetitions_per_element-wyckoff_prob_per_element_unique_element_list"
-description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element. Unique element list."
+tag = "2-spgs-repetitions_per_element-wyckoff_prob_per_element_unique_element_list_distance_checks_within_denseness_density"
+description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element. Unique element list. Do distance checks within wyckoff. Follow denseness density."
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -31,13 +31,11 @@ os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
 run_analysis_after_run = True
-analysis_per_spg = True  # TODO: Change back
+analysis_per_spg = True
 
 test_every_X_epochs = 1
-# batches_per_epoch = 1500
-batches_per_epoch = 10  # TODO: Change back
-# NO_epochs = 200
-NO_epochs = 1  # TODO: Change back
+batches_per_epoch = 1500
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -73,7 +71,7 @@ use_denseness_factors_density = True
 
 verbosity = 2
 
-local = True  # TODO: Change back
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -614,6 +612,7 @@ params_txt = (
     f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)} \n \n \n"
     f"use_element_repetitions: {str(use_element_repetitions)} \n \n \n"
     f"use_dropout: {str(use_dropout)} \n \n \n"
+    f"use_denseness_factors_density: {str(use_denseness_factors_density)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 

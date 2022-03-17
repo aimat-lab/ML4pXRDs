@@ -36,7 +36,7 @@ if __name__ == "__main__":
         spgs_to_analyze = [2, 15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
-    compute_magpie_features = False  # TODO: Change back for cluster training
+    compute_magpie_features = True
 
     show_sample_structures = False
     samples_to_show = 3

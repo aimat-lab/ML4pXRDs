@@ -695,10 +695,10 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         sim_statistics.output_dir = path_to_patterns
 
     sim_test.load(
-       load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
+        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
     )
     sim_statistics.load(
-       load_patterns_angles_intensities=False, start=files_to_use_for_test_set
+        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
     )
 
     # Calculate the statistics from the sim_statistics part of the simulation:
@@ -989,16 +989,18 @@ def load_dataset_info():
 
         denseness_factors_density_per_spg[spg] = denseness_factors_density
 
-        # if spg == 2 or spg == 15 or spg == 14 or spg == 129 or spg == 176:
-        #    grid = np.linspace(
-        #        min(denseness_factors_per_spg[spg]),
-        #        max(denseness_factors_per_spg[spg]),
-        #        1000,
-        #    )
-        #    plt.figure()
-        #    plt.plot(grid, denseness_factors_density(grid))
-        #    plt.hist(denseness_factors_per_spg[spg], density=True, bins=60)
-        #    plt.savefig(f"denseness_factors_fit_{spg}.png")
+        if False and (
+            spg == 2 or spg == 15 or spg == 14 or spg == 129 or spg == 176 or spg == 104
+        ):
+            grid = np.linspace(
+                min(denseness_factors_per_spg[spg]),
+                max(denseness_factors_per_spg[spg]),
+                1000,
+            )
+            plt.figure()
+            plt.plot(grid, denseness_factors_density(grid))
+            plt.hist(denseness_factors_per_spg[spg], density=True, bins=60)
+            plt.savefig(f"denseness_factors_fit_{spg}.png")
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -1052,7 +1054,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1062,13 +1064,18 @@ if __name__ == "__main__":
             represented_spgs,
             NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element,
+            denseness_factors_density_per_spg,
         ) = load_dataset_info()
 
-        for i in range(0, 15 * 10):
+        # for i in range(0, 15 * 10):
+        for i in range(0, 3):
             # for spg in represented_spgs:
-            # for spg in represented_spgs:
-            for spg in [2, 15]:
+            for spg in represented_spgs:
+                # for spg in [2, 15, 14, 104, 176, 129]:
                 # for spg in [2]:
+
+                if denseness_factors_density_per_spg[spg] is None:
+                    continue
 
                 print(spg)
 
@@ -1092,6 +1099,8 @@ if __name__ == "__main__":
                     True,
                     NO_unique_elements_prob_per_spg,
                     NO_repetitions_prob_per_spg_per_element,
+                    False,
+                    denseness_factors_density_per_spg,
                 )
 
     if False:
@@ -1144,7 +1153,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
     if False:
