@@ -30,13 +30,15 @@ if __name__ == "__main__":
 
     else:
 
-        in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
-        tag = "magpie_10-03-2022_14-34-51"
+        #in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
+        in_base = "classifier_spgs/runs_from_cluster/initial_tests/06-03-2022_23-58-34/"
+        # tag = "magpie_10-03-2022_14-34-51"
+        tag = "volumes_densenesses_4-spg"
 
-        spgs_to_analyze = [2, 15]
+        spgs_to_analyze = [14,104,176,129]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
-    compute_magpie_features = True
+    compute_magpie_features = False  # TODO: Change back
 
     show_sample_structures = False
     samples_to_show = 3
@@ -333,6 +335,8 @@ if __name__ == "__main__":
         / (len(falsely_indices_random) + len(rightly_indices_random))
     )
 
+    falsely_icsd_volumes_densenesses = []
+
     for i in falsely_indices_icsd:
 
         index = int(i / 5)
@@ -371,6 +375,8 @@ if __name__ == "__main__":
             if denseness_factor is not None:
                 icsd_falsely_denseness_factors.append(denseness_factor)
 
+                falsely_icsd_volumes_densenesses.append((volume, denseness_factor))
+
             icsd_falsely_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
             if compute_magpie_features:
@@ -401,6 +407,8 @@ if __name__ == "__main__":
             raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing rightly_indices_icsd")
+
+    rightly_icsd_volumes_densenesses = []
 
     for i in rightly_indices_icsd:
 
@@ -440,6 +448,8 @@ if __name__ == "__main__":
             if denseness_factor is not None:
                 icsd_rightly_denseness_factors.append(denseness_factor)
 
+                rightly_icsd_volumes_densenesses.append((volume, denseness_factor))
+
             icsd_rightly_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
 
             if compute_magpie_features:
@@ -467,6 +477,8 @@ if __name__ == "__main__":
             raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing falsely_indices_random")
+
+    falsely_icsd_volumes_densenesses = []
 
     for index in falsely_indices_random:
 
@@ -595,6 +607,21 @@ if __name__ == "__main__":
             int(samples_magpie_random_rightly) + 1
         ):
             raise Exception("total_samples_magpie was set too high.")
+
+    ################# volumes_denseness_factors ################
+
+    rightly_volumes = [item[0] for item in rightly_icsd_volumes_densenesses]
+    rightly_densenesses = [item[1] for item in rightly_icsd_volumes_densenesses]
+
+    falsely_volumes = [item[0] for item in falsely_icsd_volumes_densenesses]
+    falsely_densenesses = [item[1] for item in falsely_icsd_volumes_densenesses]
+
+    plt.scatter(rightly_volumes, rightly_densenesses, color="r", s=5)
+    plt.scatter(falsely_volumes, falsely_densenesses, color="g", s=5)
+    plt.savefig(
+        f"{out_base}volumes_densenesses.png",
+        bbox_inches="tight",
+    )
 
     ################# hist plotting ################
 
