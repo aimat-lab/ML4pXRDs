@@ -451,8 +451,9 @@ def generate_structure(
 
         try:
 
-            if denseness_factors_density_per_spg is None:
-                factor = np.random.uniform(0.7, 2.2)
+            if denseness_factors_density_per_spg is None or denseness_factors_density_per_spg[group_object.number] is None:
+                #factor = np.random.uniform(0.7, 2.2)
+                factor = np.random.uniform(0.7, 2.13)
             else:
                 factor = denseness_factors_density_per_spg[
                     group_object.number
@@ -982,7 +983,7 @@ def load_dataset_info():
             item for item in denseness_factors_per_spg[spg] if item is not None
         ]
 
-        if len(denseness_factors_per_spg[spg]) > 1:
+        if len(denseness_factors_per_spg[spg]) > 100:
             denseness_factors_density = kde.gaussian_kde(denseness_factors_per_spg[spg])
         else:
             denseness_factors_density = None
@@ -1054,7 +1055,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1156,7 +1157,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if False:
+    if True:
 
         data = load_dataset_info()
         print()
