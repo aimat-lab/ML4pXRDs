@@ -30,15 +30,15 @@ if __name__ == "__main__":
 
     else:
 
-        #in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
+        # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
         in_base = "classifier_spgs/runs_from_cluster/initial_tests/06-03-2022_23-58-34/"
         # tag = "magpie_10-03-2022_14-34-51"
         tag = "volumes_densenesses_4-spg"
 
-        spgs_to_analyze = [14,104,176,129]
+        spgs_to_analyze = [14, 104, 176, 129]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
-    compute_magpie_features = False  # TODO: Change back
+    compute_magpie_features = False
 
     show_sample_structures = False
     samples_to_show = 3
