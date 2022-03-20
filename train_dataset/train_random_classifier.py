@@ -16,8 +16,8 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs-repetitions_per_element-wyckoff_prob_per_element_unique_element_list_denseness_density_no_distance"
-description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element. Unique element list. Follow denseness density. No distance checks."
+tag = "4-spgs-repetitions_per_element-wyckoff_prob_per_element_unique_element_list_denseness_density_no_distance"
+description = "Do not return elements to the bags. Do distance checks. Do NO_repetitions per spg per element and wyckoff probability per spg per element. Unique element list. Follow denseness density. Do distance checks (within)."
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -38,12 +38,12 @@ batches_per_epoch = 1500
 NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
-# structures_per_spg = 5
-structures_per_spg = 10  # for (2,15) tuple
+structures_per_spg = 5
+# structures_per_spg = 10  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
 
-do_distance_checks = False  # TODO: Change back!
+do_distance_checks = True
 do_merge_checks = False
 use_icsd_statistics = True
 
@@ -79,12 +79,12 @@ if local:
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-spgs = [
-    2,
-    15,
-]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+# spgs = [
+#    2,
+#    15,
+# ]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
-# spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
+spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
 # as Park:
