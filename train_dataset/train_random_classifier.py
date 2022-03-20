@@ -2,7 +2,11 @@ import tensorflow.keras as keras
 from dataset_simulations.core.quick_simulation import get_random_xy_patterns
 from dataset_simulations.random_simulation_utils import load_dataset_info
 import numpy as np
-from models import build_model_park, build_model_park_medium_size
+from models import (
+    build_model_park,
+    build_model_park_huge_size,
+    build_model_park_medium_size,
+)
 import os
 from sklearn.utils import shuffle
 from dataset_simulations.simulation import Simulation
@@ -16,8 +20,8 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs-more-capacity"
-description = "2-spgs-more-capacity"
+tag = "2-spgs-more-capacity-huge"
+description = "2-spgs-more-capacity-huge"
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -35,7 +39,7 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 200
+NO_epochs = 400
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -707,7 +711,7 @@ class CustomSequence(keras.utils.Sequence):
 sequence = CustomSequence(batches_per_epoch)
 
 # model = build_model_park(None, N, len(spgs), use_dropout=use_dropout)
-model = build_model_park_medium_size(None, N, len(spgs), use_dropout=use_dropout)
+model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
 model.fit(
     x=sequence,
