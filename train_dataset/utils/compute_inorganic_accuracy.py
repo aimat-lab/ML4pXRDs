@@ -6,7 +6,7 @@ from dataset_simulations.simulation import Simulation
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import sys
 
-spgs = [14, 104, 129, 176]
+spgs = [2, 15]
 
 validation_max_NO_wyckoffs = 100
 validation_max_volume = 7000
@@ -43,7 +43,7 @@ else:  # local
     icsd_sim.output_dir = path_to_patterns
 
 # icsd_sim.load(start=0, stop=files_to_use_for_test_set) # TODO: Change back
-icsd_sim.load(start=0, stop=20)
+icsd_sim.load(start=0, stop=2)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 

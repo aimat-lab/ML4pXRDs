@@ -69,28 +69,17 @@ def build_model_park(
     if use_dropout:
         model.add(keras.layers.Dropout(0.5))
 
-    model.add(
-        keras.layers.Dense(
-            1 if (number_of_output_labels == 2) else number_of_output_labels
-        )
-    )
+    model.add(keras.layers.Dense(number_of_output_labels))
 
     optimizer = keras.optimizers.Adam(learning_rate=0.001)
 
-    if number_of_output_labels == 2:
-        model.compile(
-            optimizer=optimizer,
-            loss=keras.losses.BinaryCrossentropy(from_logits=True),
-            metrics=[BinaryAccuracy(from_logits=True)],
-        )
-    else:
-        model.compile(
-            optimizer=optimizer,
-            loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=[
-                keras.metrics.SparseCategoricalAccuracy()
-            ],  # here from_logits is not needed, since argmax will be the same
-        )
+    model.compile(
+        optimizer=optimizer,
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy()
+        ],  # here from_logits is not needed, since argmax will be the same
+    )
 
     return model
 
