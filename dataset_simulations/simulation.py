@@ -740,3 +740,31 @@ class Simulation:
 
         plt.plot(np.linspace(0, 90, 9018), self.sim_patterns[max_index][0])
         plt.show()
+
+    def get_content_types(self):
+
+        path = os.path.join(
+            os.path.dirname(self.icsd_info_file_path), "ICSD_content_type.csv"
+        )
+
+        indices = np.genfromtxt(path, delimiter=",", skip_header=2, dtype=int)
+
+        exp_inorganic = indices[:, 0]
+        exp_metalorganic = indices[:, 1]
+        theoretical = indices[:, 2]
+
+        exp_inorganic = exp_inorganic[~np.isnan(exp_inorganic)]
+        exp_metalorganic = exp_metalorganic[~np.isnan(exp_metalorganic)]
+        theoretical = theoretical[~np.isnan(theoretical)]
+
+        return exp_inorganic, exp_metalorganic, theoretical
+
+
+if __name__ == "__main__":
+
+    simulation = Simulation(
+        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+    )
+
+    data = simulation.get_content_types()

@@ -4,8 +4,8 @@ from dataset_simulations.random_simulation_utils import load_dataset_info
 import numpy as np
 from models import (
     build_model_park,
-    build_model_park_huge_size,
     build_model_park_medium_size,
+    build_model_park_huge_size,
 )
 import os
 from sklearn.utils import shuffle
@@ -318,6 +318,24 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
         del icsd_crystals_match_corrected_labels_pure[i]
         del icsd_metas_match_corrected_labels_pure[i]
 
+icsd_patterns_match_inorganic = icsd_patterns_match.copy()
+icsd_labels_match_inorganic = icsd_labels_match.copy()
+icsd_variations_match_inorganic = icsd_variations_match.copy()
+icsd_crystals_match_inorganic = icsd_crystals_match.copy()
+icsd_metas_match_inorganic = icsd_metas_match.copy()
+
+exp_inorganic, exp_metalorganic, theoretical = icsd_sim.get_content_types()
+
+for i in reversed(range(0, len(icsd_patterns_match_inorganic))):
+
+    if icsd_metas_match_inorganic[i][0] not in exp_inorganic:
+
+        del icsd_patterns_match_inorganic[i]
+        del icsd_labels_match_inorganic[i]
+        del icsd_variations_match_inorganic[i]
+        del icsd_crystals_match_inorganic[i]
+        del icsd_metas_match_inorganic[i]
+
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)
 
@@ -351,6 +369,16 @@ val_x_match = []
 for pattern in icsd_patterns_match:
     for sub_pattern in pattern:
         val_x_match.append(sub_pattern)
+
+val_y_match_inorganic = []
+for i, label in enumerate(icsd_labels_match_inorganic):
+    val_y_match_inorganic.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+val_y_match_inorganic = np.array(val_y_match_inorganic)
+
+val_x_match_inorganic = []
+for pattern in icsd_patterns_match_inorganic:
+    for sub_pattern in pattern:
+        val_x_match_inorganic.append(sub_pattern)
 
 val_y_match_correct_spgs = []
 for i, label in enumerate(icsd_labels_match_corrected_labels):
@@ -539,6 +567,7 @@ results = ray.get(object_refs)
 print("Sizes of validation sets:")
 print(f"all: {len(icsd_labels_all)} * 5")
 print(f"match: {len(icsd_labels_match)} * 5")
+print(f"match_inorganic: {len(icsd_labels_match_inorganic)} * 5")
 print(f"match_correct_spgs: {len(icsd_labels_match_corrected_labels)} * 5")
 print(f"match_correct_spgs_pure: {len(icsd_labels_match_corrected_labels_pure)} * 5")
 print(f"random: {len(results)}")
@@ -645,6 +674,9 @@ class CustomCallback(keras.callbacks.Callback):
                 scores_match = self.model.evaluate(
                     x=val_x_match, y=val_y_match, verbose=0
                 )
+                scores_match_inorganic = self.model.evaluate(
+                    x=val_x_match_inorganic, y=val_y_match_inorganic, verbose=0
+                )
                 scores_match_correct_spgs = self.model.evaluate(
                     x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
                 )
@@ -662,6 +694,9 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar("loss all", data=scores_all[0], step=epoch)
                 tf.summary.scalar("loss match", data=scores_match[0], step=epoch)
                 tf.summary.scalar(
+                    "loss match_inorganic", data=scores_match_inorganic[0], step=epoch
+                )
+                tf.summary.scalar(
                     "loss match_correct_spgs",
                     data=scores_match_correct_spgs[0],
                     step=epoch,
@@ -676,6 +711,11 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
                 tf.summary.scalar("accuracy match", data=scores_match[1], step=epoch)
                 tf.summary.scalar(
+                    "accuracy match_inorganic",
+                    data=scores_match_inorganic[1],
+                    step=epoch,
+                )
+                tf.summary.scalar(
                     "accuracy match_correct_spgs",
                     data=scores_match_correct_spgs[1],
                     step=epoch,
@@ -689,6 +729,11 @@ class CustomCallback(keras.callbacks.Callback):
 
                 tf.summary.scalar(
                     "accuracy gap", data=scores_random[1] - scores_match[1], step=epoch
+                )
+                tf.summary.scalar(
+                    "accuracy gap inorganic",
+                    data=scores_random[1] - scores_match_inorganic[1],
+                    step=epoch,
                 )
 
                 tf.summary.scalar("test time", data=time.time() - start, step=epoch)
