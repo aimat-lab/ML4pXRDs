@@ -32,26 +32,31 @@ if __name__ == "__main__":
     else:
 
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
-        in_base = "classifier_spgs/runs_from_cluster/initial_tests/06-03-2022_23-58-34/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
         # tag = "magpie_10-03-2022_14-34-51"
-        tag = "volumes_densenesses_4-spg"
+        # tag = "volumes_densenesses_4-spg"
+        tag = "look_at_structures"
 
-        spgs_to_analyze = [14, 104, 176, 129]
+        spgs_to_analyze = [2, 15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
     compute_magpie_features = False
 
-    show_sample_structures_icsd = True
+    show_sample_structures = True
     samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
+    counter_shown_random_rightly = 0
+    counter_shown_random_falsely = 0
 
     out_base = "comparison_plots/" + tag + "/"
     os.system("mkdir -p " + out_base)
 
-    if show_sample_structures_icsd:
-        os.system("mkdir -p {out_base}icsd_rightly_structures")
-        os.system("mkdir -p {out_base}icsd_falsely_structures")
+    if show_sample_structures:
+        os.system("mkdir -p " + out_base + "icsd_rightly_structures")
+        os.system("mkdir -p " + out_base + "icsd_falsely_structures")
+        os.system("mkdir -p " + out_base + "random_rightly_structures")
+        os.system("mkdir -p " + out_base + "random_falsely_structures")
 
     with open(in_base + "spgs.pickle", "rb") as file:
         spgs = pickle.load(file)
@@ -336,13 +341,15 @@ if __name__ == "__main__":
             structure = icsd_crystals[index]
 
             if (
-                show_sample_structures_icsd
+                show_sample_structures
                 and counter_shown_icsd_falsely < samples_to_show_icsd
+                and structure.is_ordered
+                and (i % 5) == 0
             ):
                 counter_shown_icsd_falsely += 1
-                ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
+                ase_struc = AseAtomsAdaptor.get_atoms(structure)
                 write(
-                    f"{out_base}icsd_falsely_structures/{counter_shown_icsd_falsely}",
+                    f"{out_base}icsd_falsely_structures/{counter_shown_icsd_falsely}.png",
                     ase_struc,
                 )
 
@@ -422,13 +429,15 @@ if __name__ == "__main__":
             structure = icsd_crystals[index]
 
             if (
-                show_sample_structures_icsd
+                show_sample_structures
                 and counter_shown_icsd_rightly < samples_to_show_icsd
+                and structure.is_ordered
+                and (i % 5) == 0
             ):
                 counter_shown_icsd_rightly += 1
-                ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
+                ase_struc = AseAtomsAdaptor.get_atoms(structure)
                 write(
-                    f"{out_base}icsd_rightly_structures/{counter_shown_icsd_rightly}",
+                    f"{out_base}icsd_rightly_structures/{counter_shown_icsd_rightly}.png",
                     ase_struc,
                 )
 
@@ -501,6 +510,17 @@ if __name__ == "__main__":
 
             structure = random_crystals[index]
 
+            if (
+                show_sample_structures
+                and counter_shown_random_falsely < samples_to_show_icsd
+            ):
+                counter_shown_random_falsely += 1
+                ase_struc = AseAtomsAdaptor.get_atoms(structure)
+                write(
+                    f"{out_base}random_falsely_structures/{counter_shown_random_falsely}.png",
+                    ase_struc,
+                )
+
             volume = structure.volume
 
             denseness_factor = get_denseness_factor(structure)
@@ -564,6 +584,17 @@ if __name__ == "__main__":
         ):
 
             structure = random_crystals[index]
+
+            if (
+                show_sample_structures
+                and counter_shown_random_rightly < samples_to_show_icsd
+            ):
+                counter_shown_random_rightly += 1
+                ase_struc = AseAtomsAdaptor.get_atoms(structure)
+                write(
+                    f"{out_base}random_rightly_structures/{counter_shown_random_rightly}.png",
+                    ase_struc,
+                )
 
             volume = structure.volume
 
