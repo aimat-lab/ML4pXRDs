@@ -40,10 +40,10 @@ if __name__ == "__main__":
 
     compute_magpie_features = False
 
-    show_sample_structures = False
-    samples_to_show = 3
-    counter_shown_icsd_samples = 0
-    counter_shown_random_samples = 0
+    show_sample_structures_icsd = True
+    samples_to_show_icsd = 10
+    counter_shown_icsd_rightly = 0
+    counter_shown_icsd_falsely = 0
 
     out_base = "comparison_plots/" + tag + "/"
     os.system("mkdir -p " + out_base)
@@ -86,12 +86,6 @@ if __name__ == "__main__":
             # print(f"{int(percentage)}%")
 
             current_struc = icsd_crystals[i]
-
-            if show_sample_structures and counter_shown_icsd_samples < samples_to_show:
-                counter_shown_icsd_samples += 1
-                ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
-                view(ase_struc)
-                input()
 
             analyzer = SpacegroupAnalyzer(current_struc)
             conv = analyzer.get_conventional_standard_structure()
@@ -285,7 +279,6 @@ if __name__ == "__main__":
     icsd_rightly_wyckoff_repetitions = []
     icsd_rightly_magpie_features = []
 
-    random_rightly_crystals = []
     random_rightly_volumes = []
     random_rightly_angles = []
     random_rightly_denseness_factors = []
@@ -298,7 +291,6 @@ if __name__ == "__main__":
     random_rightly_wyckoff_repetitions = []
     random_rightly_magpie_features = []
 
-    random_falsely_crystals = []
     random_falsely_volumes = []
     random_falsely_angles = []
     random_falsely_denseness_factors = []
@@ -341,7 +333,9 @@ if __name__ == "__main__":
 
         index = int(i / 5)
 
-        if spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze:
+        if index < len(icsd_crystals) and (
+            spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze
+        ):
 
             structure = icsd_crystals[index]
 
@@ -414,9 +408,20 @@ if __name__ == "__main__":
 
         index = int(i / 5)
 
-        if spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze:
+        if index < len(icsd_crystals) and (
+            spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze
+        ):
 
             structure = icsd_crystals[index]
+
+            if (
+                show_sample_structures_icsd
+                and counter_shown_icsd_rightly < samples_to_show_icsd
+            ):
+                counter_shown_icsd_rightly += 1
+                ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
+                view(ase_struc)
+                input()
 
             icsd_rightly_crystals.append(structure)
 
@@ -481,12 +486,11 @@ if __name__ == "__main__":
     falsely_icsd_volumes_densenesses = []
 
     for index in falsely_indices_random:
+        if index < len(random_crystals) and (
+            spgs_to_analyze is None or random_labels[index] in spgs_to_analyze
+        ):
 
-        structure = random_crystals[index]
-
-        random_falsely_crystals.append(structure)
-
-        if spgs_to_analyze is None or random_labels[index] in spgs_to_analyze:
+            structure = random_crystals[index]
 
             volume = structure.volume
 
@@ -546,12 +550,11 @@ if __name__ == "__main__":
     print("Started processing rightly_indices_random")
 
     for index in rightly_indices_random:
+        if index < len(random_crystals) and (
+            spgs_to_analyze is None or random_labels[index] in spgs_to_analyze
+        ):
 
-        structure = random_crystals[index]
-
-        random_rightly_crystals.append(structure)
-
-        if spgs_to_analyze is None or random_labels[index] in spgs_to_analyze:
+            structure = random_crystals[index]
 
             volume = structure.volume
 
