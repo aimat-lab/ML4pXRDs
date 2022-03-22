@@ -451,8 +451,11 @@ def generate_structure(
 
         try:
 
-            if denseness_factors_density_per_spg is None or denseness_factors_density_per_spg[group_object.number] is None:
-                #factor = np.random.uniform(0.7, 2.2)
+            if (
+                denseness_factors_density_per_spg is None
+                or denseness_factors_density_per_spg[group_object.number] is None
+            ):
+                # factor = np.random.uniform(0.7, 2.2)
                 factor = np.random.uniform(0.7, 2.13)
             else:
                 factor = denseness_factors_density_per_spg[

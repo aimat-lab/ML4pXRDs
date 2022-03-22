@@ -414,11 +414,13 @@ assert not np.any(np.isnan(val_x_match_correct_spgs_pure))
 assert not np.any(np.isnan(val_y_match_correct_spgs_pure))
 assert len(val_x_all) == len(val_y_all)
 assert len(val_x_match) == len(val_y_match)
+assert len(val_x_match_inorganic) == len(val_y_match_inorganic)
 assert len(val_x_match_correct_spgs) == len(val_y_match_correct_spgs)
 assert len(val_x_match_correct_spgs_pure) == len(val_y_match_correct_spgs_pure)
 
 val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match = np.expand_dims(val_x_match, axis=2)
+val_x_match_inorganic = np.expand_dims(val_x_match_inorganic, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 
