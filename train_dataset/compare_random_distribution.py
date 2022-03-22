@@ -10,6 +10,7 @@ from pyxtal import pyxtal
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.ase import AseAtomsAdaptor
 from ase.visualize import view
+from ase.io import write
 from train_dataset.utils.analyse_magpie import get_magpie_features
 from train_dataset.utils.denseness_factor import get_denseness_factor
 
@@ -41,12 +42,16 @@ if __name__ == "__main__":
     compute_magpie_features = False
 
     show_sample_structures_icsd = True
-    samples_to_show_icsd = 10
+    samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
 
     out_base = "comparison_plots/" + tag + "/"
     os.system("mkdir -p " + out_base)
+
+    if show_sample_structures_icsd:
+        os.system("mkdir -p {out_base}icsd_rightly_structures")
+        os.system("mkdir -p {out_base}icsd_falsely_structures")
 
     with open(in_base + "spgs.pickle", "rb") as file:
         spgs = pickle.load(file)
@@ -69,7 +74,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:
+    if True:
         random_crystals = random_crystals[0:300]
         random_labels = random_labels[0:300]
         random_variations = random_variations[0:300]
@@ -105,15 +110,6 @@ if __name__ == "__main__":
             # print(f"{int(percentage)}%")
 
             current_struc = random_crystals[i]
-
-            if (
-                show_sample_structures
-                and counter_shown_random_samples < samples_to_show
-            ):
-                counter_shown_random_samples += 1
-                ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
-                view(ase_struc)
-                input()
 
             analyzer = SpacegroupAnalyzer(current_struc)
             conv = analyzer.get_conventional_standard_structure()
@@ -339,6 +335,17 @@ if __name__ == "__main__":
 
             structure = icsd_crystals[index]
 
+            if (
+                show_sample_structures_icsd
+                and counter_shown_icsd_falsely < samples_to_show_icsd
+            ):
+                counter_shown_icsd_falsely += 1
+                ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
+                write(
+                    f"{out_base}icsd_falsely_structures/{counter_shown_icsd_falsely}",
+                    ase_struc,
+                )
+
             icsd_falsely_crystals.append(structure)
 
             volume = structure.volume
@@ -420,8 +427,10 @@ if __name__ == "__main__":
             ):
                 counter_shown_icsd_rightly += 1
                 ase_struc = AseAtomsAdaptor.get_atoms(current_struc)
-                view(ase_struc)
-                input()
+                write(
+                    f"{out_base}icsd_rightly_structures/{counter_shown_icsd_rightly}",
+                    ase_struc,
+                )
 
             icsd_rightly_crystals.append(structure)
 
