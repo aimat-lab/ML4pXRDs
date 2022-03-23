@@ -36,10 +36,13 @@ if __name__ == "__main__":
         # tag = "magpie_10-03-2022_14-34-51"
         # tag = "volumes_densenesses_4-spg"
         # tag = "look_at_structures"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/20-03-2022_02-06-52/"
 
-        tag = "volumes_densenesses_test"
+        # tag = "volumes_densenesses_4-spg_test"
+        tag = "volumes_densenesses_2-spg_test/15"
 
-        spgs_to_analyze = [2, 15]
+        # spgs_to_analyze = [14, 104, 176, 129]
+        spgs_to_analyze = [15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
     compute_magpie_features = False
@@ -747,6 +750,9 @@ if __name__ == "__main__":
     plt.scatter(rightly_volumes_icsd, rightly_densenesses_icsd, color="g", s=1)
     plt.scatter(falsely_volumes_icsd, falsely_densenesses_icsd, color="r", s=1)
 
+    plt.xlim(0, 7000)
+    plt.ylim(0.5, 3.3)
+
     plt.savefig(
         f"{out_base}volumes_densenesses_icsd.png",
         bbox_inches="tight",
@@ -764,12 +770,11 @@ if __name__ == "__main__":
 
     plt.figure()
 
-    plt.scatter(
-        rightly_volumes_random, rightly_densenesses_random, color="g", s=1, marker="x"
-    )
-    plt.scatter(
-        falsely_volumes_random, falsely_densenesses_random, color="r", s=1, marker="x"
-    )
+    plt.scatter(rightly_volumes_random, rightly_densenesses_random, color="g", s=1)
+    plt.scatter(falsely_volumes_random, falsely_densenesses_random, color="r", s=1)
+
+    plt.xlim(0, 7000)
+    plt.ylim(0.5, 3.3)
 
     plt.savefig(
         f"{out_base}volumes_densenesses_random.png",
