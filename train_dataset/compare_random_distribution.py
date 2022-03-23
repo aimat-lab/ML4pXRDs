@@ -863,10 +863,10 @@ if __name__ == "__main__":
                 # falsely
                 h1 = ax1.bar(
                     bins[:-1],
-                    hists[counter * 2 + 1],  # height
+                    hists[counter * 2 + 1],  # height; 1,3
                     bottom=0,  # bottom
                     color="r",
-                    label=labels[counter * 2 + 1],
+                    label=labels[counter * 2 + 1],  # 1,3
                     width=bin_width,
                     align="edge",
                 )
@@ -874,10 +874,10 @@ if __name__ == "__main__":
                 # rightly
                 h2 = ax1.bar(
                     bins[:-1],
-                    hists[counter * 2],  # height
-                    bottom=hists[counter * 2 + 1],  # bottom
+                    hists[counter * 2],  # height; 0,2
+                    bottom=hists[counter * 2 + 1],  # bottom; 1,3
                     color="g",
-                    label=labels[counter * 2],
+                    label=labels[counter * 2],  # 0,2
                     width=bin_width,
                     align="edge",
                 )
@@ -889,7 +889,9 @@ if __name__ == "__main__":
                     # bins[:-1],
                     bins[:],
                     # hists[counter * 2 + 1],
-                    np.append(hists[counter * 2 + 1], hists[counter * 2 + 1][-1]),
+                    np.append(
+                        hists[counter * 2 + 1], hists[counter * 2 + 1][-1]
+                    ),  # 1,3
                     color="blueviolet",
                     label=labels[counter * 2 + 1],
                     where="post",
@@ -902,8 +904,8 @@ if __name__ == "__main__":
                     # hists[counter * 2]
                     # + hists[counter * 2 + 1],  # top coordinate, not height
                     np.append(
-                        (hists[counter * 2] + hists[counter * 2 + 1]),
-                        (hists[counter * 2] + hists[counter * 2 + 1])[-1],
+                        (hists[counter * 2] + hists[counter * 2 + 1]),  # 0,2 + 1,3
+                        (hists[counter * 2] + hists[counter * 2 + 1])[-1],  # 0,2 + 1,3
                     ),  # top coordinate, not height
                     color="b",
                     label=labels[counter * 2],
