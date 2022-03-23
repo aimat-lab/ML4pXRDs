@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     compute_magpie_features = False
 
-    show_sample_structures = False
+    show_sample_structures = True
     samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:
+    if True:  # TODO: Change back
         random_crystals = random_crystals[0:300]
         random_labels = random_labels[0:300]
         random_variations = random_variations[0:300]
@@ -650,6 +650,47 @@ if __name__ == "__main__":
             int(samples_magpie_random_rightly) + 1
         ):
             raise Exception("total_samples_magpie was set too high.")
+
+    # combine output pngs of structures:
+
+    if show_sample_structures:
+        os.system("rm " + out_base + "icsd_rightly_structures/combined.png")
+        os.system("rm " + out_base + "icsd_falsely_structures/combined.png")
+        os.system("rm " + out_base + "random_rightly_structures/combined.png")
+        os.system("rm " + out_base + "random_falsely_structures/combined.png")
+
+        os.system(
+            "montage -density 300 -tile 5x0 -geometry +5+5 -border 5 "
+            + out_base
+            + "icsd_rightly_structures/*.png"
+            + " -resize 200x "
+            + out_base
+            + "icsd_rightly_structures/combined.png"
+        )
+        os.system(
+            "montage -density 300 -tile 5x0 -geometry +5+5 -border 5 "
+            + out_base
+            + "icsd_falsely_structures/*.png"
+            + " -resize 200x "
+            + out_base
+            + "icsd_falsely_structures/combined.png"
+        )
+        os.system(
+            "montage -density 300 -tile 5x0 -geometry +5+5 -border 5 "
+            + out_base
+            + "random_rightly_structures/*.png"
+            + " -resize 200x "
+            + out_base
+            + "random_rightly_structures/combined.png"
+        )
+        os.system(
+            "montage -density 300 -tile 5x0 -geometry +5+5 -border 5 "
+            + out_base
+            + "random_falsely_structures/*.png"
+            + " -resize 200x "
+            + out_base
+            + "random_falsely_structures/combined.png"
+        )
 
     ################# volumes_denseness_factors ################
 

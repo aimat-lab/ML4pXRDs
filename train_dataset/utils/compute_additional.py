@@ -5,13 +5,18 @@ import os
 from dataset_simulations.simulation import Simulation
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import sys
+from ase.io import write
+from pymatgen.io.ase import AseAtomsAdaptor
 
 spgs = [2, 15]
 
 validation_max_NO_wyckoffs = 100
 validation_max_volume = 7000
 
-model_path = os.path.join(sys.argv[1], "final")
+model_path = (
+    "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
+    + "final"
+)
 
 model = keras.models.load_model(model_path)
 
@@ -27,7 +32,7 @@ model = keras.models.load_model(model_path)
     denseness_factors_density_per_spg,
 ) = load_dataset_info()
 
-path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
+path_to_patterns = "../../dataset_simulations/patterns/icsd_vecsei/"
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is not None and jobid != "":
     icsd_sim = Simulation(
@@ -43,7 +48,7 @@ else:  # local
     icsd_sim.output_dir = path_to_patterns
 
 # icsd_sim.load(start=0, stop=files_to_use_for_test_set) # TODO: Change back
-icsd_sim.load(start=0, stop=2)
+icsd_sim.load(start=0, stop=1)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -157,3 +162,40 @@ scores_match_inorganic = model.evaluate(
 assert metric_names[0] == "loss"
 
 print(f"Accuracy: {scores_match_inorganic[1]}")
+
+# find max loss structures
+
+losses = []
+structures = []
+for i, pattern in enumerate(icsd_patterns_match):
+    for subpattern in pattern:
+        x = subpattern[np.newaxis, :, np.newaxis]
+        y = np.array([icsd_labels_match[i][0]])
+        scores = model.evaluate(
+            x=x,
+            y=y,
+            verbose=0,
+        )
+
+        loss = scores[0]
+
+        losses.append(loss)
+        structures.append(icsd_crystals_match[i])
+
+losses_structures_sorted = sorted(zip(losses, structures), key=lambda x: -1 * x[0])
+
+os.system("mkdir -p ./max_losses")
+
+counter = 0
+for i, loss_structure in enumerate(losses_structures_sorted):
+
+    if counter == 50:
+        break
+
+    if loss_structure[1].is_ordered:
+        ase_struc = AseAtomsAdaptor.get_atoms(loss_structure[1])
+        write(
+            "./max_losses/" + str(loss_structure[0]) + ".png",
+            ase_struc,
+        )
+        counter += 1
