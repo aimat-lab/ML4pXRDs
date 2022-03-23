@@ -255,6 +255,8 @@ if __name__ == "__main__":
     icsd_falsely_angles = []
     icsd_falsely_denseness_factors = []
     icsd_falsely_lattice_paras = []
+    icsd_falsely_max_lattice_paras = []
+    icsd_falsely_min_lattice_paras = []
     icsd_falsely_corn_sizes = []
     icsd_falsely_NO_wyckoffs = []
     icsd_falsely_NO_elements = []
@@ -270,6 +272,8 @@ if __name__ == "__main__":
     icsd_rightly_angles = []
     icsd_rightly_denseness_factors = []
     icsd_rightly_lattice_paras = []
+    icsd_rightly_max_lattice_paras = []
+    icsd_rightly_min_lattice_paras = []
     icsd_rightly_corn_sizes = []
     icsd_rightly_NO_wyckoffs = []
     icsd_rightly_NO_elements = []
@@ -284,6 +288,8 @@ if __name__ == "__main__":
     random_rightly_angles = []
     random_rightly_denseness_factors = []
     random_rightly_lattice_paras = []
+    random_rightly_max_lattice_paras = []
+    random_rightly_min_lattice_paras = []
     random_rightly_corn_sizes = []
     random_rightly_NO_wyckoffs = []
     random_rightly_NO_elements = []
@@ -296,6 +302,8 @@ if __name__ == "__main__":
     random_falsely_angles = []
     random_falsely_denseness_factors = []
     random_falsely_lattice_paras = []
+    random_falsely_max_lattice_paras = []
+    random_falsely_min_lattice_paras = []
     random_falsely_corn_sizes = []
     random_falsely_NO_wyckoffs = []
     random_falsely_NO_elements = []
@@ -379,6 +387,13 @@ if __name__ == "__main__":
             icsd_falsely_lattice_paras.append(structure.lattice.a)
             icsd_falsely_lattice_paras.append(structure.lattice.b)
             icsd_falsely_lattice_paras.append(structure.lattice.c)
+
+            icsd_falsely_max_lattice_paras.append(
+                max(structure.lattice.a, structure.lattice.b, structure.lattice.c)
+            )
+            icsd_falsely_min_lattice_paras.append(
+                min(structure.lattice.a, structure.lattice.b, structure.lattice.c)
+            )
 
             if denseness_factor is not None:
                 icsd_falsely_denseness_factors.append(denseness_factor)
@@ -468,6 +483,13 @@ if __name__ == "__main__":
             icsd_rightly_lattice_paras.append(structure.lattice.b)
             icsd_rightly_lattice_paras.append(structure.lattice.c)
 
+            icsd_rightly_max_lattice_paras.append(
+                max(structure.lattice.a, structure.lattice.b, structure.lattice.c)
+            )
+            icsd_rightly_min_lattice_paras.append(
+                min(structure.lattice.a, structure.lattice.b, structure.lattice.c)
+            )
+
             if denseness_factor is not None:
                 icsd_rightly_denseness_factors.append(denseness_factor)
 
@@ -539,6 +561,13 @@ if __name__ == "__main__":
             random_falsely_lattice_paras.append(structure.lattice.a)
             random_falsely_lattice_paras.append(structure.lattice.b)
             random_falsely_lattice_paras.append(structure.lattice.c)
+
+            random_falsely_max_lattice_paras.append(
+                max(structure.lattice.a, structure.lattice.b, structure.lattice.c)
+            )
+            random_falsely_min_lattice_paras.append(
+                min(structure.lattice.a, structure.lattice.b, structure.lattice.c)
+            )
 
             if denseness_factor is not None:
                 random_falsely_denseness_factors.append(denseness_factor)
@@ -614,6 +643,13 @@ if __name__ == "__main__":
             random_rightly_lattice_paras.append(structure.lattice.a)
             random_rightly_lattice_paras.append(structure.lattice.b)
             random_rightly_lattice_paras.append(structure.lattice.c)
+
+            random_rightly_max_lattice_paras.append(
+                max(structure.lattice.a, structure.lattice.b, structure.lattice.c)
+            )
+            random_rightly_min_lattice_paras.append(
+                min(structure.lattice.a, structure.lattice.b, structure.lattice.c)
+            )
 
             if denseness_factor is not None:
                 random_rightly_denseness_factors.append(denseness_factor)
@@ -1009,6 +1045,46 @@ if __name__ == "__main__":
             ],
             [random_rightly_lattice_paras, random_falsely_lattice_paras],
             r"lattice parameter / $Å$",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "lattice_paras_max",
+            [
+                icsd_rightly_max_lattice_paras,
+                icsd_falsely_max_lattice_paras,
+            ],
+            [random_rightly_max_lattice_paras, random_falsely_max_lattice_paras],
+            r"max lattice parameter / $Å$",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "lattice_paras_min",
+            [
+                icsd_rightly_min_lattice_paras,
+                icsd_falsely_min_lattice_paras,
+            ],
+            [random_rightly_min_lattice_paras, random_falsely_min_lattice_paras],
+            r"min lattice parameter / $Å$",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
