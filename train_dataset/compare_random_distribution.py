@@ -349,7 +349,7 @@ if __name__ == "__main__":
                 counter_shown_icsd_falsely += 1
                 ase_struc = AseAtomsAdaptor.get_atoms(structure)
                 write(
-                    f"{out_base}icsd_falsely_structures/{counter_shown_icsd_falsely}.png",
+                    f"{out_base}icsd_falsely_structures/{icsd_metas[index][0]}.png",
                     ase_struc,
                 )
 
@@ -437,7 +437,7 @@ if __name__ == "__main__":
                 counter_shown_icsd_rightly += 1
                 ase_struc = AseAtomsAdaptor.get_atoms(structure)
                 write(
-                    f"{out_base}icsd_rightly_structures/{counter_shown_icsd_rightly}.png",
+                    f"{out_base}icsd_rightly_structures/{icsd_metas[index][0]}.png",
                     ase_struc,
                 )
 
