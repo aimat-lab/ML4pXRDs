@@ -35,7 +35,9 @@ if __name__ == "__main__":
         in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
         # tag = "magpie_10-03-2022_14-34-51"
         # tag = "volumes_densenesses_4-spg"
-        tag = "look_at_structures"
+        # tag = "look_at_structures"
+
+        tag = "volumes_densenesses_test"
 
         spgs_to_analyze = [2, 15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
@@ -79,14 +81,14 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:
-        random_crystals = random_crystals[0:300]
-        random_labels = random_labels[0:300]
-        random_variations = random_variations[0:300]
-        icsd_crystals = icsd_crystals[0:300]
-        icsd_labels = icsd_labels[0:300]
-        icsd_variations = icsd_variations[0:300]
-        icsd_metas = icsd_metas[0:300]
+    if True:
+        random_crystals = random_crystals[0:600]
+        random_labels = random_labels[0:600]
+        random_variations = random_variations[0:600]
+        icsd_crystals = icsd_crystals[0:600]
+        icsd_labels = icsd_labels[0:600]
+        icsd_variations = icsd_variations[0:600]
+        icsd_metas = icsd_metas[0:600]
 
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):
@@ -523,7 +525,7 @@ if __name__ == "__main__":
 
     print("Started processing falsely_indices_random")
 
-    falsely_icsd_volumes_densenesses = []
+    falsely_random_volumes_densenesses = []
 
     for index in falsely_indices_random:
         if index < len(random_crystals) and (
@@ -572,6 +574,8 @@ if __name__ == "__main__":
             if denseness_factor is not None:
                 random_falsely_denseness_factors.append(denseness_factor)
 
+                falsely_random_volumes_densenesses.append((volume, denseness_factor))
+
             random_falsely_corn_sizes.append(random_variations[index])
             random_falsely_NO_elements.append(random_NO_elements[index])
             random_falsely_NO_wyckoffs.append(random_NO_wyckoffs[index])
@@ -606,6 +610,8 @@ if __name__ == "__main__":
             raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing rightly_indices_random")
+
+    rightly_random_volumes_densenesses = []
 
     for index in rightly_indices_random:
         if index < len(random_crystals) and (
@@ -653,6 +659,8 @@ if __name__ == "__main__":
 
             if denseness_factor is not None:
                 random_rightly_denseness_factors.append(denseness_factor)
+
+                rightly_random_volumes_densenesses.append((volume, denseness_factor))
 
             random_rightly_corn_sizes.append(random_variations[index])
             random_rightly_NO_elements.append(random_NO_elements[index])
@@ -730,16 +738,41 @@ if __name__ == "__main__":
 
     ################# volumes_denseness_factors ################
 
-    rightly_volumes = [item[0] for item in rightly_icsd_volumes_densenesses]
-    rightly_densenesses = [item[1] for item in rightly_icsd_volumes_densenesses]
+    rightly_volumes_icsd = [item[0] for item in rightly_icsd_volumes_densenesses]
+    rightly_densenesses_icsd = [item[1] for item in rightly_icsd_volumes_densenesses]
 
-    falsely_volumes = [item[0] for item in falsely_icsd_volumes_densenesses]
-    falsely_densenesses = [item[1] for item in falsely_icsd_volumes_densenesses]
+    falsely_volumes_icsd = [item[0] for item in falsely_icsd_volumes_densenesses]
+    falsely_densenesses_icsd = [item[1] for item in falsely_icsd_volumes_densenesses]
 
-    plt.scatter(rightly_volumes, rightly_densenesses, color="r", s=5)
-    plt.scatter(falsely_volumes, falsely_densenesses, color="g", s=5)
+    plt.scatter(rightly_volumes_icsd, rightly_densenesses_icsd, color="g", s=1)
+    plt.scatter(falsely_volumes_icsd, falsely_densenesses_icsd, color="r", s=1)
+
     plt.savefig(
-        f"{out_base}volumes_densenesses.png",
+        f"{out_base}volumes_densenesses_icsd.png",
+        bbox_inches="tight",
+    )
+
+    rightly_volumes_random = [item[0] for item in rightly_random_volumes_densenesses]
+    rightly_densenesses_random = [
+        item[1] for item in rightly_random_volumes_densenesses
+    ]
+
+    falsely_volumes_random = [item[0] for item in falsely_random_volumes_densenesses]
+    falsely_densenesses_random = [
+        item[1] for item in falsely_random_volumes_densenesses
+    ]
+
+    plt.figure()
+
+    plt.scatter(
+        rightly_volumes_random, rightly_densenesses_random, color="g", s=1, marker="x"
+    )
+    plt.scatter(
+        falsely_volumes_random, falsely_densenesses_random, color="r", s=1, marker="x"
+    )
+
+    plt.savefig(
+        f"{out_base}volumes_densenesses_random.png",
         bbox_inches="tight",
     )
 
