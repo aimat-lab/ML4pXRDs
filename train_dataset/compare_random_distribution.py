@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     compute_magpie_features = False
 
-    show_sample_structures = True
+    show_sample_structures = False
     samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if True:  # TODO: Change back
+    if False:
         random_crystals = random_crystals[0:300]
         random_labels = random_labels[0:300]
         random_variations = random_variations[0:300]

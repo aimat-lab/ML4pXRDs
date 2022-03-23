@@ -21,8 +21,8 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs-capacity-tiny"
-description = "2-spgs-capacity-tiny"
+tag = "2-spgs-capacity-normal-lr-0.01"
+description = "2-spgs-capacity-normal-lr-0.01"
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -758,8 +758,10 @@ class CustomSequence(keras.utils.Sequence):
 
 sequence = CustomSequence(batches_per_epoch)
 
-# model = build_model_park(None, N, len(spgs), use_dropout=use_dropout)
-model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
+model = build_model_park(
+    None, N, len(spgs), use_dropout=use_dropout, lr=0.01
+)  # TODO: Change back, potentially
+# model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 
 model.fit(
     x=sequence,

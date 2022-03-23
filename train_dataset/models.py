@@ -18,7 +18,11 @@ class BinaryAccuracy(tfm.BinaryAccuracy):
 
 
 def build_model_park(
-    hp=None, number_of_input_values=9018, number_of_output_labels=2, use_dropout=False
+    hp=None,
+    number_of_input_values=9018,
+    number_of_output_labels=2,
+    use_dropout=False,
+    lr=0.001,
 ):
 
     # From Park:
@@ -71,7 +75,7 @@ def build_model_park(
 
     model.add(keras.layers.Dense(number_of_output_labels))
 
-    optimizer = keras.optimizers.Adam(learning_rate=0.001)
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
 
     model.compile(
         optimizer=optimizer,

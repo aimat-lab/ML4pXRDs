@@ -48,7 +48,7 @@ else:  # local
     icsd_sim.output_dir = path_to_patterns
 
 # icsd_sim.load(start=0, stop=files_to_use_for_test_set) # TODO: Change back
-icsd_sim.load(start=0, stop=1)
+icsd_sim.load(start=0, stop=5)
 
 n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -163,14 +163,14 @@ assert metric_names[0] == "loss"
 
 print(f"Accuracy: {scores_match_inorganic[1]}")
 
-# find max loss structures
+# find max loss structures and print pngs of them
 
 losses = []
 structures = []
 for i, pattern in enumerate(icsd_patterns_match):
     for subpattern in pattern:
         x = subpattern[np.newaxis, :, np.newaxis]
-        y = np.array([icsd_labels_match[i][0]])
+        y = np.array([spgs.index(icsd_labels_match[i][0])])
         scores = model.evaluate(
             x=x,
             y=y,
@@ -182,6 +182,8 @@ for i, pattern in enumerate(icsd_patterns_match):
         losses.append(loss)
         structures.append(icsd_crystals_match[i])
 
+        break
+
 losses_structures_sorted = sorted(zip(losses, structures), key=lambda x: -1 * x[0])
 
 os.system("mkdir -p ./max_losses")
@@ -189,7 +191,7 @@ os.system("mkdir -p ./max_losses")
 counter = 0
 for i, loss_structure in enumerate(losses_structures_sorted):
 
-    if counter == 50:
+    if counter == 20:
         break
 
     if loss_structure[1].is_ordered:
