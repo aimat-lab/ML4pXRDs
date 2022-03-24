@@ -20,6 +20,10 @@ if __name__ == "__main__":
         # Probably running directly from the training script, so take arguments
 
         in_base = sys.argv[1]
+
+        if in_base[-1] != "/":
+            in_base += "/"
+
         tag = sys.argv[2]
 
         spgs_to_analyze = [int(spg) for spg in sys.argv[3:]]
