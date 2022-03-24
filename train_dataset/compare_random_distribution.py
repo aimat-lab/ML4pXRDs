@@ -812,6 +812,50 @@ if __name__ == "__main__":
     )
 
     plt.figure()
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_max_lattice_paras, color="g", s=1)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_max_lattice_paras, color="r", s=1)
+    plt.xlim(0, 7000)
+    plt.ylim(0, 40)
+    plt.savefig(
+        f"{out_base}2D_volumes_max_lattice_icsd.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
+    plt.scatter(
+        random_rightly_volumes, random_rightly_max_lattice_paras, color="g", s=1
+    )
+    plt.scatter(
+        random_falsely_volumes, random_falsely_max_lattice_paras, color="r", s=1
+    )
+    plt.xlim(0, 7000)
+    plt.ylim(0, 40)
+    plt.savefig(
+        f"{out_base}2D_volumes_max_lattice_random.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_min_lattice_paras, color="g", s=1)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_min_lattice_paras, color="r", s=1)
+    plt.xlim(0, 7000)
+    plt.ylim(0, 40)
+    plt.savefig(
+        f"{out_base}2D_volumes_min_lattice_icsd.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
+    plt.scatter(
+        random_rightly_volumes, random_rightly_min_lattice_paras, color="g", s=1
+    )
+    plt.scatter(
+        random_falsely_volumes, random_falsely_min_lattice_paras, color="r", s=1
+    )
+    plt.xlim(0, 7000)
+    plt.ylim(0, 40)
+    plt.savefig(
+        f"{out_base}2D_volumes_min_lattice_random.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
     plt.scatter(
         icsd_rightly_volumes, [item[0] for item in icsd_rightly_angles], color="g", s=1
     )
