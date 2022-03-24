@@ -620,8 +620,12 @@ class Simulation:
                     else:
                         wyckoff_repetitions = []
 
+                        all_wyckoffs = []
+
                         for key in wyckoffs_per_element.keys():
                             wyckoffs_unique = np.unique(wyckoffs_per_element[key])
+
+                            all_wyckoffs.extend(wyckoffs_unique)
 
                             for item in wyckoffs_unique:
                                 wyckoff_repetitions.append(
@@ -634,6 +638,12 @@ class Simulation:
                             elements,
                             occupancies,
                             wyckoff_repetitions,
+                            len(
+                                np.unique(all_wyckoffs)
+                            ),  # how many different wyckoff sites are occupied? "NO_unique_wyckoffs"
+                            len(
+                                all_wyckoffs
+                            ),  # how many different wyckoff sites are occupied summed over unique elements. "NO_unique_wyckoffs_summed_over_els"
                         )
 
                 if "_atom_site_occupancy" in line or "_atom_site_occupance" in line:

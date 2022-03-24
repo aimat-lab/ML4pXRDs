@@ -143,6 +143,9 @@ if __name__ == "__main__":
     icsd_element_repetitions = []
     icsd_wyckoff_repetitions = []
 
+    icsd_NO_unique_wyckoffs = []
+    icsd_NO_unique_wyckoffs_summed_over_els = []
+
     # Just for the icsd meta-data (ids):
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
@@ -166,6 +169,8 @@ if __name__ == "__main__":
             elements,
             occupancies,
             wyckoff_repetitions,
+            NO_unique_wyckoffs,
+            NO_unique_wyckoffs_summed_over_els,
         ) = sim.get_wyckoff_info(icsd_metas[i][0])
 
         elements_unique = np.unique(elements)
@@ -174,6 +179,11 @@ if __name__ == "__main__":
         icsd_NO_elements.append(len(elements_unique))
         icsd_occupancies.append(occupancies)
         icsd_occupancies_weights.append([1 / len(occupancies)] * len(occupancies))
+
+        icsd_NO_unique_wyckoffs.append(NO_unique_wyckoffs)
+        icsd_NO_unique_wyckoffs_summed_over_els.append(
+            NO_unique_wyckoffs_summed_over_els
+        )
 
         icsd_wyckoff_repetitions.append(wyckoff_repetitions)
 
@@ -208,20 +218,36 @@ if __name__ == "__main__":
 
         wyckoff_repetitions = []
 
+        all_wyckoffs = []
+
         for key in wyckoffs_per_element.keys():
             wyckoffs_unique = np.unique(wyckoffs_per_element[key])
+
+            all_wyckoffs.extend(wyckoffs_unique)
 
             for item in wyckoffs_unique:
                 wyckoff_repetitions.append(
                     np.sum(np.array(wyckoffs_per_element[key]) == item)
                 )
 
-        return len(struc.atom_sites), elements, wyckoff_repetitions
+        return (
+            len(struc.atom_sites),
+            elements,
+            wyckoff_repetitions,
+            len(
+                np.unique(all_wyckoffs)
+            ),  # how many different wyckoff sites are occupied? "NO_unique_wyckoffs"
+            len(
+                all_wyckoffs
+            ),  # how many different wyckoff sites are occupied summed over unique elements. "NO_unique_wyckoffs_summed_over_els"
+        )
 
     random_NO_wyckoffs = []
     random_NO_elements = []
     random_element_repetitions = []
     random_wyckoff_repetitions = []
+    random_NO_unique_wyckoffs = []
+    random_NO_unique_wyckoffs_summed_over_els = []
 
     for i in range(0, len(random_variations)):
 
@@ -229,9 +255,13 @@ if __name__ == "__main__":
 
         success = True
         try:
-            NO_wyckoffs, elements, wyckoff_repetitions = get_wyckoff_info(
-                random_crystals[i]
-            )
+            (
+                NO_wyckoffs,
+                elements,
+                wyckoff_repetitions,
+                NO_unique_wyckoffs,
+                NO_unique_wyckoffs_summed_over_els,
+            ) = get_wyckoff_info(random_crystals[i])
         except Exception as ex:
             print(ex)
             success = False
@@ -250,12 +280,20 @@ if __name__ == "__main__":
 
             random_wyckoff_repetitions.append(wyckoff_repetitions)
 
+            random_NO_unique_wyckoffs.append(NO_unique_wyckoffs)
+            random_NO_unique_wyckoffs_summed_over_els.append(
+                NO_unique_wyckoffs_summed_over_els
+            )
+
         else:
 
             random_NO_wyckoffs.append(None)
             random_NO_elements.append(None)
             random_element_repetitions.append(None)
             random_wyckoff_repetitions.append(None)
+
+            random_NO_unique_wyckoffs.append(None)
+            random_NO_unique_wyckoffs_summed_over_els.append(None)
 
     ############## Calculate histograms:
 

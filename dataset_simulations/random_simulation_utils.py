@@ -771,7 +771,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
             success = True
             try:
 
-                _, NO_wyckoffs, _, _, _ = sim_statistics.get_wyckoff_info(
+                _, NO_wyckoffs, _, _, _, _, _ = sim_statistics.get_wyckoff_info(
                     sim_statistics.sim_metas[i][0]
                 )
 
