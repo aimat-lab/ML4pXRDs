@@ -32,17 +32,17 @@ if __name__ == "__main__":
     else:
 
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
         # tag = "magpie_10-03-2022_14-34-51"
         # tag = "volumes_densenesses_4-spg"
         # tag = "look_at_structures"
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/20-03-2022_02-06-52/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/20-03-2022_02-06-52/"
 
-        # tag = "volumes_densenesses_4-spg_test"
-        tag = "volumes_densenesses_2-spg_test/15"
+        tag = "4-spg-2D-scatters"
+        # tag = "volumes_densenesses_2-spg_test/15"
 
-        # spgs_to_analyze = [14, 104, 176, 129]
-        spgs_to_analyze = [15]
+        spgs_to_analyze = [14, 104, 176, 129]
+        # spgs_to_analyze = [15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
     compute_magpie_features = False
@@ -271,6 +271,8 @@ if __name__ == "__main__":
     icsd_falsely_NO_atoms = []
     icsd_falsely_wyckoff_repetitions = []
     icsd_falsely_magpie_features = []
+    icsd_falsely_density = []
+    icsd_falsely_sum_cov_vols = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -288,6 +290,8 @@ if __name__ == "__main__":
     icsd_rightly_NO_atoms = []
     icsd_rightly_wyckoff_repetitions = []
     icsd_rightly_magpie_features = []
+    icsd_rightly_density = []
+    icsd_rightly_sum_cov_vols = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -302,6 +306,8 @@ if __name__ == "__main__":
     random_rightly_NO_atoms = []
     random_rightly_wyckoff_repetitions = []
     random_rightly_magpie_features = []
+    random_rightly_density = []
+    random_rightly_sum_cov_vols = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -316,6 +322,8 @@ if __name__ == "__main__":
     random_falsely_NO_atoms = []
     random_falsely_wyckoff_repetitions = []
     random_falsely_magpie_features = []
+    random_falsely_density = []
+    random_falsely_sum_cov_vols = []
 
     print("Started processing falsely_indices_icsd")
 
@@ -340,8 +348,6 @@ if __name__ == "__main__":
         * len(rightly_indices_random)
         / (len(falsely_indices_random) + len(rightly_indices_random))
     )
-
-    falsely_icsd_volumes_densenesses = []
 
     for i in falsely_indices_icsd:
 
@@ -370,28 +376,39 @@ if __name__ == "__main__":
 
             volume = structure.volume
 
-            denseness_factor = get_denseness_factor(structure)
+            result = get_denseness_factor(structure)
+            if result is not None:
+                denseness_factor, sum_cov_vols = result
+            else:
+                denseness_factor, sum_cov_vols = None, None
+            icsd_falsely_sum_cov_vols.append(sum_cov_vols)
+
+            try:
+                icsd_falsely_density.append(structure.density)
+            except Exception as ex:
+                print(ex)
+                icsd_falsely_density.append(None)
 
             icsd_falsely_NO_atoms.append(len(structure.frac_coords))
 
             icsd_falsely_volumes.append(volume)
-            icsd_falsely_angles.extend(
+            icsd_falsely_angles.append(
                 [
                     structure.lattice.alpha,
                     structure.lattice.beta,
                     structure.lattice.gamma,
                 ]
             )
-            icsd_falsely_corn_sizes.extend(icsd_variations[index])
+            icsd_falsely_corn_sizes.append(icsd_variations[index])
             icsd_falsely_NO_elements.append(icsd_NO_elements[index])
             icsd_falsely_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-            icsd_falsely_occupancies.extend(icsd_occupancies[index])
-            icsd_falsely_occupancies_weights.extend(icsd_occupancies_weights[index])
-            icsd_falsely_element_repetitions.extend(icsd_element_repetitions[index])
+            icsd_falsely_occupancies.append(icsd_occupancies[index])
+            icsd_falsely_occupancies_weights.append(icsd_occupancies_weights[index])
+            icsd_falsely_element_repetitions.append(icsd_element_repetitions[index])
 
-            icsd_falsely_lattice_paras.append(structure.lattice.a)
-            icsd_falsely_lattice_paras.append(structure.lattice.b)
-            icsd_falsely_lattice_paras.append(structure.lattice.c)
+            icsd_falsely_lattice_paras.append(
+                [structure.lattice.a, structure.lattice.b, structure.lattice.b]
+            )
 
             icsd_falsely_max_lattice_paras.append(
                 max(structure.lattice.a, structure.lattice.b, structure.lattice.c)
@@ -402,10 +419,10 @@ if __name__ == "__main__":
 
             if denseness_factor is not None:
                 icsd_falsely_denseness_factors.append(denseness_factor)
+            else:
+                icsd_falsely_denseness_factors.append(None)
 
-                falsely_icsd_volumes_densenesses.append((volume, denseness_factor))
-
-            icsd_falsely_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
+            icsd_falsely_wyckoff_repetitions.append(icsd_wyckoff_repetitions[index])
 
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
@@ -436,8 +453,6 @@ if __name__ == "__main__":
 
     print("Started processing rightly_indices_icsd")
 
-    rightly_icsd_volumes_densenesses = []
-
     for i in rightly_indices_icsd:
 
         index = int(i / 5)
@@ -465,28 +480,39 @@ if __name__ == "__main__":
 
             volume = structure.volume
 
-            denseness_factor = get_denseness_factor(structure)
+            result = get_denseness_factor(structure)
+            if result is not None:
+                denseness_factor, sum_cov_vols = result
+            else:
+                denseness_factor, sum_cov_vols = None, None
+            icsd_rightly_sum_cov_vols.append(sum_cov_vols)
+
+            try:
+                icsd_rightly_density.append(structure.density)
+            except Exception as ex:
+                print(ex)
+                icsd_rightly_density.append(None)
 
             icsd_rightly_NO_atoms.append(len(structure.frac_coords))
 
             icsd_rightly_volumes.append(volume)
-            icsd_rightly_angles.extend(
+            icsd_rightly_angles.append(
                 [
                     structure.lattice.alpha,
                     structure.lattice.beta,
                     structure.lattice.gamma,
                 ]
             )
-            icsd_rightly_corn_sizes.extend(icsd_variations[index])
+            icsd_rightly_corn_sizes.append(icsd_variations[index])
             icsd_rightly_NO_elements.append(icsd_NO_elements[index])
             icsd_rightly_NO_wyckoffs.append(icsd_NO_wyckoffs[index])
-            icsd_rightly_occupancies.extend(icsd_occupancies[index])
-            icsd_rightly_occupancies_weights.extend(icsd_occupancies_weights[index])
-            icsd_rightly_element_repetitions.extend(icsd_element_repetitions[index])
+            icsd_rightly_occupancies.append(icsd_occupancies[index])
+            icsd_rightly_occupancies_weights.append(icsd_occupancies_weights[index])
+            icsd_rightly_element_repetitions.append(icsd_element_repetitions[index])
 
-            icsd_rightly_lattice_paras.append(structure.lattice.a)
-            icsd_rightly_lattice_paras.append(structure.lattice.b)
-            icsd_rightly_lattice_paras.append(structure.lattice.c)
+            icsd_rightly_lattice_paras.append(
+                [structure.lattice.a, structure.lattice.b, structure.lattice.b]
+            )
 
             icsd_rightly_max_lattice_paras.append(
                 max(structure.lattice.a, structure.lattice.b, structure.lattice.c)
@@ -497,10 +523,10 @@ if __name__ == "__main__":
 
             if denseness_factor is not None:
                 icsd_rightly_denseness_factors.append(denseness_factor)
+            else:
+                icsd_rightly_denseness_factors.append(None)
 
-                rightly_icsd_volumes_densenesses.append((volume, denseness_factor))
-
-            icsd_rightly_wyckoff_repetitions.extend(icsd_wyckoff_repetitions[index])
+            icsd_rightly_wyckoff_repetitions.append(icsd_wyckoff_repetitions[index])
 
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
@@ -528,8 +554,6 @@ if __name__ == "__main__":
 
     print("Started processing falsely_indices_random")
 
-    falsely_random_volumes_densenesses = []
-
     for index in falsely_indices_random:
         if index < len(random_crystals) and (
             spgs_to_analyze is None or random_labels[index] in spgs_to_analyze
@@ -550,12 +574,23 @@ if __name__ == "__main__":
 
             volume = structure.volume
 
-            denseness_factor = get_denseness_factor(structure)
+            result = get_denseness_factor(structure)
+            if result is not None:
+                denseness_factor, sum_cov_vols = result
+            else:
+                denseness_factor, sum_cov_vols = None, None
+            random_falsely_sum_cov_vols.append(sum_cov_vols)
+
+            try:
+                random_falsely_density.append(structure.density)
+            except Exception as ex:
+                print(ex)
+                random_falsely_density.append(None)
 
             random_falsely_NO_atoms.append(len(structure.frac_coords))
 
             random_falsely_volumes.append(volume)
-            random_falsely_angles.extend(
+            random_falsely_angles.append(
                 [
                     structure.lattice.alpha,
                     structure.lattice.beta,
@@ -563,9 +598,9 @@ if __name__ == "__main__":
                 ]
             )
 
-            random_falsely_lattice_paras.append(structure.lattice.a)
-            random_falsely_lattice_paras.append(structure.lattice.b)
-            random_falsely_lattice_paras.append(structure.lattice.c)
+            random_falsely_lattice_paras.append(
+                [structure.lattice.a, structure.lattice.b, structure.lattice.c]
+            )
 
             random_falsely_max_lattice_paras.append(
                 max(structure.lattice.a, structure.lattice.b, structure.lattice.c)
@@ -576,15 +611,15 @@ if __name__ == "__main__":
 
             if denseness_factor is not None:
                 random_falsely_denseness_factors.append(denseness_factor)
-
-                falsely_random_volumes_densenesses.append((volume, denseness_factor))
+            else:
+                random_falsely_denseness_factors.append(None)
 
             random_falsely_corn_sizes.append(random_variations[index])
             random_falsely_NO_elements.append(random_NO_elements[index])
             random_falsely_NO_wyckoffs.append(random_NO_wyckoffs[index])
-            random_falsely_element_repetitions.extend(random_element_repetitions[index])
 
-            random_falsely_wyckoff_repetitions.extend(random_wyckoff_repetitions[index])
+            random_falsely_element_repetitions.append(random_element_repetitions[index])
+            random_falsely_wyckoff_repetitions.append(random_wyckoff_repetitions[index])
 
             if compute_magpie_features:
                 try:
@@ -614,8 +649,6 @@ if __name__ == "__main__":
 
     print("Started processing rightly_indices_random")
 
-    rightly_random_volumes_densenesses = []
-
     for index in rightly_indices_random:
         if index < len(random_crystals) and (
             spgs_to_analyze is None or random_labels[index] in spgs_to_analyze
@@ -636,12 +669,23 @@ if __name__ == "__main__":
 
             volume = structure.volume
 
-            denseness_factor = get_denseness_factor(structure)
+            result = get_denseness_factor(structure)
+            if result is not None:
+                denseness_factor, sum_cov_vols = result
+            else:
+                denseness_factor, sum_cov_vols = None, None
+            random_rightly_sum_cov_vols.append(sum_cov_vols)
+
+            try:
+                random_rightly_density.append(structure.density)
+            except Exception as ex:
+                print(ex)
+                random_rightly_density.append(None)
 
             random_rightly_NO_atoms.append(len(structure.frac_coords))
 
             random_rightly_volumes.append(volume)
-            random_rightly_angles.extend(
+            random_rightly_angles.append(
                 [
                     structure.lattice.alpha,
                     structure.lattice.beta,
@@ -649,9 +693,9 @@ if __name__ == "__main__":
                 ]
             )
 
-            random_rightly_lattice_paras.append(structure.lattice.a)
-            random_rightly_lattice_paras.append(structure.lattice.b)
-            random_rightly_lattice_paras.append(structure.lattice.c)
+            random_rightly_lattice_paras.append(
+                [structure.lattice.a, structure.lattice.b, structure.lattice.c]
+            )
 
             random_rightly_max_lattice_paras.append(
                 max(structure.lattice.a, structure.lattice.b, structure.lattice.c)
@@ -662,15 +706,15 @@ if __name__ == "__main__":
 
             if denseness_factor is not None:
                 random_rightly_denseness_factors.append(denseness_factor)
-
-                rightly_random_volumes_densenesses.append((volume, denseness_factor))
+            else:
+                random_rightly_denseness_factors.append(None)
 
             random_rightly_corn_sizes.append(random_variations[index])
             random_rightly_NO_elements.append(random_NO_elements[index])
             random_rightly_NO_wyckoffs.append(random_NO_wyckoffs[index])
-            random_rightly_element_repetitions.extend(random_element_repetitions[index])
 
-            random_rightly_wyckoff_repetitions.extend(random_wyckoff_repetitions[index])
+            random_rightly_element_repetitions.append(random_element_repetitions[index])
+            random_rightly_wyckoff_repetitions.append(random_wyckoff_repetitions[index])
 
             if compute_magpie_features:
                 try:
@@ -741,44 +785,148 @@ if __name__ == "__main__":
 
     ################# volumes_denseness_factors ################
 
-    rightly_volumes_icsd = [item[0] for item in rightly_icsd_volumes_densenesses]
-    rightly_densenesses_icsd = [item[1] for item in rightly_icsd_volumes_densenesses]
-
-    falsely_volumes_icsd = [item[0] for item in falsely_icsd_volumes_densenesses]
-    falsely_densenesses_icsd = [item[1] for item in falsely_icsd_volumes_densenesses]
-
-    plt.scatter(rightly_volumes_icsd, rightly_densenesses_icsd, color="g", s=1)
-    plt.scatter(falsely_volumes_icsd, falsely_densenesses_icsd, color="r", s=1)
-
+    plt.figure()
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_denseness_factors, color="g", s=1)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_denseness_factors, color="r", s=1)
     plt.xlim(0, 7000)
     plt.ylim(0.5, 3.3)
-
     plt.savefig(
-        f"{out_base}volumes_densenesses_icsd.png",
-        bbox_inches="tight",
+        f"{out_base}2D_volumes_densenesses_icsd.png", bbox_inches="tight", dpi=300
     )
 
-    rightly_volumes_random = [item[0] for item in rightly_random_volumes_densenesses]
-    rightly_densenesses_random = [
-        item[1] for item in rightly_random_volumes_densenesses
-    ]
-
-    falsely_volumes_random = [item[0] for item in falsely_random_volumes_densenesses]
-    falsely_densenesses_random = [
-        item[1] for item in falsely_random_volumes_densenesses
-    ]
-
     plt.figure()
-
-    plt.scatter(rightly_volumes_random, rightly_densenesses_random, color="g", s=1)
-    plt.scatter(falsely_volumes_random, falsely_densenesses_random, color="r", s=1)
-
+    plt.scatter(
+        random_rightly_volumes, random_rightly_denseness_factors, color="g", s=1
+    )
+    plt.scatter(
+        random_falsely_volumes, random_falsely_denseness_factors, color="r", s=1
+    )
     plt.xlim(0, 7000)
     plt.ylim(0.5, 3.3)
-
     plt.savefig(
-        f"{out_base}volumes_densenesses_random.png",
-        bbox_inches="tight",
+        f"{out_base}2D_volumes_densenesses_random.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
+    plt.scatter(
+        icsd_rightly_volumes, [item[0] for item in icsd_rightly_angles], color="g", s=1
+    )
+    plt.scatter(
+        icsd_rightly_volumes, [item[1] for item in icsd_rightly_angles], color="g", s=1
+    )
+    plt.scatter(
+        icsd_rightly_volumes, [item[2] for item in icsd_rightly_angles], color="g", s=1
+    )
+    plt.scatter(
+        icsd_falsely_volumes, [item[0] for item in icsd_falsely_angles], color="r", s=1
+    )
+    plt.scatter(
+        icsd_falsely_volumes, [item[1] for item in icsd_falsely_angles], color="r", s=1
+    )
+    plt.scatter(
+        icsd_falsely_volumes, [item[2] for item in icsd_falsely_angles], color="r", s=1
+    )
+    plt.ylim(80, 140)
+    plt.xlim(0, 7000)
+    plt.savefig(f"{out_base}2D_volumes_angles_icsd.png", bbox_inches="tight", dpi=300)
+
+    plt.figure()
+    plt.scatter(
+        random_rightly_volumes,
+        [item[0] for item in random_rightly_angles],
+        color="g",
+        s=1,
+    )
+    plt.scatter(
+        random_rightly_volumes,
+        [item[1] for item in random_rightly_angles],
+        color="g",
+        s=1,
+    )
+    plt.scatter(
+        random_rightly_volumes,
+        [item[2] for item in random_rightly_angles],
+        color="g",
+        s=1,
+    )
+    plt.scatter(
+        random_falsely_volumes,
+        [item[0] for item in random_falsely_angles],
+        color="r",
+        s=1,
+    )
+    plt.scatter(
+        random_falsely_volumes,
+        [item[1] for item in random_falsely_angles],
+        color="r",
+        s=1,
+    )
+    plt.scatter(
+        random_falsely_volumes,
+        [item[2] for item in random_falsely_angles],
+        color="r",
+        s=1,
+    )
+    plt.ylim(80, 140)
+    plt.xlim(0, 7000)
+    plt.savefig(f"{out_base}2D_volumes_angles_random.png", bbox_inches="tight", dpi=300)
+
+    plt.figure()
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_density, color="g", s=1)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_density, color="r", s=1)
+    plt.xlim(0, 7000)
+    plt.ylim(0, 17.5)
+    plt.savefig(f"{out_base}2D_volumes_density_icsd.png", bbox_inches="tight", dpi=300)
+
+    plt.figure()
+    plt.scatter(random_rightly_volumes, random_rightly_density, color="g", s=1)
+    plt.scatter(random_falsely_volumes, random_falsely_density, color="r", s=1)
+    plt.xlim(0, 7000)
+    plt.ylim(0, 17.5)
+    plt.savefig(
+        f"{out_base}2D_volumes_density_random.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
+    plt.scatter(
+        icsd_rightly_sum_cov_vols, icsd_rightly_denseness_factors, color="g", s=1
+    )
+    plt.scatter(
+        icsd_falsely_sum_cov_vols, icsd_falsely_denseness_factors, color="r", s=1
+    )
+    plt.xlim(0, 7000)
+    plt.ylim(0, 3.5)
+    plt.savefig(
+        f"{out_base}2D_sum_cov_vols_denseness_icsd.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
+    plt.scatter(
+        random_rightly_sum_cov_vols, random_rightly_denseness_factors, color="g", s=1
+    )
+    plt.scatter(
+        random_falsely_sum_cov_vols, random_falsely_denseness_factors, color="r", s=1
+    )
+    plt.xlim(0, 7000)
+    plt.ylim(0, 3.5)
+    plt.savefig(
+        f"{out_base}2D_sum_cov_vols_denseness_random.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_atoms, color="g", s=1)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_atoms, color="r", s=1)
+    plt.xlim(0, 7000)
+    plt.ylim(0, 400)
+    plt.savefig(f"{out_base}2D_volumes_NO_atoms_icsd.png", bbox_inches="tight", dpi=300)
+
+    plt.figure()
+    plt.scatter(random_rightly_volumes, random_rightly_NO_atoms, color="g", s=1)
+    plt.scatter(random_falsely_volumes, random_falsely_NO_atoms, color="r", s=1)
+    plt.xlim(0, 7000)
+    plt.ylim(0, 400)
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_atoms_random.png", bbox_inches="tight", dpi=300
     )
 
     ################# hist plotting ################
@@ -991,8 +1139,14 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "angles",
-            [icsd_rightly_angles, icsd_falsely_angles],
-            [random_rightly_angles, random_falsely_angles],
+            [
+                [j for i in icsd_rightly_angles for j in i],
+                [j for i in icsd_falsely_angles for j in i],
+            ],
+            [
+                [j for i in random_rightly_angles for j in i],
+                [j for i in random_falsely_angles for j in i],
+            ],
             r"angle / °",
             [
                 "ICSD correctly classified",
@@ -1009,10 +1163,13 @@ if __name__ == "__main__":
         create_histogram(
             "denseness_factors",
             [
-                icsd_rightly_denseness_factors,
-                icsd_falsely_denseness_factors,
+                [item for item in icsd_rightly_denseness_factors if item is not None],
+                [item for item in icsd_falsely_denseness_factors if item is not None],
             ],
-            [random_rightly_denseness_factors, random_falsely_denseness_factors],
+            [
+                [item for item in random_rightly_denseness_factors if item is not None],
+                [item for item in random_falsely_denseness_factors if item is not None],
+            ],
             "denseness factor",
             [
                 "ICSD correctly classified",
@@ -1028,7 +1185,10 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "corn_sizes",
-            [icsd_rightly_corn_sizes, icsd_falsely_corn_sizes],
+            [
+                [j for i in icsd_rightly_corn_sizes for j in i],
+                [j for i in icsd_falsely_corn_sizes for j in i],
+            ],
             [random_rightly_corn_sizes, random_falsely_corn_sizes],
             "corn size",
             [
@@ -1080,10 +1240,13 @@ if __name__ == "__main__":
         create_histogram(
             "lattice_paras",
             [
-                icsd_rightly_lattice_paras,
-                icsd_falsely_lattice_paras,
+                [j for i in icsd_rightly_lattice_paras for j in i],
+                [j for i in icsd_falsely_lattice_paras for j in i],
             ],
-            [random_rightly_lattice_paras, random_falsely_lattice_paras],
+            [
+                [j for i in random_rightly_lattice_paras for j in i],
+                [j for i in random_falsely_lattice_paras for j in i],
+            ],
             r"lattice parameter / $Å$",
             [
                 "ICSD correctly classified",
@@ -1139,7 +1302,10 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "occupancies_weighted",
-            [icsd_rightly_occupancies, icsd_falsely_occupancies],
+            [
+                [j for i in icsd_rightly_occupancies for j in i],
+                [j for i in icsd_falsely_occupancies for j in i],
+            ],
             None,
             "occupancy",
             [
@@ -1150,15 +1316,18 @@ if __name__ == "__main__":
             only_proportions=flag,
             min_is_zero=True,
             weights_icsd=[
-                icsd_rightly_occupancies_weights,
-                icsd_falsely_occupancies_weights,
+                [j for i in icsd_rightly_occupancies_weights for j in i],
+                [j for i in icsd_falsely_occupancies_weights for j in i],
             ],
         )
 
     for flag in [True, False]:
         create_histogram(
             "occupancies",
-            [icsd_rightly_occupancies, icsd_falsely_occupancies],
+            [
+                [j for i in icsd_rightly_occupancies for j in i],
+                [j for i in icsd_falsely_occupancies for j in i],
+            ],
             None,
             "occupancy",
             [
@@ -1174,10 +1343,13 @@ if __name__ == "__main__":
         create_histogram(
             "element_repetitions",
             [
-                icsd_rightly_element_repetitions,
-                icsd_falsely_element_repetitions,
+                [j for i in icsd_rightly_element_repetitions for j in i],
+                [j for i in icsd_falsely_element_repetitions for j in i],
             ],
-            [random_rightly_element_repetitions, random_falsely_element_repetitions],
+            [
+                [j for i in random_rightly_element_repetitions for j in i],
+                [j for i in random_falsely_element_repetitions for j in i],
+            ],
             "Number of element repetitions on wyckoff sites",
             [
                 "ICSD correctly classified",
@@ -1194,10 +1366,13 @@ if __name__ == "__main__":
         create_histogram(
             "wyckoff_repetitions",
             [
-                icsd_rightly_wyckoff_repetitions,
-                icsd_falsely_wyckoff_repetitions,
+                [j for i in icsd_rightly_wyckoff_repetitions for j in i],
+                [j for i in icsd_falsely_wyckoff_repetitions for j in i],
             ],
-            [random_rightly_wyckoff_repetitions, random_falsely_wyckoff_repetitions],
+            [
+                [j for i in random_rightly_wyckoff_repetitions for j in i],
+                [j for i in random_falsely_wyckoff_repetitions for j in i],
+            ],
             "Number of wyckoff repetitions per element",
             [
                 "ICSD correctly classified",

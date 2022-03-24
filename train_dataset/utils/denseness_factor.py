@@ -50,7 +50,7 @@ def get_denseness_factor(structure):
 
                 calculated_volume += 4 / 3 * np.pi * r**3 * occupancy
 
-        return actual_volume / calculated_volume
+        return actual_volume / calculated_volume, calculated_volume
 
     except Exception as ex:
 
