@@ -14,6 +14,8 @@ from ase.io import write
 from train_dataset.utils.analyse_magpie import get_magpie_features
 from train_dataset.utils.denseness_factor import get_denseness_factor
 
+from pymatgen.core.periodic_table import Species
+
 if __name__ == "__main__":
 
     if len(sys.argv) > 2:
@@ -146,6 +148,8 @@ if __name__ == "__main__":
     icsd_NO_unique_wyckoffs = []
     icsd_NO_unique_wyckoffs_summed_over_els = []
 
+    icsd_max_Zs = []
+
     # Just for the icsd meta-data (ids):
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
@@ -174,6 +178,15 @@ if __name__ == "__main__":
         ) = sim.get_wyckoff_info(icsd_metas[i][0])
 
         elements_unique = np.unique(elements)
+
+        try:
+
+            Zs = [Species(name).Z for name in elements_unique]
+            icsd_max_Zs.append(max(Zs))
+
+        except Exception as ex:
+
+            icsd_max_Zs.append(None)
 
         icsd_NO_wyckoffs.append(NO_wyckoffs)
         icsd_NO_elements.append(len(elements_unique))
@@ -248,6 +261,7 @@ if __name__ == "__main__":
     random_wyckoff_repetitions = []
     random_NO_unique_wyckoffs = []
     random_NO_unique_wyckoffs_summed_over_els = []
+    random_max_Zs = []
 
     for i in range(0, len(random_variations)):
 
@@ -269,6 +283,13 @@ if __name__ == "__main__":
         if success:
 
             elements_unique = np.unique(elements)
+
+            try:
+                Zs = [Species(name).Z for name in elements_unique]
+                random_max_Zs.append(max(Zs))
+            except Exception as ex:
+
+                random_max_Zs.append(None)
 
             random_NO_wyckoffs.append(NO_wyckoffs)
             random_NO_elements.append(len(elements_unique))
@@ -295,6 +316,8 @@ if __name__ == "__main__":
             random_NO_unique_wyckoffs.append(None)
             random_NO_unique_wyckoffs_summed_over_els.append(None)
 
+            random_max_Zs.append(None)
+
     ############## Calculate histograms:
 
     icsd_falsely_crystals = []
@@ -317,6 +340,7 @@ if __name__ == "__main__":
     icsd_falsely_sum_cov_vols = []
     icsd_falsely_NO_unique_wyckoffs = []
     icsd_falsely_NO_unique_wyckoffs_summed_over_els = []
+    icsd_falsely_max_Zs = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -338,6 +362,7 @@ if __name__ == "__main__":
     icsd_rightly_sum_cov_vols = []
     icsd_rightly_NO_unique_wyckoffs = []
     icsd_rightly_NO_unique_wyckoffs_summed_over_els = []
+    icsd_rightly_max_Zs = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -356,6 +381,7 @@ if __name__ == "__main__":
     random_rightly_sum_cov_vols = []
     random_rightly_NO_unique_wyckoffs = []
     random_rightly_NO_unique_wyckoffs_summed_over_els = []
+    random_rightly_max_Zs = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -374,6 +400,7 @@ if __name__ == "__main__":
     random_falsely_sum_cov_vols = []
     random_falsely_NO_unique_wyckoffs = []
     random_falsely_NO_unique_wyckoffs_summed_over_els = []
+    random_falsely_max_Zs = []
 
     print("Started processing falsely_indices_icsd")
 
@@ -478,6 +505,8 @@ if __name__ == "__main__":
             icsd_falsely_NO_unique_wyckoffs_summed_over_els.append(
                 icsd_NO_unique_wyckoffs_summed_over_els[index]
             )
+
+            icsd_falsely_max_Zs.append(icsd_max_Zs[index])
 
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
@@ -588,6 +617,8 @@ if __name__ == "__main__":
                 icsd_NO_unique_wyckoffs_summed_over_els[index]
             )
 
+            icsd_rightly_max_Zs.append(icsd_max_Zs[index])
+
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
@@ -685,6 +716,8 @@ if __name__ == "__main__":
             random_falsely_NO_unique_wyckoffs_summed_over_els.append(
                 random_NO_unique_wyckoffs_summed_over_els[index]
             )
+
+            random_falsely_max_Zs.append(random_max_Zs[index])
 
             if compute_magpie_features:
                 try:
@@ -786,6 +819,8 @@ if __name__ == "__main__":
                 random_NO_unique_wyckoffs_summed_over_els[index]
             )
 
+            random_rightly_max_Zs.append(random_max_Zs[index])
+
             if compute_magpie_features:
                 try:
                     if (
@@ -881,6 +916,7 @@ if __name__ == "__main__":
     plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_unique_wyckoffs, color="g", s=1)
     plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_unique_wyckoffs, color="r", s=1)
     plt.xlim(0, 7000)
+    plt.ylim(0, 9)
     plt.savefig(
         f"{out_base}2D_volumes_NO_unique_wyckoffs_icsd.png",
         bbox_inches="tight",
@@ -895,6 +931,7 @@ if __name__ == "__main__":
         random_falsely_volumes, random_falsely_NO_unique_wyckoffs, color="r", s=1
     )
     plt.xlim(0, 7000)
+    plt.ylim(0, 9)
     plt.savefig(
         f"{out_base}2D_volumes_NO_unique_wyckoffs_random.png",
         bbox_inches="tight",
@@ -915,6 +952,7 @@ if __name__ == "__main__":
         s=1,
     )
     plt.xlim(0, 7000)
+    plt.ylim(0, 17)
     plt.savefig(
         f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_icsd.png",
         bbox_inches="tight",
@@ -935,6 +973,7 @@ if __name__ == "__main__":
         s=1,
     )
     plt.xlim(0, 7000)
+    plt.ylim(0, 17)
     plt.savefig(
         f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_random.png",
         bbox_inches="tight",
@@ -1618,6 +1657,29 @@ if __name__ == "__main__":
             ],
             [random_rightly_NO_atoms, random_falsely_NO_atoms],
             "Number of atoms in the unit cell",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=True,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "max_Zs",
+            [
+                [item for item in icsd_rightly_max_Zs if item is not None],
+                [item for item in icsd_falsely_max_Zs if item is not None],
+            ],
+            [
+                [item for item in random_rightly_max_Zs if item is not None],
+                [item for item in random_falsely_max_Zs if item is not None],
+            ],
+            "max Z",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
