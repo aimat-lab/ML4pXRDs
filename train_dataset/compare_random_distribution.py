@@ -315,6 +315,8 @@ if __name__ == "__main__":
     icsd_falsely_magpie_features = []
     icsd_falsely_density = []
     icsd_falsely_sum_cov_vols = []
+    icsd_falsely_NO_unique_wyckoffs = []
+    icsd_falsely_NO_unique_wyckoffs_summed_over_els = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -334,6 +336,8 @@ if __name__ == "__main__":
     icsd_rightly_magpie_features = []
     icsd_rightly_density = []
     icsd_rightly_sum_cov_vols = []
+    icsd_rightly_NO_unique_wyckoffs = []
+    icsd_rightly_NO_unique_wyckoffs_summed_over_els = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -350,6 +354,8 @@ if __name__ == "__main__":
     random_rightly_magpie_features = []
     random_rightly_density = []
     random_rightly_sum_cov_vols = []
+    random_rightly_NO_unique_wyckoffs = []
+    random_rightly_NO_unique_wyckoffs_summed_over_els = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -366,6 +372,8 @@ if __name__ == "__main__":
     random_falsely_magpie_features = []
     random_falsely_density = []
     random_falsely_sum_cov_vols = []
+    random_falsely_NO_unique_wyckoffs = []
+    random_falsely_NO_unique_wyckoffs_summed_over_els = []
 
     print("Started processing falsely_indices_icsd")
 
@@ -465,6 +473,11 @@ if __name__ == "__main__":
                 icsd_falsely_denseness_factors.append(None)
 
             icsd_falsely_wyckoff_repetitions.append(icsd_wyckoff_repetitions[index])
+
+            icsd_falsely_NO_unique_wyckoffs.append(icsd_NO_unique_wyckoffs[index])
+            icsd_falsely_NO_unique_wyckoffs_summed_over_els.append(
+                icsd_NO_unique_wyckoffs_summed_over_els[index]
+            )
 
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
@@ -570,6 +583,11 @@ if __name__ == "__main__":
 
             icsd_rightly_wyckoff_repetitions.append(icsd_wyckoff_repetitions[index])
 
+            icsd_rightly_NO_unique_wyckoffs.append(icsd_NO_unique_wyckoffs[index])
+            icsd_rightly_NO_unique_wyckoffs_summed_over_els.append(
+                icsd_NO_unique_wyckoffs_summed_over_els[index]
+            )
+
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
@@ -662,6 +680,11 @@ if __name__ == "__main__":
 
             random_falsely_element_repetitions.append(random_element_repetitions[index])
             random_falsely_wyckoff_repetitions.append(random_wyckoff_repetitions[index])
+
+            random_falsely_NO_unique_wyckoffs.append(random_NO_unique_wyckoffs[index])
+            random_falsely_NO_unique_wyckoffs_summed_over_els.append(
+                random_NO_unique_wyckoffs_summed_over_els[index]
+            )
 
             if compute_magpie_features:
                 try:
@@ -758,6 +781,11 @@ if __name__ == "__main__":
             random_rightly_element_repetitions.append(random_element_repetitions[index])
             random_rightly_wyckoff_repetitions.append(random_wyckoff_repetitions[index])
 
+            random_rightly_NO_unique_wyckoffs.append(random_NO_unique_wyckoffs[index])
+            random_rightly_NO_unique_wyckoffs_summed_over_els.append(
+                random_NO_unique_wyckoffs_summed_over_els[index]
+            )
+
             if compute_magpie_features:
                 try:
                     if (
@@ -847,6 +875,70 @@ if __name__ == "__main__":
     plt.ylim(0.5, 3.3)
     plt.savefig(
         f"{out_base}2D_volumes_densenesses_random.png", bbox_inches="tight", dpi=300
+    )
+
+    plt.figure()
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_unique_wyckoffs, color="g", s=1)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_unique_wyckoffs, color="r", s=1)
+    plt.xlim(0, 7000)
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_icsd.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    plt.figure()
+    plt.scatter(
+        random_rightly_volumes, random_rightly_NO_unique_wyckoffs, color="g", s=1
+    )
+    plt.scatter(
+        random_falsely_volumes, random_falsely_NO_unique_wyckoffs, color="r", s=1
+    )
+    plt.xlim(0, 7000)
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_random.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    plt.figure()
+    plt.scatter(
+        icsd_rightly_volumes,
+        icsd_rightly_NO_unique_wyckoffs_summed_over_els,
+        color="g",
+        s=1,
+    )
+    plt.scatter(
+        icsd_falsely_volumes,
+        icsd_falsely_NO_unique_wyckoffs_summed_over_els,
+        color="r",
+        s=1,
+    )
+    plt.xlim(0, 7000)
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_icsd.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    plt.figure()
+    plt.scatter(
+        random_rightly_volumes,
+        random_rightly_NO_unique_wyckoffs_summed_over_els,
+        color="g",
+        s=1,
+    )
+    plt.scatter(
+        random_falsely_volumes,
+        random_falsely_NO_unique_wyckoffs_summed_over_els,
+        color="r",
+        s=1,
+    )
+    plt.xlim(0, 7000)
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_random.png",
+        bbox_inches="tight",
+        dpi=300,
     )
 
     plt.figure()
@@ -1460,6 +1552,52 @@ if __name__ == "__main__":
                 [j for i in random_falsely_wyckoff_repetitions for j in i],
             ],
             "Number of wyckoff repetitions per element",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=True,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "NO_unique_wyckoffs",
+            [
+                icsd_rightly_NO_unique_wyckoffs,
+                icsd_falsely_NO_unique_wyckoffs,
+            ],
+            [
+                random_rightly_NO_unique_wyckoffs,
+                random_falsely_NO_unique_wyckoffs,
+            ],
+            "Number of unique wyckoff sites",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=True,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "NO_unique_wyckoffs_summed_over_els",
+            [
+                icsd_rightly_NO_unique_wyckoffs_summed_over_els,
+                icsd_falsely_NO_unique_wyckoffs_summed_over_els,
+            ],
+            [
+                random_rightly_NO_unique_wyckoffs_summed_over_els,
+                random_falsely_NO_unique_wyckoffs_summed_over_els,
+            ],
+            "Number of unique wyckoff sites summed over elements",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
