@@ -97,13 +97,14 @@ if __name__ == "__main__":
 
     # limit the range:
     if True:  # TODO: Change back
-        random_crystals = random_crystals[0:600]
-        random_labels = random_labels[0:600]
-        random_variations = random_variations[0:600]
-        icsd_crystals = icsd_crystals[0:600]
-        icsd_labels = icsd_labels[0:600]
-        icsd_variations = icsd_variations[0:600]
-        icsd_metas = icsd_metas[0:600]
+        to_process = 1000
+        random_crystals = random_crystals[0:to_process]
+        random_labels = random_labels[0:to_process]
+        random_variations = random_variations[0:to_process]
+        icsd_crystals = icsd_crystals[0:to_process]
+        icsd_labels = icsd_labels[0:to_process]
+        icsd_variations = icsd_variations[0:to_process]
+        icsd_metas = icsd_metas[0:to_process]
 
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):
@@ -359,6 +360,7 @@ if __name__ == "__main__":
     icsd_falsely_NO_unique_wyckoffs_summed_over_els = []
     icsd_falsely_max_Zs = []
     icsd_falsely_set_wyckoffs_indices = []
+    icsd_falsely_set_wyckoffs_max_indices = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -382,6 +384,7 @@ if __name__ == "__main__":
     icsd_rightly_NO_unique_wyckoffs_summed_over_els = []
     icsd_rightly_max_Zs = []
     icsd_rightly_set_wyckoffs_indices = []
+    icsd_rightly_set_wyckoffs_max_indices = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -402,6 +405,7 @@ if __name__ == "__main__":
     random_rightly_NO_unique_wyckoffs_summed_over_els = []
     random_rightly_max_Zs = []
     random_rightly_set_wyckoffs_indices = []
+    random_rightly_set_wyckoffs_max_indices = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -422,6 +426,7 @@ if __name__ == "__main__":
     random_falsely_NO_unique_wyckoffs_summed_over_els = []
     random_falsely_max_Zs = []
     random_falsely_set_wyckoffs_indices = []
+    random_falsely_set_wyckoffs_max_indices = []
 
     if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
 
@@ -538,14 +543,26 @@ if __name__ == "__main__":
 
             icsd_falsely_max_Zs.append(icsd_max_Zs[index])
 
+            skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+                indices = []
+
                 for name in icsd_set_wyckoffs[index]:
                     if name in names:
-                        icsd_falsely_set_wyckoffs_indices.append(names.index(name))
+                        indices.append(names.index(name))
                     else:
                         print("Wrong wyckoff name! ##################################")
                         wrong_wyckoff_name_counter += 1
+                        skip = True
                         break
+
+                if not skip:
+                    icsd_falsely_set_wyckoffs_indices.append(indices)
+                    icsd_falsely_set_wyckoffs_max_indices.append(max(indices))
+                else:
+                    icsd_falsely_set_wyckoffs_indices.append(None)
+                    icsd_falsely_set_wyckoffs_max_indices.append(None)
+                    skip = False
 
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
@@ -658,14 +675,26 @@ if __name__ == "__main__":
 
             icsd_rightly_max_Zs.append(icsd_max_Zs[index])
 
+            skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+                indices = []
+
                 for name in icsd_set_wyckoffs[index]:
                     if name in names:
-                        icsd_rightly_set_wyckoffs_indices.append(names.index(name))
+                        indices.append(names.index(name))
                     else:
                         print("Wrong wyckoff name! ##################################")
                         wrong_wyckoff_name_counter += 1
+                        skip = True
                         break
+
+                if not skip:
+                    icsd_rightly_set_wyckoffs_max_indices.append(max(indices))
+                    icsd_rightly_set_wyckoffs_indices.append(indices)
+                else:
+                    skip = False
+                    icsd_rightly_set_wyckoffs_max_indices.append(None)
+                    icsd_rightly_set_wyckoffs_indices.append(None)
 
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
@@ -767,14 +796,26 @@ if __name__ == "__main__":
 
             random_falsely_max_Zs.append(random_max_Zs[index])
 
+            skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+                indices = []
+
                 for name in random_set_wyckoffs[index]:
                     if name in names:
-                        random_falsely_set_wyckoffs_indices.append(names.index(name))
+                        indices.append(names.index(name))
                     else:
                         print("Wrong wyckoff name! ##################################")
                         wrong_wyckoff_name_counter += 1
+                        skip = True
                         break
+
+                if not skip:
+                    random_falsely_set_wyckoffs_max_indices.append(max(indices))
+                    random_falsely_set_wyckoffs_indices.append(indices)
+                else:
+                    skip = False
+                    random_falsely_set_wyckoffs_indices.append(None)
+                    random_falsely_set_wyckoffs_max_indices.append(None)
 
             if compute_magpie_features:
                 try:
@@ -878,14 +919,26 @@ if __name__ == "__main__":
 
             random_rightly_max_Zs.append(random_max_Zs[index])
 
+            skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+                indices = []
+
                 for name in random_set_wyckoffs[index]:
                     if name in names:
-                        random_rightly_set_wyckoffs_indices.append(names.index(name))
+                        indices.append(names.index(name))
                     else:
                         print("Wrong wyckoff name! ##################################")
                         wrong_wyckoff_name_counter += 1
+                        skip = True
                         break
+
+                if not skip:
+                    random_rightly_set_wyckoffs_indices.append(indices)
+                    random_rightly_set_wyckoffs_max_indices.append(max(indices))
+                else:
+                    skip = False
+                    random_rightly_set_wyckoffs_indices.append(None)
+                    random_rightly_set_wyckoffs_max_indices.append(None)
 
             if compute_magpie_features:
                 try:
@@ -957,11 +1010,11 @@ if __name__ == "__main__":
             + "random_falsely_structures/combined.png"
         )
 
-    ################# volumes_denseness_factors ################
+    ################# 2D scatter plots ################
 
     plt.figure()
-    plt.scatter(icsd_rightly_volumes, icsd_rightly_denseness_factors, color="g", s=1)
-    plt.scatter(icsd_falsely_volumes, icsd_falsely_denseness_factors, color="r", s=1)
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_denseness_factors, color="g", s=0.5)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_denseness_factors, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0.5, 3.3)
     plt.savefig(
@@ -970,10 +1023,10 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.scatter(
-        random_rightly_volumes, random_rightly_denseness_factors, color="g", s=1
+        random_rightly_volumes, random_rightly_denseness_factors, color="g", s=0.5
     )
     plt.scatter(
-        random_falsely_volumes, random_falsely_denseness_factors, color="r", s=1
+        random_falsely_volumes, random_falsely_denseness_factors, color="r", s=0.5
     )
     plt.xlim(0, 7000)
     plt.ylim(0.5, 3.3)
@@ -982,8 +1035,8 @@ if __name__ == "__main__":
     )
 
     plt.figure()
-    plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_unique_wyckoffs, color="g", s=1)
-    plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_unique_wyckoffs, color="r", s=1)
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_unique_wyckoffs, color="g", s=0.5)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_unique_wyckoffs, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 9)
     plt.savefig(
@@ -994,10 +1047,10 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.scatter(
-        random_rightly_volumes, random_rightly_NO_unique_wyckoffs, color="g", s=1
+        random_rightly_volumes, random_rightly_NO_unique_wyckoffs, color="g", s=0.5
     )
     plt.scatter(
-        random_falsely_volumes, random_falsely_NO_unique_wyckoffs, color="r", s=1
+        random_falsely_volumes, random_falsely_NO_unique_wyckoffs, color="r", s=0.5
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 9)
@@ -1012,13 +1065,13 @@ if __name__ == "__main__":
         icsd_rightly_volumes,
         icsd_rightly_NO_unique_wyckoffs_summed_over_els,
         color="g",
-        s=1,
+        s=0.5,
     )
     plt.scatter(
         icsd_falsely_volumes,
         icsd_falsely_NO_unique_wyckoffs_summed_over_els,
         color="r",
-        s=1,
+        s=0.5,
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 17)
@@ -1033,13 +1086,13 @@ if __name__ == "__main__":
         random_rightly_volumes,
         random_rightly_NO_unique_wyckoffs_summed_over_els,
         color="g",
-        s=1,
+        s=0.5,
     )
     plt.scatter(
         random_falsely_volumes,
         random_falsely_NO_unique_wyckoffs_summed_over_els,
         color="r",
-        s=1,
+        s=0.5,
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 17)
@@ -1050,8 +1103,8 @@ if __name__ == "__main__":
     )
 
     plt.figure()
-    plt.scatter(icsd_rightly_volumes, icsd_rightly_max_lattice_paras, color="g", s=1)
-    plt.scatter(icsd_falsely_volumes, icsd_falsely_max_lattice_paras, color="r", s=1)
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_max_lattice_paras, color="g", s=0.5)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_max_lattice_paras, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
     plt.savefig(
@@ -1060,10 +1113,10 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.scatter(
-        random_rightly_volumes, random_rightly_max_lattice_paras, color="g", s=1
+        random_rightly_volumes, random_rightly_max_lattice_paras, color="g", s=0.5
     )
     plt.scatter(
-        random_falsely_volumes, random_falsely_max_lattice_paras, color="r", s=1
+        random_falsely_volumes, random_falsely_max_lattice_paras, color="r", s=0.5
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
@@ -1072,8 +1125,8 @@ if __name__ == "__main__":
     )
 
     plt.figure()
-    plt.scatter(icsd_rightly_volumes, icsd_rightly_min_lattice_paras, color="g", s=1)
-    plt.scatter(icsd_falsely_volumes, icsd_falsely_min_lattice_paras, color="r", s=1)
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_min_lattice_paras, color="g", s=0.5)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_min_lattice_paras, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
     plt.savefig(
@@ -1082,10 +1135,10 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.scatter(
-        random_rightly_volumes, random_rightly_min_lattice_paras, color="g", s=1
+        random_rightly_volumes, random_rightly_min_lattice_paras, color="g", s=0.5
     )
     plt.scatter(
-        random_falsely_volumes, random_falsely_min_lattice_paras, color="r", s=1
+        random_falsely_volumes, random_falsely_min_lattice_paras, color="r", s=0.5
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
@@ -1095,22 +1148,40 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.scatter(
-        icsd_rightly_volumes, [item[0] for item in icsd_rightly_angles], color="g", s=1
+        icsd_rightly_volumes,
+        [item[0] for item in icsd_rightly_angles],
+        color="g",
+        s=0.5,
     )
     plt.scatter(
-        icsd_rightly_volumes, [item[1] for item in icsd_rightly_angles], color="g", s=1
+        icsd_rightly_volumes,
+        [item[1] for item in icsd_rightly_angles],
+        color="g",
+        s=0.5,
     )
     plt.scatter(
-        icsd_rightly_volumes, [item[2] for item in icsd_rightly_angles], color="g", s=1
+        icsd_rightly_volumes,
+        [item[2] for item in icsd_rightly_angles],
+        color="g",
+        s=0.5,
     )
     plt.scatter(
-        icsd_falsely_volumes, [item[0] for item in icsd_falsely_angles], color="r", s=1
+        icsd_falsely_volumes,
+        [item[0] for item in icsd_falsely_angles],
+        color="r",
+        s=0.5,
     )
     plt.scatter(
-        icsd_falsely_volumes, [item[1] for item in icsd_falsely_angles], color="r", s=1
+        icsd_falsely_volumes,
+        [item[1] for item in icsd_falsely_angles],
+        color="r",
+        s=0.5,
     )
     plt.scatter(
-        icsd_falsely_volumes, [item[2] for item in icsd_falsely_angles], color="r", s=1
+        icsd_falsely_volumes,
+        [item[2] for item in icsd_falsely_angles],
+        color="r",
+        s=0.5,
     )
     plt.ylim(80, 140)
     plt.xlim(0, 7000)
@@ -1121,52 +1192,52 @@ if __name__ == "__main__":
         random_rightly_volumes,
         [item[0] for item in random_rightly_angles],
         color="g",
-        s=1,
+        s=0.5,
     )
     plt.scatter(
         random_rightly_volumes,
         [item[1] for item in random_rightly_angles],
         color="g",
-        s=1,
+        s=0.5,
     )
     plt.scatter(
         random_rightly_volumes,
         [item[2] for item in random_rightly_angles],
         color="g",
-        s=1,
+        s=0.5,
     )
     plt.scatter(
         random_falsely_volumes,
         [item[0] for item in random_falsely_angles],
         color="r",
-        s=1,
+        s=0.5,
     )
     plt.scatter(
         random_falsely_volumes,
         [item[1] for item in random_falsely_angles],
         color="r",
-        s=1,
+        s=0.5,
     )
     plt.scatter(
         random_falsely_volumes,
         [item[2] for item in random_falsely_angles],
         color="r",
-        s=1,
+        s=0.5,
     )
     plt.ylim(80, 140)
     plt.xlim(0, 7000)
     plt.savefig(f"{out_base}2D_volumes_angles_random.png", bbox_inches="tight", dpi=300)
 
     plt.figure()
-    plt.scatter(icsd_rightly_volumes, icsd_rightly_density, color="g", s=1)
-    plt.scatter(icsd_falsely_volumes, icsd_falsely_density, color="r", s=1)
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_density, color="g", s=0.5)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_density, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 17.5)
     plt.savefig(f"{out_base}2D_volumes_density_icsd.png", bbox_inches="tight", dpi=300)
 
     plt.figure()
-    plt.scatter(random_rightly_volumes, random_rightly_density, color="g", s=1)
-    plt.scatter(random_falsely_volumes, random_falsely_density, color="r", s=1)
+    plt.scatter(random_rightly_volumes, random_rightly_density, color="g", s=0.5)
+    plt.scatter(random_falsely_volumes, random_falsely_density, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 17.5)
     plt.savefig(
@@ -1175,10 +1246,10 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.scatter(
-        icsd_rightly_sum_cov_vols, icsd_rightly_denseness_factors, color="g", s=1
+        icsd_rightly_sum_cov_vols, icsd_rightly_denseness_factors, color="g", s=0.5
     )
     plt.scatter(
-        icsd_falsely_sum_cov_vols, icsd_falsely_denseness_factors, color="r", s=1
+        icsd_falsely_sum_cov_vols, icsd_falsely_denseness_factors, color="r", s=0.5
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 3.5)
@@ -1188,10 +1259,10 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.scatter(
-        random_rightly_sum_cov_vols, random_rightly_denseness_factors, color="g", s=1
+        random_rightly_sum_cov_vols, random_rightly_denseness_factors, color="g", s=0.5
     )
     plt.scatter(
-        random_falsely_sum_cov_vols, random_falsely_denseness_factors, color="r", s=1
+        random_falsely_sum_cov_vols, random_falsely_denseness_factors, color="r", s=0.5
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 3.5)
@@ -1200,19 +1271,167 @@ if __name__ == "__main__":
     )
 
     plt.figure()
-    plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_atoms, color="g", s=1)
-    plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_atoms, color="r", s=1)
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_atoms, color="g", s=0.5)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_atoms, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 400)
     plt.savefig(f"{out_base}2D_volumes_NO_atoms_icsd.png", bbox_inches="tight", dpi=300)
 
     plt.figure()
-    plt.scatter(random_rightly_volumes, random_rightly_NO_atoms, color="g", s=1)
-    plt.scatter(random_falsely_volumes, random_falsely_NO_atoms, color="r", s=1)
+    plt.scatter(random_rightly_volumes, random_rightly_NO_atoms, color="g", s=0.5)
+    plt.scatter(random_falsely_volumes, random_falsely_NO_atoms, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 400)
     plt.savefig(
         f"{out_base}2D_volumes_NO_atoms_random.png", bbox_inches="tight", dpi=300
+    )
+
+    # set_wyckoffs_indices over volume
+
+    plt.figure()
+    indices = []
+    volumes = []
+    for i, item in enumerate(icsd_rightly_set_wyckoffs_indices):
+        if item is not None:
+            for subitem in item:
+                indices.append(subitem)
+                volumes.append(icsd_rightly_volumes[i])
+    plt.scatter(volumes, indices, color="g", s=0.5)
+    indices = []
+    volumes = []
+    for i, item in enumerate(icsd_falsely_set_wyckoffs_indices):
+        if item is not None:
+            for subitem in item:
+                indices.append(subitem)
+                volumes.append(icsd_falsely_volumes[i])
+    plt.scatter(volumes, indices, color="r", s=0.5)
+    plt.xlim(0, 7000)
+    plt.ylim(-1, 12)
+    plt.savefig(
+        f"{out_base}2D_volumes_set_wyckoffs_indices_icsd.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    plt.figure()
+    indices = []
+    volumes = []
+    for i, item in enumerate(random_rightly_set_wyckoffs_indices):
+        if item is not None:
+            for subitem in item:
+                indices.append(subitem)
+                volumes.append(random_rightly_volumes[i])
+    plt.scatter(volumes, indices, color="g", s=0.5)
+    indices = []
+    volumes = []
+    for i, item in enumerate(random_falsely_set_wyckoffs_indices):
+        if item is not None:
+            for subitem in item:
+                indices.append(subitem)
+                volumes.append(random_falsely_volumes[i])
+    plt.scatter(volumes, indices, color="r", s=0.5)
+    plt.xlim(0, 7000)
+    plt.ylim(-1, 12)
+    plt.savefig(
+        f"{out_base}2D_volumes_set_wyckoffs_indices_random.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    # set_wyckoffs_max_indices over volume
+
+    plt.figure()
+    indices = []
+    volumes = []
+    for i, item in enumerate(icsd_rightly_set_wyckoffs_max_indices):
+        if item is not None:
+            indices.append(item)
+            volumes.append(icsd_rightly_volumes[i])
+    plt.scatter(volumes, indices, color="g", s=0.5)
+    indices = []
+    volumes = []
+    for i, item in enumerate(icsd_falsely_set_wyckoffs_max_indices):
+        if item is not None:
+            indices.append(item)
+            volumes.append(icsd_falsely_volumes[i])
+    plt.scatter(volumes, indices, color="r", s=0.5)
+    plt.xlim(0, 7000)
+    plt.ylim(-1, 12)
+    plt.savefig(
+        f"{out_base}2D_volumes_set_wyckoffs_max_indices_icsd.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    plt.figure()
+    indices = []
+    volumes = []
+    for i, item in enumerate(random_rightly_set_wyckoffs_max_indices):
+        if item is not None:
+            indices.append(item)
+            volumes.append(random_rightly_volumes[i])
+    plt.scatter(volumes, indices, color="g", s=0.5)
+    indices = []
+    volumes = []
+    for i, item in enumerate(random_falsely_set_wyckoffs_max_indices):
+        if item is not None:
+            indices.append(item)
+            volumes.append(random_falsely_volumes[i])
+    plt.scatter(volumes, indices, color="r", s=0.5)
+    plt.xlim(0, 7000)
+    plt.ylim(-1, 12)
+    plt.savefig(
+        f"{out_base}2D_volumes_set_wyckoffs_max_indices_random.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    # set_wyckoffs_max_indices over NO_wyckoffs
+
+    plt.figure()
+    indices = []
+    NO_wyckoffs = []
+    for i, item in enumerate(icsd_rightly_set_wyckoffs_max_indices):
+        if item is not None:
+            indices.append(item)
+            NO_wyckoffs.append(icsd_rightly_NO_wyckoffs[i])
+    plt.scatter(NO_wyckoffs, indices, color="g", s=0.5)
+    indices = []
+    NO_wyckoffs = []
+    for i, item in enumerate(icsd_falsely_set_wyckoffs_max_indices):
+        if item is not None:
+            indices.append(item)
+            NO_wyckoffs.append(icsd_falsely_NO_wyckoffs[i])
+    plt.scatter(NO_wyckoffs, indices, color="r", s=0.5)
+    plt.xlim(0, 100)
+    plt.ylim(-1, 12)
+    plt.savefig(
+        f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_icsd.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    plt.figure()
+    indices = []
+    NO_wyckoffs = []
+    for i, item in enumerate(random_rightly_set_wyckoffs_max_indices):
+        if item is not None:
+            indices.append(item)
+            NO_wyckoffs.append(random_rightly_NO_wyckoffs[i])
+    plt.scatter(NO_wyckoffs, indices, color="g", s=0.5)
+    indices = []
+    NO_wyckoffs = []
+    for i, item in enumerate(random_falsely_set_wyckoffs_max_indices):
+        if item is not None:
+            indices.append(item)
+            NO_wyckoffs.append(random_falsely_NO_wyckoffs[i])
+    plt.scatter(NO_wyckoffs, indices, color="r", s=0.5)
+    plt.xlim(0, 100)
+    plt.ylim(-1, 12)
+    plt.savefig(
+        f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_random.png",
+        bbox_inches="tight",
+        dpi=300,
     )
 
     ################# hist plotting ################
@@ -1765,14 +1984,73 @@ if __name__ == "__main__":
             create_histogram(
                 "set_wyckoff_indices",
                 [
-                    icsd_rightly_set_wyckoffs_indices,
-                    icsd_falsely_set_wyckoffs_indices,
+                    [
+                        j
+                        for i in icsd_rightly_set_wyckoffs_indices
+                        if i is not None
+                        for j in i
+                    ],
+                    [
+                        j
+                        for i in icsd_falsely_set_wyckoffs_indices
+                        if i is not None
+                        for j in i
+                    ],
                 ],
                 [
-                    random_rightly_set_wyckoffs_indices,
-                    random_falsely_set_wyckoffs_indices,
+                    [
+                        j
+                        for i in random_rightly_set_wyckoffs_indices
+                        if i is not None
+                        for j in i
+                    ],
+                    [
+                        j
+                        for i in random_falsely_set_wyckoffs_indices
+                        if i is not None
+                        for j in i
+                    ],
                 ],
                 "wyckoff index",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=True,
+                only_proportions=flag,
+                min_is_zero=True,
+            )
+
+        for flag in [True, False]:
+            create_histogram(
+                "set_wyckoff_max_indices",
+                [
+                    [
+                        item
+                        for item in icsd_rightly_set_wyckoffs_max_indices
+                        if item is not None
+                    ],
+                    [
+                        item
+                        for item in icsd_falsely_set_wyckoffs_max_indices
+                        if item is not None
+                    ],
+                ],
+                [
+                    [
+                        item
+                        for item in random_rightly_set_wyckoffs_max_indices
+                        if item is not None
+                    ],
+                    [
+                        item
+                        for item in random_falsely_set_wyckoffs_max_indices
+                        if item is not None
+                    ],
+                ],
+                "max wyckoff index",
                 [
                     "ICSD correctly classified",
                     "ICSD incorrectly classified",
