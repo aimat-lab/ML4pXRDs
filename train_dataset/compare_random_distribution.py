@@ -90,7 +90,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if True:
+    if False:  # TODO: Change back
         random_crystals = random_crystals[0:600]
         random_labels = random_labels[0:600]
         random_variations = random_variations[0:600]
