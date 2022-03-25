@@ -13,6 +13,7 @@ from ase.visualize import view
 from ase.io import write
 from train_dataset.utils.analyse_magpie import get_magpie_features
 from train_dataset.utils.denseness_factor import get_denseness_factor
+from pyxtal.symmetry import Group
 
 from pymatgen.core.periodic_table import Species
 
@@ -38,18 +39,23 @@ if __name__ == "__main__":
     else:
 
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
         # tag = "magpie_10-03-2022_14-34-51"
         # tag = "volumes_densenesses_4-spg"
         # tag = "look_at_structures"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/20-03-2022_02-06-52/"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/20-03-2022_02-06-52/"
 
-        tag = "4-spg-2D-scatters"
+        # tag = "4-spg-2D-scatters"
         # tag = "volumes_densenesses_2-spg_test/15"
 
-        spgs_to_analyze = [14, 104, 176, 129]
+        tag = "2-spg-test"
+
+        # spgs_to_analyze = [14, 104, 176, 129]
+        spgs_to_analyze = [2]
         # spgs_to_analyze = [15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
+
+    print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
     compute_magpie_features = False
 
@@ -90,7 +96,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:  # TODO: Change back
+    if True:  # TODO: Change back
         random_crystals = random_crystals[0:600]
         random_labels = random_labels[0:600]
         random_variations = random_variations[0:600]
@@ -149,6 +155,7 @@ if __name__ == "__main__":
     icsd_NO_unique_wyckoffs_summed_over_els = []
 
     icsd_max_Zs = []
+    icsd_set_wyckoffs = []
 
     # Just for the icsd meta-data (ids):
     jobid = os.getenv("SLURM_JOB_ID")
@@ -175,6 +182,7 @@ if __name__ == "__main__":
             wyckoff_repetitions,
             NO_unique_wyckoffs,
             NO_unique_wyckoffs_summed_over_els,
+            unique_wyckoffs,
         ) = sim.get_wyckoff_info(icsd_metas[i][0])
 
         elements_unique = np.unique(elements)
@@ -205,6 +213,8 @@ if __name__ == "__main__":
             reps.append(np.sum(np.array(elements) == el))
 
         icsd_element_repetitions.append(reps)
+
+        icsd_set_wyckoffs.append(unique_wyckoffs)
 
     # preprocess random data:
 
@@ -253,6 +263,7 @@ if __name__ == "__main__":
             len(
                 all_wyckoffs
             ),  # how many different wyckoff sites are occupied summed over unique elements. "NO_unique_wyckoffs_summed_over_els"
+            np.unique(all_wyckoffs),
         )
 
     random_NO_wyckoffs = []
@@ -262,6 +273,7 @@ if __name__ == "__main__":
     random_NO_unique_wyckoffs = []
     random_NO_unique_wyckoffs_summed_over_els = []
     random_max_Zs = []
+    random_set_wyckoffs = []
 
     for i in range(0, len(random_variations)):
 
@@ -275,6 +287,7 @@ if __name__ == "__main__":
                 wyckoff_repetitions,
                 NO_unique_wyckoffs,
                 NO_unique_wyckoffs_summed_over_els,
+                unique_wyckoffs,
             ) = get_wyckoff_info(random_crystals[i])
         except Exception as ex:
             print(ex)
@@ -306,6 +319,8 @@ if __name__ == "__main__":
                 NO_unique_wyckoffs_summed_over_els
             )
 
+            random_set_wyckoffs.append(unique_wyckoffs)
+
         else:
 
             random_NO_wyckoffs.append(None)
@@ -317,6 +332,8 @@ if __name__ == "__main__":
             random_NO_unique_wyckoffs_summed_over_els.append(None)
 
             random_max_Zs.append(None)
+
+            random_set_wyckoffs.append(None)
 
     ############## Calculate histograms:
 
@@ -341,6 +358,7 @@ if __name__ == "__main__":
     icsd_falsely_NO_unique_wyckoffs = []
     icsd_falsely_NO_unique_wyckoffs_summed_over_els = []
     icsd_falsely_max_Zs = []
+    icsd_falsely_set_wyckoffs_indices = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -363,6 +381,7 @@ if __name__ == "__main__":
     icsd_rightly_NO_unique_wyckoffs = []
     icsd_rightly_NO_unique_wyckoffs_summed_over_els = []
     icsd_rightly_max_Zs = []
+    icsd_rightly_set_wyckoffs_indices = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -382,6 +401,7 @@ if __name__ == "__main__":
     random_rightly_NO_unique_wyckoffs = []
     random_rightly_NO_unique_wyckoffs_summed_over_els = []
     random_rightly_max_Zs = []
+    random_rightly_set_wyckoffs_indices = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -401,6 +421,16 @@ if __name__ == "__main__":
     random_falsely_NO_unique_wyckoffs = []
     random_falsely_NO_unique_wyckoffs_summed_over_els = []
     random_falsely_max_Zs = []
+    random_falsely_set_wyckoffs_indices = []
+
+    if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+
+        spg = spgs_to_analyze[0]
+
+        group = Group(spg, dim=3)
+        names = [(str(x.multiplicity) + x.letter) for x in group]
+
+    wrong_wyckoff_name_counter = 0
 
     print("Started processing falsely_indices_icsd")
 
@@ -507,6 +537,15 @@ if __name__ == "__main__":
             )
 
             icsd_falsely_max_Zs.append(icsd_max_Zs[index])
+
+            if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+                for name in icsd_set_wyckoffs[index]:
+                    if name in names:
+                        icsd_falsely_set_wyckoffs_indices.append(names.index(name))
+                    else:
+                        print("Wrong wyckoff name! ##################################")
+                        wrong_wyckoff_name_counter += 1
+                        break
 
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
@@ -619,6 +658,15 @@ if __name__ == "__main__":
 
             icsd_rightly_max_Zs.append(icsd_max_Zs[index])
 
+            if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+                for name in icsd_set_wyckoffs[index]:
+                    if name in names:
+                        icsd_rightly_set_wyckoffs_indices.append(names.index(name))
+                    else:
+                        print("Wrong wyckoff name! ##################################")
+                        wrong_wyckoff_name_counter += 1
+                        break
+
             if compute_magpie_features:
                 if not np.any(np.array(icsd_occupancies[index]) != 1.0):
                     try:
@@ -718,6 +766,15 @@ if __name__ == "__main__":
             )
 
             random_falsely_max_Zs.append(random_max_Zs[index])
+
+            if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+                for name in random_set_wyckoffs[index]:
+                    if name in names:
+                        random_falsely_set_wyckoffs_indices.append(names.index(name))
+                    else:
+                        print("Wrong wyckoff name! ##################################")
+                        wrong_wyckoff_name_counter += 1
+                        break
 
             if compute_magpie_features:
                 try:
@@ -821,6 +878,15 @@ if __name__ == "__main__":
 
             random_rightly_max_Zs.append(random_max_Zs[index])
 
+            if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+                for name in random_set_wyckoffs[index]:
+                    if name in names:
+                        random_rightly_set_wyckoffs_indices.append(names.index(name))
+                    else:
+                        print("Wrong wyckoff name! ##################################")
+                        wrong_wyckoff_name_counter += 1
+                        break
+
             if compute_magpie_features:
                 try:
                     if (
@@ -846,6 +912,9 @@ if __name__ == "__main__":
             int(samples_magpie_random_rightly) + 1
         ):
             raise Exception("total_samples_magpie was set too high.")
+
+    if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+        print(f"{wrong_wyckoff_name_counter} wyckoff names mismatched.")
 
     # combine output pngs of structures:
 
@@ -1690,6 +1759,30 @@ if __name__ == "__main__":
             only_proportions=flag,
             min_is_zero=True,
         )
+
+    if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
+        for flag in [True, False]:
+            create_histogram(
+                "set_wyckoff_indices",
+                [
+                    icsd_rightly_set_wyckoffs_indices,
+                    icsd_falsely_set_wyckoffs_indices,
+                ],
+                [
+                    random_rightly_set_wyckoffs_indices,
+                    random_falsely_set_wyckoffs_indices,
+                ],
+                "wyckoff index",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=True,
+                only_proportions=flag,
+                min_is_zero=True,
+            )
 
     # Info about wyckoff positions in cif file format:
     # => where in the cif file is written what kind of wyckoff site we are dealing with?

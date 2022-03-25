@@ -644,6 +644,7 @@ class Simulation:
                             len(
                                 all_wyckoffs
                             ),  # how many different wyckoff sites are occupied summed over unique elements. "NO_unique_wyckoffs_summed_over_els"
+                            np.unique(all_wyckoffs),
                         )
 
                 if "_atom_site_occupancy" in line or "_atom_site_occupance" in line:

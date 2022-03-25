@@ -99,7 +99,7 @@ NO_wyckoffs_cached = {}
 for i in reversed(range(0, len(icsd_patterns_match))):
 
     if validation_max_NO_wyckoffs is not None:
-        is_pure, NO_wyckoffs, _, _, _, _, _ = icsd_sim.get_wyckoff_info(
+        is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim.get_wyckoff_info(
             icsd_metas_match[i][0]
         )
 
