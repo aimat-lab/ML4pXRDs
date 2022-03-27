@@ -666,7 +666,7 @@ def get_wyckoff_info(pyxtal_crystal):
     return len(pyxtal_crystal.atom_sites), elements
 
 
-def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
+def prepare_training(files_to_use_for_test_set=40):  # roughly 30% of the data
 
     spgs = range(1, 231)
 
@@ -716,6 +716,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
     denseness_factors_per_spg = {}
 
+    all_data_per_spg = {}
+
     # pre-process the symmetry groups:
 
     for spg_number in spgs:
@@ -732,6 +734,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
         counter_per_spg_per_element[spg_number] = {}
 
         denseness_factors_per_spg[spg_number] = []
+
+        all_data_per_spg[spg_number] = []
 
     # Analyse the statistics:
 
@@ -832,12 +836,16 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
 
         specie_strs = []
 
+        all_data_entry = []
+
         for site in struc.atom_sites:
 
             specie_str = str(site.specie)
             specie_strs.append(specie_str)
 
-            name = str(site.wp.multiplicity) + site.wp.letter
+            name = str(site.wp.multiplicity) + site.wp.letter  # wyckoff name
+
+            all_data_entry.append((specie_str, name))
 
             if specie_str in counts_per_spg_per_element_per_wyckoff[spg_number].keys():
                 if (
@@ -862,6 +870,8 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 counter_per_spg_per_element[spg_number][specie_str] += 1
             else:
                 counter_per_spg_per_element[spg_number][specie_str] = 1
+
+        all_data_per_spg[spg_number].append(all_data_entry)
 
     represented_spgs = []
     NO_wyckoffs_prob_per_spg = {}
@@ -956,6 +966,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30%
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_per_spg,
+                all_data_per_spg,
             ),
             file,
         )
@@ -1157,10 +1168,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
-    if True:
+    if False:
 
         data = load_dataset_info()
         print()
