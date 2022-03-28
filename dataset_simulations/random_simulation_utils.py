@@ -11,6 +11,7 @@ from pymatgen.io.cif import CifParser
 import os
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from scipy.stats import kde
+from sklearn.neighbors import KernelDensity
 
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 
@@ -988,13 +989,14 @@ def load_dataset_info():
         NO_unique_elements_prob_per_spg = data[6]
         NO_repetitions_prob_per_spg_per_element = data[7]
         denseness_factors_per_spg = data[8]
+        all_data_per_spg = data[9]
 
     denseness_factors_density_per_spg = {}
 
     for spg in denseness_factors_per_spg.keys():
 
         denseness_factors_per_spg[spg] = [
-            item for item in denseness_factors_per_spg[spg] if item is not None
+            item[0] for item in denseness_factors_per_spg[spg] if item is not None
         ]
 
         if len(denseness_factors_per_spg[spg]) > 100:
@@ -1048,6 +1050,33 @@ def load_dataset_info():
             counts_per_spg_per_element_per_wyckoff
         )
 
+    kde_per_spg = {}
+
+    for spg in all_data_per_spg.keys():
+
+        if len(all_data_per_spg[spg]) < 100:
+            kde_per_spg[spg] = None
+            continue
+
+        group = Group(spg, dim=3)
+        names = [(str(x.multiplicity) + x.letter) for x in group]
+
+        data = np.zeros(shape=(len(all_data_per_spg[spg]), len(names)))
+
+        for i, entry in enumerate(all_data_per_spg[spg]):
+            for subentry in entry:
+                index = names.index(subentry[1])
+                data[i, index] += 1
+
+        kd = KernelDensity(bandwidth=0.5, kernel="gaussian")
+
+        kd.fit(data)
+
+        kde_per_spg[spg] = kd
+
+        # for sample in kd.sample(15):
+        #    print([int(item) if item >= 0 else 0 for item in np.round(sample)])
+
     return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn.
         # The only correlation considered is having multiple elements of the same type (less spread in number of unique elements).
         # This is the main assumption of my work.
@@ -1064,6 +1093,7 @@ def load_dataset_info():
         NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg,
+        kde_per_spg,
     )
 
 
@@ -1168,10 +1198,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
-    if False:
+    if True:
 
         data = load_dataset_info()
         print()
