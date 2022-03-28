@@ -187,7 +187,7 @@ def generate_structure(
         np.random.seed(seed)
         random.seed(seed)
 
-    if not use_element_repetitions_instead_of_NO_wyckoffs:
+    if not use_element_repetitions_instead_of_NO_wyckoffs and kde_per_spg is None:
 
         if set_NO_elements_to_max:
             NO_elements = max_NO_elements
@@ -292,55 +292,33 @@ def generate_structure(
         current_picked_repetition = None
         current_repetition_counter = 0
 
-        while True:  # for
+        if kde_per_spg is None:
 
-            # break conditions:
-            if not use_element_repetitions_instead_of_NO_wyckoffs:
-                if set_wyckoffs_counter >= NO_elements:
-                    break
-            else:
-                if unique_elements_counter >= NO_unique_elements:
-                    break
+            while True:  # for
 
-            counter_collisions = 0
-            while True:
-                if counter_collisions > 50:
-                    print(
-                        "More than 50 collisions setting an atom, continuing with next unique element."
-                    )
-
-                    current_repetition_counter = current_picked_repetition  # force that loop goes to next unique element
-                    break
-
+                # break conditions:
                 if not use_element_repetitions_instead_of_NO_wyckoffs:
-                    if not use_icsd_statistics:
-                        chosen_elements.append(random.choice(all_elements))
-                    else:
-                        chosen_element = np.random.choice(
-                            list(
-                                probability_per_spg_per_element[
-                                    group_object.number
-                                ].keys()
-                            ),
-                            1,
-                            p=list(
-                                probability_per_spg_per_element[
-                                    group_object.number
-                                ].values()
-                            ),
-                        )[0]
-
-                        chosen_elements.append(chosen_element)
+                    if set_wyckoffs_counter >= NO_elements:
+                        break
                 else:
+                    if unique_elements_counter >= NO_unique_elements:
+                        break
 
-                    if (
-                        current_repetition_counter == current_picked_repetition
-                        or current_picked_repetition is None
-                    ):
+                counter_collisions = 0
+                while True:
+                    if counter_collisions > 50:
+                        print(
+                            "More than 50 collisions setting an atom, continuing with next unique element."
+                        )
 
-                        while True:
+                        current_repetition_counter = current_picked_repetition  # force that loop goes to next unique element
+                        break
 
-                            current_element = np.random.choice(
+                    if not use_element_repetitions_instead_of_NO_wyckoffs:
+                        if not use_icsd_statistics:
+                            chosen_elements.append(random.choice(all_elements))
+                        else:
+                            chosen_element = np.random.choice(
                                 list(
                                     probability_per_spg_per_element[
                                         group_object.number
@@ -354,91 +332,193 @@ def generate_structure(
                                 ),
                             )[0]
 
-                            if current_element not in chosen_elements:
-                                break
+                            chosen_elements.append(chosen_element)
+                    else:
 
-                        current_picked_repetition = np.random.choice(
-                            range(
+                        if (
+                            current_repetition_counter == current_picked_repetition
+                            or current_picked_repetition is None
+                        ):
+
+                            while True:
+
+                                current_element = np.random.choice(
+                                    list(
+                                        probability_per_spg_per_element[
+                                            group_object.number
+                                        ].keys()
+                                    ),
+                                    1,
+                                    p=list(
+                                        probability_per_spg_per_element[
+                                            group_object.number
+                                        ].values()
+                                    ),
+                                )[0]
+
+                                if current_element not in chosen_elements:
+                                    break
+
+                            current_picked_repetition = np.random.choice(
+                                range(
+                                    1,
+                                    len(
+                                        NO_repetitions_prob_per_spg_per_element[
+                                            group_object.number
+                                        ][current_element]
+                                    )
+                                    + 1,
+                                ),
                                 1,
-                                len(
+                                p=list(
                                     NO_repetitions_prob_per_spg_per_element[
                                         group_object.number
                                     ][current_element]
-                                )
-                                + 1,
-                            ),
-                            1,
-                            p=list(
-                                NO_repetitions_prob_per_spg_per_element[
-                                    group_object.number
-                                ][current_element]
-                            ),
-                        )[0]
-                        current_repetition_counter = 1
+                                ),
+                            )[0]
+                            current_repetition_counter = 1
 
-                        unique_elements_counter += 1
+                            unique_elements_counter += 1
+
+                        else:
+
+                            current_repetition_counter += 1
+
+                        chosen_elements.append(current_element)
+
+                    if not use_icsd_statistics:
+                        chosen_index = random.randint(
+                            0, len(number_of_atoms_per_site) - 1
+                        )
+                    else:
+                        probability_per_wyckoff = (
+                            probability_per_spg_per_element_per_wyckoff[
+                                group_object.number
+                            ][current_element]
+                        )
+
+                        chosen_wyckoff = np.random.choice(
+                            list(probability_per_wyckoff.keys()),
+                            1,
+                            p=list(probability_per_wyckoff.values()),
+                        )[0]
+                        chosen_index = names.index(chosen_wyckoff)
+
+                    """
+                    # always first choose the general Wyckoff site:
+                    chosen_index = (
+                        random.randint(0, len(number_of_atoms) - 1) if i > 0 else 0
+                    )
+                    """
+
+                    """ See this from the documentation
+                    PyXtal starts with the largest available WP, which is the general position of the space group.
+                    If the number of atoms required is equal to or greater than the size of the general position,
+                    the algorithm proceeds. If fewer atoms are needed, the next largest WP (or set of WP’s) is
+                    chosen, in order of descending multiplicity. This is done to ensure that larger positions are
+                    preferred over smaller ones; this reflects the greater prevalence of larger multiplicities
+                    both statistically and in nature.
+                    """
+
+                    if (
+                        dofs[chosen_index] == 0
+                        and int(number_of_atoms_per_site[chosen_index]) == 1
+                    ):
+                        counter_collisions += 1
+
+                        # need to reset the changes that were made above, since this didn't work out:
+                        chosen_elements.pop()
+                        current_repetition_counter -= 1
+
+                        continue  # try again
+
+                    number_of_atoms_per_site[chosen_index] += 1
+
+                    chosen_numbers.append(multiplicities[chosen_index])
+                    chosen_wyckoff_positions.append([names[chosen_index]])
+                    chosen_wyckoff_letters.append([letters[chosen_index]])
+                    chosen_wyckoff_indices.append(chosen_index)
+
+                    break
+
+                if not use_element_repetitions_instead_of_NO_wyckoffs:
+                    set_wyckoffs_counter += 1
+
+        else:
+
+            # sample wyckoff occupations directly from the ICSD:
+
+            occupations = [
+                int(item) if item >= 0 else 0
+                for item in np.round(kde_per_spg[group_object.number].sample(1)[0])
+            ]
+
+            for i in range(0, len(occupations)):
+
+                occ = occupations[i]
+
+                if dofs[i] == 0:
+                    occ = min(1, occ)
+
+                number_of_atoms_per_site[i] = occ
+
+            # Choose unique elements:
+            unique_elements = []
+            for i in range(0, NO_unique_elements):
+                while True:
+                    current_element = np.random.choice(
+                        list(
+                            probability_per_spg_per_element[group_object.number].keys()
+                        ),
+                        1,
+                        p=list(
+                            probability_per_spg_per_element[
+                                group_object.number
+                            ].values()
+                        ),
+                    )[0]
+
+                    if current_element not in unique_elements:
+                        unique_elements.append(current_element)
+                        break
+
+            NO_wyckoffs = np.sum(number_of_atoms_per_site)
+            a = sorted(
+                np.random.randint(0, len(NO_wyckoffs) + 1, len(unique_elements) - 1)
+            )
+            N_per_element = np.append(a, NO_wyckoffs) - np.insert(a, 0, 0)
+            assert (
+                np.sum(N_per_element) == NO_wyckoffs
+            )  # important for break condition below
+
+            chosen_elements = []
+            for i, current_N in enumerate(N_per_element):
+                chosen_elements.extend([unique_elements[i]] * current_N)
+
+            random.shuffle(chosen_elements)
+
+            chosen = np.zeros(len(names))
+            current_wyckoff_index = 0
+
+            for i, el in enumerate(chosen_elements):
+
+                while True:
+
+                    if (
+                        chosen[current_wyckoff_index]
+                        < number_of_atoms_per_site[current_wyckoff_index]
+                    ):
+                        chosen[current_wyckoff_index] += 1
+
+                        chosen_wyckoff_indices.append(current_wyckoff_index)
+                        chosen_numbers.append(multiplicities[current_wyckoff_index])
+
+                        break
 
                     else:
 
-                        current_repetition_counter += 1
-
-                    chosen_elements.append(current_element)
-
-                if not use_icsd_statistics:
-                    chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
-                else:
-                    probability_per_wyckoff = (
-                        probability_per_spg_per_element_per_wyckoff[
-                            group_object.number
-                        ][current_element]
-                    )
-
-                    chosen_wyckoff = np.random.choice(
-                        list(probability_per_wyckoff.keys()),
-                        1,
-                        p=list(probability_per_wyckoff.values()),
-                    )[0]
-                    chosen_index = names.index(chosen_wyckoff)
-
-                """
-                # always first choose the general Wyckoff site:
-                chosen_index = (
-                    random.randint(0, len(number_of_atoms) - 1) if i > 0 else 0
-                )
-                """
-
-                """ See this from the documentation
-                PyXtal starts with the largest available WP, which is the general position of the space group.
-                If the number of atoms required is equal to or greater than the size of the general position,
-                the algorithm proceeds. If fewer atoms are needed, the next largest WP (or set of WP’s) is
-                chosen, in order of descending multiplicity. This is done to ensure that larger positions are
-                preferred over smaller ones; this reflects the greater prevalence of larger multiplicities
-                both statistically and in nature.
-                """
-
-                if (
-                    dofs[chosen_index] == 0
-                    and int(number_of_atoms_per_site[chosen_index]) == 1
-                ):
-                    counter_collisions += 1
-
-                    # need to reset the changes that were made above, since this didn't work out:
-                    chosen_elements.pop()
-                    current_repetition_counter -= 1
-
-                    continue  # try again
-
-                number_of_atoms_per_site[chosen_index] += 1
-
-                chosen_numbers.append(multiplicities[chosen_index])
-                chosen_wyckoff_positions.append([names[chosen_index]])
-                chosen_wyckoff_letters.append([letters[chosen_index]])
-                chosen_wyckoff_indices.append(chosen_index)
-
-                break
-
-            if not use_element_repetitions_instead_of_NO_wyckoffs:
-                set_wyckoffs_counter += 1
+                        current_wyckoff_index += 1
+                        continue
 
         if use_element_repetitions_instead_of_NO_wyckoffs:
             if len(chosen_numbers) > max_NO_elements:
