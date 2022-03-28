@@ -462,6 +462,14 @@ def generate_structure(
 
                 number_of_atoms_per_site[i] = occ
 
+            NO_wyckoffs = np.sum(number_of_atoms_per_site)
+            if NO_unique_elements > NO_wyckoffs:
+                NO_unique_elements = int(NO_wyckoffs)
+
+            if NO_wyckoffs < 1.0:
+                print("NO_wyckoffs = 0.0, regenerating...")
+                continue
+
             # Choose unique elements:
             unique_elements = []
             for i in range(0, NO_unique_elements):
@@ -482,18 +490,26 @@ def generate_structure(
                         unique_elements.append(current_element)
                         break
 
-            NO_wyckoffs = np.sum(number_of_atoms_per_site)
-            a = sorted(
-                np.random.randint(0, len(NO_wyckoffs) + 1, len(unique_elements) - 1)
-            )
+            a = []
+            for i in range(0, len(unique_elements) - 1):
+                while True:
+                    chosen_frac = np.random.randint(1, NO_wyckoffs)
+                    if chosen_frac not in a:
+                        a.append(chosen_frac)
+                        break
+                    else:
+                        continue
+
+            a = sorted(a)
+
             N_per_element = np.append(a, NO_wyckoffs) - np.insert(a, 0, 0)
             assert (
                 np.sum(N_per_element) == NO_wyckoffs
             )  # important for break condition below
 
             chosen_elements = []
-            for i, current_N in enumerate(N_per_element):
-                chosen_elements.extend([unique_elements[i]] * current_N)
+            for i, current_N in enumerate(list(N_per_element)):
+                chosen_elements.extend([unique_elements[i]] * int(current_N))
 
             random.shuffle(chosen_elements)
 
@@ -1183,7 +1199,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1194,12 +1210,13 @@ if __name__ == "__main__":
             NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element,
             denseness_factors_density_per_spg,
+            kde_per_spg,
         ) = load_dataset_info()
 
         # for i in range(0, 15 * 10):
-        for i in range(0, 3):
+        for i in range(0, 10000):
             # for spg in represented_spgs:
-            for spg in represented_spgs:
+            for spg in [2, 15, 14, 104, 129, 176]:
                 # for spg in [2, 15, 14, 104, 176, 129]:
                 # for spg in [2]:
 
@@ -1213,7 +1230,7 @@ if __name__ == "__main__":
                     1,
                     100,
                     -1,
-                    True,  # distance checks enabled!
+                    False,  # distance checks disabled!
                     None,
                     False,
                     True,
@@ -1230,6 +1247,7 @@ if __name__ == "__main__":
                     NO_repetitions_prob_per_spg_per_element,
                     False,
                     denseness_factors_density_per_spg,
+                    kde_per_spg,
                 )
 
     if False:
@@ -1285,7 +1303,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if True:
+    if False:
 
         data = load_dataset_info()
         print()
