@@ -3,6 +3,8 @@ import numpy as np
 
 test = np.random.rand(12, 10000)
 
-test = gaussian_kde(test)
+test = gaussian_kde(test, bw_method=3)
 
-print(test.resample(5).T)
+# print(test.resample(5).T)
+
+print(test.covariance)
