@@ -1601,6 +1601,28 @@ if __name__ == "__main__":
             dpi=300,
         )
 
+    # number of unique elements over the volume
+
+    plt.figure()
+    plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_elements, color="g", s=0.5)
+    plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_elements, color="r", s=0.5)
+    plt.xlim(0, 7000)
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_elements_icsd.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    plt.figure()
+    plt.scatter(random_rightly_volumes, random_rightly_NO_elements, color="g", s=0.5)
+    plt.scatter(random_falsely_volumes, random_falsely_NO_elements, color="r", s=0.5)
+    plt.xlim(0, 7000)
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_elements_random.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
     ################# hist plotting ################
 
     def create_histogram(
