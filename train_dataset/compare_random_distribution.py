@@ -62,6 +62,8 @@ if __name__ == "__main__":
 
     compute_magpie_features = False
 
+    analyse_complexity_ordering = False
+
     show_sample_structures = False
     samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
@@ -100,7 +102,7 @@ if __name__ == "__main__":
 
     # limit the range:
     if True:  # TODO: Change back
-        to_process = 600
+        to_process = 200
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
         random_variations = random_variations[0:to_process]
@@ -554,25 +556,26 @@ if __name__ == "__main__":
 
             icsd_falsely_max_Zs.append(icsd_max_Zs[index])
 
-            try:
-                if structure.is_ordered:
-                    icsd_falsely_chemical_ordering.append(
-                        get_chemical_ordering(structure)
-                    )
-                else:
+            if analyse_complexity_ordering:
+                try:
+                    if structure.is_ordered:
+                        icsd_falsely_chemical_ordering.append(
+                            get_chemical_ordering(structure)
+                        )
+                    else:
+                        icsd_falsely_chemical_ordering.append(None)
+                except Exception as ex:
+                    print("Error calculating chemical ordering:")
+                    print(ex)
                     icsd_falsely_chemical_ordering.append(None)
-            except Exception as ex:
-                print("Error calculating chemical ordering:")
-                print(ex)
-                icsd_falsely_chemical_ordering.append(None)
-            try:
-                icsd_falsely_structural_complexity.append(
-                    get_structural_complexity(structure)
-                )
-            except Exception as ex:
-                print("Error calculating structural complexity:")
-                print(ex)
-                icsd_falsely_structural_complexity.append(None)
+                try:
+                    icsd_falsely_structural_complexity.append(
+                        get_structural_complexity(structure)
+                    )
+                except Exception as ex:
+                    print("Error calculating structural complexity:")
+                    print(ex)
+                    icsd_falsely_structural_complexity.append(None)
 
             skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
@@ -706,25 +709,26 @@ if __name__ == "__main__":
 
             icsd_rightly_max_Zs.append(icsd_max_Zs[index])
 
-            try:
-                if structure.is_ordered:
-                    icsd_rightly_chemical_ordering.append(
-                        get_chemical_ordering(structure)
-                    )
-                else:
+            if analyse_complexity_ordering:
+                try:
+                    if structure.is_ordered:
+                        icsd_rightly_chemical_ordering.append(
+                            get_chemical_ordering(structure)
+                        )
+                    else:
+                        icsd_rightly_chemical_ordering.append(None)
+                except Exception as ex:
+                    print("Error calculating chemical ordering:")
+                    print(ex)
                     icsd_rightly_chemical_ordering.append(None)
-            except Exception as ex:
-                print("Error calculating chemical ordering:")
-                print(ex)
-                icsd_rightly_chemical_ordering.append(None)
-            try:
-                icsd_rightly_structural_complexity.append(
-                    get_structural_complexity(structure)
-                )
-            except Exception as ex:
-                print("Error calculating structural complexity:")
-                print(ex)
-                icsd_rightly_structural_complexity.append(None)
+                try:
+                    icsd_rightly_structural_complexity.append(
+                        get_structural_complexity(structure)
+                    )
+                except Exception as ex:
+                    print("Error calculating structural complexity:")
+                    print(ex)
+                    icsd_rightly_structural_complexity.append(None)
 
             skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
@@ -847,25 +851,26 @@ if __name__ == "__main__":
 
             random_falsely_max_Zs.append(random_max_Zs[index])
 
-            try:
-                if structure.is_ordered:
-                    random_falsely_chemical_ordering.append(
-                        get_chemical_ordering(structure)
-                    )
-                else:
+            if analyse_complexity_ordering:
+                try:
+                    if structure.is_ordered:
+                        random_falsely_chemical_ordering.append(
+                            get_chemical_ordering(structure)
+                        )
+                    else:
+                        random_falsely_chemical_ordering.append(None)
+                except Exception as ex:
+                    print("Error calculating chemical ordering:")
+                    print(ex)
                     random_falsely_chemical_ordering.append(None)
-            except Exception as ex:
-                print("Error calculating chemical ordering:")
-                print(ex)
-                random_falsely_chemical_ordering.append(None)
-            try:
-                random_falsely_structural_complexity.append(
-                    get_structural_complexity(structure)
-                )
-            except Exception as ex:
-                print("Error calculating structural complexity:")
-                print(ex)
-                random_falsely_structural_complexity.append(None)
+                try:
+                    random_falsely_structural_complexity.append(
+                        get_structural_complexity(structure)
+                    )
+                except Exception as ex:
+                    print("Error calculating structural complexity:")
+                    print(ex)
+                    random_falsely_structural_complexity.append(None)
 
             skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
@@ -990,25 +995,26 @@ if __name__ == "__main__":
 
             random_rightly_max_Zs.append(random_max_Zs[index])
 
-            try:
-                if structure.is_ordered:
-                    random_rightly_chemical_ordering.append(
-                        get_chemical_ordering(structure)
-                    )
-                else:
+            if analyse_complexity_ordering:
+                try:
+                    if structure.is_ordered:
+                        random_rightly_chemical_ordering.append(
+                            get_chemical_ordering(structure)
+                        )
+                    else:
+                        random_rightly_chemical_ordering.append(None)
+                except Exception as ex:
+                    print("Error calculating chemical ordering:")
+                    print(ex)
                     random_rightly_chemical_ordering.append(None)
-            except Exception as ex:
-                print("Error calculating chemical ordering:")
-                print(ex)
-                random_rightly_chemical_ordering.append(None)
-            try:
-                random_rightly_structural_complexity.append(
-                    get_structural_complexity(structure)
-                )
-            except Exception as ex:
-                print("Error calculating structural complexity:")
-                print(ex)
-                random_rightly_structural_complexity.append(None)
+                try:
+                    random_rightly_structural_complexity.append(
+                        get_structural_complexity(structure)
+                    )
+                except Exception as ex:
+                    print("Error calculating structural complexity:")
+                    print(ex)
+                    random_rightly_structural_complexity.append(None)
 
             skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
@@ -1527,59 +1533,73 @@ if __name__ == "__main__":
 
     # structural_complexity over volume (shannon entropy of occupations)
 
-    plt.figure()
-    plt.scatter(
-        icsd_rightly_volumes, icsd_rightly_structural_complexity, color="g", s=0.5
-    )
-    plt.scatter(
-        icsd_falsely_volumes, icsd_falsely_structural_complexity, color="r", s=0.5
-    )
-    plt.xlim(0, 7000)
-    plt.savefig(
-        f"{out_base}2D_volumes_structural_complexity_icsd.png",
-        bbox_inches="tight",
-        dpi=300,
-    )
+    if analyse_complexity_ordering:
 
-    plt.figure()
-    plt.scatter(
-        random_rightly_volumes, random_rightly_structural_complexity, color="g", s=0.5
-    )
-    plt.scatter(
-        random_falsely_volumes, random_falsely_structural_complexity, color="r", s=0.5
-    )
-    plt.xlim(0, 7000)
-    plt.savefig(
-        f"{out_base}2D_volumes_structural_complexity_random.png",
-        bbox_inches="tight",
-        dpi=300,
-    )
+        plt.figure()
+        plt.scatter(
+            icsd_rightly_volumes, icsd_rightly_structural_complexity, color="g", s=0.5
+        )
+        plt.scatter(
+            icsd_falsely_volumes, icsd_falsely_structural_complexity, color="r", s=0.5
+        )
+        plt.xlim(0, 7000)
+        plt.savefig(
+            f"{out_base}2D_volumes_structural_complexity_icsd.png",
+            bbox_inches="tight",
+            dpi=300,
+        )
+
+        plt.figure()
+        plt.scatter(
+            random_rightly_volumes,
+            random_rightly_structural_complexity,
+            color="g",
+            s=0.5,
+        )
+        plt.scatter(
+            random_falsely_volumes,
+            random_falsely_structural_complexity,
+            color="r",
+            s=0.5,
+        )
+        plt.xlim(0, 7000)
+        plt.savefig(
+            f"{out_base}2D_volumes_structural_complexity_random.png",
+            bbox_inches="tight",
+            dpi=300,
+        )
 
     # chemical_ordering over volume (shannon entropy of occupations)
 
-    plt.figure()
-    plt.scatter(icsd_rightly_volumes, icsd_rightly_chemical_ordering, color="g", s=0.5)
-    plt.scatter(icsd_falsely_volumes, icsd_falsely_chemical_ordering, color="r", s=0.5)
-    plt.xlim(0, 7000)
-    plt.savefig(
-        f"{out_base}2D_volumes_chemical_ordering_icsd.png",
-        bbox_inches="tight",
-        dpi=300,
-    )
+    if analyse_complexity_ordering:
 
-    plt.figure()
-    plt.scatter(
-        random_rightly_volumes, random_rightly_chemical_ordering, color="g", s=0.5
-    )
-    plt.scatter(
-        random_falsely_volumes, random_falsely_chemical_ordering, color="r", s=0.5
-    )
-    plt.xlim(0, 7000)
-    plt.savefig(
-        f"{out_base}2D_volumes_chemical_ordering_random.png",
-        bbox_inches="tight",
-        dpi=300,
-    )
+        plt.figure()
+        plt.scatter(
+            icsd_rightly_volumes, icsd_rightly_chemical_ordering, color="g", s=0.5
+        )
+        plt.scatter(
+            icsd_falsely_volumes, icsd_falsely_chemical_ordering, color="r", s=0.5
+        )
+        plt.xlim(0, 7000)
+        plt.savefig(
+            f"{out_base}2D_volumes_chemical_ordering_icsd.png",
+            bbox_inches="tight",
+            dpi=300,
+        )
+
+        plt.figure()
+        plt.scatter(
+            random_rightly_volumes, random_rightly_chemical_ordering, color="g", s=0.5
+        )
+        plt.scatter(
+            random_falsely_volumes, random_falsely_chemical_ordering, color="r", s=0.5
+        )
+        plt.xlim(0, 7000)
+        plt.savefig(
+            f"{out_base}2D_volumes_chemical_ordering_random.png",
+            bbox_inches="tight",
+            dpi=300,
+        )
 
     ################# hist plotting ################
 
@@ -2209,67 +2229,85 @@ if __name__ == "__main__":
                 min_is_zero=True,
             )
 
-    for flag in [True, False]:
-        create_histogram(
-            "structural_complexity",
-            [
-                [
-                    item
-                    for item in icsd_rightly_structural_complexity
-                    if item is not None
-                ],
-                [
-                    item
-                    for item in icsd_falsely_structural_complexity
-                    if item is not None
-                ],
-            ],
-            [
-                [
-                    item
-                    for item in random_rightly_structural_complexity
-                    if item is not None
-                ],
-                [
-                    item
-                    for item in random_falsely_structural_complexity
-                    if item is not None
-                ],
-            ],
-            r"structural complexity",
-            [
-                "ICSD correctly classified",
-                "ICSD incorrectly classified",
-                "Random correctly classified",
-                "Random incorrectly classified",
-            ],
-            is_int=False,
-            only_proportions=flag,
-            min_is_zero=True,
-        )
+    if analyse_complexity_ordering:
 
-    for flag in [True, False]:
-        create_histogram(
-            "chemical ordering",
-            [
-                [item for item in icsd_rightly_chemical_ordering if item is not None],
-                [item for item in icsd_falsely_chemical_ordering if item is not None],
-            ],
-            [
-                [item for item in random_rightly_chemical_ordering if item is not None],
-                [item for item in random_falsely_chemical_ordering if item is not None],
-            ],
-            r"chemical ordering",
-            [
-                "ICSD correctly classified",
-                "ICSD incorrectly classified",
-                "Random correctly classified",
-                "Random incorrectly classified",
-            ],
-            is_int=False,
-            only_proportions=flag,
-            min_is_zero=True,
-        )
+        for flag in [True, False]:
+            create_histogram(
+                "structural_complexity",
+                [
+                    [
+                        item
+                        for item in icsd_rightly_structural_complexity
+                        if item is not None
+                    ],
+                    [
+                        item
+                        for item in icsd_falsely_structural_complexity
+                        if item is not None
+                    ],
+                ],
+                [
+                    [
+                        item
+                        for item in random_rightly_structural_complexity
+                        if item is not None
+                    ],
+                    [
+                        item
+                        for item in random_falsely_structural_complexity
+                        if item is not None
+                    ],
+                ],
+                r"structural complexity",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                min_is_zero=True,
+            )
+
+        for flag in [True, False]:
+            create_histogram(
+                "chemical ordering",
+                [
+                    [
+                        item
+                        for item in icsd_rightly_chemical_ordering
+                        if item is not None
+                    ],
+                    [
+                        item
+                        for item in icsd_falsely_chemical_ordering
+                        if item is not None
+                    ],
+                ],
+                [
+                    [
+                        item
+                        for item in random_rightly_chemical_ordering
+                        if item is not None
+                    ],
+                    [
+                        item
+                        for item in random_falsely_chemical_ordering
+                        if item is not None
+                    ],
+                ],
+                r"chemical ordering",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                min_is_zero=True,
+            )
 
     # Info about wyckoff positions in cif file format:
     # => where in the cif file is written what kind of wyckoff site we are dealing with?
