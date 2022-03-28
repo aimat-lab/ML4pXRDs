@@ -21,8 +21,8 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-tag = "2-spgs-capacity-normal-lr-0.0001"
-description = "2-spgs-capacity-normal-lr-0.0001"
+tag = "2-spgs_kde"
+description = "2-spgs_kde"
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -39,8 +39,10 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
-NO_epochs = 200
+# batches_per_epoch = 1500
+batches_per_epoch = 15  # TODO: Change back
+# NO_epochs = 200
+NO_epochs = 1  # TODO: Change back
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -48,7 +50,7 @@ structures_per_spg = 10  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
 
-do_distance_checks = True
+do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
@@ -67,9 +69,10 @@ validation_max_volume = 7000  # None possible
 validation_max_NO_wyckoffs = 100  # None possible
 
 do_symmetry_checks = True
-use_NO_wyckoffs_counts = True
 
+use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
+use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
 
 use_dropout = False
 
@@ -77,7 +80,7 @@ use_denseness_factors_density = True
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -110,7 +113,11 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
     NO_unique_elements_prob_per_spg,
     NO_repetitions_prob_per_spg_per_element,
     denseness_factors_density_per_spg,
+    kde_per_spg,
 ) = load_dataset_info()
+
+if not use_kde_per_spg:
+    kde_per_spg = None
 
 if not use_icsd_statistics:
     (
@@ -471,6 +478,7 @@ def batch_generator_with_additional(
         NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+        kde_per_spg=kde_per_spg,
     )
 
     # Set the label to the right index:
@@ -521,6 +529,7 @@ def batch_generator_queue(
                 NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+                kde_per_spg=kde_per_spg,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -758,9 +767,7 @@ class CustomSequence(keras.utils.Sequence):
 
 sequence = CustomSequence(batches_per_epoch)
 
-model = build_model_park(
-    None, N, len(spgs), use_dropout=use_dropout, lr=0.0001
-)  # TODO: Change back, potentially
+model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=0.001)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 
 model.fit(

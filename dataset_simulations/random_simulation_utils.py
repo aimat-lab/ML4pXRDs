@@ -166,6 +166,7 @@ def generate_structure(
     NO_repetitions_prob_per_spg_per_element=None,
     verbose=False,
     denseness_factors_density_per_spg=None,
+    kde_per_spg=None,
 ):
 
     if use_icsd_statistics and (
@@ -273,6 +274,7 @@ def generate_structure(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 verbose=verbose,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+                kde_per_spg=kde_per_spg,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -606,6 +608,7 @@ def generate_structures(
     NO_repetitions_prob_per_spg_per_element=None,
     verbose=False,
     denseness_factors_density_per_spg=None,
+    kde_per_spg=None,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -648,6 +651,7 @@ def generate_structures(
             NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             verbose=verbose,
             denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+            kde_per_spg=kde_per_spg,
         )
         for i in range(0, N)
     ]
