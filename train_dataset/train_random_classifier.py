@@ -39,10 +39,8 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-# batches_per_epoch = 1500
-batches_per_epoch = 15  # TODO: Change back
-# NO_epochs = 200
-NO_epochs = 1  # TODO: Change back
+batches_per_epoch = 1500
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -80,7 +78,7 @@ use_denseness_factors_density = True
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -659,6 +657,7 @@ params_txt = (
     f"use_element_repetitions: {str(use_element_repetitions)} \n \n \n"
     f"use_dropout: {str(use_dropout)} \n \n \n"
     f"use_denseness_factors_density: {str(use_denseness_factors_density)} \n \n \n"
+    f"use_kde_per_spg: {str(use_kde_per_spg)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
