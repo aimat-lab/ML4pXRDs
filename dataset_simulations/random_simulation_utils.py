@@ -167,6 +167,7 @@ def generate_structure(
     verbose=False,
     denseness_factors_density_per_spg=None,
     kde_per_spg=None,
+    all_data_per_spg=None,
 ):
 
     if use_icsd_statistics and (
@@ -187,7 +188,11 @@ def generate_structure(
         np.random.seed(seed)
         random.seed(seed)
 
-    if not use_element_repetitions_instead_of_NO_wyckoffs and kde_per_spg is None:
+    if (
+        not use_element_repetitions_instead_of_NO_wyckoffs
+        and kde_per_spg is None
+        and all_data_per_spg is None
+    ):
 
         if set_NO_elements_to_max:
             NO_elements = max_NO_elements
@@ -218,7 +223,7 @@ def generate_structure(
                 if NO_elements <= max_NO_elements:
                     break
 
-    else:
+    elif use_element_repetitions_instead_of_NO_wyckoffs or kde_per_spg is not None:
 
         # pick number of unique elements to sample:
 
@@ -292,7 +297,7 @@ def generate_structure(
         current_picked_repetition = None
         current_repetition_counter = 0
 
-        if kde_per_spg is None:
+        if kde_per_spg is None and all_data_per_spg is None:
 
             while True:  # for
 
@@ -444,7 +449,7 @@ def generate_structure(
                 if not use_element_repetitions_instead_of_NO_wyckoffs:
                     set_wyckoffs_counter += 1
 
-        else:
+        elif kde_per_spg is not None and all_data_per_spg is None:
 
             # sample wyckoff occupations directly from the ICSD:
 
@@ -537,7 +542,25 @@ def generate_structure(
                         current_wyckoff_index += 1
                         continue
 
-        if use_element_repetitions_instead_of_NO_wyckoffs:
+        else:
+
+            all_data = all_data_per_spg[group_object.number]
+            chosen_entry = random.choice(all_data)
+
+            for item in chosen_entry:
+                el = item[0]
+                wyckoff_name = item[1]
+                wyckoff_index = names.index(wyckoff_name)
+
+                chosen_elements.append(el)
+                chosen_numbers.append(multiplicities[wyckoff_index])
+                chosen_wyckoff_indices.append(wyckoff_index)
+
+        if (
+            use_element_repetitions_instead_of_NO_wyckoffs
+            or kde_per_spg is not None
+            or all_data_per_spg is not None
+        ):
             if len(chosen_numbers) > max_NO_elements:
                 print(
                     f"Too many total number of set wyckoff sites for spg {group_object.number}, regenerating..."

@@ -599,9 +599,10 @@ for result in results:
 val_x_random = np.expand_dims(val_x_random, axis=2)
 val_y_random = np.array(val_y_random)
 
-for i in range(0, 10):
+for i in range(0, 100):
     plt.plot(angle_range, val_x_random[i, :, 0], label="Random " + str(val_y_random[i]))
     plt.plot(angle_range, val_x_match[i, :, 0], label="ICSD " + str(val_y_match[i]))
+    plt.legend()
     plt.show()
 exit()  # TODO: Change back
 
