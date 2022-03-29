@@ -22,8 +22,8 @@ import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import matplotlib.pyplot as plt
 
-tag = "2-spgs_kde"
-description = "2-spgs_kde"
+tag = "2-spgs_1by1"
+description = "2-spgs_1by1"
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -49,7 +49,7 @@ structures_per_spg = 10  # for (2,15) tuple
 NO_corn_sizes = 5
 # => 4*5*5=100 batch size (for 4 spgs)
 
-do_distance_checks = False
+do_distance_checks = True  # TODO: Change back
 do_merge_checks = False
 use_icsd_statistics = True
 
@@ -72,7 +72,7 @@ do_symmetry_checks = True
 use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
 use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
-use_all_data_per_spg = False  # Overwrites all the previous ones # TODO: Change
+use_all_data_per_spg = True  # Overwrites all the previous ones
 
 use_dropout = False
 
@@ -80,7 +80,7 @@ use_denseness_factors_density = True
 
 verbosity = 2
 
-local = True  # TODO: Change back
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -606,12 +606,36 @@ for result in results:
 val_x_random = np.expand_dims(val_x_random, axis=2)
 val_y_random = np.array(val_y_random)
 
-for i in range(0, 100):
-    plt.plot(angle_range, val_x_random[i, :, 0], label="Random " + str(val_y_random[i]))
-    plt.plot(angle_range, val_x_match[i, :, 0], label="ICSD " + str(val_y_match[i]))
+"""
+for j in range(0, 100):
+
+    plt.figure()
+    for i in range(j * 4, (j + 1) * 4):
+        plt.plot(
+            angle_range,
+            val_x_random[i, :, 0],
+            label="Random "
+            + str(val_y_random[i])
+            + " "
+            + str(random_comparison_crystals[i].volume),
+        )
+    plt.legend()
+
+    plt.figure()
+    for i in range(j * 4, (j + 1) * 4):
+        plt.plot(
+            angle_range,
+            val_x_match[i * 5, :, 0],
+            label="ICSD "
+            + str(val_y_match[i])
+            + " "
+            + str(icsd_crystals_match[i].volume)
+            + " "
+            + str(icsd_metas_match[i][0]),
+        )
     plt.legend()
     plt.show()
-exit()  # TODO: Change back
+"""
 
 with open(out_base + "random_data.pickle", "wb") as file:
     pickle.dump(

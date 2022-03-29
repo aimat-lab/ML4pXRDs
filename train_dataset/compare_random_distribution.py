@@ -23,8 +23,8 @@ from utils.entropy import get_structural_complexity
 if __name__ == "__main__":
 
     if len(sys.argv) > 2:
-        # Probably running directly from the training script, so take arguments
 
+        # Probably running directly from the training script, so take arguments
         in_base = sys.argv[1]
 
         if in_base[-1] != "/":
@@ -101,8 +101,8 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if True:  # TODO: Change back
-        to_process = 200
+    if False:
+        to_process = 600
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
         random_variations = random_variations[0:to_process]
