@@ -20,6 +20,7 @@ from datetime import datetime
 import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+import matplotlib.pyplot as plt
 
 tag = "2-spgs_kde"
 description = "2-spgs_kde"
@@ -78,7 +79,7 @@ use_denseness_factors_density = True
 
 verbosity = 2
 
-local = False
+local = True  # TODO: Change back
 if local:
     NO_workers = 8
     verbosity = 1
@@ -597,6 +598,12 @@ for result in results:
 
 val_x_random = np.expand_dims(val_x_random, axis=2)
 val_y_random = np.array(val_y_random)
+
+for i in range(0, 10):
+    plt.plot(angle_range, val_x_random[i, :, 0], label="Random " + str(val_y_random[i]))
+    plt.plot(angle_range, val_x_match[i, :, 0], label="ICSD " + str(val_y_match[i]))
+    plt.show()
+exit()  # TODO: Change back
 
 with open(out_base + "random_data.pickle", "wb") as file:
     pickle.dump(

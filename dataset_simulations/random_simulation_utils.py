@@ -463,12 +463,13 @@ def generate_structure(
                 number_of_atoms_per_site[i] = occ
 
             NO_wyckoffs = np.sum(number_of_atoms_per_site)
-            if NO_unique_elements > NO_wyckoffs:
-                NO_unique_elements = int(NO_wyckoffs)
 
             if NO_wyckoffs < 1.0:
                 print("NO_wyckoffs = 0.0, regenerating...")
                 continue
+
+            if NO_unique_elements > NO_wyckoffs:
+                NO_unique_elements = int(NO_wyckoffs)
 
             # Choose unique elements:
             unique_elements = []
