@@ -9,6 +9,8 @@ import ray
 
 if __name__ == "__main__":
 
+    ray.init(num_cpus=8)
+
     spgs_to_analyze = [2, 15, 14, 129, 176]
     validation_max_NO_wyckoffs = 100
     validation_max_volume = 7000
@@ -203,6 +205,6 @@ if __name__ == "__main__":
         pattern_average_random = np.average(patterns_per_spg_random[spg], axis=0)
 
         plt.plot(angle_range, pattern_average_icsd, label=f"ICSD, spg {spg}")
-        plt.plot(angle_range, pattern_average_random, label=f"ICSD, spg {spg}")
+        plt.plot(angle_range, pattern_average_random, label=f"Random, spg {spg}")
         plt.legend()
         plt.show()
