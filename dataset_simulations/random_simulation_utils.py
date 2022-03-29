@@ -280,6 +280,7 @@ def generate_structure(
                 verbose=verbose,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
+                all_data_per_spg=all_data_per_spg,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -729,6 +730,7 @@ def generate_structures(
     verbose=False,
     denseness_factors_density_per_spg=None,
     kde_per_spg=None,
+    all_data_per_spg=None,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -772,6 +774,7 @@ def generate_structures(
             verbose=verbose,
             denseness_factors_density_per_spg=denseness_factors_density_per_spg,
             kde_per_spg=kde_per_spg,
+            all_data_per_spg=all_data_per_spg,
         )
         for i in range(0, N)
     ]
@@ -1218,6 +1221,7 @@ def load_dataset_info():
         NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg,
         kde_per_spg,
+        all_data_per_spg,
     )
 
 
@@ -1235,6 +1239,7 @@ if __name__ == "__main__":
             NO_repetitions_prob_per_spg_per_element,
             denseness_factors_density_per_spg,
             kde_per_spg,
+            all_data_per_spg,
         ) = load_dataset_info()
 
         # for i in range(0, 15 * 10):
@@ -1272,6 +1277,7 @@ if __name__ == "__main__":
                     False,
                     denseness_factors_density_per_spg,
                     kde_per_spg,
+                    all_data_per_spg,
                 )
 
     if False:

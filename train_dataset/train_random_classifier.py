@@ -72,6 +72,7 @@ do_symmetry_checks = True
 use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
 use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
+use_all_data_per_spg = False  # Overwrites all the previous ones # TODO: Change
 
 use_dropout = False
 
@@ -113,7 +114,11 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
     NO_repetitions_prob_per_spg_per_element,
     denseness_factors_density_per_spg,
     kde_per_spg,
+    all_data_per_spg,
 ) = load_dataset_info()
+
+if not use_all_data_per_spg:
+    all_data_per_spg = None
 
 if not use_kde_per_spg:
     kde_per_spg = None
@@ -478,6 +483,7 @@ def batch_generator_with_additional(
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg=denseness_factors_density_per_spg,
         kde_per_spg=kde_per_spg,
+        all_data_per_spg=all_data_per_spg,
     )
 
     # Set the label to the right index:
@@ -529,6 +535,7 @@ def batch_generator_queue(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
+                all_data_per_spg=all_data_per_spg,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -666,6 +673,7 @@ params_txt = (
     f"use_dropout: {str(use_dropout)} \n \n \n"
     f"use_denseness_factors_density: {str(use_denseness_factors_density)} \n \n \n"
     f"use_kde_per_spg: {str(use_kde_per_spg)} \n \n \n"
+    f"use_all_data_per_spg: {str(use_all_data_per_spg)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 

@@ -517,6 +517,7 @@ def get_random_xy_patterns(
     NO_repetitions_prob_per_spg_per_element=None,
     denseness_factors_density_per_spg=None,
     kde_per_spg=None,
+    all_data_per_spg=None,
 ):
 
     result_patterns_y = []
@@ -552,6 +553,7 @@ def get_random_xy_patterns(
             NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             denseness_factors_density_per_spg=denseness_factors_density_per_spg,
             kde_per_spg=kde_per_spg,
+            all_data_per_spg=all_data_per_spg,
         )
 
         if do_print:
