@@ -835,17 +835,12 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30% of the data
         )
         sim_statistics.output_dir = path_to_patterns
 
-    # TODO: Change back
-    """
     sim_test.load(
         load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
     )
     sim_statistics.load(
         load_patterns_angles_intensities=False, start=files_to_use_for_test_set
     )
-    """
-    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=1)
-    sim_statistics.load(load_patterns_angles_intensities=False, start=1, stop=2)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -1149,13 +1144,14 @@ def load_dataset_info():
 
         denseness_factors_density_per_spg[spg] = denseness_factors_density
 
-        if False and (
-            spg == 2 or spg == 15 or spg == 14 or spg == 129 or spg == 176 or spg == 104
-        ):
+        # if False and (
+        #    spg == 2 or spg == 15 or spg == 14 or spg == 129 or spg == 176 or spg == 104
+        # ):
+        if False and spg in range(201, 231) and denseness_factors_density is not None:
             grid = np.linspace(
                 min(denseness_factors_per_spg[spg]),
                 max(denseness_factors_per_spg[spg]),
-                1000,
+                300,
             )
             plt.figure()
             plt.plot(grid, denseness_factors_density(grid))
