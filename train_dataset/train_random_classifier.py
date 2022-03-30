@@ -37,7 +37,7 @@ os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
 run_analysis_after_run = True
-analysis_per_spg = True
+analysis_per_spg = False  # TODO: Change back
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
@@ -45,9 +45,10 @@ NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
-structures_per_spg = 10  # for (2,15) tuple
-NO_corn_sizes = 5
-# => 4*5*5=100 batch size (for 4 spgs)
+# structures_per_spg = 10  # for (2,15) tuple
+# NO_corn_sizes = 5
+structures_per_spg = 1  # TODO: Change back
+NO_corn_sizes = 3
 
 do_distance_checks = False
 do_merge_checks = False
@@ -59,7 +60,8 @@ queue_size = 200
 queue_size_tf = 100
 
 # NO_random_batches = 20
-NO_random_swipes = 1000  # make this smaller for the all-spgs run
+# NO_random_swipes = 1000  # make this smaller for the all-spgs run # TODO: Change back
+NO_random_swipes = 300
 
 generation_max_volume = 7000
 generation_max_NO_wyckoffs = 100
@@ -82,7 +84,7 @@ use_denseness_factors_density = True
 
 verbosity = 2
 
-local = True  # TODO: Change back
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -150,10 +152,10 @@ if not use_denseness_factors_density:
 else:
     for i in reversed(range(0, len(spgs))):
         if denseness_factors_density_per_spg[spgs[i]] is None:
-            del spgs[i]
             print(
                 f"Excluded spg {spgs[i]} due to missing denseness_factor density (not enough statistics)."
             )
+            del spgs[i]
 
 # Construct validation sets
 # Used validation sets:
