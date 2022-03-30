@@ -76,6 +76,8 @@ use_all_data_per_spg = True  # Overwrites all the previous ones
 
 use_dropout = False
 
+learning_rate = 0.001
+
 use_denseness_factors_density = True
 
 verbosity = 2
@@ -695,6 +697,7 @@ params_txt = (
     f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)} \n \n \n"
     f"use_element_repetitions: {str(use_element_repetitions)} \n \n \n"
     f"use_dropout: {str(use_dropout)} \n \n \n"
+    f"learning_rate: {str(learning_rate)} \n \n \n"
     f"use_denseness_factors_density: {str(use_denseness_factors_density)} \n \n \n"
     f"use_kde_per_spg: {str(use_kde_per_spg)} \n \n \n"
     f"use_all_data_per_spg: {str(use_all_data_per_spg)} \n \n \n"
@@ -806,7 +809,7 @@ class CustomSequence(keras.utils.Sequence):
 
 sequence = CustomSequence(batches_per_epoch)
 
-model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=0.001)
+model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 
 model.fit(
