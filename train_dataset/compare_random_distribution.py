@@ -1654,6 +1654,10 @@ if __name__ == "__main__":
             if item is None:
                 continue
 
+            for j in reversed(range(0, len(item))):
+                if item[j] is None:
+                    del item[j]
+
             new_min = np.min(item)
             new_max = np.max(item)
 
