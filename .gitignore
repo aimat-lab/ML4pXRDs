@@ -33,3 +33,4 @@ dataset_simulations/set_wyckoffs_statistics*
 dataset_simulations/prepared_training*
 *.cif
 train_dataset/utils/max_losses
+train_dataset/utils/*.png

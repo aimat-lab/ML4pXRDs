@@ -223,7 +223,9 @@ def generate_structure(
                 if NO_elements <= max_NO_elements:
                     break
 
-    elif use_element_repetitions_instead_of_NO_wyckoffs or kde_per_spg is not None:
+    elif (
+        use_element_repetitions_instead_of_NO_wyckoffs or kde_per_spg is not None
+    ) and all_data_per_spg is None:
 
         # pick number of unique elements to sample:
 
@@ -613,14 +615,20 @@ def generate_structure(
             if not volume_ok:
                 tries_counter += 1
 
-                if not use_element_repetitions_instead_of_NO_wyckoffs:
+                if (
+                    not use_element_repetitions_instead_of_NO_wyckoffs
+                    and kde_per_spg is None
+                    and all_data_per_spg is None
+                ):
                     print(
                         f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
                     )
-                else:
+                elif all_data_per_spg is None:
                     print(
                         f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
                     )
+                else:
+                    print(f"Volume too high, regenerating.")
 
                 continue
 

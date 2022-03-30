@@ -204,7 +204,9 @@ if __name__ == "__main__":
         pattern_average_icsd = np.average(patterns_per_spg_icsd[spg], axis=0)
         pattern_average_random = np.average(patterns_per_spg_random[spg], axis=0)
 
+        plt.figure()
         plt.plot(angle_range, pattern_average_icsd, label=f"ICSD, spg {spg}")
         plt.plot(angle_range, pattern_average_random, label=f"Random, spg {spg}")
         plt.legend()
-        plt.show()
+        plt.savefig(f"intensity_distribution_spg_{spg}.png")
+        # plt.show()
