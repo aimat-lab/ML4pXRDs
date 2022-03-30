@@ -550,9 +550,10 @@ def generate_structure(
             all_data = all_data_per_spg[group_object.number]
             chosen_entry = random.choice(all_data)
 
-            for item in chosen_entry:
+            for item in chosen_entry["occupations"]:
                 el = item[0]
                 wyckoff_name = item[1]
+                # position = item[2]
                 wyckoff_index = names.index(wyckoff_name)
 
                 chosen_elements.append(el)
@@ -834,12 +835,17 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30% of the data
         )
         sim_statistics.output_dir = path_to_patterns
 
+    # TODO: Change back
+    """
     sim_test.load(
         load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
     )
     sim_statistics.load(
         load_patterns_angles_intensities=False, start=files_to_use_for_test_set
     )
+    """
+    sim_test.load(load_patterns_angles_intensities=False, start=0, stop=1)
+    sim_statistics.load(load_patterns_angles_intensities=False, start=1, stop=2)
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -972,7 +978,9 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30% of the data
 
         specie_strs = []
 
-        all_data_entry = []
+        all_data_entry = {}
+        all_data_entry["occupations"] = []
+        all_data_entry["lattice_parameters"] = struc.lattice.get_para()
 
         for site in struc.atom_sites:
 
@@ -981,7 +989,7 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30% of the data
 
             name = str(site.wp.multiplicity) + site.wp.letter  # wyckoff name
 
-            all_data_entry.append((specie_str, name))
+            all_data_entry["occupations"].append((specie_str, name, site.position))
 
             if specie_str in counts_per_spg_per_element_per_wyckoff[spg_number].keys():
                 if (
@@ -1235,7 +1243,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1338,7 +1346,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
     if False:
