@@ -285,6 +285,7 @@ def generate_structure(
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
                 all_data_per_spg=all_data_per_spg,
+                use_coordinates_directly=use_coordinates_directly,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -679,6 +680,10 @@ def generate_structure(
                     if el == el_atom and wyckoff_name == wyckoff_name_atom:
 
                         atom.position = item[2]
+                        atom.update()  # important
+
+                        # Not really needed:
+                        # new_site.coords = filtered_coords(new_site.coords)
 
                         del occupations_copy[i]
                         break
@@ -768,6 +773,7 @@ def generate_structures(
     denseness_factors_density_per_spg=None,
     kde_per_spg=None,
     all_data_per_spg=None,
+    use_coordinates_directly=False,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -812,6 +818,7 @@ def generate_structures(
             denseness_factors_density_per_spg=denseness_factors_density_per_spg,
             kde_per_spg=kde_per_spg,
             all_data_per_spg=all_data_per_spg,
+            use_coordinates_directly=use_coordinates_directly,
         )
         for i in range(0, N)
     ]
@@ -1231,7 +1238,7 @@ def load_dataset_info():
         data = np.zeros(shape=(len(all_data_per_spg[spg]), len(names)))
 
         for i, entry in enumerate(all_data_per_spg[spg]):
-            for subentry in entry:
+            for subentry in entry["occupations"]:
                 index = names.index(subentry[1])
                 data[i, index] += 1
 
@@ -1267,7 +1274,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1318,6 +1325,7 @@ if __name__ == "__main__":
                     denseness_factors_density_per_spg,
                     kde_per_spg,
                     all_data_per_spg,
+                    True,
                 )
 
     if False:
@@ -1370,7 +1378,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
     if False:
