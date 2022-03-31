@@ -12,6 +12,7 @@ import os
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from scipy.stats import kde
 from sklearn.neighbors import KernelDensity
+from pyxtal.crystal import atom_site
 
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 
@@ -168,6 +169,7 @@ def generate_structure(
     denseness_factors_density_per_spg=None,
     kde_per_spg=None,
     all_data_per_spg=None,
+    use_coordinates_directly=False,
 ):
 
     if use_icsd_statistics and (
@@ -656,6 +658,32 @@ def generate_structure(
             tries_counter += 1
 
             continue
+
+        # This is by no means the fastest way to implement this.
+        # But since this is just for understanding the problem / testing, it is fine.
+        if use_coordinates_directly and all_data_per_spg is not None:
+
+            # potentially useful in the future: chosen_entry["lattice_parameters"]
+
+            occupations_copy = chosen_entry["occupations"].copy()
+
+            for atom in my_crystal.atom_sites:
+
+                wyckoff_name_atom = str(atom.wp.multiplicity) + atom.wp.letter
+                el_atom = atom.specie
+
+                for i, item in enumerate(occupations_copy):
+                    el = item[0]
+                    wyckoff_name = item[1]
+
+                    if el == el_atom and wyckoff_name == wyckoff_name_atom:
+
+                        atom.position = item[2]
+
+                        del occupations_copy[i]
+                        break
+
+            assert len(occupations_copy) == 0
 
         try:
 
