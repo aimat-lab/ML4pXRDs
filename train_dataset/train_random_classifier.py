@@ -467,6 +467,8 @@ print()
 
 queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 
+all_data_per_spg_handle = ray.put(all_data_per_spg)  # TODO: Implement this properly
+
 
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_with_additional(
@@ -498,7 +500,7 @@ def batch_generator_with_additional(
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg=denseness_factors_density_per_spg,
         kde_per_spg=kde_per_spg,
-        all_data_per_spg=all_data_per_spg,
+        all_data_per_spg=all_data_per_spg_handle,
         use_coordinates_directly=use_coordinates_directly,
     )
 
@@ -551,7 +553,7 @@ def batch_generator_queue(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
-                all_data_per_spg=all_data_per_spg,
+                all_data_per_spg=all_data_per_spg_handle,
                 use_coordinates_directly=use_coordinates_directly,
             )
 
