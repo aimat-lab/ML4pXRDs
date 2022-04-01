@@ -36,12 +36,12 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-run_analysis_after_run = False  # TODO: Change back
+run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 1  # TODO: Change back
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -62,7 +62,7 @@ queue_size_tf = 100
 # NO_random_batches = 20
 # NO_random_swipes = 1000  # make this smaller for the all-spgs run
 # NO_random_swipes = 300 # 30-spg
-NO_random_swipes = 1000
+NO_random_samples_per_spg = 200
 
 generation_max_volume = 7000
 generation_max_NO_wyckoffs = 100
@@ -75,8 +75,8 @@ do_symmetry_checks = True
 use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
 use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
-use_all_data_per_spg = False  # Overwrites all the previous ones # TODO: Change back
-use_coordinates_directly = False  # TODO: Change back
+use_all_data_per_spg = True  # Overwrites all the previous ones
+use_coordinates_directly = True  # TODO: Change back
 
 use_dropout = True  # TODO: Change back
 
@@ -467,7 +467,7 @@ print()
 
 queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 
-# all_data_per_spg_handle = ray.put(all_data_per_spg)  # TODO: Implement this properly
+all_data_per_spg_handle = ray.put(all_data_per_spg)
 
 
 @ray.remote(num_cpus=1, num_gpus=0)
@@ -475,7 +475,7 @@ def batch_generator_with_additional(
     spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes
 ):
 
-    # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
+    all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     patterns, labels, structures, corn_sizes = get_random_xy_patterns(
         spgs=spgs,
@@ -502,8 +502,7 @@ def batch_generator_with_additional(
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg=denseness_factors_density_per_spg,
         kde_per_spg=kde_per_spg,
-        # all_data_per_spg=all_data_per_spg_worker,
-        all_data_per_spg=all_data_per_spg,
+        all_data_per_spg=all_data_per_spg_worker,
         use_coordinates_directly=use_coordinates_directly,
     )
 
@@ -529,7 +528,7 @@ def batch_generator_queue(
     NO_corn_sizes,
 ):
 
-    # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
+    all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     while True:
         try:
@@ -558,8 +557,7 @@ def batch_generator_queue(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
-                # all_data_per_spg=all_data_per_spg_worker,
-                all_data_per_spg=all_data_per_spg,
+                all_data_per_spg=all_data_per_spg_worker,
                 use_coordinates_directly=use_coordinates_directly,
             )
 
@@ -594,18 +592,36 @@ random_comparison_crystals = []
 random_comparison_labels = []
 random_comparison_corn_sizes = []
 
-object_refs = []
-for i in range(NO_random_swipes):
-    ref = batch_generator_with_additional.remote(
-        spgs, 1, N, start_angle, end_angle, generation_max_NO_wyckoffs, 1
-    )
-    # ref = batch_generator_with_additional(
-    #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
-    # )
-    object_refs.append(ref)
+total = 0
+results = []
+finished = False
+while True:
 
-results = ray.get(object_refs)
-# results = object_refs
+    object_refs = []
+
+    for i in range(NO_workers):
+
+        if total == NO_random_samples_per_spg:
+            finished = True
+            break
+
+        ref = batch_generator_with_additional.remote(
+            spgs, 1, N, start_angle, end_angle, generation_max_NO_wyckoffs, 1
+        )
+        # ref = batch_generator_with_additional(
+        #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
+        # )
+        object_refs.append(ref)
+
+        total += 1
+
+    results.extend(
+        ray.get(object_refs)
+    )  # wait for everything to finish before starting the next batch
+    # results = object_refs
+
+    if finished:
+        break
 
 print("Sizes of validation sets:")
 print(f"all: {len(icsd_labels_all)} * 5")
