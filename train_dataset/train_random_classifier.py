@@ -458,7 +458,8 @@ if not local:
     )
 else:
     # ray.init(include_dashboard=False, _temp_dir=temp_dir)
-    ray.init(include_dashboard=False, _temp_dir="/home/henrik/ray_tmp")
+    # ray.init(include_dashboard=False, _temp_dir="/home/henrik/ray_tmp")
+    ray.init(include_dashboard=False)
 
 print()
 print(ray.cluster_resources())
@@ -528,7 +529,7 @@ def batch_generator_queue(
     NO_corn_sizes,
 ):
 
-    #all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
+    # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     while True:
         try:
@@ -557,7 +558,7 @@ def batch_generator_queue(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
-                #all_data_per_spg=all_data_per_spg_worker,
+                # all_data_per_spg=all_data_per_spg_worker,
                 all_data_per_spg=all_data_per_spg,
                 use_coordinates_directly=use_coordinates_directly,
             )
