@@ -195,7 +195,9 @@ icsd_metas_all = icsd_sim.sim_metas
 
 # Mainly to make the volume constraints correct:
 conventional_errors_counter = 0
-print("Calculating conventional structures...")
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures..."
+)
 for i in reversed(range(0, len(icsd_crystals_all))):
 
     try:
@@ -211,7 +213,7 @@ for i in reversed(range(0, len(icsd_crystals_all))):
         conventional_errors_counter += 1
 
 print(
-    f"{conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell."
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell."
 )
 
 icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
@@ -592,6 +594,10 @@ random_comparison_crystals = []
 random_comparison_labels = []
 random_comparison_corn_sizes = []
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating validation random structures."
+)
+
 total = 0
 results = []
 finished = False
@@ -622,6 +628,10 @@ while True:
 
     if finished:
         break
+
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Finished generating validation random structures."
+)
 
 print("Sizes of validation sets:")
 print(f"all: {len(icsd_labels_all)} * 5")
