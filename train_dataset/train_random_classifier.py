@@ -62,7 +62,7 @@ queue_size_tf = 100
 # NO_random_batches = 20
 # NO_random_swipes = 1000  # make this smaller for the all-spgs run
 # NO_random_swipes = 300 # 30-spg
-NO_random_samples_per_spg = 200
+NO_random_samples_per_spg = 500
 
 generation_max_volume = 7000
 generation_max_NO_wyckoffs = 100
