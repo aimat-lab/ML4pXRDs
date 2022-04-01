@@ -476,7 +476,14 @@ all_data_per_spg_handle = ray.put(all_data_per_spg)
 
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_with_additional(
-    spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes
+    spgs,
+    structures_per_spg,
+    N,
+    start_angle,
+    end_angle,
+    max_NO_elements,
+    NO_corn_sizes,
+    all_data_per_spg_handle,
 ):
 
     all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
@@ -530,6 +537,7 @@ def batch_generator_queue(
     end_angle,
     max_NO_elements,
     NO_corn_sizes,
+    all_data_per_spg_handle,
 ):
 
     all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
@@ -615,7 +623,14 @@ while True:
             break
 
         ref = batch_generator_with_additional.remote(
-            spgs, 1, N, start_angle, end_angle, generation_max_NO_wyckoffs, 1
+            spgs,
+            1,
+            N,
+            start_angle,
+            end_angle,
+            generation_max_NO_wyckoffs,
+            1,
+            all_data_per_spg_handle,
         )
         # ref = batch_generator_with_additional(
         #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
@@ -713,6 +728,7 @@ for i in range(0, NO_workers):
         end_angle,
         generation_max_NO_wyckoffs,
         NO_corn_sizes,
+        all_data_per_spg_handle,
     )
 
 tb_callback = keras.callbacks.TensorBoard(out_base + "tuner_tb")
