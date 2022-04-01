@@ -18,8 +18,7 @@ ip_head=$head_node_ip:$port
 export ip_head # pass along
 echo "Starting HEAD at $ip_head"
 
-#srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --port=$port --redis-password='5241590000000000' --temp-dir "../$1/ray_log" --num-cpus "14" --num-gpus "1" --block &
-srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --port=$port --redis-password='5241590000000000' --num-cpus "14" --num-gpus "1" --block &
+srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --port=$port --redis-password='5241590000000000' --temp-dir "/home/ws/uvgnh/ray_tmp" --num-cpus "14" --num-gpus "1" --block &
 
 sleep 20
 echo $head_node_ip > ./head_node_ip # signal that worker can connect

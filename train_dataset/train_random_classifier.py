@@ -451,15 +451,14 @@ val_x_match_inorganic = np.expand_dims(val_x_match_inorganic, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 
-# temp_dir = out_base + "ray_log"
-
 if not local:
-    # ray.init(address="auto", include_dashboard=False, _temp_dir=temp_dir)
     # ray.init(include_dashboard=True, num_cpus=NO_workers)
-    ray.init(address="auto", include_dashboard=False)
+    ray.init(
+        address="auto", include_dashboard=False, _temp_dir="/home/ws/uvgnh/ray_tmp"
+    )
 else:
     # ray.init(include_dashboard=False, _temp_dir=temp_dir)
-    ray.init(include_dashboard=False)
+    ray.init(include_dashboard=False, _temp_dir="/home/henrik/ray_tmp")
 
 print()
 print(ray.cluster_resources())
