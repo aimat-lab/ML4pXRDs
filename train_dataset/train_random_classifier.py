@@ -466,7 +466,7 @@ print()
 
 queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 
-all_data_per_spg_handle = ray.put(all_data_per_spg)  # TODO: Implement this properly
+# all_data_per_spg_handle = ray.put(all_data_per_spg)  # TODO: Implement this properly
 
 
 @ray.remote(num_cpus=1, num_gpus=0)
@@ -474,7 +474,7 @@ def batch_generator_with_additional(
     spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes
 ):
 
-    all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
+    # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     patterns, labels, structures, corn_sizes = get_random_xy_patterns(
         spgs=spgs,
@@ -501,7 +501,8 @@ def batch_generator_with_additional(
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg=denseness_factors_density_per_spg,
         kde_per_spg=kde_per_spg,
-        all_data_per_spg=all_data_per_spg_worker,
+        # all_data_per_spg=all_data_per_spg_worker,
+        all_data_per_spg=all_data_per_spg,
         use_coordinates_directly=use_coordinates_directly,
     )
 
@@ -527,7 +528,7 @@ def batch_generator_queue(
     NO_corn_sizes,
 ):
 
-    all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
+    #all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     while True:
         try:
@@ -556,7 +557,8 @@ def batch_generator_queue(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
-                all_data_per_spg=all_data_per_spg_worker,
+                #all_data_per_spg=all_data_per_spg_worker,
+                all_data_per_spg=all_data_per_spg,
                 use_coordinates_directly=use_coordinates_directly,
             )
 
