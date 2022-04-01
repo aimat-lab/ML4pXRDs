@@ -109,7 +109,7 @@ spgs = [
 # as Vecsei:
 start_angle, end_angle, N = 5, 90, 8501
 angle_range = np.linspace(start_angle, end_angle, N)
-print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}")
+print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
 
 (
     probability_per_spg_per_element,
@@ -196,7 +196,8 @@ icsd_metas_all = icsd_sim.sim_metas
 # Mainly to make the volume constraints correct:
 conventional_errors_counter = 0
 print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures..."
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures...",
+    flush=True,
 )
 for i in reversed(range(0, len(icsd_crystals_all))):
 
@@ -213,7 +214,8 @@ for i in reversed(range(0, len(icsd_crystals_all))):
         conventional_errors_counter += 1
 
 print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell."
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell.",
+    flush=True,
 )
 
 icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
@@ -595,7 +597,8 @@ random_comparison_labels = []
 random_comparison_corn_sizes = []
 
 print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating validation random structures."
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating validation random structures.",
+    flush=True,
 )
 
 total = 0
@@ -630,7 +633,8 @@ while True:
         break
 
 print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Finished generating validation random structures."
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Finished generating validation random structures.",
+    flush=True,
 )
 
 print("Sizes of validation sets:")
@@ -911,7 +915,7 @@ print(out_base)
 
 if run_analysis_after_run:
 
-    print("Starting analysis now...")
+    print("Starting analysis now...", flush=True)
 
     if analysis_per_spg:
         for i, spg in enumerate(spgs):
