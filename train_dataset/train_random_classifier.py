@@ -475,6 +475,8 @@ def batch_generator_with_additional(
     spgs, structures_per_spg, N, start_angle, end_angle, max_NO_elements, NO_corn_sizes
 ):
 
+    all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
+
     patterns, labels, structures, corn_sizes = get_random_xy_patterns(
         spgs=spgs,
         structures_per_spg=structures_per_spg,
@@ -500,7 +502,7 @@ def batch_generator_with_additional(
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg=denseness_factors_density_per_spg,
         kde_per_spg=kde_per_spg,
-        all_data_per_spg=all_data_per_spg_handle,
+        all_data_per_spg=all_data_per_spg_worker,
         use_coordinates_directly=use_coordinates_directly,
     )
 
@@ -525,6 +527,8 @@ def batch_generator_queue(
     max_NO_elements,
     NO_corn_sizes,
 ):
+
+    all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     while True:
         try:
@@ -553,7 +557,7 @@ def batch_generator_queue(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
-                all_data_per_spg=all_data_per_spg_handle,
+                all_data_per_spg=all_data_per_spg_worker,
                 use_coordinates_directly=use_coordinates_directly,
             )
 
