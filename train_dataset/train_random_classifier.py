@@ -122,11 +122,9 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     NO_repetitions_prob_per_spg_per_element,
     denseness_factors_density_per_spg,
     kde_per_spg,
-    all_data_per_spg,
+    all_data_per_spg_tmp,
 ) = load_dataset_info()
 
-if not use_all_data_per_spg:
-    all_data_per_spg = None
 
 if not use_kde_per_spg:
     kde_per_spg = None
@@ -158,6 +156,13 @@ else:
                 f"Excluded spg {spgs[i]} due to missing denseness_factor density (not enough statistics)."
             )
             del spgs[i]
+
+if not use_all_data_per_spg:
+    all_data_per_spg = None
+else:
+    all_data_per_spg = {}
+    for spg in spgs:
+        all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
 
 # Construct validation sets
 # Used validation sets:
@@ -471,7 +476,7 @@ print()
 
 queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 
-all_data_per_spg_handle = ray.put(all_data_per_spg)
+# all_data_per_spg_handle = ray.put(all_data_per_spg)
 
 
 @ray.remote(num_cpus=1, num_gpus=0)
@@ -483,10 +488,10 @@ def batch_generator_with_additional(
     end_angle,
     max_NO_elements,
     NO_corn_sizes,
-    all_data_per_spg_handle,
+    # all_data_per_spg_handle,
 ):
 
-    all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
+    # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     patterns, labels, structures, corn_sizes = get_random_xy_patterns(
         spgs=spgs,
@@ -513,7 +518,8 @@ def batch_generator_with_additional(
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg=denseness_factors_density_per_spg,
         kde_per_spg=kde_per_spg,
-        all_data_per_spg=all_data_per_spg_worker,
+        # all_data_per_spg=all_data_per_spg_worker,
+        all_data_per_spg=all_data_per_spg,
         use_coordinates_directly=use_coordinates_directly,
     )
 
@@ -537,10 +543,10 @@ def batch_generator_queue(
     end_angle,
     max_NO_elements,
     NO_corn_sizes,
-    all_data_per_spg_handle,
+    # all_data_per_spg_handle,
 ):
 
-    all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
+    # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     while True:
         try:
@@ -569,7 +575,8 @@ def batch_generator_queue(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
-                all_data_per_spg=all_data_per_spg_worker,
+                # all_data_per_spg=all_data_per_spg_worker,
+                all_data_per_spg=all_data_per_spg,
                 use_coordinates_directly=use_coordinates_directly,
             )
 
@@ -630,7 +637,7 @@ while True:
             end_angle,
             generation_max_NO_wyckoffs,
             1,
-            all_data_per_spg_handle,
+            # all_data_per_spg_handle,
         )
         # ref = batch_generator_with_additional(
         #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
@@ -728,7 +735,7 @@ for i in range(0, NO_workers):
         end_angle,
         generation_max_NO_wyckoffs,
         NO_corn_sizes,
-        all_data_per_spg_handle,
+        # all_data_per_spg_handle,
     )
 
 tb_callback = keras.callbacks.TensorBoard(out_base + "tuner_tb")
