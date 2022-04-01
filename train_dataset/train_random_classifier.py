@@ -36,12 +36,12 @@ os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
-run_analysis_after_run = True
+run_analysis_after_run = False  # TODO: Change back
 analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 200
+NO_epochs = 1  # TODO: Change back
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -75,8 +75,8 @@ do_symmetry_checks = True
 use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
 use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
-use_all_data_per_spg = True  # Overwrites all the previous ones
-use_coordinates_directly = True  # TODO: Change back
+use_all_data_per_spg = False  # Overwrites all the previous ones # TODO: Change back
+use_coordinates_directly = False  # TODO: Change back
 
 use_dropout = True  # TODO: Change back
 
