@@ -83,6 +83,8 @@ use_lattice_paras_directly = True  # TODO: Change back
 
 # TODO: Change back
 use_icsd_structures_directly = True  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
+# TODO: Think about the random validation set
+# TODO: Think about the comparison script; makes sense for this option?
 
 use_dropout = True  # TODO: Change back
 
@@ -170,6 +172,17 @@ else:
     for spg in spgs:
         all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
 
+for i in reversed(range(len(represented_spgs))):
+    if np.sum(NO_wyckoffs_prob_per_spg[represented_spgs[i]][0:100]) <= 0.01:
+        print(
+            f"Excluded spg {represented_spgs[i]} from represented_spgs due to low probability in NO_wyckoffs < 100."
+        )
+        del represented_spgs[i]
+
+for spg in spgs:
+    if spg not in represented_spgs:
+        raise Exception("Requested space group not represented in prepared statistics.")
+
 # Construct validation sets
 # Used validation sets:
 # - All ICSD entries
@@ -210,19 +223,21 @@ print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures...",
     flush=True,
 )
+
 for i in reversed(range(0, len(icsd_crystals_all))):
+    # Only needed if the sample will actually be used later!
+    if icsd_labels_all[i][0] in spgs or corrected_labels[i][0] in spgs:
+        try:
+            current_struc = icsd_crystals_all[i]
+            analyzer = SpacegroupAnalyzer(current_struc)
+            conv = analyzer.get_conventional_standard_structure()
+            icsd_crystals_all[i] = conv
 
-    try:
-        current_struc = icsd_crystals_all[i]
-        analyzer = SpacegroupAnalyzer(current_struc)
-        conv = analyzer.get_conventional_standard_structure()
-        icsd_crystals_all[i] = conv
+        except Exception as ex:
 
-    except Exception as ex:
-
-        print("Error calculating conventional cell of ICSD:")
-        print(ex)
-        conventional_errors_counter += 1
+            print("Error calculating conventional cell of ICSD:")
+            print(ex)
+            conventional_errors_counter += 1
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell.",
@@ -238,22 +253,6 @@ icsd_variations_match_corrected_labels = icsd_variations_all.copy()
 icsd_metas_match_corrected_labels = icsd_metas_all.copy()
 
 assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
-
-# Only train on spgs that are actually present in the ICSD:
-# spgs = sorted(np.unique([item[0] for item in icsd_labels_all]))
-# better:
-# spgs = represented_spgs
-
-for i in reversed(range(len(represented_spgs))):
-    if np.sum(NO_wyckoffs_prob_per_spg[represented_spgs[i]][0:100]) <= 0.01:
-        print(
-            f"Excluded spg {represented_spgs[i]} from represented_spgs due to low probability in NO_wyckoffs < 100."
-        )
-        del represented_spgs[i]
-
-for spg in spgs:
-    if spg not in represented_spgs:
-        raise Exception("Requested space group not represented in prepared statistics.")
 
 for i in reversed(range(0, len(icsd_patterns_all))):
 
