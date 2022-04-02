@@ -22,8 +22,10 @@ import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import matplotlib.pyplot as plt
 
-tag = "2-spg-direct_coordinates"
-description = "Use coordinates + occupation numbers directly from ICSD, but not lattice parameters etc."
+tag = "2-spg-direct_coordinates_and_lattice_parameters"
+description = (
+    "Use coordinates + occupation numbers + lattice parameters directly from ICSD."
+)
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -77,6 +79,7 @@ use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
 use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
 use_all_data_per_spg = True  # Overwrites all the previous ones
 use_coordinates_directly = True  # TODO: Change back
+use_lattice_paras_directly = True  # TODO: Change back
 
 use_dropout = True  # TODO: Change back
 
@@ -521,6 +524,7 @@ def batch_generator_with_additional(
         # all_data_per_spg=all_data_per_spg_worker,
         all_data_per_spg=all_data_per_spg,
         use_coordinates_directly=use_coordinates_directly,
+        use_lattice_paras_directly=use_lattice_paras_directly,
     )
 
     # Set the label to the right index:
@@ -578,6 +582,7 @@ def batch_generator_queue(
                 # all_data_per_spg=all_data_per_spg_worker,
                 all_data_per_spg=all_data_per_spg,
                 use_coordinates_directly=use_coordinates_directly,
+                use_lattice_paras_directly=use_lattice_paras_directly,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -778,6 +783,7 @@ params_txt = (
     f"use_kde_per_spg: {str(use_kde_per_spg)} \n \n \n"
     f"use_all_data_per_spg: {str(use_all_data_per_spg)} \n \n \n"
     f"use_coordinates_directly: {str(use_coordinates_directly)} \n \n \n"
+    f"use_lattice_paras_directly: {str(use_lattice_paras_directly)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 

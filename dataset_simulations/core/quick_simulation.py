@@ -519,6 +519,7 @@ def get_random_xy_patterns(
     kde_per_spg=None,
     all_data_per_spg=None,
     use_coordinates_directly=False,
+    use_lattice_paras_directly=False,
 ):
 
     result_patterns_y = []
@@ -556,6 +557,7 @@ def get_random_xy_patterns(
             kde_per_spg=kde_per_spg,
             all_data_per_spg=all_data_per_spg,
             use_coordinates_directly=use_coordinates_directly,
+            use_lattice_paras_directly=use_lattice_paras_directly,
         )
 
         if do_print:

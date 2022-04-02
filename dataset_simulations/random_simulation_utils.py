@@ -13,6 +13,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from scipy.stats import kde
 from sklearn.neighbors import KernelDensity
 from pyxtal.crystal import atom_site
+from pyxtal.lattice import Lattice
 
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 
@@ -170,6 +171,7 @@ def generate_structure(
     kde_per_spg=None,
     all_data_per_spg=None,
     use_coordinates_directly=False,
+    use_lattice_paras_directly=False,
 ):
 
     if use_icsd_statistics and (
@@ -286,6 +288,7 @@ def generate_structure(
                 kde_per_spg=kde_per_spg,
                 all_data_per_spg=all_data_per_spg,
                 use_coordinates_directly=use_coordinates_directly,
+                use_lattice_paras_directly=use_lattice_paras_directly,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -690,6 +693,12 @@ def generate_structure(
 
             assert len(occupations_copy) == 0
 
+        if use_lattice_paras_directly and all_data_per_spg is not None:
+
+            my_crystal.lattice.set_para(
+                chosen_entry["lattice_parameters"], radians=True
+            )
+
         try:
 
             # Only for comparing the debug code with the original code:
@@ -774,6 +783,7 @@ def generate_structures(
     kde_per_spg=None,
     all_data_per_spg=None,
     use_coordinates_directly=False,
+    use_lattice_paras_directly=False,
 ):
 
     group = Group(spacegroup_number, dim=3)
@@ -819,6 +829,7 @@ def generate_structures(
             kde_per_spg=kde_per_spg,
             all_data_per_spg=all_data_per_spg,
             use_coordinates_directly=use_coordinates_directly,
+            use_lattice_paras_directly=use_lattice_paras_directly,
         )
         for i in range(0, N)
     ]
