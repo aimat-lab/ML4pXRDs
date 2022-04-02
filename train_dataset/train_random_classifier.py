@@ -83,8 +83,7 @@ use_lattice_paras_directly = True  # TODO: Change back
 
 # TODO: Change back
 use_icsd_structures_directly = True  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
-# TODO: Think about the random validation set
-# TODO: Think about the comparison script; makes sense for this option?
+# TODO: Make the random validation set be the icsd training set if this option is True (or at least a part of it!)???
 
 use_dropout = True  # TODO: Change back
 
@@ -1001,7 +1000,7 @@ if not use_icsd_structures_directly:
     model.fit(
         x=sequence,
         epochs=NO_epochs,
-        batch_size=batches_per_epoch,
+        batch_size=batches_per_epoch,  # TODO: Should actually be None!
         callbacks=[tb_callback, CustomCallback()],
         verbose=verbosity,
         workers=1,
@@ -1013,14 +1012,13 @@ else:
     model.fit(
         x=train_x_match,
         y=train_y_match,
-        epochs=NO_epochs,  # TODO: Rescale this!
-        batch_size=batches_per_epoch,  # TODO: Change this
+        epochs=NO_epochs,
+        batch_size=100,
         callbacks=[tb_callback, CustomCallback()],
         verbose=verbosity,
         workers=1,
         max_queue_size=queue_size_tf,
         use_multiprocessing=False,
-        steps_per_epoch=batches_per_epoch,  # TODO: Change this
     )
 
 model.save(out_base + "final")
