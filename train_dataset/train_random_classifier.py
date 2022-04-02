@@ -81,6 +81,9 @@ use_all_data_per_spg = True  # Overwrites all the previous ones
 use_coordinates_directly = True  # TODO: Change back
 use_lattice_paras_directly = True  # TODO: Change back
 
+# TODO: Change back
+use_icsd_structures_directly = True  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
+
 use_dropout = True  # TODO: Change back
 
 learning_rate = 0.001
@@ -177,29 +180,29 @@ else:
 path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is not None and jobid != "":
-    icsd_sim = Simulation(
+    icsd_sim_test = Simulation(
         os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
         os.path.expanduser("~/Databases/ICSD/cif/"),
     )
-    icsd_sim.output_dir = path_to_patterns
+    icsd_sim_test.output_dir = path_to_patterns
 else:  # local
-    icsd_sim = Simulation(
+    icsd_sim_test = Simulation(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
-    icsd_sim.output_dir = path_to_patterns
+    icsd_sim_test.output_dir = path_to_patterns
 
-icsd_sim.load(
+icsd_sim_test.load(
     start=0, stop=files_to_use_for_test_set if not local else 2
 )  # to not overflow the memory
 
-n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
+n_patterns_per_crystal = len(icsd_sim_test.sim_patterns[0])
 
-icsd_patterns_all = icsd_sim.sim_patterns
-icsd_labels_all = icsd_sim.sim_labels
-icsd_variations_all = icsd_sim.sim_variations
-icsd_crystals_all = icsd_sim.sim_crystals
-icsd_metas_all = icsd_sim.sim_metas
+icsd_patterns_all = icsd_sim_test.sim_patterns
+icsd_labels_all = icsd_sim_test.sim_labels
+icsd_variations_all = icsd_sim_test.sim_variations
+icsd_crystals_all = icsd_sim_test.sim_crystals
+icsd_metas_all = icsd_sim_test.sim_metas
 
 # Mainly to make the volume constraints correct:
 conventional_errors_counter = 0
@@ -285,7 +288,7 @@ NO_wyckoffs_cached = {}
 for i in reversed(range(0, len(icsd_patterns_match))):
 
     if validation_max_NO_wyckoffs is not None:
-        is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim.get_wyckoff_info(
+        is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim_test.get_wyckoff_info(
             icsd_metas_match[i][0]
         )
 
@@ -317,7 +320,7 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 
     if validation_max_NO_wyckoffs is not None:
         if icsd_metas_match_corrected_labels[i][0] not in NO_wyckoffs_cached.keys():
-            is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim.get_wyckoff_info(
+            is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim_test.get_wyckoff_info(
                 icsd_metas_match_corrected_labels[i][0]
             )
         else:
@@ -363,7 +366,7 @@ icsd_variations_match_inorganic = icsd_variations_match.copy()
 icsd_crystals_match_inorganic = icsd_crystals_match.copy()
 icsd_metas_match_inorganic = icsd_metas_match.copy()
 
-exp_inorganic, exp_metalorganic, theoretical = icsd_sim.get_content_types()
+exp_inorganic, exp_metalorganic, theoretical = icsd_sim_test.get_content_types()
 
 for i in reversed(range(0, len(icsd_patterns_match_inorganic))):
 
@@ -729,19 +732,119 @@ with open(out_base + "random_data.pickle", "wb") as file:
         file,
     )
 
-# Start worker tasks
-for i in range(0, NO_workers):
-    batch_generator_queue.remote(
-        queue,
-        spgs,
-        structures_per_spg,
-        N,
-        start_angle,
-        end_angle,
-        generation_max_NO_wyckoffs,
-        NO_corn_sizes,
-        # all_data_per_spg_handle,
+#########################################################
+# Prepare the training directly from ICSD
+
+if use_icsd_structures_directly:
+
+    if jobid is not None and jobid != "":
+        icsd_sim_train = Simulation(
+            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+            os.path.expanduser("~/Databases/ICSD/cif/"),
+        )
+        icsd_sim_train.output_dir = path_to_patterns
+    else:  # local
+        icsd_sim_train = Simulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
+        icsd_sim_train.output_dir = path_to_patterns
+
+    icsd_sim_train.load(
+        start=files_to_use_for_test_set if not local else 2,
+        stop=None if not local else 4,
+    )  # to not overflow the memory if local
+
+    train_icsd_patterns_match = icsd_sim_train.sim_patterns
+    train_icsd_labels_match = icsd_sim_train.sim_labels
+    train_icsd_variations_match = icsd_sim_train.sim_variations
+    train_icsd_crystals_match = icsd_sim_train.sim_crystals
+    train_icsd_metas_match = icsd_sim_train.sim_metas
+
+    # Mainly to make the volume constraints correct:
+    conventional_errors_counter = 0
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures for training set...",
+        flush=True,
     )
+    for i in reversed(range(0, len(train_icsd_crystals_match))):
+
+        try:
+            current_struc = train_icsd_crystals_match[i]
+            analyzer = SpacegroupAnalyzer(current_struc)
+            conv = analyzer.get_conventional_standard_structure()
+            train_icsd_crystals_match[i] = conv
+
+        except Exception as ex:
+
+            print("Error calculating conventional cell of ICSD (training):")
+            print(ex)
+            conventional_errors_counter += 1
+
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell (training).",
+        flush=True,
+    )
+
+    for i in reversed(range(0, len(train_icsd_patterns_match))):
+
+        if (
+            np.any(np.isnan(train_icsd_variations_match[i][0]))
+            or train_icsd_labels_match[i][0] not in spgs
+        ):
+            del train_icsd_patterns_match[i]
+            del train_icsd_labels_match[i]
+            del train_icsd_variations_match[i]
+            del train_icsd_crystals_match[i]
+            del train_icsd_metas_match[i]
+
+    for i in reversed(range(0, len(train_icsd_patterns_match))):
+        if validation_max_NO_wyckoffs is not None:
+            is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim_train.get_wyckoff_info(
+                train_icsd_metas_match[i][0]
+            )
+
+        if (
+            validation_max_volume is not None
+            and train_icsd_crystals_match[i].volume > validation_max_volume
+        ) or (
+            validation_max_NO_wyckoffs is not None
+            and NO_wyckoffs > validation_max_NO_wyckoffs
+        ):
+            del train_icsd_patterns_match[i]
+            del train_icsd_labels_match[i]
+            del train_icsd_variations_match[i]
+            del train_icsd_crystals_match[i]
+            del train_icsd_metas_match[i]
+
+    train_y_match = []
+    for i, label in enumerate(train_icsd_labels_match):
+        train_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+    train_y_match = np.array(train_y_match)
+
+    train_x_match = []
+    for pattern in train_icsd_patterns_match:
+        for sub_pattern in pattern:
+            train_x_match.append(sub_pattern)
+
+    train_x_match = np.expand_dims(train_x_match, axis=2)
+
+#########################################################
+
+if not use_icsd_structures_directly:
+    # Start worker tasks
+    for i in range(0, NO_workers):
+        batch_generator_queue.remote(
+            queue,
+            spgs,
+            structures_per_spg,
+            N,
+            start_angle,
+            end_angle,
+            generation_max_NO_wyckoffs,
+            NO_corn_sizes,
+            # all_data_per_spg_handle,
+        )
 
 tb_callback = keras.callbacks.TensorBoard(out_base + "tuner_tb")
 
@@ -895,17 +998,31 @@ sequence = CustomSequence(batches_per_epoch)
 model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 
-model.fit(
-    x=sequence,
-    epochs=NO_epochs,
-    batch_size=batches_per_epoch,
-    callbacks=[tb_callback, CustomCallback()],
-    verbose=verbosity,
-    workers=1,
-    max_queue_size=queue_size_tf,
-    use_multiprocessing=False,
-    steps_per_epoch=batches_per_epoch,
-)
+if not use_icsd_structures_directly:
+    model.fit(
+        x=sequence,
+        epochs=NO_epochs,
+        batch_size=batches_per_epoch,
+        callbacks=[tb_callback, CustomCallback()],
+        verbose=verbosity,
+        workers=1,
+        max_queue_size=queue_size_tf,
+        use_multiprocessing=False,
+        steps_per_epoch=batches_per_epoch,
+    )
+else:
+    model.fit(
+        x=train_x_match,
+        y=train_y_match,
+        epochs=NO_epochs,  # TODO: Rescale this!
+        batch_size=batches_per_epoch,  # TODO: Change this
+        callbacks=[tb_callback, CustomCallback()],
+        verbose=verbosity,
+        workers=1,
+        max_queue_size=queue_size_tf,
+        use_multiprocessing=False,
+        steps_per_epoch=batches_per_epoch,  # TODO: Change this
+    )
 
 model.save(out_base + "final")
 
