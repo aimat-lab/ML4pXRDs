@@ -22,10 +22,8 @@ import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import matplotlib.pyplot as plt
 
-tag = "2-spg-direct_coordinates_and_lattice_parameters"
-description = (
-    "Use coordinates + occupation numbers + lattice parameters directly from ICSD."
-)
+tag = "2-spg-structures-directly"
+description = "Use structures directly from ICSD."
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -43,7 +41,7 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 200
+NO_epochs = 1700  # TODO: Change this back!
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -56,7 +54,8 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-NO_workers = 127 + 127 + 14  # for int-nano cluster
+# NO_workers = 127 + 127 + 14  # for int-nano cluster
+NO_workers = 14  # TODO: Change back
 # NO_workers = 40 * 5 + 5  # for bwuni
 queue_size = 200
 queue_size_tf = 100
@@ -83,7 +82,6 @@ use_lattice_paras_directly = True  # TODO: Change back
 
 # TODO: Change back
 use_icsd_structures_directly = True  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
-# TODO: Make the random validation set be the icsd training set if this option is True (or at least a part of it!)???
 
 use_dropout = True  # TODO: Change back
 
@@ -225,7 +223,7 @@ print(
 
 for i in reversed(range(0, len(icsd_crystals_all))):
     # Only needed if the sample will actually be used later!
-    if icsd_labels_all[i][0] in spgs or corrected_labels[i][0] in spgs:
+    if icsd_labels_all[i][0] in spgs or corrected_labels[i] in spgs:
         try:
             current_struc = icsd_crystals_all[i]
             analyzer = SpacegroupAnalyzer(current_struc)
@@ -780,7 +778,7 @@ if use_icsd_structures_directly:
             conventional_errors_counter += 1
 
     print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell (training).",
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(train_icsd_crystals_match)} failed to convert to conventional cell (training).",
         flush=True,
     )
 
@@ -818,13 +816,15 @@ if use_icsd_structures_directly:
     train_y_match = []
     for i, label in enumerate(train_icsd_labels_match):
         train_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
-    train_y_match = np.array(train_y_match)
 
     train_x_match = []
     for pattern in train_icsd_patterns_match:
         for sub_pattern in pattern:
             train_x_match.append(sub_pattern)
 
+    train_x_match, train_y_match = shuffle(train_x_match, train_y_match)
+
+    train_y_match = np.array(train_y_match)
     train_x_match = np.expand_dims(train_x_match, axis=2)
 
 #########################################################
@@ -885,6 +885,7 @@ params_txt = (
     f"use_all_data_per_spg: {str(use_all_data_per_spg)} \n \n \n"
     f"use_coordinates_directly: {str(use_coordinates_directly)} \n \n \n"
     f"use_lattice_paras_directly: {str(use_lattice_paras_directly)} \n \n \n"
+    f"use_icsd_structures_directly: {str(use_icsd_structures_directly)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
@@ -1000,7 +1001,7 @@ if not use_icsd_structures_directly:
     model.fit(
         x=sequence,
         epochs=NO_epochs,
-        batch_size=batches_per_epoch,  # TODO: Should actually be None!
+        # TODO: Removed the batch_size parameter here, any impact?
         callbacks=[tb_callback, CustomCallback()],
         verbose=verbosity,
         workers=1,
@@ -1022,7 +1023,6 @@ else:
     )
 
 model.save(out_base + "final")
-
 
 # Get predictions for val_x_match and write rightly_indices / falsely_indices:
 prediction = model.predict(val_x_match)
