@@ -1811,6 +1811,9 @@ if __name__ == "__main__":
             if item is None:
                 continue
 
+            if len(item) == 0:
+                continue
+
             for j in reversed(range(0, len(item))):
                 if item[j] is None:
                     del item[j]
@@ -1823,6 +1826,9 @@ if __name__ == "__main__":
 
             if new_max > max:
                 max = new_max
+
+        if min == 10**9:
+            return  # no data present
 
         if fixed_y_max is not None:
             max = fixed_y_max
