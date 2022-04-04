@@ -21,6 +21,7 @@ import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
 
 tag = "2-spg-structures-directly"
 description = "Use structures directly from ICSD."
@@ -1031,22 +1032,22 @@ else:
 model.save(out_base + "final")
 
 # Get predictions for val_x_match and write rightly_indices / falsely_indices:
-prediction = model.predict(val_x_match)
-prediction = np.argmax(prediction, axis=1)
+prediction_match = model.predict(val_x_match)
+prediction_match = np.argmax(prediction_match, axis=1)
 
-rightly_indices_match = np.argwhere(prediction == val_y_match)[:, 0]
-falsely_indices_match = np.argwhere(prediction != val_y_match)[:, 0]
+rightly_indices_match = np.argwhere(prediction_match == val_y_match)[:, 0]
+falsely_indices_match = np.argwhere(prediction_match != val_y_match)[:, 0]
 
 with open(out_base + "rightly_falsely_icsd.pickle", "wb") as file:
     pickle.dump((rightly_indices_match, falsely_indices_match), file)
 
 
 # Get predictions for val_x_random and write rightly_indices / falsely_indices:
-prediction = model.predict(val_x_random)
-prediction = np.argmax(prediction, axis=1)
+prediction_random = model.predict(val_x_random)
+prediction_random = np.argmax(prediction_random, axis=1)
 
-rightly_indices_random = np.argwhere(prediction == val_y_random)[:, 0]
-falsely_indices_random = np.argwhere(prediction != val_y_random)[:, 0]
+rightly_indices_random = np.argwhere(prediction_random == val_y_random)[:, 0]
+falsely_indices_random = np.argwhere(prediction_random != val_y_random)[:, 0]
 
 with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
     pickle.dump((rightly_indices_random, falsely_indices_random), file)
@@ -1061,6 +1062,9 @@ with file_writer.as_default():
 print("Training finished.")
 print("Output dir:")
 print(out_base)
+
+print("Classification report softmax:")
+print(classification_report(val_y_match, prediction_match))
 
 if run_analysis_after_run:
 
