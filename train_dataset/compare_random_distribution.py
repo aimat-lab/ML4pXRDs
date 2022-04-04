@@ -73,7 +73,7 @@ if __name__ == "__main__":
     counter_shown_random_rightly = 0
     counter_shown_random_falsely = 0
 
-    show_sample_xrds = True
+    show_sample_xrds = False
     xrds_to_show = 100
     counter_xrds_icsd_rightly = 0
     counter_xrds_icsd_falsely = 0
