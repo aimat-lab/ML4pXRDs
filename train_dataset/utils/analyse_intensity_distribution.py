@@ -9,9 +9,29 @@ import ray
 
 if __name__ == "__main__":
 
-    ray.init(num_cpus=8)
+    ray.init(num_cpus=4)
 
-    spgs_to_analyze = [2, 15, 14, 129, 176]
+    spgs_to_analyze = [
+        2,
+        14,
+        15,
+        19,
+        50,
+        80,
+        129,
+        135,
+        140,
+        150,
+        160,
+        176,
+        180,
+        190,
+        201,
+        210,
+        215,
+        220,
+        225,
+    ]
     validation_max_NO_wyckoffs = 100
     validation_max_volume = 7000
     angle_range = np.linspace(5, 90, 8501)
@@ -31,7 +51,7 @@ if __name__ == "__main__":
         )
         icsd_sim.output_dir = path_to_patterns
 
-    icsd_sim.load(start=0, stop=20)
+    icsd_sim.load(start=0, stop=15)
 
     n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -46,21 +66,19 @@ if __name__ == "__main__":
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals_match))):
 
-        try:
-            current_struc = icsd_crystals_match[i]
-            analyzer = SpacegroupAnalyzer(current_struc)
-            conv = analyzer.get_conventional_standard_structure()
-            icsd_crystals_match[i] = conv
+        # only convert to conventional cell if this is actually being used later
+        if icsd_labels_match[i][0] in spgs_to_analyze:
+            try:
+                current_struc = icsd_crystals_match[i]
+                analyzer = SpacegroupAnalyzer(current_struc)
+                conv = analyzer.get_conventional_standard_structure()
+                icsd_crystals_match[i] = conv
 
-        except Exception as ex:
+            except Exception as ex:
 
-            print("Error calculating conventional cell of ICSD:")
-            print(ex)
-            conventional_errors_counter += 1
-
-    print(
-        f"{conventional_errors_counter} of {len(icsd_crystals_match)} failed to convert to conventional cell."
-    )
+                print("Error calculating conventional cell of ICSD:")
+                print(ex)
+                conventional_errors_counter += 1
 
     for i in reversed(range(0, len(icsd_patterns_match))):
         if (
@@ -72,6 +90,10 @@ if __name__ == "__main__":
             del icsd_variations_match[i]
             del icsd_crystals_match[i]
             del icsd_metas_match[i]
+
+    print(
+        f"{conventional_errors_counter} of {len(icsd_crystals_match)} failed to convert to conventional cell."
+    )
 
     NO_wyckoffs_cached = {}
     for i in reversed(range(0, len(icsd_patterns_match))):
@@ -110,8 +132,12 @@ if __name__ == "__main__":
         NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg,
         kde_per_spg,
-        all_data_per_spg,
+        all_data_per_spg_tmp,
     ) = load_dataset_info()
+
+    all_data_per_spg = {}
+    for spg in spgs_to_analyze:
+        all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
 
     @ray.remote(num_cpus=1, num_gpus=0)
     def batch_generator_with_additional(
@@ -201,11 +227,13 @@ if __name__ == "__main__":
         print(f"ICSD {spg}: {len(patterns_per_spg_icsd[spg])} patterns")
         print(f"Random {spg}: {len(patterns_per_spg_random[spg])} patterns")
 
-        pattern_average_icsd = np.average(patterns_per_spg_icsd[spg], axis=0)
+        if len(patterns_per_spg_icsd[spg]) > 0:
+            pattern_average_icsd = np.average(patterns_per_spg_icsd[spg], axis=0)
         pattern_average_random = np.average(patterns_per_spg_random[spg], axis=0)
 
         plt.figure()
-        plt.plot(angle_range, pattern_average_icsd, label=f"ICSD, spg {spg}")
+        if len(patterns_per_spg_icsd[spg]) > 0:
+            plt.plot(angle_range, pattern_average_icsd, label=f"ICSD, spg {spg}")
         plt.plot(angle_range, pattern_average_random, label=f"Random, spg {spg}")
         plt.legend()
         plt.savefig(f"intensity_distribution_spg_{spg}.png")

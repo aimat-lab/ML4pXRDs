@@ -216,6 +216,7 @@ icsd_metas_all = icsd_sim_test.sim_metas
 
 # Mainly to make the volume constraints correct:
 conventional_errors_counter = 0
+conventional_counter = 0
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures...",
     flush=True,
@@ -224,6 +225,7 @@ print(
 for i in reversed(range(0, len(icsd_crystals_all))):
     # Only needed if the sample will actually be used later!
     if icsd_labels_all[i][0] in spgs or corrected_labels[i] in spgs:
+        conventional_counter += 1
         try:
             current_struc = icsd_crystals_all[i]
             analyzer = SpacegroupAnalyzer(current_struc)
@@ -237,7 +239,7 @@ for i in reversed(range(0, len(icsd_crystals_all))):
             conventional_errors_counter += 1
 
 print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(icsd_crystals_all)} failed to convert to conventional cell.",
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {conventional_counter} failed to convert to conventional cell.",
     flush=True,
 )
 
@@ -759,26 +761,30 @@ if use_icsd_structures_directly:
 
     # Mainly to make the volume constraints correct:
     conventional_errors_counter = 0
+    conventional_counter = 0
     print(
         f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures for training set...",
         flush=True,
     )
     for i in reversed(range(0, len(train_icsd_crystals_match))):
 
-        try:
-            current_struc = train_icsd_crystals_match[i]
-            analyzer = SpacegroupAnalyzer(current_struc)
-            conv = analyzer.get_conventional_standard_structure()
-            train_icsd_crystals_match[i] = conv
+        if train_icsd_labels_match[i][0] in spgs:  # speedup
 
-        except Exception as ex:
+            conventional_counter += 1
+            try:
+                current_struc = train_icsd_crystals_match[i]
+                analyzer = SpacegroupAnalyzer(current_struc)
+                conv = analyzer.get_conventional_standard_structure()
+                train_icsd_crystals_match[i] = conv
 
-            print("Error calculating conventional cell of ICSD (training):")
-            print(ex)
-            conventional_errors_counter += 1
+            except Exception as ex:
+
+                print("Error calculating conventional cell of ICSD (training):")
+                print(ex)
+                conventional_errors_counter += 1
 
     print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {len(train_icsd_crystals_match)} failed to convert to conventional cell (training).",
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {conventional_counter} failed to convert to conventional cell (training).",
         flush=True,
     )
 

@@ -74,11 +74,16 @@ if __name__ == "__main__":
     counter_shown_random_falsely = 0
 
     show_sample_xrds = True
-    xrds_to_show = 30
+    xrds_to_show = 100
     counter_xrds_icsd_rightly = 0
     counter_xrds_icsd_falsely = 0
     counter_xrds_random_rightly = 0
     counter_xrds_random_falsely = 0
+
+    xrds_icsd_rightly_average = None
+    xrds_icsd_falsely_average = None
+    xrds_random_rightly_average = None
+    xrds_random_falsely_average = None
 
     out_base = "comparison_plots/" + tag + "/"
     os.system("mkdir -p " + out_base)
@@ -116,7 +121,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if True:  # TODO: Change back
+    if False:  # TODO: Change back
         to_process = 100
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
@@ -532,6 +537,11 @@ if __name__ == "__main__":
                 plt.savefig(out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.png")
                 counter_xrds_icsd_falsely += 1
 
+                if xrds_icsd_falsely_average is None:
+                    xrds_icsd_falsely_average = pattern
+                else:
+                    xrds_icsd_falsely_average += pattern
+
             icsd_falsely_crystals.append(structure)
 
             volume = structure.volume
@@ -705,6 +715,11 @@ if __name__ == "__main__":
                 plt.savefig(out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.png")
                 counter_xrds_icsd_rightly += 1
 
+                if xrds_icsd_rightly_average is None:
+                    xrds_icsd_rightly_average = pattern
+                else:
+                    xrds_icsd_rightly_average += pattern
+
             icsd_rightly_crystals.append(structure)
 
             volume = structure.volume
@@ -868,6 +883,11 @@ if __name__ == "__main__":
                 )
                 counter_xrds_random_falsely += 1
 
+                if xrds_random_falsely_average is None:
+                    xrds_random_falsely_average = pattern
+                else:
+                    xrds_random_falsely_average += pattern
+
             volume = structure.volume
 
             result = get_denseness_factor(structure)
@@ -1029,6 +1049,11 @@ if __name__ == "__main__":
                     out_base + f"random_rightly_xrds/{counter_xrds_random_rightly}.png"
                 )
                 counter_xrds_random_rightly += 1
+
+                if xrds_random_rightly_average is None:
+                    xrds_random_rightly_average = pattern
+                else:
+                    xrds_random_rightly_average += pattern
 
             volume = structure.volume
 
@@ -1197,6 +1222,47 @@ if __name__ == "__main__":
             + out_base
             + "random_falsely_structures/combined.png"
         )
+
+    if show_sample_xrds:
+
+        xrds_icsd_falsely_average /= counter_xrds_icsd_falsely
+        xrds_icsd_rightly_average /= counter_xrds_icsd_rightly
+        xrds_random_rightly_average /= counter_xrds_random_rightly
+        xrds_random_falsely_average /= counter_xrds_random_falsely
+
+        plt.figure()
+
+        plt.plot(
+            np.linspace(5, 90, 8501),
+            xrds_icsd_falsely_average,
+            label="ICSD falsely",
+            linestyle="dotted",
+            alpha=0.5,
+        )
+        plt.plot(
+            np.linspace(5, 90, 8501),
+            xrds_icsd_rightly_average,
+            label="ICSD rightly",
+            linestyle="dotted",
+            alpha=0.5,
+        )
+        plt.plot(
+            np.linspace(5, 90, 8501),
+            xrds_random_falsely_average,
+            label="Random falsely",
+            linestyle="dotted",
+            alpha=0.5,
+        )
+        plt.plot(
+            np.linspace(5, 90, 8501),
+            xrds_random_rightly_average,
+            label="Random rightly",
+            linestyle="dotted",
+            alpha=0.5,
+        )
+
+        plt.legend()
+        plt.savefig(out_base + f"average_xrds.png")
 
     ################# 2D scatter plots ################
 
