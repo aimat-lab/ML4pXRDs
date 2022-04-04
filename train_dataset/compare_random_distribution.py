@@ -15,6 +15,8 @@ from train_dataset.utils.analyse_magpie import get_magpie_features
 from train_dataset.utils.denseness_factor import get_denseness_factor
 from pyxtal.symmetry import Group
 
+from dataset_simulations.core.quick_simulation import get_xy_patterns
+
 from pymatgen.core.periodic_table import Species
 
 from utils.entropy import get_chemical_ordering
@@ -51,10 +53,10 @@ if __name__ == "__main__":
         # tag = "4-spg-2D-scatters"
         # tag = "volumes_densenesses_2-spg_test/15"
 
-        tag = "2-spg-test"
+        tag = "2-spg-xrds"
 
         # spgs_to_analyze = [14, 104, 176, 129]
-        spgs_to_analyze = [2]
+        spgs_to_analyze = [2, 15]
         # spgs_to_analyze = [15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
@@ -71,6 +73,13 @@ if __name__ == "__main__":
     counter_shown_random_rightly = 0
     counter_shown_random_falsely = 0
 
+    show_sample_xrds = True
+    xrds_to_show = 30
+    counter_xrds_icsd_rightly = 0
+    counter_xrds_icsd_falsely = 0
+    counter_xrds_random_rightly = 0
+    counter_xrds_random_falsely = 0
+
     out_base = "comparison_plots/" + tag + "/"
     os.system("mkdir -p " + out_base)
 
@@ -79,6 +88,12 @@ if __name__ == "__main__":
         os.system("mkdir -p " + out_base + "icsd_falsely_structures")
         os.system("mkdir -p " + out_base + "random_rightly_structures")
         os.system("mkdir -p " + out_base + "random_falsely_structures")
+
+    if show_sample_xrds:
+        os.system("mkdir -p " + out_base + "icsd_rightly_xrds")
+        os.system("mkdir -p " + out_base + "icsd_falsely_xrds")
+        os.system("mkdir -p " + out_base + "random_rightly_xrds")
+        os.system("mkdir -p " + out_base + "random_falsely_xrds")
 
     with open(in_base + "spgs.pickle", "rb") as file:
         spgs = pickle.load(file)
@@ -101,8 +116,8 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:
-        to_process = 600
+    if True:  # TODO: Change back
+        to_process = 100
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
         random_variations = random_variations[0:to_process]
@@ -497,6 +512,26 @@ if __name__ == "__main__":
                     ase_struc,
                 )
 
+            if (
+                show_sample_xrds
+                and counter_xrds_icsd_falsely < xrds_to_show
+                and (i % 5) == 0
+            ):
+                pattern = get_xy_patterns(
+                    structure,
+                    1.5406,
+                    np.linspace(5, 90, 8501),
+                    1,
+                    (5, 90),
+                    False,
+                    False,
+                    False,
+                )[0]
+                plt.figure()
+                plt.plot(np.linspace(5, 90, 8501), pattern)
+                plt.savefig(out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.png")
+                counter_xrds_icsd_falsely += 1
+
             icsd_falsely_crystals.append(structure)
 
             volume = structure.volume
@@ -650,6 +685,26 @@ if __name__ == "__main__":
                     ase_struc,
                 )
 
+            if (
+                show_sample_xrds
+                and counter_xrds_icsd_rightly < xrds_to_show
+                and (i % 5) == 0
+            ):
+                pattern = get_xy_patterns(
+                    structure,
+                    1.5406,
+                    np.linspace(5, 90, 8501),
+                    1,
+                    (5, 90),
+                    False,
+                    False,
+                    False,
+                )[0]
+                plt.figure()
+                plt.plot(np.linspace(5, 90, 8501), pattern)
+                plt.savefig(out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.png")
+                counter_xrds_icsd_rightly += 1
+
             icsd_rightly_crystals.append(structure)
 
             volume = structure.volume
@@ -795,6 +850,24 @@ if __name__ == "__main__":
                     ase_struc,
                 )
 
+            if show_sample_xrds and counter_xrds_random_falsely < xrds_to_show:
+                pattern = get_xy_patterns(
+                    structure,
+                    1.5406,
+                    np.linspace(5, 90, 8501),
+                    1,
+                    (5, 90),
+                    False,
+                    False,
+                    False,
+                )[0]
+                plt.figure()
+                plt.plot(np.linspace(5, 90, 8501), pattern)
+                plt.savefig(
+                    out_base + f"random_falsely_xrds/{counter_xrds_random_falsely}.png"
+                )
+                counter_xrds_random_falsely += 1
+
             volume = structure.volume
 
             result = get_denseness_factor(structure)
@@ -938,6 +1011,24 @@ if __name__ == "__main__":
                     f"{out_base}random_rightly_structures/{counter_shown_random_rightly}.png",
                     ase_struc,
                 )
+
+            if show_sample_xrds and counter_xrds_random_rightly < xrds_to_show:
+                pattern = get_xy_patterns(
+                    structure,
+                    1.5406,
+                    np.linspace(5, 90, 8501),
+                    1,
+                    (5, 90),
+                    False,
+                    False,
+                    False,
+                )[0]
+                plt.figure()
+                plt.plot(np.linspace(5, 90, 8501), pattern)
+                plt.savefig(
+                    out_base + f"random_rightly_xrds/{counter_xrds_random_rightly}.png"
+                )
+                counter_xrds_random_rightly += 1
 
             volume = structure.volume
 
