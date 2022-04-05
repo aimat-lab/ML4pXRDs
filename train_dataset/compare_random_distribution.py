@@ -1841,6 +1841,48 @@ if __name__ == "__main__":
         dpi=300,
     )
 
+    # sum of intensities over the volume
+
+    plt.figure()
+    plt.scatter(
+        [item[0] for item in icsd_rightly_volumes_sum_of_intensities],
+        [item[1] for item in icsd_rightly_volumes_sum_of_intensities],
+        color="g",
+        s=0.5,
+    )
+    plt.scatter(
+        [item[0] for item in icsd_falsely_volumes_sum_of_intensities],
+        [item[1] for item in icsd_falsely_volumes_sum_of_intensities],
+        color="r",
+        s=0.5,
+    )
+    plt.xlim(0, 7000)
+    plt.savefig(
+        f"{out_base}2D_volumes_sum_of_intensities_icsd.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+    plt.figure()
+    plt.scatter(
+        [item[0] for item in random_rightly_volumes_sum_of_intensities],
+        [item[1] for item in random_rightly_volumes_sum_of_intensities],
+        color="g",
+        s=0.5,
+    )
+    plt.scatter(
+        [item[0] for item in random_falsely_volumes_sum_of_intensities],
+        [item[1] for item in random_falsely_volumes_sum_of_intensities],
+        color="r",
+        s=0.5,
+    )
+    plt.xlim(0, 7000)
+    plt.savefig(
+        f"{out_base}2D_volumes_sum_of_intensities_random.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
     ################# hist plotting ################
 
     def create_histogram(
@@ -2399,8 +2441,14 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "sum_of_intensities",
-            [[item[1] for item in icsd_rightly_volumes_sum_of_intensities], [item[1] for item in icsd_falsely_volumes_sum_of_intensities]],
-            [[item[1] for item in random_rightly_volumes_sum_of_intensities], [item[1] for item in random_falsely_volumes_sum_of_intensities]],
+            [
+                [item[1] for item in icsd_rightly_volumes_sum_of_intensities],
+                [item[1] for item in icsd_falsely_volumes_sum_of_intensities],
+            ],
+            [
+                [item[1] for item in random_rightly_volumes_sum_of_intensities],
+                [item[1] for item in random_falsely_volumes_sum_of_intensities],
+            ],
             r"sum of intensities",
             [
                 "ICSD correctly classified",
