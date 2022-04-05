@@ -387,6 +387,7 @@ if __name__ == "__main__":
     icsd_falsely_set_wyckoffs_max_indices = []
     icsd_falsely_structural_complexity = []
     icsd_falsely_chemical_ordering = []
+    icsd_falsely_sum_of_intensities = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -413,6 +414,7 @@ if __name__ == "__main__":
     icsd_rightly_set_wyckoffs_max_indices = []
     icsd_rightly_structural_complexity = []
     icsd_rightly_chemical_ordering = []
+    icsd_rightly_sum_of_intensities = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -436,6 +438,7 @@ if __name__ == "__main__":
     random_rightly_set_wyckoffs_max_indices = []
     random_rightly_structural_complexity = []
     random_rightly_chemical_ordering = []
+    random_rightly_sum_of_intensities = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -459,6 +462,7 @@ if __name__ == "__main__":
     random_falsely_set_wyckoffs_max_indices = []
     random_falsely_structural_complexity = []
     random_falsely_chemical_ordering = []
+    random_falsely_sum_of_intensities = []
 
     if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
 
@@ -543,7 +547,7 @@ if __name__ == "__main__":
                 and counter_xrds_icsd_falsely < total_xrds_icsd_falsely
                 and (i % 5) == 0
             ):
-                pattern = get_xy_patterns(
+                patterns, angles, intensities = get_xy_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
@@ -551,8 +555,11 @@ if __name__ == "__main__":
                     (5, 90),
                     False,
                     False,
-                    False,
-                )[0]
+                    True,  # return angles and intensities
+                )
+                pattern = patterns[0]
+                icsd_falsely_sum_of_intensities.append(np.sum(intensities))
+
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
                 plt.savefig(out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.png")
@@ -721,7 +728,7 @@ if __name__ == "__main__":
                 and counter_xrds_icsd_rightly < total_xrds_icsd_rightly
                 and (i % 5) == 0
             ):
-                pattern = get_xy_patterns(
+                patterns, angles, intensities = get_xy_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
@@ -729,8 +736,11 @@ if __name__ == "__main__":
                     (5, 90),
                     False,
                     False,
-                    False,
-                )[0]
+                    True,  # return angles and intensities
+                )
+                pattern = patterns[0]
+                icsd_rightly_sum_of_intensities.append(np.sum(intensities))
+
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
                 plt.savefig(out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.png")
@@ -890,7 +900,7 @@ if __name__ == "__main__":
                 show_sample_xrds
                 and counter_xrds_random_falsely < total_xrds_random_falsely
             ):
-                pattern = get_xy_patterns(
+                patterns, angles, intensities = get_xy_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
@@ -898,8 +908,11 @@ if __name__ == "__main__":
                     (5, 90),
                     False,
                     False,
-                    False,
-                )[0]
+                    True,  # return angles and intensities
+                )
+                pattern = patterns[0]
+                random_falsely_sum_of_intensities.append(np.sum(intensities))
+
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
                 plt.savefig(
@@ -1060,7 +1073,7 @@ if __name__ == "__main__":
                 show_sample_xrds
                 and counter_xrds_random_rightly < total_xrds_random_rightly
             ):
-                pattern = get_xy_patterns(
+                patterns, angles, intensities = get_xy_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
@@ -1068,8 +1081,11 @@ if __name__ == "__main__":
                     (5, 90),
                     False,
                     False,
-                    False,
-                )[0]
+                    True,  # return angles and intensities
+                )
+                pattern = patterns[0]
+                random_rightly_sum_of_intensities.append(np.sum(intensities))
+
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
                 plt.savefig(
@@ -2358,6 +2374,23 @@ if __name__ == "__main__":
                 "Random incorrectly classified",
             ],
             is_int=True,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "sum_of_intensities",
+            [icsd_rightly_sum_of_intensities, icsd_falsely_sum_of_intensities],
+            [random_rightly_sum_of_intensities, random_falsely_sum_of_intensities],
+            r"sum of intensities",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
             only_proportions=flag,
             min_is_zero=True,
         )
