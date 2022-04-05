@@ -387,7 +387,7 @@ if __name__ == "__main__":
     icsd_falsely_set_wyckoffs_max_indices = []
     icsd_falsely_structural_complexity = []
     icsd_falsely_chemical_ordering = []
-    icsd_falsely_sum_of_intensities = []
+    icsd_falsely_volumes_sum_of_intensities = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -414,7 +414,7 @@ if __name__ == "__main__":
     icsd_rightly_set_wyckoffs_max_indices = []
     icsd_rightly_structural_complexity = []
     icsd_rightly_chemical_ordering = []
-    icsd_rightly_sum_of_intensities = []
+    icsd_rightly_volumes_sum_of_intensities = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -438,7 +438,7 @@ if __name__ == "__main__":
     random_rightly_set_wyckoffs_max_indices = []
     random_rightly_structural_complexity = []
     random_rightly_chemical_ordering = []
-    random_rightly_sum_of_intensities = []
+    random_rightly_volumes_sum_of_intensities = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -462,7 +462,7 @@ if __name__ == "__main__":
     random_falsely_set_wyckoffs_max_indices = []
     random_falsely_structural_complexity = []
     random_falsely_chemical_ordering = []
-    random_falsely_sum_of_intensities = []
+    random_falsely_volumes_sum_of_intensities = []
 
     if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
 
@@ -519,6 +519,11 @@ if __name__ == "__main__":
         / (len(falsely_indices_random) + len(rightly_indices_random))
     )
 
+    falsely_icsd_already_processed = []
+    rightly_icsd_already_processed = []
+    falsely_random_already_processed = []
+    rightly_random_already_processed = []
+
     for i in falsely_indices_icsd:
 
         index = int(i / 5)
@@ -533,7 +538,7 @@ if __name__ == "__main__":
                 show_sample_structures
                 and counter_shown_icsd_falsely < samples_to_show_icsd
                 and structure.is_ordered
-                and (i % 5) == 0
+                and index not in falsely_icsd_already_processed
             ):
                 counter_shown_icsd_falsely += 1
                 ase_struc = AseAtomsAdaptor.get_atoms(structure)
@@ -545,7 +550,7 @@ if __name__ == "__main__":
             if (
                 show_sample_xrds
                 and counter_xrds_icsd_falsely < total_xrds_icsd_falsely
-                and (i % 5) == 0
+                and index not in falsely_icsd_already_processed
             ):
                 patterns, angles, intensities = get_xy_patterns(
                     structure,
@@ -558,7 +563,9 @@ if __name__ == "__main__":
                     True,  # return angles and intensities
                 )
                 pattern = patterns[0]
-                icsd_falsely_sum_of_intensities.append(np.sum(intensities))
+                icsd_falsely_volumes_sum_of_intensities.append(
+                    (structure.volume, np.sum(intensities))
+                )
 
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
@@ -569,6 +576,8 @@ if __name__ == "__main__":
                     xrds_icsd_falsely_average = pattern
                 else:
                     xrds_icsd_falsely_average += pattern
+
+            falsely_icsd_already_processed.append(index)
 
             icsd_falsely_crystals.append(structure)
 
@@ -714,7 +723,7 @@ if __name__ == "__main__":
                 show_sample_structures
                 and counter_shown_icsd_rightly < samples_to_show_icsd
                 and structure.is_ordered
-                and (i % 5) == 0
+                and index not in rightly_icsd_already_processed
             ):
                 counter_shown_icsd_rightly += 1
                 ase_struc = AseAtomsAdaptor.get_atoms(structure)
@@ -726,8 +735,9 @@ if __name__ == "__main__":
             if (
                 show_sample_xrds
                 and counter_xrds_icsd_rightly < total_xrds_icsd_rightly
-                and (i % 5) == 0
+                and index not in rightly_icsd_already_processed
             ):
+
                 patterns, angles, intensities = get_xy_patterns(
                     structure,
                     1.5406,
@@ -739,7 +749,9 @@ if __name__ == "__main__":
                     True,  # return angles and intensities
                 )
                 pattern = patterns[0]
-                icsd_rightly_sum_of_intensities.append(np.sum(intensities))
+                icsd_rightly_volumes_sum_of_intensities.append(
+                    (structure.volume, np.sum(intensities))
+                )
 
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
@@ -750,6 +762,8 @@ if __name__ == "__main__":
                     xrds_icsd_rightly_average = pattern
                 else:
                     xrds_icsd_rightly_average += pattern
+
+            rightly_icsd_already_processed.append(index)
 
             icsd_rightly_crystals.append(structure)
 
@@ -911,7 +925,9 @@ if __name__ == "__main__":
                     True,  # return angles and intensities
                 )
                 pattern = patterns[0]
-                random_falsely_sum_of_intensities.append(np.sum(intensities))
+                random_falsely_volumes_sum_of_intensities.append(
+                    (structure.volume, np.sum(intensities))
+                )
 
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
@@ -1084,7 +1100,9 @@ if __name__ == "__main__":
                     True,  # return angles and intensities
                 )
                 pattern = patterns[0]
-                random_rightly_sum_of_intensities.append(np.sum(intensities))
+                random_rightly_volumes_sum_of_intensities.append(
+                    (structure.volume, np.sum(intensities))
+                )
 
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
@@ -2381,8 +2399,8 @@ if __name__ == "__main__":
     for flag in [True, False]:
         create_histogram(
             "sum_of_intensities",
-            [icsd_rightly_sum_of_intensities, icsd_falsely_sum_of_intensities],
-            [random_rightly_sum_of_intensities, random_falsely_sum_of_intensities],
+            [[item[1] for item in icsd_rightly_volumes_sum_of_intensities], [item[1] for item in icsd_falsely_volumes_sum_of_intensities]],
+            [[item[1] for item in random_rightly_volumes_sum_of_intensities], [item[1] for item in random_falsely_volumes_sum_of_intensities]],
             r"sum of intensities",
             [
                 "ICSD correctly classified",
