@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 
-tag = "spgs-10-20"
+tag = "spgs-150-230"
 description = "Use element repetition strategy."
 
 if len(sys.argv) > 1:
@@ -39,7 +39,7 @@ os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
 run_analysis_after_run = True
-analysis_per_spg = True
+analysis_per_spg = False  # TODO: Change back
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
@@ -47,7 +47,8 @@ NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
-structures_per_spg = 10  # for (2,15) tuple
+# structures_per_spg = 10  # for (2,15) tuple
+structures_per_spg = 1  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 1
 # structures_per_spg = 1  # 30-spg
@@ -110,7 +111,8 @@ if local:
 
 # spgs = list(range(201, 231))
 
-spgs = list(range(10, 21))
+# spgs = list(range(10, 21))
+spgs = list(range(150, 231))
 
 # as Park:
 # start_angle, end_angle, N = 10, 110, 10001
