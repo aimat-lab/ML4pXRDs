@@ -73,7 +73,9 @@ if __name__ == "__main__":
     counter_shown_random_falsely = 0
 
     show_sample_xrds = True
-    xrds_to_show = 200
+    # xrds_to_show = 200 # TODO: Change back
+    xrds_to_show = 10**9  # show them all
+    show_individual = False
     counter_xrds_icsd_rightly = 0
     counter_xrds_icsd_falsely = 0
     counter_xrds_random_rightly = 0
@@ -575,9 +577,12 @@ if __name__ == "__main__":
                     / np.sum(intensities)
                 )
 
-                plt.figure()
-                plt.plot(np.linspace(5, 90, 8501), pattern)
-                plt.savefig(out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.png")
+                if show_individual:
+                    plt.figure()
+                    plt.plot(np.linspace(5, 90, 8501), pattern)
+                    plt.savefig(
+                        out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.png"
+                    )
                 counter_xrds_icsd_falsely += 1
 
                 if xrds_icsd_falsely_average is None:
@@ -765,9 +770,12 @@ if __name__ == "__main__":
                     / np.sum(intensities)
                 )
 
-                plt.figure()
-                plt.plot(np.linspace(5, 90, 8501), pattern)
-                plt.savefig(out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.png")
+                if show_individual:
+                    plt.figure()
+                    plt.plot(np.linspace(5, 90, 8501), pattern)
+                    plt.savefig(
+                        out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.png"
+                    )
                 counter_xrds_icsd_rightly += 1
 
                 if xrds_icsd_rightly_average is None:
@@ -945,11 +953,13 @@ if __name__ == "__main__":
                     / np.sum(intensities)
                 )
 
-                plt.figure()
-                plt.plot(np.linspace(5, 90, 8501), pattern)
-                plt.savefig(
-                    out_base + f"random_falsely_xrds/{counter_xrds_random_falsely}.png"
-                )
+                if show_individual:
+                    plt.figure()
+                    plt.plot(np.linspace(5, 90, 8501), pattern)
+                    plt.savefig(
+                        out_base
+                        + f"random_falsely_xrds/{counter_xrds_random_falsely}.png"
+                    )
                 counter_xrds_random_falsely += 1
 
                 if xrds_random_falsely_average is None:
@@ -1124,11 +1134,13 @@ if __name__ == "__main__":
                     / np.sum(intensities)
                 )
 
-                plt.figure()
-                plt.plot(np.linspace(5, 90, 8501), pattern)
-                plt.savefig(
-                    out_base + f"random_rightly_xrds/{counter_xrds_random_rightly}.png"
-                )
+                if show_individual:
+                    plt.figure()
+                    plt.plot(np.linspace(5, 90, 8501), pattern)
+                    plt.savefig(
+                        out_base
+                        + f"random_rightly_xrds/{counter_xrds_random_rightly}.png"
+                    )
                 counter_xrds_random_rightly += 1
 
                 if xrds_random_rightly_average is None:
