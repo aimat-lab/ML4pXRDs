@@ -520,6 +520,7 @@ def get_random_xy_patterns(
     all_data_per_spg=None,
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
+    group_object_per_spg=None,
 ):
 
     result_patterns_y = []
@@ -534,6 +535,11 @@ def get_random_xy_patterns(
 
         if do_print:
             start = time.time()
+
+        if group_object_per_spg is not None and spg in group_object_per_spg.keys():
+            group_object = group_object_per_spg[spg]
+        else:
+            group_object = None
 
         structures = generate_structures(
             spg,
@@ -558,6 +564,7 @@ def get_random_xy_patterns(
             all_data_per_spg=all_data_per_spg,
             use_coordinates_directly=use_coordinates_directly,
             use_lattice_paras_directly=use_lattice_paras_directly,
+            group_object=group_object,
         )
 
         if do_print:

@@ -22,6 +22,7 @@ import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
+from pyxtal.symmetry import Group
 
 tag = "spgs-10-20"
 description = "Use element repetition strategy."
@@ -556,6 +557,10 @@ def batch_generator_queue(
 
     # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
+    group_object_per_spg = {}
+    for spg in spgs:
+        group_object_per_spg[spg] = Group(spg, dim=3)
+
     while True:
         try:
 
@@ -587,6 +592,7 @@ def batch_generator_queue(
                 all_data_per_spg=all_data_per_spg,
                 use_coordinates_directly=use_coordinates_directly,
                 use_lattice_paras_directly=use_lattice_paras_directly,
+                group_object_per_spg=group_object_per_spg,
             )
 
             patterns, labels = shuffle(patterns, labels)

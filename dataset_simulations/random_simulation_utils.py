@@ -788,9 +788,13 @@ def generate_structures(
     all_data_per_spg=None,
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
+    group_object=None,  # for speedup
 ):
 
-    group = Group(spacegroup_number, dim=3)
+    if group_object is None:
+        group = Group(spacegroup_number, dim=3)
+    else:
+        group = group_object
 
     multiplicities = [x.multiplicity for x in group]
     names = [(str(x.multiplicity) + x.letter) for x in group]
