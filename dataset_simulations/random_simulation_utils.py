@@ -591,9 +591,13 @@ def generate_structure(
                 # factor = np.random.uniform(0.7, 2.2)
                 factor = np.random.uniform(0.7, 2.13)
             else:
-                factor = denseness_factors_density_per_spg[
-                    group_object.number
-                ].resample(1)[0, 0]
+                while True:
+                    factor = denseness_factors_density_per_spg[
+                        group_object.number
+                    ].resample(1)[0, 0]
+
+                    if factor > 0.0:
+                        break
 
             # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
             volume_ok = my_crystal.from_random(
@@ -1193,7 +1197,7 @@ def load_dataset_info():
         # if False and (
         #    spg == 2 or spg == 15 or spg == 14 or spg == 129 or spg == 176 or spg == 104
         # ):
-        if False and spg in range(201, 231) and denseness_factors_density is not None:
+        if False and spg in range(10, 21) and denseness_factors_density is not None:
             grid = np.linspace(
                 min(denseness_factors_per_spg[spg]),
                 max(denseness_factors_per_spg[spg]),
