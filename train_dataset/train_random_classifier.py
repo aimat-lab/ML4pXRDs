@@ -23,8 +23,8 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 
-tag = "2-spg-structures-directly"
-description = "Use structures directly from ICSD."
+tag = "spgs-10-20"
+description = "Use element repetition strategy."
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
@@ -42,12 +42,13 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 1700  # TODO: Change this back!
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 structures_per_spg = 10  # for (2,15) tuple
-NO_corn_sizes = 5
+# NO_corn_sizes = 5
+NO_corn_sizes = 1
 # structures_per_spg = 1  # 30-spg
 # NO_corn_sizes = 3 # 30-spg
 
@@ -55,9 +56,10 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-# NO_workers = 127 + 127 + 14  # for int-nano cluster
-NO_workers = 14  # TODO: Change back
+NO_workers = 127 + 127 + 14  # for int-nano cluster
+# NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
+
 queue_size = 200
 queue_size_tf = 100
 
@@ -76,17 +78,15 @@ do_symmetry_checks = True
 
 use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
-use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
-use_all_data_per_spg = True  # Overwrites all the previous ones
-use_coordinates_directly = True  # TODO: Change back
-use_lattice_paras_directly = True  # TODO: Change back
+use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
+use_all_data_per_spg = False  # Overwrites all the previous ones
+use_coordinates_directly = False
+use_lattice_paras_directly = False
+use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
-# TODO: Change back
-use_icsd_structures_directly = True  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
+use_dropout = False
 
-use_dropout = True  # TODO: Change back
-
-learning_rate = 0.001
+learning_rate = 0.0001
 
 use_denseness_factors_density = True
 
@@ -99,15 +99,17 @@ if local:
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-spgs = [
-    2,
-    15,
-]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+# spgs = [
+#    2,
+#    15,
+# ]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
 # spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
 
 # spgs = list(range(201, 231))
+
+spgs = list(range(10, 21))
 
 # as Park:
 # start_angle, end_angle, N = 10, 110, 10001
@@ -137,7 +139,7 @@ if not use_kde_per_spg:
 
 if not use_icsd_statistics:
     (
-        probability_per_element,
+        probability_per_spg_per_element,
         probability_per_spg_per_element_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
     ) = (
