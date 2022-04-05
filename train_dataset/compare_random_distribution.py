@@ -388,6 +388,7 @@ if __name__ == "__main__":
     icsd_falsely_structural_complexity = []
     icsd_falsely_chemical_ordering = []
     icsd_falsely_volumes_sum_of_intensities = []
+    icsd_falsely_COM = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -415,6 +416,7 @@ if __name__ == "__main__":
     icsd_rightly_structural_complexity = []
     icsd_rightly_chemical_ordering = []
     icsd_rightly_volumes_sum_of_intensities = []
+    icsd_rightly_COM = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -439,6 +441,7 @@ if __name__ == "__main__":
     random_rightly_structural_complexity = []
     random_rightly_chemical_ordering = []
     random_rightly_volumes_sum_of_intensities = []
+    random_rightly_COM = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -463,6 +466,7 @@ if __name__ == "__main__":
     random_falsely_structural_complexity = []
     random_falsely_chemical_ordering = []
     random_falsely_volumes_sum_of_intensities = []
+    random_falsely_COM = []
 
     if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
 
@@ -565,6 +569,10 @@ if __name__ == "__main__":
                 pattern = patterns[0]
                 icsd_falsely_volumes_sum_of_intensities.append(
                     (structure.volume, np.sum(intensities))
+                )
+                icsd_falsely_COM.append(
+                    np.sum(np.array(angles) * np.array(intensities))
+                    / np.sum(intensities)
                 )
 
                 plt.figure()
@@ -752,6 +760,10 @@ if __name__ == "__main__":
                 icsd_rightly_volumes_sum_of_intensities.append(
                     (structure.volume, np.sum(intensities))
                 )
+                icsd_rightly_COM.append(
+                    np.sum(np.array(angles) * np.array(intensities))
+                    / np.sum(intensities)
+                )
 
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
@@ -928,6 +940,10 @@ if __name__ == "__main__":
                 random_falsely_volumes_sum_of_intensities.append(
                     (structure.volume, np.sum(intensities))
                 )
+                random_falsely_COM.append(
+                    np.sum(np.array(angles) * np.array(intensities))
+                    / np.sum(intensities)
+                )
 
                 plt.figure()
                 plt.plot(np.linspace(5, 90, 8501), pattern)
@@ -1102,6 +1118,10 @@ if __name__ == "__main__":
                 pattern = patterns[0]
                 random_rightly_volumes_sum_of_intensities.append(
                     (structure.volume, np.sum(intensities))
+                )
+                random_rightly_COM.append(
+                    np.sum(np.array(angles) * np.array(intensities))
+                    / np.sum(intensities)
                 )
 
                 plt.figure()
@@ -2450,6 +2470,29 @@ if __name__ == "__main__":
                 [item[1] for item in random_falsely_volumes_sum_of_intensities],
             ],
             r"sum of intensities",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "COM",
+            [
+                icsd_rightly_COM,
+                icsd_falsely_COM,
+            ],
+            [
+                random_rightly_COM,
+                random_falsely_COM,
+            ],
+            r"COM",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
