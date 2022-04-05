@@ -72,8 +72,8 @@ if __name__ == "__main__":
     counter_shown_random_rightly = 0
     counter_shown_random_falsely = 0
 
-    show_sample_xrds = False
-    xrds_to_show = 100
+    show_sample_xrds = True
+    xrds_to_show = 200
     counter_xrds_icsd_rightly = 0
     counter_xrds_icsd_falsely = 0
     counter_xrds_random_rightly = 0
@@ -493,6 +493,28 @@ if __name__ == "__main__":
         / (len(falsely_indices_random) + len(rightly_indices_random))
     )
 
+    # make this scale with the rightly / falsely proportion
+    total_xrds_icsd_falsely = (
+        xrds_to_show  # 200
+        * len(falsely_indices_icsd)
+        / (len(falsely_indices_icsd) + len(rightly_indices_icsd))
+    )
+    total_xrds_icsd_rightly = (
+        xrds_to_show  # 200
+        * len(rightly_indices_icsd)
+        / (len(falsely_indices_icsd) + len(rightly_indices_icsd))
+    )
+    total_xrds_random_falsely = (
+        xrds_to_show  # 200
+        * len(falsely_indices_random)
+        / (len(falsely_indices_random) + len(rightly_indices_random))
+    )
+    total_xrds_random_rightly = (
+        xrds_to_show  # 200
+        * len(rightly_indices_random)
+        / (len(falsely_indices_random) + len(rightly_indices_random))
+    )
+
     for i in falsely_indices_icsd:
 
         index = int(i / 5)
@@ -518,7 +540,7 @@ if __name__ == "__main__":
 
             if (
                 show_sample_xrds
-                and counter_xrds_icsd_falsely < xrds_to_show
+                and counter_xrds_icsd_falsely < total_xrds_icsd_falsely
                 and (i % 5) == 0
             ):
                 pattern = get_xy_patterns(
@@ -696,7 +718,7 @@ if __name__ == "__main__":
 
             if (
                 show_sample_xrds
-                and counter_xrds_icsd_rightly < xrds_to_show
+                and counter_xrds_icsd_rightly < total_xrds_icsd_rightly
                 and (i % 5) == 0
             ):
                 pattern = get_xy_patterns(
@@ -864,7 +886,10 @@ if __name__ == "__main__":
                     ase_struc,
                 )
 
-            if show_sample_xrds and counter_xrds_random_falsely < xrds_to_show:
+            if (
+                show_sample_xrds
+                and counter_xrds_random_falsely < total_xrds_random_falsely
+            ):
                 pattern = get_xy_patterns(
                     structure,
                     1.5406,
@@ -1031,7 +1056,10 @@ if __name__ == "__main__":
                     ase_struc,
                 )
 
-            if show_sample_xrds and counter_xrds_random_rightly < xrds_to_show:
+            if (
+                show_sample_xrds
+                and counter_xrds_random_rightly < total_xrds_random_rightly
+            ):
                 pattern = get_xy_patterns(
                     structure,
                     1.5406,
