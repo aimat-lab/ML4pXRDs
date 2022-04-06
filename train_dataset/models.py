@@ -323,3 +323,5 @@ def build_model_resnet_50(
     )
 
     Model.summary()
+
+    return Model

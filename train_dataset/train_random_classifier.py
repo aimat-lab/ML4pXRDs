@@ -100,6 +100,8 @@ if local:
     NO_workers = 8
     verbosity = 1
 
+    NO_random_samples_per_spg = 10  # TODO: Change back
+
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
 # spgs = [
