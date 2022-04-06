@@ -7,6 +7,7 @@ from models import (
     build_model_park_medium_size,
     build_model_park_huge_size,
     build_model_park_tiny_size,
+    build_model_resnet_50,
 )
 import os
 from sklearn.utils import shuffle
@@ -24,7 +25,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 
-tag = "spgs-150-230"
+tag = "spgs-150-230-resnet"
 description = "Use element repetition strategy."
 
 if len(sys.argv) > 1:
@@ -42,7 +43,7 @@ run_analysis_after_run = True
 analysis_per_spg = False  # TODO: Change back
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
+batches_per_epoch = 15  # TODO: Change back
 NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
@@ -94,7 +95,7 @@ use_denseness_factors_density = True
 
 verbosity = 2
 
-local = False
+local = True  # TODO: Change back
 if local:
     NO_workers = 8
     verbosity = 1
@@ -1011,8 +1012,9 @@ class CustomSequence(keras.utils.Sequence):
 
 sequence = CustomSequence(batches_per_epoch)
 
-model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+# model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
+model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 
 if not use_icsd_structures_directly:
     model.fit(
