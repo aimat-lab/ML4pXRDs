@@ -43,7 +43,7 @@ run_analysis_after_run = True
 analysis_per_spg = False  # TODO: Change back
 
 test_every_X_epochs = 1
-batches_per_epoch = 15  # TODO: Change back
+batches_per_epoch = 1500
 NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
@@ -59,7 +59,7 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-NO_workers = 127 + 127 + 14  # for int-nano cluster
+NO_workers = 127 + 127 + 10  # for int-nano cluster
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 
@@ -89,18 +89,16 @@ use_icsd_structures_directly = False  # This overwrites mose of the previous set
 
 use_dropout = False
 
-learning_rate = 0.0001
+learning_rate = 0.0003  # TODO: Change back
 
 use_denseness_factors_density = True
 
 verbosity = 2
 
-local = True  # TODO: Change back
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
-
-    NO_random_samples_per_spg = 10  # TODO: Change back
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
