@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 
-tag = "spgs-1-230"
+tag = "spgs-1:230:3_huge_size"
 description = "Use element repetition strategy."
 
 if len(sys.argv) > 1:
@@ -89,7 +89,7 @@ use_icsd_structures_directly = False  # This overwrites mose of the previous set
 
 use_dropout = False
 
-learning_rate = 0.0003  # TODO: Change back
+learning_rate = 0.0001
 
 use_denseness_factors_density = True
 
@@ -113,7 +113,8 @@ if local:
 # spgs = list(range(201, 231))
 
 # spgs = list(range(10, 21))
-spgs = list(range(150, 231))
+# spgs = list(range(150, 231))
+spgs = list(range(1, 231, 3))
 
 # as Park:
 # start_angle, end_angle, N = 10, 110, 10001
@@ -1014,7 +1015,8 @@ sequence = CustomSequence(batches_per_epoch)
 
 # model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
-model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
+# model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
+model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
 if not use_icsd_structures_directly:
     model.fit(
