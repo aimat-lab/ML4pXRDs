@@ -1077,15 +1077,20 @@ print("Training finished.")
 print("Output dir:")
 print(out_base)
 
-print("Classification report softmax:")
-print(classification_report(val_y_match, prediction_match))
-
 report = classification_report(
     [spgs[i] for i in val_y_match],
     [spgs[i] for i in prediction_match],
     output_dict=True,
 )
-with open(out_base + "classification_report.pickle", "wb") as file:
+with open(out_base + "classification_report_match.pickle", "wb") as file:
+    pickle.dump(report, file)
+
+report = classification_report(
+    [spgs[i] for i in val_y_random],
+    [spgs[i] for i in prediction_random],
+    output_dict=True,
+)
+with open(out_base + "classification_report_random.pickle", "wb") as file:
     pickle.dump(report, file)
 
 if run_analysis_after_run:
