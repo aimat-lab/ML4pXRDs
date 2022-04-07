@@ -72,7 +72,7 @@ if __name__ == "__main__":
     counter_shown_random_rightly = 0
     counter_shown_random_falsely = 0
 
-    show_sample_xrds = False
+    show_sample_xrds = True
     # xrds_to_show = 200 # TODO: Change back
     xrds_to_show = 10**9  # show them all
     show_individual = False

@@ -8,8 +8,8 @@ if __name__ == "__main__":
     if True:
 
         report = classification_report(
-            [1, 2, 3, 4, 5, 6, 7, 2, 5, 6, 3, 6, 7, 1, 2, 1, 3, 6, 4],
-            [1, 2, 3, 4, 3, 5, 7, 3, 5, 6, 2, 4, 2, 1, 2, 3, 1, 6, 4],
+            [1, 2, 3, 4, 5, 6, 10, 2, 5, 6, 3, 6, 7, 1, 2, 1, 3, 6, 4],
+            [1, 2, 3, 4, 3, 5, 10, 3, 5, 6, 2, 4, 2, 1, 2, 3, 1, 6, 4],
             output_dict=True,
         )
 
@@ -37,9 +37,9 @@ if __name__ == "__main__":
         f1_scores.append(f1_score)
 
     plt.figure()
-    plt.plot(spgs, precisions, label="precision")
-    plt.plot(spgs, recalls, label="recall")
-    plt.plot(spgs, f1_scores, label="f1-score")
+    plt.scatter(spgs, precisions, label="precision")
+    plt.scatter(spgs, recalls, label="recall")
+    plt.scatter(spgs, f1_scores, label="f1-score")
     plt.gca().set_xticks(list(range(min(spgs), max(spgs) + 1)))
     plt.legend()
     plt.show()
