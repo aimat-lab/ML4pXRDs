@@ -1078,6 +1078,10 @@ print(out_base)
 print("Classification report softmax:")
 print(classification_report(val_y_match, prediction_match))
 
+report = classification_report(val_y_match, prediction_match, output_dict=True)
+with open(out_base + "classification_report.pickle", "wb") as file:
+    pickle.dump(report, file)
+
 if run_analysis_after_run:
 
     print("Starting analysis now...", flush=True)
