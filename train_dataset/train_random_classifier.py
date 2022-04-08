@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 
-tag = "spgs-1:230:3_huge_size"
+tag = "spgs-100-230_huge_size"
 description = "Use element repetition strategy."
 
 if len(sys.argv) > 1:
@@ -114,7 +114,7 @@ if local:
 
 # spgs = list(range(10, 21))
 # spgs = list(range(150, 231))
-spgs = list(range(1, 231, 3))
+spgs = list(range(100, 231))
 
 # as Park:
 # start_angle, end_angle, N = 10, 110, 10001
