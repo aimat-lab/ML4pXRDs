@@ -72,7 +72,7 @@ if __name__ == "__main__":
     counter_shown_random_rightly = 0
     counter_shown_random_falsely = 0
 
-    show_sample_xrds = False
+    show_sample_xrds = True
     # xrds_to_show = 200 # TODO: Change back
     xrds_to_show = 10**9  # show them all
     show_individual = False
@@ -391,6 +391,8 @@ if __name__ == "__main__":
     icsd_falsely_chemical_ordering = []
     icsd_falsely_volumes_sum_of_intensities = []
     icsd_falsely_COM = []
+    icsd_falsely_max_unscaled_intensity = []
+    icsd_falsely_max_unscaled_intensity_weighted = []
 
     icsd_rightly_crystals = []
     icsd_rightly_volumes = []
@@ -419,6 +421,8 @@ if __name__ == "__main__":
     icsd_rightly_chemical_ordering = []
     icsd_rightly_volumes_sum_of_intensities = []
     icsd_rightly_COM = []
+    icsd_rightly_max_unscaled_intensity = []
+    icsd_rightly_max_unscaled_intensity_weighted = []
 
     random_rightly_volumes = []
     random_rightly_angles = []
@@ -444,6 +448,8 @@ if __name__ == "__main__":
     random_rightly_chemical_ordering = []
     random_rightly_volumes_sum_of_intensities = []
     random_rightly_COM = []
+    random_rightly_max_unscaled_intensity = []
+    random_rightly_max_unscaled_intensity_weighted = []
 
     random_falsely_volumes = []
     random_falsely_angles = []
@@ -469,6 +475,8 @@ if __name__ == "__main__":
     random_falsely_chemical_ordering = []
     random_falsely_volumes_sum_of_intensities = []
     random_falsely_COM = []
+    random_falsely_max_unscaled_intensity = []
+    random_falsely_max_unscaled_intensity_weighted = []
 
     if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
 
@@ -558,7 +566,12 @@ if __name__ == "__main__":
                 and counter_xrds_icsd_falsely < total_xrds_icsd_falsely
                 and index not in falsely_icsd_already_processed
             ):
-                patterns, angles, intensities = get_xy_patterns(
+                (
+                    patterns,
+                    angles,
+                    intensities,
+                    max_unscaled_intensity_angle,
+                ) = get_xy_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
@@ -567,6 +580,7 @@ if __name__ == "__main__":
                     False,
                     False,
                     True,  # return angles and intensities
+                    True,  # return max_unscaled_intensity_angle
                 )
                 pattern = patterns[0]
                 icsd_falsely_volumes_sum_of_intensities.append(
@@ -575,6 +589,12 @@ if __name__ == "__main__":
                 icsd_falsely_COM.append(
                     np.sum(np.array(angles) * np.array(intensities))
                     / np.sum(intensities)
+                )
+                icsd_falsely_max_unscaled_intensity.append(
+                    max_unscaled_intensity_angle[0]
+                )
+                icsd_falsely_max_unscaled_intensity_weighted.append(
+                    max_unscaled_intensity_angle[0] * max_unscaled_intensity_angle[1]
                 )
 
                 if show_individual:
@@ -751,7 +771,12 @@ if __name__ == "__main__":
                 and index not in rightly_icsd_already_processed
             ):
 
-                patterns, angles, intensities = get_xy_patterns(
+                (
+                    patterns,
+                    angles,
+                    intensities,
+                    max_unscaled_intensity_angle,
+                ) = get_xy_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
@@ -760,6 +785,7 @@ if __name__ == "__main__":
                     False,
                     False,
                     True,  # return angles and intensities
+                    True,
                 )
                 pattern = patterns[0]
                 icsd_rightly_volumes_sum_of_intensities.append(
@@ -768,6 +794,12 @@ if __name__ == "__main__":
                 icsd_rightly_COM.append(
                     np.sum(np.array(angles) * np.array(intensities))
                     / np.sum(intensities)
+                )
+                icsd_rightly_max_unscaled_intensity.append(
+                    max_unscaled_intensity_angle[0]
+                )
+                icsd_rightly_max_unscaled_intensity_weighted.append(
+                    max_unscaled_intensity_angle[0] * max_unscaled_intensity_angle[1]
                 )
 
                 if show_individual:
@@ -934,7 +966,12 @@ if __name__ == "__main__":
                 show_sample_xrds
                 and counter_xrds_random_falsely < total_xrds_random_falsely
             ):
-                patterns, angles, intensities = get_xy_patterns(
+                (
+                    patterns,
+                    angles,
+                    intensities,
+                    max_unscaled_intensity_angle,
+                ) = get_xy_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
@@ -943,6 +980,7 @@ if __name__ == "__main__":
                     False,
                     False,
                     True,  # return angles and intensities
+                    True,
                 )
                 pattern = patterns[0]
                 random_falsely_volumes_sum_of_intensities.append(
@@ -951,6 +989,12 @@ if __name__ == "__main__":
                 random_falsely_COM.append(
                     np.sum(np.array(angles) * np.array(intensities))
                     / np.sum(intensities)
+                )
+                random_falsely_max_unscaled_intensity.append(
+                    max_unscaled_intensity_angle[0]
+                )
+                random_falsely_max_unscaled_intensity_weighted.append(
+                    max_unscaled_intensity_angle[0] * max_unscaled_intensity_angle[1]
                 )
 
                 if show_individual:
@@ -1115,7 +1159,12 @@ if __name__ == "__main__":
                 show_sample_xrds
                 and counter_xrds_random_rightly < total_xrds_random_rightly
             ):
-                patterns, angles, intensities = get_xy_patterns(
+                (
+                    patterns,
+                    angles,
+                    intensities,
+                    max_unscaled_intensity_angle,
+                ) = get_xy_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
@@ -1124,6 +1173,7 @@ if __name__ == "__main__":
                     False,
                     False,
                     True,  # return angles and intensities
+                    True,
                 )
                 pattern = patterns[0]
                 random_rightly_volumes_sum_of_intensities.append(
@@ -1132,6 +1182,12 @@ if __name__ == "__main__":
                 random_rightly_COM.append(
                     np.sum(np.array(angles) * np.array(intensities))
                     / np.sum(intensities)
+                )
+                random_rightly_max_unscaled_intensity.append(
+                    max_unscaled_intensity_angle[0]
+                )
+                random_rightly_max_unscaled_intensity_weighted.append(
+                    max_unscaled_intensity_angle[0] * max_unscaled_intensity_angle[1]
                 )
 
                 if show_individual:
@@ -2515,6 +2571,53 @@ if __name__ == "__main__":
             only_proportions=flag,
             min_is_zero=True,
         )
+
+    if show_sample_xrds:
+        for flag in [True, False]:
+            create_histogram(
+                "max_unscaled_intensity_angle",
+                [
+                    icsd_rightly_max_unscaled_intensity,
+                    icsd_falsely_max_unscaled_intensity,
+                ],
+                [
+                    random_rightly_max_unscaled_intensity,
+                    random_falsely_max_unscaled_intensity,
+                ],
+                r"max_unscaled_intensity_angle",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                min_is_zero=True,
+            )
+
+        for flag in [True, False]:
+            create_histogram(
+                "max_unscaled_intensity_angle_weighted",
+                [
+                    icsd_rightly_max_unscaled_intensity_weighted,
+                    icsd_falsely_max_unscaled_intensity_weighted,
+                ],
+                [
+                    random_rightly_max_unscaled_intensity_weighted,
+                    random_falsely_max_unscaled_intensity_weighted,
+                ],
+                r"max_unscaled_intensity_angle_weighted",
+                [
+                    "ICSD correctly classified",
+                    "ICSD incorrectly classified",
+                    "Random correctly classified",
+                    "Random incorrectly classified",
+                ],
+                is_int=False,
+                only_proportions=flag,
+                min_is_zero=True,
+            )
 
     if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
         for flag in [True, False]:
