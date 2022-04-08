@@ -102,6 +102,10 @@ if local:
     NO_workers = 8
     verbosity = 1
 
+git_revision_hash = (
+    subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
+)
+
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
 # spgs = [
@@ -886,9 +890,6 @@ tb_callback = keras.callbacks.TensorBoard(out_base + "tuner_tb")
 # log parameters to tensorboard
 file_writer = tf.summary.create_file_writer(out_base + "metrics")
 
-git_revision_hash = (
-    subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
-)
 
 params_txt = (
     f"tag: {tag}  \n"
