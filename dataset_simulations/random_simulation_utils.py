@@ -142,6 +142,17 @@ def track_job(job, update_interval=5):
         time.sleep(update_interval)
 
 
+def generate_pyxtal_object():
+
+    # pick a random factor
+    # calculate the sum of covalent volumes
+    # calculate actual volume of crystal (multiply by factor)
+    # generate a lattice with the given volume
+    # create the pyxtal object
+
+    pass
+
+
 def generate_structure(
     _,
     group_object,
@@ -172,6 +183,7 @@ def generate_structure(
     all_data_per_spg=None,
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
+    use_alternative_structure_generator_implementation=False,
 ):
 
     if use_icsd_statistics and (
@@ -580,128 +592,136 @@ def generate_structure(
         if verbose:
             print(f"Number of chosen wyckoff sites: {len(chosen_numbers)}")
 
-        my_crystal = pyxtal()
+        if not use_alternative_structure_generator_implementation:
 
-        try:
+            my_crystal = pyxtal()
 
-            if (
-                denseness_factors_density_per_spg is None
-                or denseness_factors_density_per_spg[group_object.number] is None
-            ):
-                # factor = np.random.uniform(0.7, 2.2)
-                factor = np.random.uniform(0.7, 2.13)
-            else:
-                while True:
-                    factor = denseness_factors_density_per_spg[
-                        group_object.number
-                    ].resample(1)[0, 0]
-
-                    if factor > 0.0:
-                        break
-
-            # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
-            volume_ok = my_crystal.from_random(
-                wyckoff_indices_per_specie=chosen_wyckoff_indices
-                if force_wyckoff_indices
-                else None,
-                use_given_wyckoff_sites=force_wyckoff_indices,
-                dim=3,
-                group=group_object,
-                species=chosen_elements,
-                numIons=chosen_numbers,
-                # sites=chosen_wyckoff_positions,
-                my_seed=seed,
-                # factor=1.1,
-                # factor=np.random.uniform(0.7, 5.0),
-                # factor=np.random.uniform(0.7, 3.0),
-                # factor=np.random.uniform(0.7, 1.2),
-                factor=factor,
-                do_distance_checks=do_distance_checks,
-                fixed_volume=fixed_volume,
-                do_merge_checks=do_merge_checks,
-                max_volume=max_volume,
-                max_count=5,
-            )
-
-            if not volume_ok:
-                tries_counter += 1
+            try:
 
                 if (
-                    not use_element_repetitions_instead_of_NO_wyckoffs
-                    and kde_per_spg is None
-                    and all_data_per_spg is None
+                    denseness_factors_density_per_spg is None
+                    or denseness_factors_density_per_spg[group_object.number] is None
                 ):
-                    print(
-                        f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
-                    )
-                elif all_data_per_spg is None:
-                    print(
-                        f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
-                    )
+                    # factor = np.random.uniform(0.7, 2.2)
+                    factor = np.random.uniform(0.7, 2.13)
                 else:
-                    print(f"Volume too high, regenerating.")
+                    while True:
+                        factor = denseness_factors_density_per_spg[
+                            group_object.number
+                        ].resample(1)[0, 0]
+
+                        if factor > 0.0:
+                            break
+
+                # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
+                volume_ok = my_crystal.from_random(
+                    wyckoff_indices_per_specie=chosen_wyckoff_indices
+                    if force_wyckoff_indices
+                    else None,
+                    use_given_wyckoff_sites=force_wyckoff_indices,
+                    dim=3,
+                    group=group_object,
+                    species=chosen_elements,
+                    numIons=chosen_numbers,
+                    # sites=chosen_wyckoff_positions,
+                    my_seed=seed,
+                    # factor=1.1,
+                    # factor=np.random.uniform(0.7, 5.0),
+                    # factor=np.random.uniform(0.7, 3.0),
+                    # factor=np.random.uniform(0.7, 1.2),
+                    factor=factor,
+                    do_distance_checks=do_distance_checks,
+                    fixed_volume=fixed_volume,
+                    do_merge_checks=do_merge_checks,
+                    max_volume=max_volume,
+                    max_count=5,
+                )
+
+                if not volume_ok:
+                    tries_counter += 1
+
+                    if (
+                        not use_element_repetitions_instead_of_NO_wyckoffs
+                        and kde_per_spg is None
+                        and all_data_per_spg is None
+                    ):
+                        print(
+                            f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
+                        )
+                    elif all_data_per_spg is None:
+                        print(
+                            f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
+                        )
+                    else:
+                        print(f"Volume too high, regenerating.")
+
+                    continue
+
+            except Exception as ex:
+                print(flush=True)
+                print(ex, flush=True)
+                print(group_object.number, flush=True)
+                print(chosen_elements, flush=True)
+                print(chosen_numbers, flush=True)
+                print(flush=True)
+
+                tries_counter += 1
 
                 continue
 
-        except Exception as ex:
-            print(flush=True)
-            print(ex, flush=True)
-            print(group_object.number, flush=True)
-            print(chosen_elements, flush=True)
-            print(chosen_numbers, flush=True)
-            print(flush=True)
+            if not my_crystal.valid:
+                print(flush=True)
+                print(
+                    "Generated a non-valid crystal. Something went wrong.", flush=True
+                )
+                print(group_object.number, flush=True)
+                print(chosen_elements, flush=True)
+                print(chosen_numbers, flush=True)
+                print(flush=True)
 
-            tries_counter += 1
+                tries_counter += 1
 
-            continue
+                continue
 
-        if not my_crystal.valid:
-            print(flush=True)
-            print("Generated a non-valid crystal. Something went wrong.", flush=True)
-            print(group_object.number, flush=True)
-            print(chosen_elements, flush=True)
-            print(chosen_numbers, flush=True)
-            print(flush=True)
+            # This is by no means the fastest way to implement this.
+            # But since this is just for understanding the problem / testing, it is fine.
+            if use_coordinates_directly and all_data_per_spg is not None:
 
-            tries_counter += 1
+                # potentially useful in the future: chosen_entry["lattice_parameters"]
 
-            continue
+                occupations_copy = chosen_entry["occupations"].copy()
 
-        # This is by no means the fastest way to implement this.
-        # But since this is just for understanding the problem / testing, it is fine.
-        if use_coordinates_directly and all_data_per_spg is not None:
+                for atom in my_crystal.atom_sites:
 
-            # potentially useful in the future: chosen_entry["lattice_parameters"]
+                    wyckoff_name_atom = str(atom.wp.multiplicity) + atom.wp.letter
+                    el_atom = atom.specie
 
-            occupations_copy = chosen_entry["occupations"].copy()
+                    for i, item in enumerate(occupations_copy):
+                        el = item[0]
+                        wyckoff_name = item[1]
 
-            for atom in my_crystal.atom_sites:
+                        if el == el_atom and wyckoff_name == wyckoff_name_atom:
 
-                wyckoff_name_atom = str(atom.wp.multiplicity) + atom.wp.letter
-                el_atom = atom.specie
+                            atom.position = item[2]
+                            atom.update()  # important
 
-                for i, item in enumerate(occupations_copy):
-                    el = item[0]
-                    wyckoff_name = item[1]
+                            # Not really needed:
+                            # new_site.coords = filtered_coords(new_site.coords)
 
-                    if el == el_atom and wyckoff_name == wyckoff_name_atom:
+                            del occupations_copy[i]
+                            break
 
-                        atom.position = item[2]
-                        atom.update()  # important
+                assert len(occupations_copy) == 0
 
-                        # Not really needed:
-                        # new_site.coords = filtered_coords(new_site.coords)
+            if use_lattice_paras_directly and all_data_per_spg is not None:
 
-                        del occupations_copy[i]
-                        break
+                my_crystal.lattice.set_para(
+                    chosen_entry["lattice_parameters"], radians=True
+                )
 
-            assert len(occupations_copy) == 0
+        else:
 
-        if use_lattice_paras_directly and all_data_per_spg is not None:
-
-            my_crystal.lattice.set_para(
-                chosen_entry["lattice_parameters"], radians=True
-            )
+            my_crystal = generate_pyxtal_object()
 
         try:
 
