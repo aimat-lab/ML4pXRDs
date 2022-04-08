@@ -122,8 +122,8 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:
-        to_process = 100
+    if True:
+        to_process = 10
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
         random_variations = random_variations[0:to_process]
@@ -2577,12 +2577,28 @@ if __name__ == "__main__":
             create_histogram(
                 "max_unscaled_intensity_angle",
                 [
-                    icsd_rightly_max_unscaled_intensity,
-                    icsd_falsely_max_unscaled_intensity,
+                    [
+                        item
+                        for item in icsd_rightly_max_unscaled_intensity
+                        if item < 10**11
+                    ],
+                    [
+                        item
+                        for item in icsd_falsely_max_unscaled_intensity
+                        if item < 10**11
+                    ],
                 ],
                 [
-                    random_rightly_max_unscaled_intensity,
-                    random_falsely_max_unscaled_intensity,
+                    [
+                        item
+                        for item in random_rightly_max_unscaled_intensity
+                        if item < 10**11
+                    ],
+                    [
+                        item
+                        for item in random_falsely_max_unscaled_intensity
+                        if item < 10**11
+                    ],
                 ],
                 r"max_unscaled_intensity_angle",
                 [
@@ -2594,18 +2610,35 @@ if __name__ == "__main__":
                 is_int=False,
                 only_proportions=flag,
                 min_is_zero=True,
+                fixed_y_max=10**10,
             )
 
         for flag in [True, False]:
             create_histogram(
                 "max_unscaled_intensity_angle_weighted",
                 [
-                    icsd_rightly_max_unscaled_intensity_weighted,
-                    icsd_falsely_max_unscaled_intensity_weighted,
+                    [
+                        item
+                        for item in icsd_rightly_max_unscaled_intensity_weighted
+                        if item < 10**11
+                    ],
+                    [
+                        item
+                        for item in icsd_falsely_max_unscaled_intensity_weighted
+                        if item < 10**11
+                    ],
                 ],
                 [
-                    random_rightly_max_unscaled_intensity_weighted,
-                    random_falsely_max_unscaled_intensity_weighted,
+                    [
+                        item
+                        for item in random_rightly_max_unscaled_intensity_weighted
+                        if item < 10**11
+                    ],
+                    [
+                        item
+                        for item in random_falsely_max_unscaled_intensity_weighted
+                        if item < 10**11
+                    ],
                 ],
                 r"max_unscaled_intensity_angle_weighted",
                 [
