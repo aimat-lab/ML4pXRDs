@@ -1202,7 +1202,7 @@ def load_dataset_info():
         #    spg == 2 or spg == 15 or spg == 14 or spg == 129 or spg == 176 or spg == 104
         # ):
         if (
-            True
+            False
             and spg in list(range(1, 231, 3))
             and denseness_factors_density is not None
         ):

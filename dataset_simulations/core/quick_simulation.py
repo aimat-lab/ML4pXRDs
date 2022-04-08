@@ -124,13 +124,15 @@ def __get_pattern_optimized(
             x.append(k)
             y.append(v)
 
-    y = np.array(y) / max(y)
-
     return x, y
 
 
 def get_pattern_optimized(
-    structure, wavelength, two_theta_range=(0, 90), do_print=False
+    structure,
+    wavelength,
+    two_theta_range=(0, 90),
+    do_print=False,
+    return_max_unscaled_intensity_angle=False,
 ):
 
     latt = structure.lattice
@@ -189,7 +191,7 @@ def get_pattern_optimized(
     recip_pts_sorted = list(map(list, zip(*recip_pts_sorted)))
 
     start = time.time()
-    result = __get_pattern_optimized(
+    x, y = __get_pattern_optimized(
         wavelength,
         zs,
         coeffs,
@@ -204,7 +206,18 @@ def get_pattern_optimized(
     if do_print:
         print("Took {} s for numba portion.".format(stop - start))
 
-    return result
+    if not return_max_unscaled_intensity_angle:
+        return x, np.array(y) / max(y)
+    else:
+        index = np.argmax(y)
+        max_unscaled_intensity = y[index]
+        max_unscaled_intensity_angle = x[index]
+
+        return (
+            x,
+            np.array(y) / max(y),
+            (max_unscaled_intensity, max_unscaled_intensity_angle),
+        )
 
 
 ###################################### NON-OPTIMIZED #############################################
@@ -446,6 +459,7 @@ def get_xy_patterns(
     do_print=False,
     return_corn_sizes=False,
     return_angles_intensities=False,
+    return_max_unscaled_intensity_angle=False,
 ):
 
     if return_corn_sizes:
@@ -453,9 +467,16 @@ def get_xy_patterns(
 
     if do_print:
         start = time.time()
-    angles, intensities = get_pattern_optimized(
-        structure, wavelength, two_theta_range, False
-    )
+
+    if not return_max_unscaled_intensity_angle:
+        angles, intensities = get_pattern_optimized(
+            structure, wavelength, two_theta_range, False
+        )
+    else:
+        angles, intensities, max_unscaled_intensity_angle = get_pattern_optimized(
+            structure, wavelength, two_theta_range, False, True
+        )
+
     if do_print:
         timings_simulation_pattern.append(time.time() - start)
 
@@ -481,14 +502,32 @@ def get_xy_patterns(
 
     if not return_corn_sizes:
         if return_angles_intensities:
-            return results, angles, intensities
+            if not return_max_unscaled_intensity_angle:
+                return results, angles, intensities
+            else:
+                return results, angles, intensities, max_unscaled_intensity_angle
         else:
-            return results
+            if not return_max_unscaled_intensity_angle:
+                return results
+            else:
+                return results, max_unscaled_intensity_angle
     else:
         if return_angles_intensities:
-            return results, corn_sizes, angles, intensities
+            if not return_max_unscaled_intensity_angle:
+                return results, corn_sizes, angles, intensities
+            else:
+                return (
+                    results,
+                    corn_sizes,
+                    angles,
+                    intensities,
+                    max_unscaled_intensity_angle,
+                )
         else:
-            return results, corn_sizes
+            if not return_max_unscaled_intensity_angle:
+                return results, corn_sizes
+            else:
+                return results, corn_sizes, max_unscaled_intensity_angle
 
 
 def get_random_xy_patterns(
@@ -973,18 +1012,22 @@ if __name__ == "__main__":
         """
 
     if True:
+
         (
             probability_per_spg_per_element,
-            probability_per_spg_per_wyckoff,
+            probability_per_spg_per_element_per_wyckoff,
             NO_wyckoffs_prob_per_spg,
             corrected_labels,
             files_to_use_for_test_set,
             represented_spgs,  # spgs represented in the statistics dataset (70%)
             NO_unique_elements_prob_per_spg,
-            NO_repetitions_prob_per_spg,
+            NO_repetitions_prob_per_spg_per_element,
+            denseness_factors_density_per_spg,
+            kde_per_spg,
+            all_data_per_spg,
         ) = load_dataset_info()
 
-        patterns, labels = get_random_xy_patterns(
+        result = get_random_xy_patterns(
             [15],
             1,
             1.5,
@@ -999,7 +1042,7 @@ if __name__ == "__main__":
             False,
             True,
             probability_per_spg_per_element,
-            probability_per_spg_per_wyckoff,
+            probability_per_spg_per_element_per_wyckoff,
             7000,
             NO_wyckoffs_prob_per_spg,
             True,
@@ -1007,5 +1050,7 @@ if __name__ == "__main__":
             True,
             True,
             NO_unique_elements_prob_per_spg,
-            NO_repetitions_prob_per_spg,
+            NO_repetitions_prob_per_spg_per_element,
         )
+
+        print()
