@@ -1,8 +1,43 @@
+# Parts of this (especially the lattice generation) originate from the pyxtal codebase.
+# https://github.com/qzhu2017/PyXtal
+
+
 import numba
 import numpy as np
+from pyxtal.database.element import Element
 
 deg = 180.0 / np.pi
 rad = np.pi / 180.0
+
+
+@numba.njit(cache=True)
+def angle(v1, v2, radians=True):
+    """
+    Calculate the angle (in radians) between two vectors.
+
+    Args:
+        v1: a 1x3 vector
+        v2: a 1x3 vector
+        radians: whether to return angle in radians (default) or degrees
+
+    Returns:
+        the angle in radians between the two vectors
+    """
+    v1 = np.real(v1)
+    v2 = np.real(v2)
+    dot = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+    # if np.isclose(dot, 1.0):
+    if np.abs(dot - 1) < 1e-3:
+        a = 0
+    elif np.abs(dot + 1) < 1e-3:
+        a = np.pi
+    else:
+        a = np.arccos(dot)
+
+    if radians:
+        return a
+    else:
+        return a * deg
 
 
 @numba.njit(cache=True)
@@ -110,6 +145,99 @@ def para2matrix(cell_para, radians=True, format="upper"):
 
 
 @numba.njit(cache=True)
+def random_shear_matrix(width=1.0, unitary=False):
+    """
+    Generate a random symmetric shear matrix with Gaussian elements. If unitary
+    is True, normalize to determinant 1
+
+    Args:
+        width: the width of the normal distribution to use when choosing values.
+            Passed to np.random.normal
+        unitary: whether or not to normalize the matrix to determinant 1
+
+    Returns:
+        a 3x3 numpy array of floats
+    """
+
+    mat = np.zeros((3, 3))
+    determinant = 0
+    while determinant == 0:
+        a, b, c = (
+            np.random.normal(0.0, width),
+            np.random.normal(0.0, width),
+            np.random.normal(0.0, width),
+        )
+        mat = np.array([[1, a, b], [a, 1, c], [b, c, 1]])
+        determinant = np.linalg.det(mat)
+    if unitary:
+        # new = mat / np.cbrt(np.linalg.det(mat))
+        new = mat / (np.linalg.det(mat)) ** (1 / 3)
+        return new
+    else:
+        return mat
+
+
+@numba.njit(cache=True)
+def random_vector(width=0.35, unit=False):
+    """
+    Generate a random vector for lattice constant generation. The ratios between
+    x, y, and z of the returned vector correspond to the ratios between a, b,
+    and c. Results in a Gaussian distribution of the natural log of the ratios.
+
+    Args:
+        minvec: the bottom-left-back minimum point which can be chosen
+        maxvec: the top-right-front maximum point which can be chosen
+        width: the width of the normal distribution to use when choosing values.
+            Passed to np.random.normal
+        unit: whether or not to normalize the vector to determinant 1
+
+    Returns:
+        a 1x3 numpy array of floats
+    """
+
+    vec = np.array(
+        [
+            np.exp(np.random.normal(0.0, width)),
+            np.exp(np.random.normal(0.0, width)),
+            np.exp(np.random.normal(0.0, width)),
+        ],
+        # dtype=numba.types.float64,
+    )
+    if unit:
+        return vec / np.linalg.norm(vec)
+    else:
+        return vec
+
+
+@numba.njit(cache=True)
+def gaussian(min, max, sigma=3.0):
+    """
+    Choose a random number from a Gaussian probability distribution centered
+    between min and max. sigma is the number of standard deviations that min
+    and max are away from the center. Thus, sigma is also the largest possible
+    number of standard deviations corresponding to the returned value. sigma=2
+    corresponds to a 95.45% probability of choosing a number between min and
+    max.
+
+    Args:
+        min: the minimum acceptable value
+        max: the maximum acceptable value
+        sigma: the number of standard deviations between the center and min or max
+
+    Returns:
+        a value chosen randomly between min and max
+    """
+
+    center = (max + min) * 0.5
+    delta = np.fabs(max - min) * 0.5
+    ratio = delta / sigma
+    while True:
+        x = np.random.normal(scale=ratio, loc=center)
+        if x > min and x < max:
+            return x
+
+
+@numba.njit(cache=True)
 def generate_lattice(
     ltype,
     volume,
@@ -204,6 +332,7 @@ def generate_lattice(
         else:
             max_l = kwargs["max_l"]
         """
+
         # Defining cell dimensions not currently supported!
         min_l = minvec
         mid_l = minvec
@@ -303,16 +432,20 @@ def generate_pyxtal_object(
         volume += numIon * 4 / 3 * np.pi * r**3
     volume = factor * volume
 
-    # TODO: Think about this again!
+    # TODO: Think about this again! Do we really need this?
+    min_density = 0.75
     # make sure the volume is not too small
-    if volume / sum(multiplicities) < self.min_density:
-        volume = sum(multiplicities) * self.min_density
+    if volume / sum(multiplicities) < min_density:
+        volume = sum(multiplicities) * min_density
         print("Volume has been scaled to match minimum density.")
 
     (
         paras,
         lattice_matrix,
     ) = reset_matrix(lattice_ltype, volume)
+    # TODO: Get lattice type (look how pyxtal handles this in "Lattice" constructor)
 
-    # TODO: Handle > max_volume
+    # TODO: Handle > max_volume (return like the original implementation also did)
+
     # TODO: Handle lattice re-generation
+    # Understand what the "merge" call is doing in the wyckoff object
