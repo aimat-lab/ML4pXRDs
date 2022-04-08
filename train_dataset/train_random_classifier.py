@@ -24,6 +24,8 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
+import gc
+import psutil
 
 tag = "spgs-100-230_huge_size"
 description = "Use element repetition strategy."
@@ -491,6 +493,18 @@ queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 # all_data_per_spg_handle = ray.put(all_data_per_spg)
 
 
+def auto_garbage_collect(pct=93.0):
+    """
+    auto_garbage_collection - Call the garbage collection if memory used is greater than 80% of total available memory.
+                              This is called to deal with an issue in Ray not freeing up used memory.
+
+        pct - Default value of 80%.  Amount of memory in use that triggers the garbage collection call.
+    """
+    if psutil.virtual_memory().percent >= pct:
+        gc.collect()
+    return
+
+
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_with_additional(
     spgs,
@@ -542,6 +556,8 @@ def batch_generator_with_additional(
 
     patterns = np.array(patterns)
     labels = np.array(labels)
+
+    auto_garbage_collect()
 
     return patterns, labels, structures, corn_sizes
 
@@ -609,6 +625,8 @@ def batch_generator_queue(
             patterns = np.expand_dims(patterns, axis=2)
 
             labels = np.array(labels)
+
+            auto_garbage_collect()
 
             queue.put((patterns, labels))  # blocks if queue is full, which is good
 
@@ -1008,6 +1026,7 @@ class CustomSequence(keras.utils.Sequence):
         start = time.time()
         result = queue.get()
         log_wait_timings.append(time.time() - start)
+        auto_garbage_collect()
         return result
 
 
