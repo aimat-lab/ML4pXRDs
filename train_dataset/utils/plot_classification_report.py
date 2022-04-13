@@ -17,7 +17,8 @@ if __name__ == "__main__":
         #    output_dict=True,
         # )
 
-        path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-04-2022_14-55-52"
+        path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-04-2022_14-55-52"  # 1-230
+        # path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/05-04-2022_22-08-30"
 
     else:
 
@@ -49,12 +50,7 @@ if __name__ == "__main__":
             recalls.append(recall)
             f1_scores.append(f1_score)
 
-        return [
-            np.array(item)
-            for item in zip(
-                *sorted(zip(spgs, precisions, recalls, f1_scores), key=lambda x: x[0])
-            )
-        ]
+        return spgs, precisions, recalls, f1_scores
 
     spgs_match, precisions_match, recalls_match, f1_scores_match = process_report(
         report_match
@@ -63,21 +59,12 @@ if __name__ == "__main__":
         report_random
     )
 
-    if False:
-        plt.figure()
-        plt.plot(spgs_match, f1_scores_match, label="Match")
-        plt.plot(spgs_random, f1_scores_random, label="Random")
-        plt.xlabel("spg")
-        plt.ylabel("f1-score")
-        plt.legend()
-        plt.show()
+    assert spgs_match == spgs_random
 
-        plt.figure()
-        plt.plot(spgs_match, f1_scores_random - f1_scores_match, label="random - match")
-        plt.xlabel("spg")
-        plt.ylabel("f1-score")
-        plt.legend()
-        plt.show()
+    # Switch between possible metrics:
+    metrics_random = f1_scores_random
+    metrics_match = f1_scores_match
+    metric_name = "f1_scores"
 
     (
         probability_per_spg_per_element,
@@ -106,13 +93,13 @@ if __name__ == "__main__":
         average_NO_wyckoffs.append(average)
 
     plt.figure()
-    hd0 = plt.plot(spgs_match, recalls_match, label="Match")
-    hd1 = plt.plot(spgs_random, recalls_random, label="Random")
+    hd0 = plt.plot(spgs_match, metrics_match, label="Match")
+    hd1 = plt.plot(spgs_random, metrics_random, label="Random")
     hd2 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
     for x in [1, 3, 16, 75, 143, 168, 195]:
         plt.axvline(x, color="r")
     plt.xlabel("spg")
-    plt.ylabel("f1-score")
+    plt.ylabel(metric_name)
     ax2 = plt.gca().twinx()
     hd3 = ax2.plot(
         spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs", color="r"
@@ -122,12 +109,16 @@ if __name__ == "__main__":
     plt.show()
 
     plt.figure()
-    hd0 = plt.plot(spgs_match, recalls_random - recalls_match, label="random - match")
+    hd0 = plt.plot(
+        spgs_match,
+        np.array(metrics_random) - np.array(metrics_match),
+        label="random - match",
+    )
     hd1 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
     for x in [1, 3, 16, 75, 143, 168, 195]:
         plt.axvline(x, color="r")
     plt.xlabel("spg")
-    plt.ylabel("delta f1-score")
+    plt.ylabel("delta " + metric_name)
     ax2 = plt.gca().twinx()
     hd2 = ax2.plot(
         spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs", color="r"
