@@ -106,24 +106,32 @@ if __name__ == "__main__":
         average_NO_wyckoffs.append(average)
 
     plt.figure()
-    plt.plot(spgs_match, recalls_match, label="Match")
-    plt.plot(spgs_random, recalls_random, label="Random")
-    plt.plot(spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs")
-    plt.plot(spgs_match, np.zeros(len(spgs_match)))
+    hd0 = plt.plot(spgs_match, recalls_match, label="Match")
+    hd1 = plt.plot(spgs_random, recalls_random, label="Random")
+    hd2 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
     for x in [1, 3, 16, 75, 143, 168, 195]:
         plt.axvline(x, color="r")
     plt.xlabel("spg")
     plt.ylabel("f1-score")
-    plt.legend()
+    ax2 = plt.gca().twinx()
+    hd3 = ax2.plot(
+        spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs", color="r"
+    )
+    ax2.set_ylabel("average NO_wyckoffs")
+    plt.legend(handles=hd0 + hd1 + hd3)
     plt.show()
 
     plt.figure()
-    plt.plot(spgs_match, recalls_random - recalls_match, label="random - match")
-    plt.plot(spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs")
-    plt.plot(spgs_match, np.zeros(len(spgs_match)))
+    hd0 = plt.plot(spgs_match, recalls_random - recalls_match, label="random - match")
+    hd1 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
     for x in [1, 3, 16, 75, 143, 168, 195]:
         plt.axvline(x, color="r")
     plt.xlabel("spg")
     plt.ylabel("delta f1-score")
-    plt.legend()
+    ax2 = plt.gca().twinx()
+    hd2 = ax2.plot(
+        spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs", color="r"
+    )
+    ax2.set_ylabel("average NO_wyckoffs")
+    plt.legend(handles=hd0 + hd2)
     plt.show()
