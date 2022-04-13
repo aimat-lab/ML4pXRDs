@@ -37,13 +37,17 @@ if __name__ == "__main__":
 
         if len(spgs_to_analyze) == 0:
             spgs_to_analyze = None  # all spgs
+        elif len(spgs_to_analyze) == 1:
+            tag += "/" + str(spgs_to_analyze[0])
         else:
-            tag += "/" + "_".join([str(spg) for spg in spgs_to_analyze])
+            tag += "/all"
 
     else:
 
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
+
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
         # tag = "magpie_10-03-2022_14-34-51"
         # tag = "volumes_densenesses_4-spg"
         # tag = "look_at_structures"
@@ -52,7 +56,7 @@ if __name__ == "__main__":
         # tag = "4-spg-2D-scatters"
         # tag = "volumes_densenesses_2-spg_test/15"
 
-        tag = "2-spg-xrds"
+        tag = "2-spg-not-per-element"
 
         # spgs_to_analyze = [14, 104, 176, 129]
         spgs_to_analyze = [2, 15]
@@ -65,7 +69,7 @@ if __name__ == "__main__":
 
     analyse_complexity_ordering = False
 
-    show_sample_structures = False
+    show_sample_structures = True
     samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
@@ -124,7 +128,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if True:
+    if False:
         to_process = 10
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
