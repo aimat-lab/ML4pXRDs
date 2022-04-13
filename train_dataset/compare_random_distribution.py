@@ -107,6 +107,8 @@ if __name__ == "__main__":
     with open(in_base + "icsd_data.pickle", "rb") as file:
         icsd_crystals, icsd_labels, icsd_variations, icsd_metas = pickle.load(file)
 
+    n_patterns_per_crystal = len(icsd_variations[0])
+
     with open(in_base + "random_data.pickle", "rb") as file:
         (
             random_crystals,
@@ -540,7 +542,7 @@ if __name__ == "__main__":
 
     for i in falsely_indices_icsd:
 
-        index = int(i / 5)
+        index = int(i / n_patterns_per_crystal)
 
         if index < len(icsd_crystals) and (
             spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze
@@ -744,7 +746,7 @@ if __name__ == "__main__":
 
     for i in rightly_indices_icsd:
 
-        index = int(i / 5)
+        index = int(i / n_patterns_per_crystal)
 
         if index < len(icsd_crystals) and (
             spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze

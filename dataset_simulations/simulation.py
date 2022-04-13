@@ -352,7 +352,13 @@ class Simulation:
         with open(os.path.join(data_dir, f"intensities_{i}.npy"), "wb") as pickle_file:
             pickle.dump(self.sim_intensities[start:end], pickle_file)
 
-    def load(self, start=None, stop=None, load_patterns_angles_intensities=True):
+    def load(
+        self,
+        start=None,
+        stop=None,
+        load_patterns_angles_intensities=True,
+        load_only_N_patterns_each=None,
+    ):
 
         self.reset_simulation_status()
 
@@ -429,10 +435,22 @@ class Simulation:
         for file in variations_files[first_index:last_index]:
             self.sim_variations.extend(np.load(file, allow_pickle=True))
 
+        if load_only_N_patterns_each is not None:
+            self.sim_variations = [
+                item[0:load_only_N_patterns_each] for item in self.sim_variations
+            ]
+
         if load_patterns_angles_intensities:
 
             for file in patterns_files[first_index:last_index]:
-                self.sim_patterns.extend(np.load(file, allow_pickle=True))
+                if load_only_N_patterns_each is not None:
+                    self.sim_patterns.extend(
+                        np.load(file, allow_pickle=True, mmap_mode="r")[
+                            :, 0:load_only_N_patterns_each
+                        ]
+                    )
+                else:
+                    self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
             for file in angles_files[first_index:last_index]:
                 with open(file, "rb") as pickle_file:
@@ -778,4 +796,6 @@ if __name__ == "__main__":
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )
 
-    data = simulation.get_content_types()
+    simulation.output_dir = "./patterns/icsd_vecsei/"
+
+    simulation.load(0, 2, True, 2)

@@ -95,6 +95,8 @@ learning_rate = 0.0001
 
 use_denseness_factors_density = True
 
+load_only_N_patterns_each_test = 2  # None possible
+
 verbosity = 2
 
 local = False
@@ -216,7 +218,9 @@ else:  # local
     icsd_sim_test.output_dir = path_to_patterns
 
 icsd_sim_test.load(
-    start=0, stop=(files_to_use_for_test_set if False else 20) if not local else 2
+    start=0,
+    stop=files_to_use_for_test_set if not local else 2,
+    load_only_N_patterns_each=load_only_N_patterns_each_test,
 )  # to not overflow the memory
 
 n_patterns_per_crystal = len(icsd_sim_test.sim_patterns[0])
@@ -700,11 +704,15 @@ print(
 )
 
 print("Sizes of validation sets:")
-print(f"all: {len(icsd_labels_all)} * 5")
-print(f"match: {len(icsd_labels_match)} * 5")
-print(f"match_inorganic: {len(icsd_labels_match_inorganic)} * 5")
-print(f"match_correct_spgs: {len(icsd_labels_match_corrected_labels)} * 5")
-print(f"match_correct_spgs_pure: {len(icsd_labels_match_corrected_labels_pure)} * 5")
+print(f"all: {len(icsd_labels_all)} * {n_patterns_per_crystal}")
+print(f"match: {len(icsd_labels_match)} * {n_patterns_per_crystal}")
+print(f"match_inorganic: {len(icsd_labels_match_inorganic)} * {n_patterns_per_crystal}")
+print(
+    f"match_correct_spgs: {len(icsd_labels_match_corrected_labels)} * {n_patterns_per_crystal}"
+)
+print(
+    f"match_correct_spgs_pure: {len(icsd_labels_match_corrected_labels_pure)} * {n_patterns_per_crystal}"
+)
 print(f"random: {len(results)}")
 
 val_x_random = []
@@ -923,6 +931,7 @@ params_txt = (
     f"use_coordinates_directly: {str(use_coordinates_directly)} \n \n \n"
     f"use_lattice_paras_directly: {str(use_lattice_paras_directly)} \n \n \n"
     f"use_icsd_structures_directly: {str(use_icsd_structures_directly)} \n \n \n"
+    f"load_only_N_patterns_each_test: {str(load_only_N_patterns_each_test)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
