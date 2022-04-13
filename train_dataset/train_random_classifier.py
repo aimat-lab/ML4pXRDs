@@ -61,12 +61,12 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-NO_workers = 127 + 127 + 10  # for int-nano cluster
+NO_workers = 127 + 127 + 8  # for int-nano cluster
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 
-queue_size = 200
-queue_size_tf = 100
+queue_size = 120
+queue_size_tf = 60
 
 # NO_random_batches = 20
 # NO_random_swipes = 1000  # make this smaller for the all-spgs run
@@ -144,7 +144,6 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     all_data_per_spg_tmp,
 ) = load_dataset_info()
 
-
 if not use_kde_per_spg:
     kde_per_spg = None
 
@@ -217,7 +216,7 @@ else:  # local
     icsd_sim_test.output_dir = path_to_patterns
 
 icsd_sim_test.load(
-    start=0, stop=files_to_use_for_test_set if not local else 2
+    start=0, stop=(files_to_use_for_test_set if False else 20) if not local else 2
 )  # to not overflow the memory
 
 n_patterns_per_crystal = len(icsd_sim_test.sim_patterns[0])
@@ -258,9 +257,9 @@ print(
 )
 
 icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
-icsd_labels_match_corrected_labels = (
-    corrected_labels if not local else corrected_labels[: len(icsd_labels_all)]
-)  # corrected labels from spglib
+icsd_labels_match_corrected_labels = corrected_labels[
+    : len(icsd_labels_all)
+]  # corrected labels from spglib
 icsd_crystals_match_corrected_labels = icsd_crystals_all.copy()
 icsd_variations_match_corrected_labels = icsd_variations_all.copy()
 icsd_metas_match_corrected_labels = icsd_metas_all.copy()
