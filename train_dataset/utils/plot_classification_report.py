@@ -1,5 +1,6 @@
 from concurrent.futures import process
 from sklearn.metrics import classification_report
+from dataset_simulations.random_simulation_utils import load_dataset_info
 import pickle
 import sys
 import matplotlib.pyplot as plt
@@ -78,9 +79,36 @@ if __name__ == "__main__":
         plt.legend()
         plt.show()
 
+    (
+        probability_per_spg_per_element,
+        probability_per_spg_per_element_per_wyckoff,
+        NO_wyckoffs_prob_per_spg,
+        corrected_labels,
+        files_to_use_for_test_set,
+        represented_spgs,
+        NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element,
+        denseness_factors_density_per_spg,
+        kde_per_spg,
+        all_data_per_spg_tmp,
+    ) = load_dataset_info()
+
+    average_NO_wyckoffs = []
+
+    for spg in spgs_match:
+        NO_wyckoffs_prob = NO_wyckoffs_prob_per_spg[spg]
+
+        average = 0
+
+        for i, NO_wyckoff in enumerate(range(1, len(NO_wyckoffs_prob) + 1)):
+            average += NO_wyckoff * NO_wyckoffs_prob[i]
+
+        average_NO_wyckoffs.append(average)
+
     plt.figure()
     plt.plot(spgs_match, recalls_match, label="Match")
     plt.plot(spgs_random, recalls_random, label="Random")
+    plt.plot(spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs")
     plt.plot(spgs_match, np.zeros(len(spgs_match)))
     for x in [1, 3, 16, 75, 143, 168, 195]:
         plt.axvline(x, color="r")
@@ -91,10 +119,11 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.plot(spgs_match, recalls_random - recalls_match, label="random - match")
+    plt.plot(spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs")
     plt.plot(spgs_match, np.zeros(len(spgs_match)))
     for x in [1, 3, 16, 75, 143, 168, 195]:
         plt.axvline(x, color="r")
     plt.xlabel("spg")
-    plt.ylabel("f1-score")
+    plt.ylabel("delta f1-score")
     plt.legend()
     plt.show()
