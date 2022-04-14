@@ -28,7 +28,7 @@ import gc
 import psutil
 from sklearn.preprocessing import StandardScaler
 
-tag = "2-spg-direct-coordinates-rerun-no-dropout"
+tag = "2-spg-normalized"
 description = ""
 
 if len(sys.argv) > 1:
@@ -84,15 +84,15 @@ do_symmetry_checks = True
 
 use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
-use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
-use_all_data_per_spg = True  # Overwrites all the previous ones
-use_coordinates_directly = True
+use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
+use_all_data_per_spg = False  # Overwrites all the previous ones
+use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
 use_dropout = False
 
-learning_rate = 0.0001
+learning_rate = 0.001  # TODO: Change back
 
 use_denseness_factors_density = True
 

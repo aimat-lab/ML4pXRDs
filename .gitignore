@@ -35,3 +35,4 @@ dataset_simulations/prepared_training*
 train_dataset/utils/max_losses
 train_dataset/utils/*.png
 dataset_simulations/denseness_factors_fit_*.png
+train_dataset/utils/average_intensity_plots/*
