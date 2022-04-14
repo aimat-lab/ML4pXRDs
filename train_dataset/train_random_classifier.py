@@ -27,7 +27,7 @@ from pyxtal.symmetry import Group
 import gc
 import psutil
 
-tag = "2-spg-direct-coordinates-rerun"
+tag = "2-spg-direct-coordinates-rerun-no-dropout"
 description = ""
 
 if len(sys.argv) > 1:
@@ -89,7 +89,7 @@ use_coordinates_directly = True
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
-use_dropout = True
+use_dropout = False
 
 learning_rate = 0.0001
 
