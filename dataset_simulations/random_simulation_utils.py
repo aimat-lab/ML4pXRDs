@@ -710,7 +710,52 @@ def generate_structure(
 
         else:
 
-            my_crystal = generate_pyxtal_object()
+            if (use_coordinates_directly and all_data_per_spg is not None) or (
+                use_lattice_paras_directly and all_data_per_spg is not None
+            ):
+                raise Exception("Mode not yet supported.")
+
+            try:
+                my_crystal = generate_pyxtal_object(
+                    group_object=group_object,
+                    factor=factor,
+                    species=chosen_elements,
+                    chosen_wyckoff_indices=chosen_wyckoff_indices,
+                    multiplicities=chosen_numbers,
+                    max_volume=max_volume,
+                    scale_volume_min_density=False,
+                )
+            except Exception as ex:
+                print(flush=True)
+                print(ex, flush=True)
+                print(group_object.number, flush=True)
+                print(chosen_elements, flush=True)
+                print(chosen_numbers, flush=True)
+                print(flush=True)
+
+                tries_counter += 1
+
+                continue
+
+            if not my_crystal:
+                tries_counter += 1
+
+                if (
+                    not use_element_repetitions_instead_of_NO_wyckoffs
+                    and kde_per_spg is None
+                    and all_data_per_spg is None
+                ):
+                    print(
+                        f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
+                    )
+                elif all_data_per_spg is None:
+                    print(
+                        f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
+                    )
+                else:
+                    print(f"Volume too high, regenerating.")
+
+                continue
 
         try:
 
