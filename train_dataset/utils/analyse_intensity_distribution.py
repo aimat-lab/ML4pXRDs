@@ -27,9 +27,9 @@ if __name__ == "__main__":
         all_data_per_spg_tmp,
     ) = load_dataset_info()
 
-    all_data_per_spg = {}
-    for spg in spgs_to_analyze:
-        all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
+    # all_data_per_spg = {}
+    # or spg in spgs_to_analyze:
+    #    all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
 
     for i in reversed(range(0, len(spgs_to_analyze))):
         if denseness_factors_density_per_spg[spgs_to_analyze[i]] is None:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         )
         icsd_sim.output_dir = path_to_patterns
 
-    icsd_sim.load(start=0, stop=20)
+    icsd_sim.load(start=0, stop=20, load_only_N_patterns_each=2)
 
     n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -147,7 +147,7 @@ if __name__ == "__main__":
             max_NO_elements=max_NO_elements,
             do_print=False,
             return_additional=True,
-            do_distance_checks=True,
+            do_distance_checks=False,
             do_merge_checks=False,
             use_icsd_statistics=True,
             probability_per_spg_per_element=probability_per_spg_per_element,
@@ -160,8 +160,8 @@ if __name__ == "__main__":
             NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
             denseness_factors_density_per_spg=denseness_factors_density_per_spg,
-            kde_per_spg=kde_per_spg,
-            all_data_per_spg=all_data_per_spg,
+            kde_per_spg=None,
+            all_data_per_spg=None,
         )
 
         patterns = np.array(patterns)

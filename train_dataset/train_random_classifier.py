@@ -26,6 +26,7 @@ from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 import gc
 import psutil
+from sklearn.preprocessing import StandardScaler
 
 tag = "2-spg-direct-coordinates-rerun-no-dropout"
 description = ""
@@ -97,6 +98,8 @@ use_denseness_factors_density = True
 
 load_only_N_patterns_each_test = 2  # None possible
 
+scale_patterns = True
+
 verbosity = 2
 
 local = False
@@ -145,6 +148,11 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     kde_per_spg,
     all_data_per_spg_tmp,
 ) = load_dataset_info()
+
+if scale_patterns and use_icsd_structures_directly:
+    raise Exception(
+        "Invalid options: Scaling patterns not compatible with direct icsd training."
+    )
 
 if not use_kde_per_spg:
     kde_per_spg = None
@@ -475,11 +483,6 @@ assert len(val_x_match_inorganic) == len(val_y_match_inorganic)
 assert len(val_x_match_correct_spgs) == len(val_y_match_correct_spgs)
 assert len(val_x_match_correct_spgs_pure) == len(val_y_match_correct_spgs_pure)
 
-val_x_all = np.expand_dims(val_x_all, axis=2)
-val_x_match = np.expand_dims(val_x_match, axis=2)
-val_x_match_inorganic = np.expand_dims(val_x_match_inorganic, axis=2)
-val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
-val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 
 if not local:
     # ray.init(include_dashboard=True, num_cpus=NO_workers)
@@ -579,6 +582,7 @@ def batch_generator_queue(
     end_angle,
     max_NO_elements,
     NO_corn_sizes,
+    sc=None
     # all_data_per_spg_handle,
 ):
 
@@ -629,6 +633,10 @@ def batch_generator_queue(
                 labels[i] = spgs.index(labels[i])
 
             patterns = np.array(patterns)
+
+            if sc is not None:
+                patterns = sc.transform(patterns)
+
             patterns = np.expand_dims(patterns, axis=2)
 
             labels = np.array(labels)
@@ -728,8 +736,24 @@ for result in results:
     val_x_random.extend(patterns)
     val_y_random.extend(labels)
 
-val_x_random = np.expand_dims(val_x_random, axis=2)
 val_y_random = np.array(val_y_random)
+
+if scale_patterns:
+    sc = StandardScaler()
+    val_x_random = sc.fit_transform(val_x_random)
+
+    val_x_all = sc.transform(val_x_all)
+    val_x_match = sc.transform(val_x_match)
+    val_x_match_inorganic = sc.transform(val_x_match_inorganic)
+    val_x_match_correct_spgs = sc.transform(val_x_match_correct_spgs)
+    val_x_match_correct_spgs_pure = sc.transform(val_x_match_correct_spgs_pure)
+
+val_x_all = np.expand_dims(val_x_all, axis=2)
+val_x_match = np.expand_dims(val_x_match, axis=2)
+val_x_match_inorganic = np.expand_dims(val_x_match_inorganic, axis=2)
+val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
+val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
+val_x_random = np.expand_dims(val_x_random, axis=2)
 
 """
 for j in range(0, 100):
@@ -889,6 +913,7 @@ if not use_icsd_structures_directly:
             end_angle,
             generation_max_NO_wyckoffs,
             NO_corn_sizes,
+            sc=sc if scale_patterns else None
             # all_data_per_spg_handle,
         )
 
@@ -932,6 +957,7 @@ params_txt = (
     f"use_lattice_paras_directly: {str(use_lattice_paras_directly)} \n \n \n"
     f"use_icsd_structures_directly: {str(use_icsd_structures_directly)} \n \n \n"
     f"load_only_N_patterns_each_test: {str(load_only_N_patterns_each_test)} \n \n \n"
+    f"scale_patterns: {str(scale_patterns)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
