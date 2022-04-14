@@ -1,6 +1,6 @@
-# The core of the following code is taken from the pymatgen package.
+# The core (calculating angles and intensities of peaks) of the following code is from the pymatgen package.
 # It is altered and optimized to run using numba.
-# If performance is not a concern to you, you should use the original pymatgen code.
+# If performance is not a concern to you, you should use the original pymatgen implementation.
 
 from dataset_simulations.random_simulation_utils import generate_structures
 from dataset_simulations.random_simulation_utils import load_dataset_info

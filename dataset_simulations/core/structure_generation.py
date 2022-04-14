@@ -5,6 +5,11 @@
 import numba
 import numpy as np
 from pyxtal.database.element import Element
+from pyxtal import pyxtal
+from pyxtal.lattice import Lattice
+from pyxtal.symmetry import Wyckoff_position
+from pyxtal.symmetry import Group
+from pyxtal.crystal import atom_site
 
 deg = 180.0 / np.pi
 rad = np.pi / 180.0
@@ -413,15 +418,18 @@ def reset_matrix(lattice_ltype, lattice_volume):
 
 
 def generate_pyxtal_object(
-    group_object, factor, species, chosen_wyckoff_indices, multiplicities, max_volume
+    group_object,
+    factor,
+    species,
+    chosen_wyckoff_indices,
+    multiplicities,
+    max_volume,
+    scale_volume_min_density=True,
 ):
-
     # calculate the sum of covalent volumes
     # calculate actual volume of crystal (multiply by factor)
     # generate a lattice with the given volume
     # create the pyxtal object
-
-    ########## Set the volume
 
     volume = 0
     for numIon, specie in zip(multiplicities, species):
@@ -432,20 +440,34 @@ def generate_pyxtal_object(
         volume += numIon * 4 / 3 * np.pi * r**3
     volume = factor * volume
 
-    # TODO: Think about this again! Do we really need this?
-    min_density = 0.75
-    # make sure the volume is not too small
-    if volume / sum(multiplicities) < min_density:
-        volume = sum(multiplicities) * min_density
-        print("Volume has been scaled to match minimum density.")
+    if volume > max_volume:
+        return False
+
+    if scale_volume_min_density:
+        min_density = 0.75
+        # make sure the volume is not too small
+        if volume / sum(multiplicities) < min_density:
+            volume = sum(multiplicities) * min_density
+            print("Volume has been scaled to match minimum density.")
 
     (
         paras,
         lattice_matrix,
-    ) = reset_matrix(lattice_ltype, volume)
-    # TODO: Get lattice type (look how pyxtal handles this in "Lattice" constructor)
+    ) = reset_matrix(group_object.lattice_type, volume)
 
-    # TODO: Handle > max_volume (return like the original implementation also did)
+    pyxtal_object = pyxtal(molecular=False)
 
-    # TODO: Handle lattice re-generation
-    # Understand what the "merge" call is doing in the wyckoff object
+    pyxtal_object.lattice = Lattice.from_matrix(
+        lattice_matrix, reset=False, ltype=group_object.lattice_type
+    )
+
+    for specie, wyckoff_index in zip(species, chosen_wyckoff_indices):
+
+        # TODO: Check if index is correct
+        wyckoff = group_object.get_wyckoff_position(wyckoff_index)
+
+        random_coord = pyxtal_object.lattice.generate_point()
+        projected_coord = wyckoff.project(random_coord, lattice_matrix)
+
+        new_atom_site = atom_site(wp=wyckoff, coordinate=projected_coord, specie=specie)
+        pyxtal_object.atom_sites.append(new_atom_site)

@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     analyse_complexity_ordering = False
 
-    show_sample_structures = True
+    show_sample_structures = False
     samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
