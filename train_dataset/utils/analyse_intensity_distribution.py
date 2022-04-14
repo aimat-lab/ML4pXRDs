@@ -11,27 +11,31 @@ if __name__ == "__main__":
 
     ray.init(num_cpus=4)
 
-    spgs_to_analyze = [
-        2,
-        14,
-        15,
-        19,
-        50,
-        80,
-        129,
-        135,
-        140,
-        150,
-        160,
-        176,
-        180,
-        190,
-        201,
-        210,
-        215,
-        220,
-        225,
-    ]
+    spgs_to_analyze = list(range(1, 231))
+
+    (
+        probability_per_spg_per_element,
+        probability_per_spg_per_element_per_wyckoff,
+        NO_wyckoffs_prob_per_spg,
+        corrected_labels,
+        files_to_use_for_test_set,
+        represented_spgs,
+        NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element,
+        denseness_factors_density_per_spg,
+        kde_per_spg,
+        all_data_per_spg_tmp,
+    ) = load_dataset_info()
+
+    all_data_per_spg = {}
+    for spg in spgs_to_analyze:
+        all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
+
+    for i in reversed(range(0, len(spgs_to_analyze))):
+        if denseness_factors_density_per_spg[spgs_to_analyze[i]] is None:
+            print(f"Excluded spg {spgs_to_analyze[i]}")
+            del spgs_to_analyze[i]
+
     validation_max_NO_wyckoffs = 100
     validation_max_volume = 7000
     angle_range = np.linspace(5, 90, 8501)
@@ -51,7 +55,7 @@ if __name__ == "__main__":
         )
         icsd_sim.output_dir = path_to_patterns
 
-    icsd_sim.load(start=0, stop=15)
+    icsd_sim.load(start=0, stop=20)
 
     n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -120,24 +124,6 @@ if __name__ == "__main__":
             del icsd_metas_match[i]
 
     ############################################################
-
-    (
-        probability_per_spg_per_element,
-        probability_per_spg_per_element_per_wyckoff,
-        NO_wyckoffs_prob_per_spg,
-        corrected_labels,
-        files_to_use_for_test_set,
-        represented_spgs,
-        NO_unique_elements_prob_per_spg,
-        NO_repetitions_prob_per_spg_per_element,
-        denseness_factors_density_per_spg,
-        kde_per_spg,
-        all_data_per_spg_tmp,
-    ) = load_dataset_info()
-
-    all_data_per_spg = {}
-    for spg in spgs_to_analyze:
-        all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
 
     @ray.remote(num_cpus=1, num_gpus=0)
     def batch_generator_with_additional(
@@ -236,5 +222,4 @@ if __name__ == "__main__":
             plt.plot(angle_range, pattern_average_icsd, label=f"ICSD, spg {spg}")
         plt.plot(angle_range, pattern_average_random, label=f"Random, spg {spg}")
         plt.legend()
-        plt.savefig(f"intensity_distribution_spg_{spg}.png")
-        # plt.show()
+        plt.savefig(f"average_intensity_plots/intensity_distribution_spg_{spg}.png")
