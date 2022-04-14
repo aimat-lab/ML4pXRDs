@@ -121,6 +121,10 @@ if __name__ == "__main__":
         ) = pickle.load(file)
     random_labels = [spgs[index] for index in random_labels]
 
+    print(
+        f"{len(random_crystals)} random crystals, {len(icsd_crystals)} icsd crystals loaded"
+    )
+
     with open(in_base + "rightly_falsely_icsd.pickle", "rb") as file:
         rightly_indices_icsd, falsely_indices_icsd = pickle.load(file)
 
