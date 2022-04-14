@@ -55,7 +55,7 @@ if __name__ == "__main__":
         )
         icsd_sim.output_dir = path_to_patterns
 
-    icsd_sim.load(start=0, stop=20, load_only_N_patterns_each=2)
+    icsd_sim.load(start=0, stop=20, load_only_N_patterns_each=1)
 
     n_patterns_per_crystal = len(icsd_sim.sim_patterns[0])
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     random_comparison_corn_sizes = []
 
     object_refs = []
-    for i in range(1000):
+    for i in range(300):
         ref = batch_generator_with_additional.remote(
             spgs_to_analyze, 1, 8501, 5, 90, 100, 1
         )
