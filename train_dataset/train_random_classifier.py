@@ -28,7 +28,7 @@ import gc
 import psutil
 from sklearn.preprocessing import StandardScaler
 
-tag = "2-spg-normalized"
+tag = "2-spg-normalized_without_mean"
 description = ""
 
 if len(sys.argv) > 1:
@@ -739,8 +739,11 @@ for result in results:
 val_y_random = np.array(val_y_random)
 
 if scale_patterns:
-    sc = StandardScaler()
+    sc = StandardScaler(with_mean=False)
     val_x_random = sc.fit_transform(val_x_random)
+
+    with open(out_base + "sc.pickle", "wb") as file:
+        pickle.dump(sc, file)
 
     val_x_all = sc.transform(val_x_all)
     val_x_match = sc.transform(val_x_match)
