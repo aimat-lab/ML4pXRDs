@@ -723,7 +723,7 @@ def generate_structure(
                     chosen_wyckoff_indices=chosen_wyckoff_indices,
                     multiplicities=chosen_numbers,
                     max_volume=max_volume,
-                    scale_volume_min_density=False,
+                    scale_volume_min_density=True,  # TODO: Maybe change
                 )
             except Exception as ex:
                 print(flush=True)
