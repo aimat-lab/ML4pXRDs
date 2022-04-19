@@ -48,8 +48,8 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 15  # TODO: Change back
-NO_epochs = 3  # TODO: Change back
+batches_per_epoch = 1500
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -104,7 +104,7 @@ scale_patterns = False
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -522,7 +522,8 @@ for pattern in icsd_patterns_match_corrected_labels_pure:
 
 val_y_randomized = []
 for i, label in enumerate(randomized_labels):
-    val_y_randomized.append(spgs.index(label))
+    # val_y_randomized.append(spgs.index(label))
+    val_y_randomized.append(label)
 val_y_randomized = np.array(val_y_randomized)
 
 val_x_randomized = []
@@ -531,7 +532,8 @@ for pattern in randomized_patterns:
 
 val_y_randomized_ref = []
 for i, label in enumerate(randomized_labels):
-    val_y_randomized_ref.append(spgs.index(label))
+    # val_y_randomized_ref.append(spgs.index(label))
+    val_y_randomized_ref.append(label)
 val_y_randomized_ref = np.array(val_y_randomized_ref)
 
 val_x_randomized_ref = []
