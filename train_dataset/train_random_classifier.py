@@ -423,7 +423,13 @@ randomized_crystals, reference_crystals, labels = randomize_coordinates(
     icsd_crystals_match_corrected_labels
 )
 
-assert labels == icsd_labels_match_corrected_labels
+for i, label in enumerate(labels):
+    if label is not None:
+        assert label == icsd_labels_match_corrected_labels[i]
+
+randomized_crystals = [item for item in randomized_crystals if item is not None]
+reference_crystals = [item for item in reference_crystals if item is not None]
+labels = [item for item in labels if item is not None]
 
 randomized_patterns = []
 reference_patterns = []

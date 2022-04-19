@@ -96,9 +96,19 @@ def randomize_coordinates(crystals):
     for crystal in crystals:
 
         pyxtal_object = pyxtal()
-        pyxtal_object.from_seed(crystal)
 
-        labels.append(pyxtal_object.number)
+        try:
+            pyxtal_object.from_seed(crystal)
+        except Exception as ex:
+            print(ex)
+
+            labels.append(None)
+            reference_crystals.append(None)
+            randomized_crystals.append(None)
+
+            continue
+
+        labels.append(pyxtal_object.group.number)
 
         reference_crystal = pyxtal_object.to_pymatgen()
         reference_crystals.append(reference_crystal)
