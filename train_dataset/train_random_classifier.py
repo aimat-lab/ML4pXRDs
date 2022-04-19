@@ -100,7 +100,7 @@ use_denseness_factors_density = True
 
 load_only_N_patterns_each_test = 1  # None possible
 
-scale_patterns = True
+scale_patterns = False
 
 verbosity = 2
 
@@ -550,6 +550,8 @@ assert len(val_x_match) == len(val_y_match)
 assert len(val_x_match_inorganic) == len(val_y_match_inorganic)
 assert len(val_x_match_correct_spgs) == len(val_y_match_correct_spgs)
 assert len(val_x_match_correct_spgs_pure) == len(val_y_match_correct_spgs_pure)
+assert len(val_x_randomized) == len(val_y_randomized)
+assert len(val_x_randomized_ref) == len(val_y_randomized_ref)
 
 
 if not local:
@@ -818,6 +820,8 @@ if scale_patterns:
     val_x_match_inorganic = sc.transform(val_x_match_inorganic)
     val_x_match_correct_spgs = sc.transform(val_x_match_correct_spgs)
     val_x_match_correct_spgs_pure = sc.transform(val_x_match_correct_spgs_pure)
+    val_x_randomized = sc.transform(val_x_randomized)
+    val_x_randomized_ref = sc.transform(val_x_randomized_ref)
 
 val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match = np.expand_dims(val_x_match, axis=2)
@@ -825,6 +829,8 @@ val_x_match_inorganic = np.expand_dims(val_x_match_inorganic, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 val_x_random = np.expand_dims(val_x_random, axis=2)
+val_x_randomized = np.expand_dims(val_x_randomized, axis=2)
+val_x_randomized_ref = np.expand_dims(val_x_randomized_ref, axis=2)
 
 """
 for j in range(0, 100):
@@ -1070,6 +1076,12 @@ class CustomCallback(keras.callbacks.Callback):
                 scores_random = self.model.evaluate(
                     x=val_x_random, y=val_y_random, verbose=0
                 )
+                scores_randomized = self.model.evaluate(
+                    x=val_x_randomized, y=val_y_randomized, verbose=0
+                )
+                scores_randomized_ref = self.model.evaluate(
+                    x=val_x_randomized_ref, y=val_y_randomized_ref, verbose=0
+                )
 
                 assert metric_names[0] == "loss"
 
@@ -1089,6 +1101,12 @@ class CustomCallback(keras.callbacks.Callback):
                     step=epoch,
                 )
                 tf.summary.scalar("loss random", data=scores_random[0], step=epoch)
+                tf.summary.scalar(
+                    "loss randomized", data=scores_randomized[0], step=epoch
+                )
+                tf.summary.scalar(
+                    "loss randomized ref", data=scores_randomized_ref[0], step=epoch
+                )
 
                 tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
                 tf.summary.scalar("accuracy match", data=scores_match[1], step=epoch)
@@ -1108,6 +1126,12 @@ class CustomCallback(keras.callbacks.Callback):
                     step=epoch,
                 )
                 tf.summary.scalar("accuracy random", data=scores_random[1], step=epoch)
+                tf.summary.scalar(
+                    "accuracy randomized", data=scores_randomized[1], step=epoch
+                )
+                tf.summary.scalar(
+                    "accuracy randomized ref", data=scores_randomized_ref[1], step=epoch
+                )
 
                 tf.summary.scalar(
                     "accuracy gap", data=scores_random[1] - scores_match[1], step=epoch
