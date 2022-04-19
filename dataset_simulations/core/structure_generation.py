@@ -1,7 +1,3 @@
-# Parts of this (especially the lattice generation) originate from the pyxtal codebase.
-# https://github.com/qzhu2017/PyXtal
-
-
 import numpy as np
 from pyxtal.database.element import Element
 from pyxtal import pyxtal
@@ -32,7 +28,7 @@ def generate_pyxtal_object(
         # )
         r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
         volume += numIon * 4 / 3 * np.pi * r**3
-    volume = factor * volume
+    volume *= factor
 
     if scale_volume_min_density:
         min_density = 0.75
@@ -58,3 +54,5 @@ def generate_pyxtal_object(
 
         new_atom_site = atom_site(wp=wyckoff, coordinate=projected_coord, specie=specie)
         pyxtal_object.atom_sites.append(new_atom_site)
+
+    return pyxtal_object
