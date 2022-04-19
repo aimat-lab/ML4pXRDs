@@ -27,6 +27,8 @@ from pyxtal.symmetry import Group
 import gc
 import psutil
 from sklearn.preprocessing import StandardScaler
+from dataset_simulations.core.structure_generation import randomize_coordinates
+from dataset_simulations.core.quick_simulation import get_xy_patterns
 
 tag = "2-spg-normalized_without_mean"
 description = ""
@@ -415,6 +417,52 @@ with open(out_base + "icsd_data.pickle", "wb") as file:
         file,
     )
 
+####### Generate match (corrected spgs) validation set with randomized coordinates and reference:
+
+randomized_crystals, reference_crystals, labels = randomize_coordinates(
+    icsd_crystals_match_corrected_labels
+)
+
+assert labels == icsd_labels_match_corrected_labels
+
+randomized_patterns = []
+reference_patterns = []
+
+xs = np.linspace(start_angle, end_angle, N)
+for i, crystal in enumerate(randomized_crystals):
+    pattern = get_xy_patterns(
+        crystal,
+        wavelength=1.5406,
+        xs=xs,
+        NO_corn_sizes=1,
+        two_theta_range=(start_angle, end_angle),
+        do_print=False,
+        return_corn_sizes=False,
+        return_angles_intensities=False,
+        return_max_unscaled_intensity_angle=False,
+    )[0]
+    randomized_patterns.append(pattern)
+
+for i, crystal in enumerate(reference_crystals):
+    pattern = get_xy_patterns(
+        crystal,
+        wavelength=1.5406,
+        xs=xs,
+        NO_corn_sizes=1,
+        two_theta_range=(start_angle, end_angle),
+        do_print=False,
+        return_corn_sizes=False,
+        return_angles_intensities=False,
+        return_max_unscaled_intensity_angle=False,
+    )[0]
+    reference_patterns.append(pattern)
+
+randomized_labels = []
+for i in range(0, len(labels)):
+    randomized_labels.append(spgs.index(labels[i]))
+
+##############
+
 val_y_all = []
 for i, label in enumerate(icsd_labels_all):
     val_y_all.extend([spgs.index(label[0])] * n_patterns_per_crystal)
@@ -464,6 +512,26 @@ val_x_match_correct_spgs_pure = []
 for pattern in icsd_patterns_match_corrected_labels_pure:
     for sub_pattern in pattern:
         val_x_match_correct_spgs_pure.append(sub_pattern)
+
+
+val_y_randomized = []
+for i, label in enumerate(randomized_labels):
+    val_y_randomized.append(spgs.index(label))
+val_y_randomized = np.array(val_y_randomized)
+
+val_x_randomized = []
+for pattern in randomized_patterns:
+    val_x_randomized.append(pattern)
+
+val_y_randomized_ref = []
+for i, label in enumerate(randomized_labels):
+    val_y_randomized_ref.append(spgs.index(label))
+val_y_randomized_ref = np.array(val_y_randomized_ref)
+
+val_x_randomized_ref = []
+for pattern in reference_patterns:
+    val_x_randomized_ref.append(pattern)
+
 
 print("Numbers in validation set (that matches sim parameters):")
 for i in range(0, len(spgs)):

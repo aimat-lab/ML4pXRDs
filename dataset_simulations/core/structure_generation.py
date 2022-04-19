@@ -89,15 +89,16 @@ def generate_pyxtal_object(
 
 def randomize_coordinates(crystals):
 
-    randomized_crystals = []
     reference_crystals = []
+    randomized_crystals = []
+    labels = []
 
     for crystal in crystals:
 
         pyxtal_object = pyxtal()
         pyxtal_object.from_seed(crystal)
 
-        # TODO: Maybe make sure that spg is correct
+        labels.append(pyxtal_object.number)
 
         reference_crystal = pyxtal_object.to_pymatgen()
         reference_crystals.append(reference_crystal)
@@ -116,4 +117,4 @@ def randomize_coordinates(crystals):
         randomized_crystal = pyxtal_object.to_pymatgen()
         randomized_crystals.append(randomized_crystal)
 
-    return randomized_crystals, reference_crystals
+    return randomized_crystals, reference_crystals, labels
