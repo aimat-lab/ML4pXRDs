@@ -7,7 +7,7 @@
 #SBATCH --time=10-48:00:00
 
 source ~/mambaforge/etc/profile.d/conda.sh
-conda activate pyxtal_debug
+conda activate pyxtal
 
 # wait until head is ready
 until [ -f ./head_node_ip ]

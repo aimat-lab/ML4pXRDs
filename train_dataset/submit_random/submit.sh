@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ~/mambaforge/etc/profile.d/conda.sh
-conda activate pyxtal_debug
+conda activate pyxtal
 
 rm -f ./worker_1_ready
 rm -f ./worker_2_ready
