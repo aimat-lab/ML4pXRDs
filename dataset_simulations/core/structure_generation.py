@@ -14,6 +14,34 @@ def generate_pyxtal_object(
     max_volume,
     scale_volume_min_density=True,
 ):
+    """Used to generate a pyxtal object using the given parameters.
+
+    Parameters
+    ----------
+    group_object: Group
+        Symmetry operations of this group will be used.
+    factor: float
+        Factor to scale the volume with.
+    species: list[str]
+        Species to set on wyckoff sites.
+    chosen_wyckoff_indices: list[int]
+        Wyckoff sites to use for each specie.
+    multiplicities: list[int]
+        Multiplicity of each of the chosen Wyckoff sites.
+    max_volume: float
+        Maximum value of lattice volume. Returns False if volume > max_volumne.
+    scale_volume_min_density: True
+        Whether or not to scale volume so it matches the minimum density.
+
+    Returns
+    -------
+    False
+        If the volume was too high.
+    pyxtal
+        Pyxtal object.
+
+    """
+
     # 1) calculate the sum of covalent volumes
     # 2) calculate actual volume of crystal (multiply by factor)
     # 3) generate a lattice with the given volume
@@ -46,7 +74,6 @@ def generate_pyxtal_object(
 
     for specie, wyckoff_index in zip(species, chosen_wyckoff_indices):
 
-        # TODO: Check if index is correct
         wyckoff = group_object.get_wyckoff_position(wyckoff_index)
 
         random_coord = pyxtal_object.lattice.generate_point()
@@ -58,3 +85,35 @@ def generate_pyxtal_object(
     pyxtal_object.valid = True
 
     return pyxtal_object
+
+
+def randomize_coordinates(crystals):
+
+    randomized_crystals = []
+    reference_crystals = []
+
+    for crystal in crystals:
+
+        pyxtal_object = pyxtal()
+        pyxtal_object.from_seed(crystal)
+
+        # TODO: Maybe make sure that spg is correct
+
+        reference_crystal = pyxtal_object.to_pymatgen()
+        reference_crystals.append(reference_crystal)
+
+        for site in pyxtal_object.atom_sites:
+
+            wyckoff = site.wp
+
+            random_coord = pyxtal_object.lattice.generate_point()
+            projected_coord = wyckoff.project(
+                random_coord, pyxtal_object.lattice.matrix
+            )
+
+            site.update(pos=projected_coord)
+
+        randomized_crystal = pyxtal_object.to_pymatgen()
+        randomized_crystals.append(randomized_crystal)
+
+    return randomized_crystals, reference_crystals

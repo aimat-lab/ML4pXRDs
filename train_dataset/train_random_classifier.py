@@ -96,7 +96,7 @@ learning_rate = 0.001  # TODO: Change back
 
 use_denseness_factors_density = True
 
-load_only_N_patterns_each_test = 2  # None possible
+load_only_N_patterns_each_test = 1  # None possible
 
 scale_patterns = True
 

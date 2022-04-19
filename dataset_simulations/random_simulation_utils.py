@@ -290,6 +290,7 @@ def generate_structure(
                 all_data_per_spg=all_data_per_spg,
                 use_coordinates_directly=use_coordinates_directly,
                 use_lattice_paras_directly=use_lattice_paras_directly,
+                use_alternative_structure_generator_implementation=use_alternative_structure_generator_implementation,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -1374,34 +1375,64 @@ if __name__ == "__main__":
                     continue
                 print(spg)
 
-                generate_structures(
-                    spg,
-                    1,
-                    100,
-                    -1,
-                    False,
-                    None,
-                    False,
-                    True,
-                    probability_per_spg_per_element,
-                    probability_per_spg_per_element_per_wyckoff,
-                    7000,
-                    False,
-                    NO_wyckoffs_prob_per_spg,
-                    True,
-                    False,
-                    True,
-                    True,
-                    NO_unique_elements_prob_per_spg,
-                    NO_repetitions_prob_per_spg_per_element,
-                    False,
-                    denseness_factors_density_per_spg,
-                    None,
-                    None,
-                    False,
-                    False,
-                    None,
-                )
+                if False:
+                    generate_structures(
+                        spg,
+                        1,
+                        100,
+                        -1,
+                        False,
+                        None,
+                        False,
+                        True,
+                        probability_per_spg_per_element,
+                        probability_per_spg_per_element_per_wyckoff,
+                        7000,
+                        False,
+                        NO_wyckoffs_prob_per_spg,
+                        True,
+                        False,
+                        True,
+                        True,
+                        NO_unique_elements_prob_per_spg,
+                        NO_repetitions_prob_per_spg_per_element,
+                        False,
+                        denseness_factors_density_per_spg,
+                        None,
+                        None,
+                        False,
+                        False,
+                        None,
+                    )
+                else:
+                    generate_structures(
+                        spg,
+                        1,
+                        100,
+                        -1,
+                        False,
+                        None,
+                        False,
+                        True,
+                        probability_per_spg_per_element,
+                        probability_per_spg_per_element_per_wyckoff,
+                        7000,
+                        False,
+                        NO_wyckoffs_prob_per_spg,
+                        True,
+                        False,
+                        True,
+                        True,
+                        NO_unique_elements_prob_per_spg,
+                        NO_repetitions_prob_per_spg_per_element,
+                        False,
+                        denseness_factors_density_per_spg,
+                        kde_per_spg,
+                        all_data_per_spg,  # 1by1
+                        False,
+                        False,
+                        None,
+                    )
 
     if False:
 
