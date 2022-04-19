@@ -55,4 +55,6 @@ def generate_pyxtal_object(
         new_atom_site = atom_site(wp=wyckoff, coordinate=projected_coord, specie=specie)
         pyxtal_object.atom_sites.append(new_atom_site)
 
+    pyxtal_object.valid = True
+
     return pyxtal_object

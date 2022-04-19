@@ -172,7 +172,7 @@ def generate_structure(
     all_data_per_spg=None,
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
-    use_alternative_structure_generator_implementation=False,
+    use_alternative_structure_generator_implementation=True,
 ):
 
     if use_icsd_statistics and (
@@ -1351,7 +1351,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1366,16 +1366,12 @@ if __name__ == "__main__":
             all_data_per_spg,
         ) = load_dataset_info()
 
-        # for i in range(0, 15 * 10):
-        for i in range(0, 10000):
+        for i in range(0, 10):
             # for spg in represented_spgs:
             for spg in [2, 15, 14, 104, 129, 176]:
-                # for spg in [2, 15, 14, 104, 176, 129]:
-                # for spg in [2]:
 
                 if denseness_factors_density_per_spg[spg] is None:
                     continue
-
                 print(spg)
 
                 generate_structures(
@@ -1383,7 +1379,7 @@ if __name__ == "__main__":
                     1,
                     100,
                     -1,
-                    False,  # distance checks disabled!
+                    False,
                     None,
                     False,
                     True,
@@ -1400,9 +1396,11 @@ if __name__ == "__main__":
                     NO_repetitions_prob_per_spg_per_element,
                     False,
                     denseness_factors_density_per_spg,
-                    kde_per_spg,
-                    all_data_per_spg,
-                    True,
+                    None,
+                    None,
+                    False,
+                    False,
+                    None,
                 )
 
     if False:
@@ -1458,7 +1456,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if True:
+    if False:
 
         data = load_dataset_info()
         print()
