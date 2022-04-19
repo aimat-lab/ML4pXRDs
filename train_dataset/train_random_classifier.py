@@ -423,9 +423,12 @@ randomized_crystals, reference_crystals, labels = randomize_coordinates(
     icsd_crystals_match_corrected_labels
 )
 
+errors_counter = 0
 for i, label in enumerate(labels):
     if label is not None:
-        assert label == icsd_labels_match_corrected_labels[i]
+        if label != icsd_labels_match_corrected_labels[i]:
+            errors_counter += 1
+print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
 
 randomized_crystals = [item for item in randomized_crystals if item is not None]
 reference_crystals = [item for item in reference_crystals if item is not None]
