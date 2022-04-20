@@ -16,6 +16,7 @@ from pyxtal.crystal import atom_site
 from pyxtal.lattice import Lattice
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 from dataset_simulations.core.structure_generation import generate_pyxtal_object
+import scipy.integrate as integrate
 
 # import warnings
 # with warnings.catch_warnings():
@@ -1239,18 +1240,23 @@ def load_dataset_info():
         all_data_per_spg = data[9]
 
     denseness_factors_density_per_spg = {}
+    denseness_factors_conditional_density_per_spg = {}
 
     for spg in denseness_factors_per_spg.keys():
 
-        denseness_factors_per_spg[spg] = [
+        denseness_factors = [
             item[0] for item in denseness_factors_per_spg[spg] if item is not None
         ]
+        sums_cov_volumes = [
+            item[1] for item in denseness_factors_per_spg[spg] if item is not None
+        ]
 
-        if len(denseness_factors_per_spg[spg]) > 100:
-            denseness_factors_density = kde.gaussian_kde(denseness_factors_per_spg[spg])
+        # 1D densities:
+
+        if len(denseness_factors) > 100:
+            denseness_factors_density = kde.gaussian_kde(denseness_factors)
         else:
             denseness_factors_density = None
-
         denseness_factors_density_per_spg[spg] = denseness_factors_density
 
         # if False and (
@@ -1270,6 +1276,74 @@ def load_dataset_info():
             plt.plot(grid, denseness_factors_density(grid))
             plt.hist(denseness_factors_per_spg[spg], density=True, bins=60)
             plt.savefig(f"denseness_factors_fit_{spg}.png")
+
+        # 2D densities (p(factor | volume)):
+
+        if len(denseness_factors) < 100:
+            denseness_factors_conditional_density_per_spg[spg] = None
+            continue
+
+        entries = [
+            entry for entry in denseness_factors_per_spg[spg] if entry is not None
+        ]
+        entries = np.array(entries).T
+
+        density = kde.gaussian_kde(entries)
+
+        lin_grid_1 = np.linspace(
+            min([item[0] for item in entries.T]),
+            max([item[0] for item in entries.T]),
+            30,
+        )
+        lin_grid_2 = np.linspace(
+            min([item[1] for item in entries.T]),
+            max([item[1] for item in entries.T]),
+            30,
+        )
+        grid = np.array(np.meshgrid(lin_grid_1, lin_grid_2)).T.reshape(-1, 2)
+
+        cm = plt.cm.get_cmap("RdYlBu")
+        sc = plt.scatter(
+            [item[0] for item in grid],
+            [item[1] for item in grid],
+            c=[density(item)[0] for item in grid],
+            s=20,
+            cmap=cm,
+        )
+        plt.scatter(
+            [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
+        )
+        plt.colorbar(sc)
+
+        # Sampling a point:
+        # points = density.resample(100).T
+
+        # Get the conditional probability: p(x|y) = p(x,y) / p(y) = p(x,y) / int (p(x,y) dx)
+
+        conditional = (
+            lambda x, y: density([x, y])[0]
+            / integrate.quad(
+                lambda x_1, y_1: density([x_1, y_1])[0], -np.inf, +np.inf, args=(y)
+            )[0]
+        )
+
+        plt.figure()
+        cm = plt.cm.get_cmap("RdYlBu")
+        sc = plt.scatter(
+            [item[0] for item in grid],
+            [item[1] for item in grid],
+            c=[conditional(*item) for item in grid],
+            s=20,
+            cmap=cm,
+        )
+        plt.scatter(
+            [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
+        )
+        plt.colorbar(sc)
+        plt.show()
+
+        y_0 = 0.4
+        print(integrate.quad(lambda x: conditional(x, y_0), -np.inf, np.inf))
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -1352,7 +1426,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1487,7 +1561,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if False:
+    if True:
 
         data = load_dataset_info()
         print()

@@ -45,9 +45,9 @@ if __name__ == "__main__":
     else:
 
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
 
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
         # tag = "magpie_10-03-2022_14-34-51"
         # tag = "volumes_densenesses_4-spg"
         # tag = "look_at_structures"
@@ -56,14 +56,15 @@ if __name__ == "__main__":
         # tag = "4-spg-2D-scatters"
         # tag = "volumes_densenesses_2-spg_test/15"
 
-        tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
+        # tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
+        tag = "2-spgs-new"
 
         # spgs_to_analyze = [14, 104, 176, 129]
-        # spgs_to_analyze = [2, 15]
+        spgs_to_analyze = [2, 15]
         # spgs_to_analyze = [15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
-        spgs_to_analyze = None
+        # spgs_to_analyze = None
 
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     counter_shown_random_rightly = 0
     counter_shown_random_falsely = 0
 
-    show_sample_xrds = True
+    show_sample_xrds = False  # TODO: Change back
     xrds_to_show = 2000  # TODO: Change back
     # xrds_to_show = 10**9  # show them all
     show_individual = False
