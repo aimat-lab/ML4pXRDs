@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     show_sample_xrds = True
     xrds_to_show = 2000  # TODO: Change back
-    #xrds_to_show = 10**9  # show them all
+    # xrds_to_show = 10**9  # show them all
     show_individual = False
     counter_xrds_icsd_rightly = 0
     counter_xrds_icsd_falsely = 0
@@ -144,6 +144,7 @@ if __name__ == "__main__":
         icsd_variations = icsd_variations[0:to_process]
         icsd_metas = icsd_metas[0:to_process]
 
+    # TODO: Actually not really needed, because this is already done in the training script for icsd crystals.
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):
 
@@ -161,7 +162,7 @@ if __name__ == "__main__":
             print("Error calculating conventional cell of ICSD:")
             print(ex)
 
-    # this is actually not really needed, but just in case...
+    # This is actually not really needed, but just in case...
     for i in reversed(range(0, len(random_crystals))):
 
         try:
@@ -2573,6 +2574,29 @@ if __name__ == "__main__":
                 random_falsely_COM,
             ],
             r"COM",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "sum_cov_vols",
+            [
+                icsd_rightly_sum_cov_vols,
+                icsd_falsely_sum_cov_vols,
+            ],
+            [
+                random_rightly_sum_cov_vols,
+                random_falsely_sum_cov_vols,
+            ],
+            r"sum of covalent volumes",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
