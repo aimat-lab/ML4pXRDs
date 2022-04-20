@@ -433,7 +433,7 @@ for i in reversed(range(len(labels))):
             errors_counter += 1
 
             del labels[i]
-            del icsd_labels_match_corrected_labels[i]
+            # del icsd_labels_match_corrected_labels[i]
             del randomized_crystals[i]
             del reference_crystals[i]
 
