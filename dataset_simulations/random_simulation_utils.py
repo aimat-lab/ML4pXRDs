@@ -17,6 +17,8 @@ from pyxtal.lattice import Lattice
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 from dataset_simulations.core.structure_generation import generate_pyxtal_object
 import scipy.integrate as integrate
+from scipy import stats
+import statsmodels.api as sm
 
 # import warnings
 # with warnings.catch_warnings():
@@ -1286,39 +1288,58 @@ def load_dataset_info():
         entries = [
             entry for entry in denseness_factors_per_spg[spg] if entry is not None
         ]
+
+        conditional_density = sm.nonparametric.KDEMultivariateConditional(endog=[denseness_factors],
+            exog=[sums_cov_volumes], dep_type='c', indep_type='c', bw='normal_reference')
+        conditional_density.
+        print(conditional_density.bw)
+
+        conditional_density.
+
         entries = np.array(entries).T
 
         density = kde.gaussian_kde(entries)
 
-        lin_grid_1 = np.linspace(
-            min([item[0] for item in entries.T]),
-            max([item[0] for item in entries.T]),
-            30,
-        )
-        lin_grid_2 = np.linspace(
-            min([item[1] for item in entries.T]),
-            max([item[1] for item in entries.T]),
-            30,
-        )
-        grid = np.array(np.meshgrid(lin_grid_1, lin_grid_2)).T.reshape(-1, 2)
+        if True:
+            # lin_grid_1 = np.linspace(
+            #    min([item[0] for item in entries.T]),
+            #    max([item[0] for item in entries.T]),
+            #    50,
+            # )
+            # lin_grid_2 = np.linspace(
+            #    min([item[1] for item in entries.T]),
+            #    max([item[1] for item in entries.T]),
+            #    50,
+            # )
+            # grid = np.array(np.meshgrid(lin_grid_1, lin_grid_2)).T.reshape(-1, 2)
 
-        cm = plt.cm.get_cmap("RdYlBu")
-        sc = plt.scatter(
-            [item[0] for item in grid],
-            [item[1] for item in grid],
-            c=[density(item)[0] for item in grid],
-            s=20,
-            cmap=cm,
-        )
-        plt.scatter(
-            [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
-        )
-        plt.colorbar(sc)
+            # cm = plt.cm.get_cmap("RdYlBu")
+            # sc = plt.scatter(
+            #    [item[0] for item in grid],
+            #    [item[1] for item in grid],
+            #    c=[density(item)[0] for item in grid],
+            #    s=20,
+            #    cmap=cm,
+            # )
+            # plt.scatter(
+            #    [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
+            # )
+            # plt.colorbar(sc)
+            # plt.show()
+
+            sampled_points = density.resample(500).T
+            plt.scatter(
+                [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
+            )
+            plt.scatter(sampled_points.T[0], sampled_points.T[1], s=10)
+            # plt.show()
 
         # Sampling a point:
         # points = density.resample(100).T
 
         # Get the conditional probability: p(x|y) = p(x,y) / p(y) = p(x,y) / int (p(x,y) dx)
+
+        # TODO: You need a faster kde!
 
         conditional = (
             lambda x, y: density([x, y])[0]
@@ -1327,23 +1348,58 @@ def load_dataset_info():
             )[0]
         )
 
-        plt.figure()
-        cm = plt.cm.get_cmap("RdYlBu")
-        sc = plt.scatter(
-            [item[0] for item in grid],
-            [item[1] for item in grid],
-            c=[conditional(*item) for item in grid],
-            s=20,
-            cmap=cm,
-        )
-        plt.scatter(
-            [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
-        )
-        plt.colorbar(sc)
-        plt.show()
+        if True:
+            # plt.figure()
+            # cm = plt.cm.get_cmap("RdYlBu")
+            # sc = plt.scatter(
+            #    [item[0] for item in grid],
+            #    [item[1] for item in grid],
+            #    c=[conditional(*item) for item in grid],
+            #    s=20,
+            #    cmap=cm,
+            # )
+            # plt.scatter(
+            #    [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
+            # )
+            # plt.colorbar(sc)
+            # plt.show()
+            # y_0 = 0.4
+            # print(integrate.quad(lambda x: conditional(x, y_0), -np.inf, np.inf))
 
-        y_0 = 0.4
-        print(integrate.quad(lambda x: conditional(x, y_0), -np.inf, np.inf))
+            def rejection_sampler(p, xbounds, pmax):
+                while True:
+                    x = (np.random.rand(1) * (xbounds[1] - xbounds[0]) + xbounds[0])[0]
+                    y = (np.random.rand(1) * pmax)[0]
+                    if y <= p(x):
+                        return x
+
+            sample = lambda y: rejection_sampler(
+                lambda x: conditional(x, y),
+                (min(denseness_factors), max(denseness_factors)),
+                np.max(
+                    [
+                        conditional(
+                            x_lin,
+                            y,
+                        )
+                        for x_lin in np.linspace(
+                            min(denseness_factors), max(denseness_factors), 100
+                        )
+                    ]
+                ),
+            )
+
+            start = time.time()
+            sample(50)
+            print(f"{time.time()-start}s")
+
+            plt.scatter(
+                [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
+            )
+            plt.scatter(sampled_points.T[0], sampled_points.T[1], s=10)
+            plt.show()
+
+            print()
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
