@@ -17,13 +17,8 @@ from pyxtal.crystal import atom_site
 from pyxtal.lattice import Lattice
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 from dataset_simulations.core.structure_generation import generate_pyxtal_object
-import scipy.integrate as integrate
-from scipy import stats
 
 import statsmodels.api as sm
-from fastkde import fastKDE
-from KDEpy import TreeKDE
-from KDEpy import FFTKDE
 
 # import warnings
 # with warnings.catch_warnings():
@@ -181,6 +176,7 @@ def generate_structure(
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
     use_alternative_structure_generator_implementation=True,
+    denseness_factors_conditional_sampler_per_spg=None,
 ):
 
     if use_icsd_statistics and (
@@ -299,6 +295,7 @@ def generate_structure(
                 use_coordinates_directly=use_coordinates_directly,
                 use_lattice_paras_directly=use_lattice_paras_directly,
                 use_alternative_structure_generator_implementation=use_alternative_structure_generator_implementation,
+                denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -593,10 +590,15 @@ def generate_structure(
         if (
             denseness_factors_density_per_spg is None
             or denseness_factors_density_per_spg[group_object.number] is None
+            or (
+                denseness_factors_conditional_sampler_per_spg is not None
+                and denseness_factors_conditional_sampler_per_spg[group_object.number]
+                is None
+            )
         ):
             # factor = np.random.uniform(0.7, 2.2)
             factor = np.random.uniform(0.7, 2.13)
-        else:
+        elif denseness_factors_conditional_sampler_per_spg is None:
             while True:
                 factor = denseness_factors_density_per_spg[
                     group_object.number
@@ -604,8 +606,15 @@ def generate_structure(
 
                 if factor > 0.0:
                     break
+        else:
+            factor = None
 
         if not use_alternative_structure_generator_implementation:
+
+            if factor is None:
+                raise Exception(
+                    "Conditional kde for denseness_factor not supported in this implementation."
+                )
 
             my_crystal = pyxtal()
 
@@ -733,6 +742,7 @@ def generate_structure(
                     multiplicities=chosen_numbers,
                     max_volume=max_volume,
                     scale_volume_min_density=True,  # TODO: Maybe change
+                    denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
                 )
             except Exception as ex:
                 print(flush=True)
@@ -852,6 +862,7 @@ def generate_structures(
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
     group_object=None,  # for speedup
+    denseness_factors_conditional_sampler_per_spg=None,
 ):
 
     if group_object is None:
@@ -901,6 +912,7 @@ def generate_structures(
             all_data_per_spg=all_data_per_spg,
             use_coordinates_directly=use_coordinates_directly,
             use_lattice_paras_directly=use_lattice_paras_directly,
+            denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
         )
         for i in range(0, N)
     ]
@@ -1251,8 +1263,6 @@ def load_dataset_info():
 
     for spg in denseness_factors_per_spg.keys():
 
-        print(spg)
-
         denseness_factors = [
             item[0] for item in denseness_factors_per_spg[spg] if item is not None
         ]
@@ -1285,7 +1295,6 @@ def load_dataset_info():
 
         ########## 2D densities (p(factor | volume)):
 
-
         if len(denseness_factors) < 100:
             denseness_factors_conditional_sampler_per_spg[spg] = None
             continue
@@ -1295,10 +1304,15 @@ def load_dataset_info():
         ]
         entries = np.array(entries)
 
-        conditional_density = sm.nonparametric.KDEMultivariateConditional(endog=[denseness_factors],
-            exog=[sums_cov_volumes], dep_type='c', indep_type='c', bw=[0.0530715103, 104.043070])
+        conditional_density = sm.nonparametric.KDEMultivariateConditional(
+            endog=[denseness_factors],
+            exog=[sums_cov_volumes],
+            dep_type="c",
+            indep_type="c",
+            bw=[0.0530715103, 104.043070],
+        )
 
-        print(conditional_density.bw)
+        # print(conditional_density.bw)
 
         def rejection_sampler(p, xbounds, pmax):
             while True:
@@ -1308,7 +1322,7 @@ def load_dataset_info():
                     return x
 
         sample = lambda y: rejection_sampler(
-            lambda x: conditional_density.pdf([x],[y]),
+            lambda x: conditional_density.pdf([x], [y]),
             (0, max(denseness_factors) + 2),
             np.max(
                 [
@@ -1317,7 +1331,9 @@ def load_dataset_info():
                         [y],
                     )
                     for x_lin in np.linspace(
-                        min(denseness_factors), max(denseness_factors), 100 # TODO: You need more, here!
+                        min(denseness_factors),
+                        max(denseness_factors),
+                        100,  # TODO: You need more, here!
                     )
                 ]
             ),
@@ -1331,18 +1347,25 @@ def load_dataset_info():
             stop = time.time()
             print(f"Sampling once took {stop-start}s")
 
-        if False and spg in [2,15]:
-            
+        if False and spg in [2, 15]:
+
             start = time.time()
             samples = [[sample(volume), volume] for volume in sums_cov_volumes[0:1000]]
             stop = time.time()
             print(f"Sampling took {stop-start}s")
 
-            plt.scatter([item[1] for item in entries[0:1000]], [item[0] for item in entries[0:1000]], label="Original")
-            plt.scatter([item[1] for item in samples], [item[0] for item in samples], label="Resampled")
+            plt.scatter(
+                [item[1] for item in entries[0:1000]],
+                [item[0] for item in entries[0:1000]],
+                label="Original",
+            )
+            plt.scatter(
+                [item[1] for item in samples],
+                [item[0] for item in samples],
+                label="Resampled",
+            )
             plt.legend()
             plt.show()
-
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -1420,13 +1443,13 @@ def load_dataset_info():
         denseness_factors_density_per_spg,
         kde_per_spg,
         all_data_per_spg,
-        denseness_factors_conditional_sampler_per_spg
+        denseness_factors_conditional_sampler_per_spg,
     )
 
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1439,17 +1462,18 @@ if __name__ == "__main__":
             denseness_factors_density_per_spg,
             kde_per_spg,
             all_data_per_spg,
+            denseness_factors_conditional_sampler_per_spg,
         ) = load_dataset_info()
 
-        for i in range(0, 10):
+        for i in range(0, 100):
             # for spg in represented_spgs:
-            for spg in [2, 15, 14, 104, 129, 176]:
+            for spg in [2, 15]:
 
                 if denseness_factors_density_per_spg[spg] is None:
                     continue
                 print(spg)
 
-                if False:
+                if True:
                     generate_structures(
                         spg,
                         1,
@@ -1477,6 +1501,7 @@ if __name__ == "__main__":
                         False,
                         False,
                         None,
+                        denseness_factors_conditional_sampler_per_spg,
                     )
                 else:
                     generate_structures(
@@ -1561,7 +1586,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if True:
+    if False:
 
         data = load_dataset_info()
         print()

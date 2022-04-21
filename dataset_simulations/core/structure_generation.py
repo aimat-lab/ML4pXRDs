@@ -13,6 +13,7 @@ def generate_pyxtal_object(
     multiplicities,
     max_volume,
     scale_volume_min_density=True,
+    denseness_factors_conditional_sampler_per_spg=None,
 ):
     """Used to generate a pyxtal object using the given parameters.
 
@@ -56,7 +57,14 @@ def generate_pyxtal_object(
         # )
         r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
         volume += numIon * 4 / 3 * np.pi * r**3
-    volume *= factor
+
+    if factor is not None:
+        volume *= factor
+    else:
+        factor = denseness_factors_conditional_sampler_per_spg[group_object.number](
+            volume
+        )
+        volume *= factor
 
     if scale_volume_min_density:
         min_density = 0.75
