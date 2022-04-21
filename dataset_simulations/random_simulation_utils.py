@@ -1247,9 +1247,11 @@ def load_dataset_info():
         all_data_per_spg = data[9]
 
     denseness_factors_density_per_spg = {}
-    denseness_factors_conditional_density_per_spg = {}
+    denseness_factors_conditional_sampler_per_spg = {}
 
     for spg in denseness_factors_per_spg.keys():
+
+        print(spg)
 
         denseness_factors = [
             item[0] for item in denseness_factors_per_spg[spg] if item is not None
@@ -1258,7 +1260,7 @@ def load_dataset_info():
             item[1] for item in denseness_factors_per_spg[spg] if item is not None
         ]
 
-        # 1D densities:
+        ########## 1D densities:
 
         if len(denseness_factors) > 100:
             denseness_factors_density = kde.gaussian_kde(denseness_factors)
@@ -1281,10 +1283,11 @@ def load_dataset_info():
             plt.hist(denseness_factors_per_spg[spg], density=True, bins=60)
             plt.savefig(f"denseness_factors_fit_{spg}.png")
 
-        # 2D densities (p(factor | volume)):
+        ########## 2D densities (p(factor | volume)):
+
 
         if len(denseness_factors) < 100:
-            denseness_factors_conditional_density_per_spg[spg] = None
+            denseness_factors_conditional_sampler_per_spg[spg] = None
             continue
 
         entries = [
@@ -1293,13 +1296,9 @@ def load_dataset_info():
         entries = np.array(entries)
 
         conditional_density = sm.nonparametric.KDEMultivariateConditional(endog=[denseness_factors],
-            exog=[sums_cov_volumes], dep_type='c', indep_type='c', bw='normal_reference')
-        print(conditional_density.bw)
+            exog=[sums_cov_volumes], dep_type='c', indep_type='c', bw=[0.0530715103, 104.043070])
 
-        start = time.time()
-        print(conditional_density.pdf([3], [1000]))
-        stop = time.time()
-        print(f"{stop-start}s")
+        print(conditional_density.bw)
 
         def rejection_sampler(p, xbounds, pmax):
             while True:
@@ -1318,155 +1317,32 @@ def load_dataset_info():
                         [y],
                     )
                     for x_lin in np.linspace(
-                        min(denseness_factors), max(denseness_factors), 10
+                        min(denseness_factors), max(denseness_factors), 100 # TODO: You need more, here!
                     )
                 ]
             ),
         )
 
-        start = time.time()
-        sample(1000)
-        stop = time.time()
-        print(f"{stop-start}s")
+        denseness_factors_conditional_sampler_per_spg[spg] = sample
 
-        samples = [[sample(volume), volume] for volume in np.linspace(0,5000,100)]
-
-        # TODO: Actually also sample the volumes to better be able to compare to original data
-
-        plt.scatter([item[1] for item in samples], [item[0] for item in samples])
-        plt.show()
-
-        continue
-
-        exit()
-
-        grid_points = [[i,j] for i in np.linspace(min(denseness_factors), max(denseness_factors), 10) for j in np.linspace(min(sums_cov_volumes), max(sums_cov_volumes), 10)]
-
-
-        print()
-
-        ################
-        
-        density = FFTKDE(kernel="gaussian", bw=0.5).fit(entries) # TODO: Implement bandwidth estimation
-
-        print(f"{min(denseness_factors)} to {max(denseness_factors)}")
-        print(f"{min(sums_cov_volumes)} to {max(sums_cov_volumes)}")
-
-        result = density.evaluate(np.array([[3,1000]]))
-
-        result = density.evaluate((100,100))
-
-        print(density.evaluate())
-
-        conditional = (
-            lambda x, y: density.evaluate(np.array([[x, y]]))[0]
-            / integrate.quad(
-                lambda x_1, y_1: density.evaluate(np.array([[x_1, y_1]]))[0], 0, 20, args=(y) # TODO: Change 20?
-            )[0]
-        )
-
-        def rejection_sampler(p, xbounds, pmax):
-            while True:
-                x = (np.random.rand(1) * (xbounds[1] - xbounds[0]) + xbounds[0])[0]
-                y = (np.random.rand(1) * pmax)[0]
-                if y <= p(x):
-                    return x
-
-        sample = lambda y: rejection_sampler(
-            lambda x: conditional(x, y),
-            (min(denseness_factors), max(denseness_factors)),
-            np.max(
-                [
-                    conditional(
-                        x_lin,
-                        y,
-                    )
-                    for x_lin in np.linspace(
-                        min(denseness_factors), max(denseness_factors), 10
-                    )
-                ]
-            ),
-        )
-
-        start = time.time()
-        sample(50)
-        print(f"{time.time()-start}s")
-
-        #pOfYGivenX,axes = fastKDE.conditional(denseness_factors, sums_cov_volumes)
-        #print(pOfYGivenX[2,2])
-        #print()
-
-        """
-
-        conditional_density = sm.nonparametric.KDEMultivariateConditional(endog=[denseness_factors],
-            exog=[sums_cov_volumes], dep_type='c', indep_type='c', bw='normal_reference')
-        conditional_density.
-        print(conditional_density.bw)
-
-        conditional_density.
-
-        entries = np.array(entries).T
-
-        density = kde.gaussian_kde(entries)
-
-        if True:
-            sampled_points = density.resample(500).T
-            plt.scatter(
-                [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
-            )
-            plt.scatter(sampled_points.T[0], sampled_points.T[1], s=10)
-            # plt.show()
-
-        # Sampling a point:
-        # points = density.resample(100).T
-
-        # Get the conditional probability: p(x|y) = p(x,y) / p(y) = p(x,y) / int (p(x,y) dx)
-
-        conditional = (
-            lambda x, y: density([x, y])[0]
-            / integrate.quad(
-                lambda x_1, y_1: density([x_1, y_1])[0], -np.inf, +np.inf, args=(y)
-            )[0]
-        )
-
-        if True:
-
-            def rejection_sampler(p, xbounds, pmax):
-                while True:
-                    x = (np.random.rand(1) * (xbounds[1] - xbounds[0]) + xbounds[0])[0]
-                    y = (np.random.rand(1) * pmax)[0]
-                    if y <= p(x):
-                        return x
-
-            sample = lambda y: rejection_sampler(
-                lambda x: conditional(x, y),
-                (min(denseness_factors), max(denseness_factors)),
-                np.max(
-                    [
-                        conditional(
-                            x_lin,
-                            y,
-                        )
-                        for x_lin in np.linspace(
-                            min(denseness_factors), max(denseness_factors), 100
-                        )
-                    ]
-                ),
-            )
-
+        if False:
             start = time.time()
-            sample(50)
-            print(f"{time.time()-start}s")
+            sample(2000)
+            stop = time.time()
+            print(f"Sampling once took {stop-start}s")
 
-            plt.scatter(
-                [item[0] for item in entries.T], [item[1] for item in entries.T], s=50
-            )
-            plt.scatter(sampled_points.T[0], sampled_points.T[1], s=10)
+        if False and spg in [2,15]:
+            
+            start = time.time()
+            samples = [[sample(volume), volume] for volume in sums_cov_volumes[0:1000]]
+            stop = time.time()
+            print(f"Sampling took {stop-start}s")
+
+            plt.scatter([item[1] for item in entries[0:1000]], [item[0] for item in entries[0:1000]], label="Original")
+            plt.scatter([item[1] for item in samples], [item[0] for item in samples], label="Resampled")
+            plt.legend()
             plt.show()
 
-            print()
-
-            """
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -1544,6 +1420,7 @@ def load_dataset_info():
         denseness_factors_density_per_spg,
         kde_per_spg,
         all_data_per_spg,
+        denseness_factors_conditional_sampler_per_spg
     )
 
 
