@@ -449,40 +449,56 @@ reference_crystals = [item for item in reference_crystals if item is not None]
 labels = [item for item in labels if item is not None]
 
 randomized_patterns = []
+randomized_corn_sizes = []
 reference_patterns = []
+reference_corn_sizes = []
 
 xs = np.linspace(start_angle, end_angle, N)
 for i, crystal in enumerate(randomized_crystals):
-    pattern = get_xy_patterns(
+    patterns, corn_sizes = get_xy_patterns(
         crystal,
         wavelength=1.5406,
         xs=xs,
         NO_corn_sizes=1,
         two_theta_range=(start_angle, end_angle),
         do_print=False,
-        return_corn_sizes=False,
+        return_corn_sizes=True,
         return_angles_intensities=False,
         return_max_unscaled_intensity_angle=False,
-    )[0]
-    randomized_patterns.append(pattern)
+    )
+    randomized_patterns.append(patterns[0])
+    randomized_corn_sizes.append(corn_sizes[0])
 
 for i, crystal in enumerate(reference_crystals):
-    pattern = get_xy_patterns(
+    patterns, corn_sizes = get_xy_patterns(
         crystal,
         wavelength=1.5406,
         xs=xs,
         NO_corn_sizes=1,
         two_theta_range=(start_angle, end_angle),
         do_print=False,
-        return_corn_sizes=False,
+        return_corn_sizes=True,
         return_angles_intensities=False,
         return_max_unscaled_intensity_angle=False,
-    )[0]
-    reference_patterns.append(pattern)
+    )
+    reference_patterns.append(patterns[0])
+    reference_corn_sizes.append(corn_sizes[0])
 
 randomized_labels = []
 for i in range(0, len(labels)):
     randomized_labels.append(spgs.index(labels[i]))
+
+with open(out_base + "randomized_data.pickle", "wb") as file:
+    pickle.dump(
+        (
+            randomized_crystals,
+            randomized_labels,
+            randomized_corn_sizes,
+            reference_crystals,
+            reference_corn_sizes,
+        ),
+        file,
+    )
 
 ##############
 
@@ -1243,6 +1259,35 @@ falsely_indices_random = np.argwhere(prediction_random != val_y_random)[:, 0]
 with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
     pickle.dump((rightly_indices_random, falsely_indices_random), file)
 
+# Get predictions for val_x_randomized and write rightly_indices / falsely_indices:
+prediction_randomized = model.predict(val_x_randomized)
+prediction_randomized = np.argmax(prediction_randomized, axis=1)
+
+rightly_indices_randomized = np.argwhere(prediction_randomized == val_y_randomized)[
+    :, 0
+]
+falsely_indices_randomized = np.argwhere(prediction_randomized != val_y_randomized)[
+    :, 0
+]
+
+with open(out_base + "rightly_falsely_randomized.pickle", "wb") as file:
+    pickle.dump((rightly_indices_randomized, falsely_indices_randomized), file)
+
+# Get predictions for val_x_randomized_ref and write rightly_indices / falsely_indices:
+prediction_randomized_ref = model.predict(val_x_randomized_ref)
+prediction_randomized_ref = np.argmax(prediction_randomized_ref, axis=1)
+
+rightly_indices_randomized_ref = np.argwhere(
+    prediction_randomized_ref == val_y_randomized_ref
+)[:, 0]
+falsely_indices_randomized_ref = np.argwhere(
+    prediction_randomized_ref != val_y_randomized_ref
+)[:, 0]
+
+with open(out_base + "rightly_falsely_randomized_ref.pickle", "wb") as file:
+    pickle.dump((rightly_indices_randomized_ref, falsely_indices_randomized_ref), file)
+
+##########
 
 ray.shutdown()
 
