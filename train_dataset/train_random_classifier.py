@@ -30,7 +30,7 @@ from sklearn.preprocessing import StandardScaler
 from dataset_simulations.core.structure_generation import randomize_coordinates
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 
-tag = "2-spg-repetition-new-validations"
+tag = "2-spg-repetition-conditional_denseness_factors"
 description = ""
 
 if len(sys.argv) > 1:
@@ -97,6 +97,7 @@ use_dropout = False
 learning_rate = 0.001  # TODO: Change back
 
 use_denseness_factors_density = True
+use_conditional_density = True
 
 load_only_N_patterns_each_test = 1  # None possible
 
@@ -149,6 +150,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     denseness_factors_density_per_spg,
     kde_per_spg,
     all_data_per_spg_tmp,
+    denseness_factors_conditional_sampler_per_spg,
 ) = load_dataset_info()
 
 if scale_patterns and use_icsd_structures_directly:
@@ -186,6 +188,9 @@ else:
                 f"Excluded spg {spgs[i]} due to missing denseness_factor density (not enough statistics)."
             )
             del spgs[i]
+
+if not use_conditional_density:
+    denseness_factors_conditional_sampler_per_spg = None
 
 if not use_all_data_per_spg:
     all_data_per_spg = None
@@ -648,6 +653,7 @@ def batch_generator_with_additional(
         all_data_per_spg=all_data_per_spg,
         use_coordinates_directly=use_coordinates_directly,
         use_lattice_paras_directly=use_lattice_paras_directly,
+        denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
     )
 
     # Set the label to the right index:
@@ -714,6 +720,7 @@ def batch_generator_queue(
                 use_coordinates_directly=use_coordinates_directly,
                 use_lattice_paras_directly=use_lattice_paras_directly,
                 group_object_per_spg=group_object_per_spg,
+                denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -1055,6 +1062,7 @@ params_txt = (
     f"use_icsd_structures_directly: {str(use_icsd_structures_directly)} \n \n \n"
     f"load_only_N_patterns_each_test: {str(load_only_N_patterns_each_test)} \n \n \n"
     f"scale_patterns: {str(scale_patterns)} \n \n \n"
+    f"use_conditional_density: {str(use_conditional_density)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
