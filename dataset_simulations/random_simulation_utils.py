@@ -1261,6 +1261,7 @@ def load_dataset_info():
         denseness_factors_per_spg = data[8]
         all_data_per_spg = data[9]
 
+    print("Info about statistics (prepared) dataset:")
     total = 0
     total_below_100 = 0
     for spg in denseness_factors_per_spg.keys():

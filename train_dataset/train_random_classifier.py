@@ -49,7 +49,7 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 200
+NO_epochs = 15
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -107,7 +107,7 @@ scale_patterns = False
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -235,8 +235,8 @@ else:  # local
     icsd_sim_test.output_dir = path_to_patterns
 
 icsd_sim_test.load(
-    start=0,
-    stop=files_to_use_for_test_set if not local else 2,
+    start=5,  # TODO: Change back
+    stop=files_to_use_for_test_set if not local else 10,
     load_only_N_patterns_each=load_only_N_patterns_each_test,
 )  # to not overflow the memory
 
@@ -317,6 +317,8 @@ icsd_crystals_match = icsd_crystals_all.copy()
 icsd_metas_match = icsd_metas_all.copy()
 
 NO_wyckoffs_cached = {}
+is_pure_counter = 0
+
 for i in reversed(range(0, len(icsd_patterns_match))):
 
     if validation_max_NO_wyckoffs is not None:
@@ -339,6 +341,11 @@ for i in reversed(range(0, len(icsd_patterns_match))):
         del icsd_variations_match[i]
         del icsd_crystals_match[i]
         del icsd_metas_match[i]
+    else:
+        if is_pure:
+            is_pure_counter += 1
+
+print(f"is_pure: {is_pure_counter} of {len(icsd_patterns_match)}")
 
 icsd_patterns_match_corrected_labels_pure = icsd_patterns_match_corrected_labels.copy()
 icsd_labels_match_corrected_labels_pure = icsd_labels_match_corrected_labels.copy()
@@ -359,6 +366,9 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
             is_pure, NO_wyckoffs = NO_wyckoffs_cached[
                 icsd_metas_match_corrected_labels[i][0]
             ]
+
+    if is_pure != icsd_crystals_match_corrected_labels[i].is_ordered:
+        print("########## Warning: is_pure != is_ordered")
 
     if (
         validation_max_volume is not None
@@ -942,8 +952,8 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         icsd_sim_statistics.output_dir = path_to_patterns
 
     icsd_sim_statistics.load(
-        start=files_to_use_for_test_set,
-        stop=None if not local else files_to_use_for_test_set + 2,
+        start=files_to_use_for_test_set + 4,  # TODO: Change back
+        stop=None if not local else files_to_use_for_test_set + 9,
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
         else None,
