@@ -48,8 +48,8 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
-NO_epochs = 200
+batches_per_epoch = 15  # TODO: Change back
+NO_epochs = 3  # TODO: Change back
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -92,7 +92,7 @@ use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
-use_statistics_dataset_as_validation = True  # TODO: Change this
+use_statistics_dataset_as_validation = True  # TODO: Change this!?
 
 use_dropout = False
 
@@ -107,7 +107,7 @@ scale_patterns = False
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
