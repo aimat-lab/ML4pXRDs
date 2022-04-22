@@ -560,7 +560,7 @@ def get_random_xy_patterns(
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
     group_object_per_spg=None,
-    denseness_factors_conditional_sampler_per_spg=None,
+    denseness_factors_conditional_sampler_seeds_per_spg=None,
 ):
 
     result_patterns_y = []
@@ -605,7 +605,7 @@ def get_random_xy_patterns(
             use_coordinates_directly=use_coordinates_directly,
             use_lattice_paras_directly=use_lattice_paras_directly,
             group_object=group_object,
-            denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
+            denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
         )
 
         if do_print:

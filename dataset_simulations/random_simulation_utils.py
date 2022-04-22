@@ -19,6 +19,7 @@ from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 from dataset_simulations.core.structure_generation import generate_pyxtal_object
 
 import statsmodels.api as sm
+from dataset_simulations.core.structure_generation import sample_denseness_factor
 
 # import warnings
 # with warnings.catch_warnings():
@@ -176,7 +177,7 @@ def generate_structure(
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
     use_alternative_structure_generator_implementation=True,
-    denseness_factors_conditional_sampler_per_spg=None,
+    denseness_factors_conditional_sampler_seeds_per_spg=None,
 ):
 
     if use_icsd_statistics and (
@@ -295,7 +296,7 @@ def generate_structure(
                 use_coordinates_directly=use_coordinates_directly,
                 use_lattice_paras_directly=use_lattice_paras_directly,
                 use_alternative_structure_generator_implementation=use_alternative_structure_generator_implementation,
-                denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
+                denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -591,14 +592,16 @@ def generate_structure(
             denseness_factors_density_per_spg is None
             or denseness_factors_density_per_spg[group_object.number] is None
             or (
-                denseness_factors_conditional_sampler_per_spg is not None
-                and denseness_factors_conditional_sampler_per_spg[group_object.number]
+                denseness_factors_conditional_sampler_seeds_per_spg is not None
+                and denseness_factors_conditional_sampler_seeds_per_spg[
+                    group_object.number
+                ]
                 is None
             )
         ):
             # factor = np.random.uniform(0.7, 2.2)
             factor = np.random.uniform(0.7, 2.13)
-        elif denseness_factors_conditional_sampler_per_spg is None:
+        elif denseness_factors_conditional_sampler_seeds_per_spg is None:
             while True:
                 factor = denseness_factors_density_per_spg[
                     group_object.number
@@ -742,7 +745,7 @@ def generate_structure(
                     multiplicities=chosen_numbers,
                     max_volume=max_volume,
                     scale_volume_min_density=True,  # TODO: Maybe change
-                    denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
+                    denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                 )
             except Exception as ex:
                 print(flush=True)
@@ -862,7 +865,7 @@ def generate_structures(
     use_coordinates_directly=False,
     use_lattice_paras_directly=False,
     group_object=None,  # for speedup
-    denseness_factors_conditional_sampler_per_spg=None,
+    denseness_factors_conditional_sampler_seeds_per_spg=None,
 ):
 
     if group_object is None:
@@ -912,7 +915,7 @@ def generate_structures(
             all_data_per_spg=all_data_per_spg,
             use_coordinates_directly=use_coordinates_directly,
             use_lattice_paras_directly=use_lattice_paras_directly,
-            denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
+            denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
         )
         for i in range(0, N)
     ]
@@ -1259,7 +1262,7 @@ def load_dataset_info():
         all_data_per_spg = data[9]
 
     denseness_factors_density_per_spg = {}
-    denseness_factors_conditional_sampler_per_spg = {}
+    denseness_factors_conditional_sampler_seeds_per_spg = {}
 
     for spg in denseness_factors_per_spg.keys():
 
@@ -1296,7 +1299,7 @@ def load_dataset_info():
         ########## 2D densities (p(factor | volume)):
 
         if len(denseness_factors) < 100:
-            denseness_factors_conditional_sampler_per_spg[spg] = None
+            denseness_factors_conditional_sampler_seeds_per_spg[spg] = None
             continue
 
         entries = [
@@ -1309,37 +1312,17 @@ def load_dataset_info():
             exog=[sums_cov_volumes],
             dep_type="c",
             indep_type="c",
-            bw=[0.0530715103, 104.043070],
+            bw=[0.0530715103, 104.043070],  # TODO: Maybe change bandwidth in the future
         )
 
         # print(conditional_density.bw)
 
-        def rejection_sampler(p, xbounds, pmax):
-            while True:
-                x = (np.random.rand(1) * (xbounds[1] - xbounds[0]) + xbounds[0])[0]
-                y = (np.random.rand(1) * pmax)[0]
-                if y <= p(x):
-                    return x
-
-        sample = lambda y: rejection_sampler(
-            lambda x: conditional_density.pdf([x], [y]),
-            (0, max(denseness_factors) + 2),
-            np.max(
-                [
-                    conditional_density.pdf(
-                        [x_lin],
-                        [y],
-                    )
-                    for x_lin in np.linspace(
-                        min(denseness_factors),
-                        max(denseness_factors),
-                        100,  # TODO: You need more, here!
-                    )
-                ]
-            ),
+        sampler_seed = (
+            conditional_density,
+            min(denseness_factors),
+            max(denseness_factors),
         )
-
-        denseness_factors_conditional_sampler_per_spg[spg] = sample
+        denseness_factors_conditional_sampler_seeds_per_spg[spg] = sampler_seed
 
         if False:
             start = time.time()
@@ -1347,10 +1330,27 @@ def load_dataset_info():
             stop = time.time()
             print(f"Sampling once took {stop-start}s")
 
-        if False and spg in [2, 15]:
+    if False:
+        for spg in [2, 15]:
+
+            denseness_factors = [
+                item[0] for item in denseness_factors_per_spg[spg] if item is not None
+            ]
+            sums_cov_volumes = [
+                item[1] for item in denseness_factors_per_spg[spg] if item is not None
+            ]
+            entries = [
+                entry for entry in denseness_factors_per_spg[spg] if entry is not None
+            ]
+            entries = np.array(entries)
+
+            seed = denseness_factors_conditional_sampler_seeds_per_spg[spg]
 
             start = time.time()
-            samples = [[sample(volume), volume] for volume in sums_cov_volumes[0:1000]]
+            samples = [
+                [sample_denseness_factor(volume, seed), volume]
+                for volume in sums_cov_volumes[0:1000]
+            ]
             stop = time.time()
             print(f"Sampling took {stop-start}s")
 
@@ -1443,7 +1443,7 @@ def load_dataset_info():
         denseness_factors_density_per_spg,
         kde_per_spg,
         all_data_per_spg,
-        denseness_factors_conditional_sampler_per_spg,
+        denseness_factors_conditional_sampler_seeds_per_spg,
     )
 
 
@@ -1462,10 +1462,11 @@ if __name__ == "__main__":
             denseness_factors_density_per_spg,
             kde_per_spg,
             all_data_per_spg,
-            denseness_factors_conditional_sampler_per_spg,
+            denseness_factors_conditional_sampler_seeds_per_spg,
         ) = load_dataset_info()
 
-        for i in range(0, 100):
+        volumes = []
+        for i in range(0, 1000):
             # for spg in represented_spgs:
             for spg in [2, 15]:
 
@@ -1474,7 +1475,7 @@ if __name__ == "__main__":
                 print(spg)
 
                 if True:
-                    generate_structures(
+                    structure = generate_structures(
                         spg,
                         1,
                         100,
@@ -1501,8 +1502,10 @@ if __name__ == "__main__":
                         False,
                         False,
                         None,
-                        denseness_factors_conditional_sampler_per_spg,
-                    )
+                        denseness_factors_conditional_sampler_seeds_per_spg,
+                    )[0]
+                    volumes.append(structure.volume)
+
                 else:
                     generate_structures(
                         spg,
@@ -1532,6 +1535,9 @@ if __name__ == "__main__":
                         False,
                         None,
                     )
+
+        plt.hist(volumes, bins=40)
+        plt.show()
 
     if False:
 

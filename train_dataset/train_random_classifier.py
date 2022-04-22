@@ -150,7 +150,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     denseness_factors_density_per_spg,
     kde_per_spg,
     all_data_per_spg_tmp,
-    denseness_factors_conditional_sampler_per_spg,
+    denseness_factors_conditional_sampler_seeds_per_spg,
 ) = load_dataset_info()
 
 if scale_patterns and use_icsd_structures_directly:
@@ -190,7 +190,7 @@ else:
             del spgs[i]
 
 if not use_conditional_density:
-    denseness_factors_conditional_sampler_per_spg = None
+    denseness_factors_conditional_sampler_seeds_per_spg = None
 
 if not use_all_data_per_spg:
     all_data_per_spg = None
@@ -669,7 +669,7 @@ def batch_generator_with_additional(
         all_data_per_spg=all_data_per_spg,
         use_coordinates_directly=use_coordinates_directly,
         use_lattice_paras_directly=use_lattice_paras_directly,
-        denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
+        denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
     )
 
     # Set the label to the right index:
@@ -736,7 +736,7 @@ def batch_generator_queue(
                 use_coordinates_directly=use_coordinates_directly,
                 use_lattice_paras_directly=use_lattice_paras_directly,
                 group_object_per_spg=group_object_per_spg,
-                denseness_factors_conditional_sampler_per_spg=denseness_factors_conditional_sampler_per_spg,
+                denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
             )
 
             patterns, labels = shuffle(patterns, labels)

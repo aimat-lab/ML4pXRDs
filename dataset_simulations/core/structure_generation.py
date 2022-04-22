@@ -5,6 +5,39 @@ from pyxtal.lattice import Lattice
 from pyxtal.crystal import atom_site
 
 
+def rejection_sampler(p, xbounds, pmax):
+    while True:
+        x = (np.random.rand(1) * (xbounds[1] - xbounds[0]) + xbounds[0])[0]
+        y = (np.random.rand(1) * pmax)[0]
+        if y <= p(x):
+            return x
+
+
+def sample_denseness_factor(volume, seed):
+
+    conditional_density = seed[0]
+    min_denseness_factors = seed[1]
+    max_denseness_factors = seed[2]
+
+    return rejection_sampler(
+        lambda factor: conditional_density.pdf([factor], [volume]),
+        (0, max_denseness_factors + 2),
+        np.max(
+            [
+                conditional_density.pdf(
+                    [factor_lin],
+                    [volume],
+                )
+                for factor_lin in np.linspace(
+                    min_denseness_factors,
+                    max_denseness_factors,
+                    100,
+                )
+            ]
+        ),
+    )
+
+
 def generate_pyxtal_object(
     group_object,
     factor,
@@ -13,7 +46,7 @@ def generate_pyxtal_object(
     multiplicities,
     max_volume,
     scale_volume_min_density=True,
-    denseness_factors_conditional_sampler_per_spg=None,
+    denseness_factors_conditional_sampler_seeds_per_spg=None,
 ):
     """Used to generate a pyxtal object using the given parameters.
 
@@ -61,8 +94,9 @@ def generate_pyxtal_object(
     if factor is not None:
         volume *= factor
     else:
-        factor = denseness_factors_conditional_sampler_per_spg[group_object.number](
-            volume
+        factor = sample_denseness_factor(
+            volume,
+            denseness_factors_conditional_sampler_seeds_per_spg[group_object.number],
         )
         volume *= factor
 
