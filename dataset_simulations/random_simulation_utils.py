@@ -1261,6 +1261,15 @@ def load_dataset_info():
         denseness_factors_per_spg = data[8]
         all_data_per_spg = data[9]
 
+    total = 0
+    total_below_100 = 0
+    for spg in denseness_factors_per_spg.keys():
+        total += len(denseness_factors_per_spg[spg])
+        if len(denseness_factors_per_spg[spg]) < 100:
+            total_below_100 += 1
+    print(f"{total} total entries.")
+    print(f"{total_below_100} spgs below 100 entries.")
+
     denseness_factors_density_per_spg = {}
     denseness_factors_conditional_sampler_seeds_per_spg = {}
 
@@ -1449,7 +1458,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1592,7 +1601,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if False:
+    if True:
 
         data = load_dataset_info()
         print()
