@@ -2220,7 +2220,7 @@ if __name__ == "__main__":
 
     for flag in [True, False]:
         create_histogram(
-            "angles",
+            "angles_all",
             [
                 [j for i in icsd_rightly_angles for j in i],
                 [j for i in icsd_falsely_angles for j in i],
@@ -2229,7 +2229,76 @@ if __name__ == "__main__":
                 [j for i in random_rightly_angles for j in i],
                 [j for i in random_falsely_angles for j in i],
             ],
-            r"angle / °",
+            r"angles all / °",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "angle_0",
+            [
+                [item[0] for item in icsd_rightly_angles],
+                [item[0] for item in icsd_falsely_angles],
+            ],
+            [
+                [item[0] for item in random_rightly_angles],
+                [item[0] for item in random_falsely_angles],
+            ],
+            r"angle 0 / °",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "angle_1",
+            [
+                [item[1] for item in icsd_rightly_angles],
+                [item[1] for item in icsd_falsely_angles],
+            ],
+            [
+                [item[1] for item in random_rightly_angles],
+                [item[1] for item in random_falsely_angles],
+            ],
+            r"angle 1 / °",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "angle_2",
+            [
+                [item[2] for item in icsd_rightly_angles],
+                [item[2] for item in icsd_falsely_angles],
+            ],
+            [
+                [item[2] for item in random_rightly_angles],
+                [item[2] for item in random_falsely_angles],
+            ],
+            r"angle 2 / °",
             [
                 "ICSD correctly classified",
                 "ICSD incorrectly classified",
