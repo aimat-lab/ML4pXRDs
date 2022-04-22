@@ -92,6 +92,8 @@ use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
+use_statistics_dataset_as_validation = True  # TODO: Change this
+
 use_dropout = False
 
 learning_rate = 0.001  # TODO: Change back
@@ -917,107 +919,124 @@ with open(out_base + "random_data.pickle", "wb") as file:
     )
 
 #########################################################
-# Prepare the training directly from ICSD
+# Prepare the training directly from ICSD OR statistics validation dataset
 
-if use_icsd_structures_directly:
+if use_icsd_structures_directly or use_statistics_dataset_as_validation:
+
+    if use_icsd_structures_directly and use_statistics_dataset_as_validation:
+        raise Exception(
+            "Cannot train and validate on statistics dataset at the same time."
+        )
 
     if jobid is not None and jobid != "":
-        icsd_sim_train = Simulation(
+        icsd_sim_statistics = Simulation(
             os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
             os.path.expanduser("~/Databases/ICSD/cif/"),
         )
-        icsd_sim_train.output_dir = path_to_patterns
+        icsd_sim_statistics.output_dir = path_to_patterns
     else:  # local
-        icsd_sim_train = Simulation(
+        icsd_sim_statistics = Simulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
-        icsd_sim_train.output_dir = path_to_patterns
+        icsd_sim_statistics.output_dir = path_to_patterns
 
-    icsd_sim_train.load(
-        start=files_to_use_for_test_set if not local else 2,
-        stop=None if not local else 4,
+    icsd_sim_statistics.load(
+        start=files_to_use_for_test_set,
+        stop=None if not local else files_to_use_for_test_set + 2,
+        load_only_N_patterns_each=load_only_N_patterns_each_test
+        if use_statistics_dataset_as_validation
+        else None,
     )  # to not overflow the memory if local
 
-    train_icsd_patterns_match = icsd_sim_train.sim_patterns
-    train_icsd_labels_match = icsd_sim_train.sim_labels
-    train_icsd_variations_match = icsd_sim_train.sim_variations
-    train_icsd_crystals_match = icsd_sim_train.sim_crystals
-    train_icsd_metas_match = icsd_sim_train.sim_metas
+    statistics_icsd_patterns_match = icsd_sim_statistics.sim_patterns
+    statistics_icsd_labels_match = icsd_sim_statistics.sim_labels
+    statistics_icsd_variations_match = icsd_sim_statistics.sim_variations
+    statistics_icsd_crystals_match = icsd_sim_statistics.sim_crystals
+    statistics_icsd_metas_match = icsd_sim_statistics.sim_metas
 
     # Mainly to make the volume constraints correct:
     conventional_errors_counter = 0
     conventional_counter = 0
     print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures for training set...",
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures for statistics dataset...",
         flush=True,
     )
-    for i in reversed(range(0, len(train_icsd_crystals_match))):
+    for i in reversed(range(0, len(statistics_icsd_crystals_match))):
 
-        if train_icsd_labels_match[i][0] in spgs:  # speedup
+        if statistics_icsd_labels_match[i][0] in spgs:  # speedup
 
             conventional_counter += 1
             try:
-                current_struc = train_icsd_crystals_match[i]
+                current_struc = statistics_icsd_crystals_match[i]
                 analyzer = SpacegroupAnalyzer(current_struc)
                 conv = analyzer.get_conventional_standard_structure()
-                train_icsd_crystals_match[i] = conv
+                statistics_icsd_crystals_match[i] = conv
 
             except Exception as ex:
 
-                print("Error calculating conventional cell of ICSD (training):")
+                print("Error calculating conventional cell of ICSD (statistics):")
                 print(ex)
                 conventional_errors_counter += 1
 
     print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {conventional_counter} failed to convert to conventional cell (training).",
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {conventional_counter} failed to convert to conventional cell (statistics).",
         flush=True,
     )
 
-    for i in reversed(range(0, len(train_icsd_patterns_match))):
+    for i in reversed(range(0, len(statistics_icsd_patterns_match))):
 
         if (
-            np.any(np.isnan(train_icsd_variations_match[i][0]))
-            or train_icsd_labels_match[i][0] not in spgs
+            np.any(np.isnan(statistics_icsd_variations_match[i][0]))
+            or statistics_icsd_labels_match[i][0] not in spgs
         ):
-            del train_icsd_patterns_match[i]
-            del train_icsd_labels_match[i]
-            del train_icsd_variations_match[i]
-            del train_icsd_crystals_match[i]
-            del train_icsd_metas_match[i]
+            del statistics_icsd_patterns_match[i]
+            del statistics_icsd_labels_match[i]
+            del statistics_icsd_variations_match[i]
+            del statistics_icsd_crystals_match[i]
+            del statistics_icsd_metas_match[i]
 
-    for i in reversed(range(0, len(train_icsd_patterns_match))):
+    for i in reversed(range(0, len(statistics_icsd_patterns_match))):
         if validation_max_NO_wyckoffs is not None:
-            is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim_train.get_wyckoff_info(
-                train_icsd_metas_match[i][0]
-            )
+            (
+                is_pure,
+                NO_wyckoffs,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+            ) = icsd_sim_statistics.get_wyckoff_info(statistics_icsd_metas_match[i][0])
 
         if (
             validation_max_volume is not None
-            and train_icsd_crystals_match[i].volume > validation_max_volume
+            and statistics_icsd_crystals_match[i].volume > validation_max_volume
         ) or (
             validation_max_NO_wyckoffs is not None
             and NO_wyckoffs > validation_max_NO_wyckoffs
         ):
-            del train_icsd_patterns_match[i]
-            del train_icsd_labels_match[i]
-            del train_icsd_variations_match[i]
-            del train_icsd_crystals_match[i]
-            del train_icsd_metas_match[i]
+            del statistics_icsd_patterns_match[i]
+            del statistics_icsd_labels_match[i]
+            del statistics_icsd_variations_match[i]
+            del statistics_icsd_crystals_match[i]
+            del statistics_icsd_metas_match[i]
 
-    train_y_match = []
-    for i, label in enumerate(train_icsd_labels_match):
-        train_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+    statistics_y_match = []
+    for i, label in enumerate(statistics_icsd_labels_match):
+        statistics_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
 
-    train_x_match = []
-    for pattern in train_icsd_patterns_match:
+    statistics_x_match = []
+    for pattern in statistics_icsd_patterns_match:
         for sub_pattern in pattern:
-            train_x_match.append(sub_pattern)
+            statistics_x_match.append(sub_pattern)
 
-    train_x_match, train_y_match = shuffle(train_x_match, train_y_match)
+    statistics_x_match, statistics_y_match = shuffle(
+        statistics_x_match, statistics_y_match
+    )
 
-    train_y_match = np.array(train_y_match)
-    train_x_match = np.expand_dims(train_x_match, axis=2)
+    statistics_y_match = np.array(statistics_y_match)
+    statistics_x_match = np.expand_dims(statistics_x_match, axis=2)
 
 #########################################################
 
@@ -1079,6 +1098,7 @@ params_txt = (
     f"load_only_N_patterns_each_test: {str(load_only_N_patterns_each_test)} \n \n \n"
     f"scale_patterns: {str(scale_patterns)} \n \n \n"
     f"use_conditional_density: {str(use_conditional_density)} \n \n \n"
+    f"use_statistics_dataset_as_validation: {str(use_statistics_dataset_as_validation)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
@@ -1126,6 +1146,10 @@ class CustomCallback(keras.callbacks.Callback):
                 scores_randomized_ref = self.model.evaluate(
                     x=val_x_randomized_ref, y=val_y_randomized_ref, verbose=0
                 )
+                if use_statistics_dataset_as_validation:
+                    scores_statistics = self.model.evaluate(
+                        x=statistics_x_match, y=statistics_y_match, verbose=0
+                    )
 
                 assert metric_names[0] == "loss"
 
@@ -1151,6 +1175,10 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar(
                     "loss randomized ref", data=scores_randomized_ref[0], step=epoch
                 )
+                if use_statistics_dataset_as_validation:
+                    tf.summary.scalar(
+                        "loss statistics", data=scores_statistics[0], step=epoch
+                    )
 
                 tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
                 tf.summary.scalar("accuracy match", data=scores_match[1], step=epoch)
@@ -1176,6 +1204,10 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar(
                     "accuracy randomized ref", data=scores_randomized_ref[1], step=epoch
                 )
+                if use_statistics_dataset_as_validation:
+                    tf.summary.scalar(
+                        "accuracy statistics", data=scores_statistics[1], step=epoch
+                    )
 
                 tf.summary.scalar(
                     "accuracy gap", data=scores_random[1] - scores_match[1], step=epoch
@@ -1225,8 +1257,8 @@ if not use_icsd_structures_directly:
     )
 else:
     model.fit(
-        x=train_x_match,
-        y=train_y_match,
+        x=statistics_x_match,
+        y=statistics_y_match,
         epochs=NO_epochs,
         batch_size=100,
         callbacks=[tb_callback, CustomCallback()],
