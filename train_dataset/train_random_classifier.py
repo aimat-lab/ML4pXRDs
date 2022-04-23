@@ -30,7 +30,7 @@ from sklearn.preprocessing import StandardScaler
 from dataset_simulations.core.structure_generation import randomize_coordinates
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 
-tag = "2-spg-repetition-conditional_denseness_factors"
+tag = "2-spg-1by1-conditional_denseness_factors"
 description = ""
 
 if len(sys.argv) > 1:
@@ -49,7 +49,7 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 1500
-NO_epochs = 15
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -86,8 +86,8 @@ do_symmetry_checks = True
 
 use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
-use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
-use_all_data_per_spg = False  # Overwrites all the previous ones
+use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
+use_all_data_per_spg = True  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
@@ -107,7 +107,7 @@ scale_patterns = False
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -235,8 +235,8 @@ else:  # local
     icsd_sim_test.output_dir = path_to_patterns
 
 icsd_sim_test.load(
-    start=5,  # TODO: Change back
-    stop=files_to_use_for_test_set if not local else 10,
+    start=0,
+    stop=files_to_use_for_test_set if not local else 4,
     load_only_N_patterns_each=load_only_N_patterns_each_test,
 )  # to not overflow the memory
 
@@ -952,8 +952,8 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         icsd_sim_statistics.output_dir = path_to_patterns
 
     icsd_sim_statistics.load(
-        start=files_to_use_for_test_set + 4,  # TODO: Change back
-        stop=None if not local else files_to_use_for_test_set + 9,
+        start=files_to_use_for_test_set,
+        stop=None if not local else files_to_use_for_test_set + 4,
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
         else None,
