@@ -129,7 +129,7 @@ def generate_pyxtal_object(
     return pyxtal_object
 
 
-def randomize_coordinates(crystals):
+def randomize(crystals, randomize_coordinates=True, randomize_lattice=False):
 
     reference_crystals = []
     randomized_crystals = []
@@ -155,16 +155,22 @@ def randomize_coordinates(crystals):
         reference_crystal = pyxtal_object.to_pymatgen()
         reference_crystals.append(reference_crystal)
 
-        for site in pyxtal_object.atom_sites:
-
-            wyckoff = site.wp
-
-            random_coord = pyxtal_object.lattice.generate_point()
-            projected_coord = wyckoff.project(
-                random_coord, pyxtal_object.lattice.matrix
+        if randomize_lattice:  # regenerate the lattice
+            pyxtal_object.lattice = Lattice(
+                pyxtal_object.group.lattice_type, pyxtal_object.lattice.volume
             )
 
-            site.update(pos=projected_coord)
+        if randomize_coordinates:  # regenerate coordinates
+            for site in pyxtal_object.atom_sites:
+
+                wyckoff = site.wp
+
+                random_coord = pyxtal_object.lattice.generate_point()
+                projected_coord = wyckoff.project(
+                    random_coord, pyxtal_object.lattice.matrix
+                )
+
+                site.update(pos=projected_coord)
 
         randomized_crystal = pyxtal_object.to_pymatgen()
         randomized_crystals.append(randomized_crystal)

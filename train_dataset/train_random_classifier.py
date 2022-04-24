@@ -27,10 +27,10 @@ from pyxtal.symmetry import Group
 import gc
 import psutil
 from sklearn.preprocessing import StandardScaler
-from dataset_simulations.core.structure_generation import randomize_coordinates
+from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 
-tag = "2-spg-1by1-conditional_denseness_factors"
+tag = "2-spg-repetition-conditional_denseness_factors_randomized_paras_validations"
 description = ""
 
 if len(sys.argv) > 1:
@@ -86,8 +86,8 @@ do_symmetry_checks = True
 
 use_NO_wyckoffs_counts = True
 use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
-use_kde_per_spg = True  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
-use_all_data_per_spg = True  # Overwrites all the previous ones
+use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
+use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
@@ -436,7 +436,7 @@ with open(out_base + "icsd_data.pickle", "wb") as file:
 
 ####### Generate match (corrected spgs) validation set with randomized coordinates and reference:
 
-randomized_crystals, reference_crystals, labels = randomize_coordinates(
+randomized_crystals, reference_crystals, labels = randomize(
     icsd_crystals_match_corrected_labels
 )
 
