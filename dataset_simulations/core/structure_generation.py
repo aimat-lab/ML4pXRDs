@@ -183,6 +183,14 @@ def generate_pyxtal_object(
 
     pyxtal_object.lattice = Lattice(group_object.lattice_type, volume)
 
+    if lattice_paras_density_per_lattice_type is not None:
+        paras = sample_lattice_paras(
+            volume,
+            pyxtal_object.group.lattice_type,
+            lattice_paras_density_per_lattice_type,
+        )
+        pyxtal_object.lattice.set_para(paras, radians=True)
+
     for specie, wyckoff_index in zip(species, chosen_wyckoff_indices):
 
         wyckoff = group_object.get_wyckoff_position(wyckoff_index)
@@ -198,7 +206,12 @@ def generate_pyxtal_object(
     return pyxtal_object
 
 
-def randomize(crystals, randomize_coordinates=True, randomize_lattice=False):
+def randomize(
+    crystals,
+    randomize_coordinates=True,
+    randomize_lattice=False,
+    lattice_paras_density_per_lattice_type=None,
+):
 
     reference_crystals = []
     randomized_crystals = []
@@ -228,6 +241,14 @@ def randomize(crystals, randomize_coordinates=True, randomize_lattice=False):
             pyxtal_object.lattice = Lattice(
                 pyxtal_object.group.lattice_type, pyxtal_object.lattice.volume
             )
+
+            if lattice_paras_density_per_lattice_type is not None:
+                paras = sample_lattice_paras(
+                    pyxtal_object.lattice.volume,
+                    pyxtal_object.group.lattice_type,
+                    lattice_paras_density_per_lattice_type,
+                )
+                pyxtal_object.lattice.set_para(paras, radians=True)
 
         if randomize_coordinates:  # regenerate coordinates
             for site in pyxtal_object.atom_sites:
