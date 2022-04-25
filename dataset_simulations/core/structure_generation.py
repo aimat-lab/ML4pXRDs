@@ -38,6 +38,74 @@ def sample_denseness_factor(volume, seed):
     )
 
 
+def sample_lattice_paras(volume, lattice_type, lattice_paras_density_per_lattice_type):
+
+    if lattice_type not in ["cubic", "Cubic"]:
+        density = lattice_paras_density_per_lattice_type[lattice_type]
+        paras_constrained = density.resample(1).T[0]
+
+    if lattice_type in ["cubic", "Cubic"]:
+        paras = [1, 1, 1, np.pi / 2, np.pi / 2, np.pi / 2]
+
+    elif lattice_type in ["hexagonal", "trigonal", "Hexagonal", "Trigonal"]:
+        paras = [
+            paras_constrained[0],
+            paras_constrained[0],
+            paras_constrained[1],
+            np.pi / 2,
+            np.pi / 2,
+            np.pi * 2 / 3,
+        ]
+
+    elif lattice_type in ["tetragonal", "Tetragonal"]:
+        paras = [
+            paras_constrained[0],
+            paras_constrained[0],
+            paras_constrained[1],
+            np.pi / 2,
+            np.pi / 2,
+            np.pi / 2,
+        ]
+
+    elif lattice_type in ["orthorhombic", "Orthorhombic"]:
+        paras = [
+            paras_constrained[0],
+            paras_constrained[1],
+            paras_constrained[2],
+            np.pi / 2,
+            np.pi / 2,
+            np.pi / 2,
+        ]
+
+    elif lattice_type in ["monoclinic", "Monoclinic"]:
+        paras = [
+            paras_constrained[0],
+            paras_constrained[1],
+            paras_constrained[2],
+            np.pi / 2,
+            paras_constrained[3],
+            np.pi / 2,
+        ]
+
+    elif lattice_type == "triclinic":
+        paras = paras_constrained
+
+    else:
+
+        raise Exception(f"Invalid lattice type {lattice_type}")
+
+    cbrt_volume = np.cbrt(volume)
+
+    return [
+        cbrt_volume * paras[0],
+        cbrt_volume * paras[1],
+        cbrt_volume * paras[2],
+        paras[3],
+        paras[4],
+        paras[5],
+    ]
+
+
 def generate_pyxtal_object(
     group_object,
     factor,
@@ -47,6 +115,7 @@ def generate_pyxtal_object(
     max_volume,
     scale_volume_min_density=True,
     denseness_factors_conditional_sampler_seeds_per_spg=None,
+    lattice_paras_density_per_lattice_type=None,
 ):
     """Used to generate a pyxtal object using the given parameters.
 

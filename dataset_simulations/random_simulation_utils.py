@@ -1538,8 +1538,6 @@ def load_dataset_info():
 
         lattice_paras_density_per_lattice_type[lattice_type] = density
 
-    print()
-
     return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn.
         # The only correlation considered is having multiple elements of the same type (less spread in number of unique elements).
         # This is the main assumption of my work.
