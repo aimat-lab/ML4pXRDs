@@ -1573,7 +1573,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1587,10 +1587,11 @@ if __name__ == "__main__":
             kde_per_spg,
             all_data_per_spg,
             denseness_factors_conditional_sampler_seeds_per_spg,
+            lattice_paras_density_per_lattice_type,
         ) = load_dataset_info()
 
         volumes = []
-        for i in range(0, 1000):
+        for i in range(0, 200):
             # for spg in represented_spgs:
             for spg in [2, 15]:
 
@@ -1627,6 +1628,7 @@ if __name__ == "__main__":
                         False,
                         None,
                         denseness_factors_conditional_sampler_seeds_per_spg,
+                        lattice_paras_density_per_lattice_type,
                     )[0]
                     volumes.append(structure.volume)
 
@@ -1716,7 +1718,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if True:
+    if False:
 
         data = load_dataset_info()
         print()

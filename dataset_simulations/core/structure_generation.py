@@ -3,6 +3,7 @@ from pyxtal.database.element import Element
 from pyxtal import pyxtal
 from pyxtal.lattice import Lattice
 from pyxtal.crystal import atom_site
+import time
 
 
 def rejection_sampler(p, xbounds, pmax):
@@ -42,7 +43,11 @@ def sample_lattice_paras(volume, lattice_type, lattice_paras_density_per_lattice
 
     if lattice_type not in ["cubic", "Cubic"]:
         density = lattice_paras_density_per_lattice_type[lattice_type]
+
+        # start = time.time()
         paras_constrained = density.resample(1).T[0]
+        # stop = time.time()
+        # print(f"{stop-start}s")
 
     if lattice_type in ["cubic", "Cubic"]:
         paras = [1, 1, 1, np.pi / 2, np.pi / 2, np.pi / 2]
@@ -186,7 +191,7 @@ def generate_pyxtal_object(
     if lattice_paras_density_per_lattice_type is not None:
         paras = sample_lattice_paras(
             volume,
-            pyxtal_object.group.lattice_type,
+            group_object.lattice_type,
             lattice_paras_density_per_lattice_type,
         )
         pyxtal_object.lattice.set_para(paras, radians=True)
