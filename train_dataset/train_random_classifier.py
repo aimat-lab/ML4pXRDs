@@ -94,6 +94,8 @@ use_icsd_structures_directly = False  # This overwrites mose of the previous set
 
 use_statistics_dataset_as_validation = True  # TODO: Change this!?
 
+generate_randomized_validation_datasets = True
+
 use_dropout = False
 
 learning_rate = 0.001  # TODO: Change back
@@ -436,188 +438,194 @@ with open(out_base + "icsd_data.pickle", "wb") as file:
 
 ####### Generate match (corrected spgs) validation set with randomized coordinates and reference:
 
-randomized_coords_crystals, reference_crystals, labels = randomize(
-    icsd_crystals_match_corrected_labels,
-    randomize_coordinates=True,
-    randomize_lattice=False,
-)
+if generate_randomized_validation_datasets:
 
-errors_counter = 0
-for i in reversed(range(len(labels))):
-
-    label = labels[i]
-
-    if label is not None:
-        if label != icsd_labels_match_corrected_labels[i]:
-            errors_counter += 1
-
-            del labels[i]
-            del randomized_coords_crystals[i]
-            del reference_crystals[i]
-
-print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
-
-randomized_coords_crystals = [
-    item for item in randomized_coords_crystals if item is not None
-]
-reference_crystals = [item for item in reference_crystals if item is not None]
-labels = [item for item in labels if item is not None]
-
-randomized_coords_patterns = []
-randomized_coords_corn_sizes = []
-reference_patterns = []
-reference_corn_sizes = []
-
-xs = np.linspace(start_angle, end_angle, N)
-for i, crystal in enumerate(randomized_coords_crystals):
-    patterns, corn_sizes = get_xy_patterns(
-        crystal,
-        wavelength=1.5406,
-        xs=xs,
-        NO_corn_sizes=1,
-        two_theta_range=(start_angle, end_angle),
-        do_print=False,
-        return_corn_sizes=True,
-        return_angles_intensities=False,
-        return_max_unscaled_intensity_angle=False,
+    randomized_coords_crystals, reference_crystals, labels = randomize(
+        icsd_crystals_match_corrected_labels,
+        randomize_coordinates=True,
+        randomize_lattice=False,
     )
-    randomized_coords_patterns.append(patterns[0])
-    randomized_coords_corn_sizes.append(corn_sizes[0])
 
-for i, crystal in enumerate(reference_crystals):
-    patterns, corn_sizes = get_xy_patterns(
-        crystal,
-        wavelength=1.5406,
-        xs=xs,
-        NO_corn_sizes=1,
-        two_theta_range=(start_angle, end_angle),
-        do_print=False,
-        return_corn_sizes=True,
-        return_angles_intensities=False,
-        return_max_unscaled_intensity_angle=False,
-    )
-    reference_patterns.append(patterns[0])
-    reference_corn_sizes.append(corn_sizes[0])
+    errors_counter = 0
+    for i in reversed(range(len(labels))):
 
-randomized_coords_labels = []
-for i in range(0, len(labels)):
-    randomized_coords_labels.append(spgs.index(labels[i]))
+        label = labels[i]
 
-with open(out_base + "randomized_coords_data.pickle", "wb") as file:
-    pickle.dump(
-        (
-            randomized_coords_crystals,
-            randomized_coords_labels,
-            randomized_coords_corn_sizes,
-            reference_crystals,
-            reference_corn_sizes,
-        ),
-        file,
-    )
+        if label is not None:
+            if label != icsd_labels_match_corrected_labels[i]:
+                errors_counter += 1
+
+                del labels[i]
+                del randomized_coords_crystals[i]
+                del reference_crystals[i]
+
+    print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
+
+    randomized_coords_crystals = [
+        item for item in randomized_coords_crystals if item is not None
+    ]
+    reference_crystals = [item for item in reference_crystals if item is not None]
+    labels = [item for item in labels if item is not None]
+
+    randomized_coords_patterns = []
+    randomized_coords_corn_sizes = []
+    reference_patterns = []
+    reference_corn_sizes = []
+
+    xs = np.linspace(start_angle, end_angle, N)
+    for i, crystal in enumerate(randomized_coords_crystals):
+        patterns, corn_sizes = get_xy_patterns(
+            crystal,
+            wavelength=1.5406,
+            xs=xs,
+            NO_corn_sizes=1,
+            two_theta_range=(start_angle, end_angle),
+            do_print=False,
+            return_corn_sizes=True,
+            return_angles_intensities=False,
+            return_max_unscaled_intensity_angle=False,
+        )
+        randomized_coords_patterns.append(patterns[0])
+        randomized_coords_corn_sizes.append(corn_sizes[0])
+
+    for i, crystal in enumerate(reference_crystals):
+        patterns, corn_sizes = get_xy_patterns(
+            crystal,
+            wavelength=1.5406,
+            xs=xs,
+            NO_corn_sizes=1,
+            two_theta_range=(start_angle, end_angle),
+            do_print=False,
+            return_corn_sizes=True,
+            return_angles_intensities=False,
+            return_max_unscaled_intensity_angle=False,
+        )
+        reference_patterns.append(patterns[0])
+        reference_corn_sizes.append(corn_sizes[0])
+
+    randomized_coords_labels = []
+    for i in range(0, len(labels)):
+        randomized_coords_labels.append(spgs.index(labels[i]))
+
+    with open(out_base + "randomized_coords_data.pickle", "wb") as file:
+        pickle.dump(
+            (
+                randomized_coords_crystals,
+                randomized_coords_labels,
+                randomized_coords_corn_sizes,
+                reference_crystals,
+                reference_corn_sizes,
+            ),
+            file,
+        )
 
 ##############
 
 ####### Generate match (corrected spgs) validation set with randomized lattice:
 
-randomized_lattice_crystals, _, labels = randomize(
-    icsd_crystals_match_corrected_labels,
-    randomize_coordinates=False,
-    randomize_lattice=True,
-)
+if generate_randomized_validation_datasets:
 
-errors_counter = 0
-for i in reversed(range(len(labels))):
-
-    label = labels[i]
-
-    if label is not None:
-        if label != icsd_labels_match_corrected_labels[i]:
-            errors_counter += 1
-
-            del labels[i]
-            del randomized_lattice_crystals[i]
-
-print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
-
-randomized_lattice_crystals = [
-    item for item in randomized_lattice_crystals if item is not None
-]
-labels = [item for item in labels if item is not None]
-
-randomized_lattice_patterns = []
-randomized_lattice_corn_sizes = []
-
-xs = np.linspace(start_angle, end_angle, N)
-for i, crystal in enumerate(randomized_lattice_crystals):
-    patterns, corn_sizes = get_xy_patterns(
-        crystal,
-        wavelength=1.5406,
-        xs=xs,
-        NO_corn_sizes=1,
-        two_theta_range=(start_angle, end_angle),
-        do_print=False,
-        return_corn_sizes=True,
-        return_angles_intensities=False,
-        return_max_unscaled_intensity_angle=False,
+    randomized_lattice_crystals, _, labels = randomize(
+        icsd_crystals_match_corrected_labels,
+        randomize_coordinates=False,
+        randomize_lattice=True,
     )
-    randomized_lattice_patterns.append(patterns[0])
-    randomized_lattice_corn_sizes.append(corn_sizes[0])
 
-randomized_lattice_labels = []
-for i in range(0, len(labels)):
-    randomized_lattice_labels.append(spgs.index(labels[i]))
+    errors_counter = 0
+    for i in reversed(range(len(labels))):
+
+        label = labels[i]
+
+        if label is not None:
+            if label != icsd_labels_match_corrected_labels[i]:
+                errors_counter += 1
+
+                del labels[i]
+                del randomized_lattice_crystals[i]
+
+    print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
+
+    randomized_lattice_crystals = [
+        item for item in randomized_lattice_crystals if item is not None
+    ]
+    labels = [item for item in labels if item is not None]
+
+    randomized_lattice_patterns = []
+    randomized_lattice_corn_sizes = []
+
+    xs = np.linspace(start_angle, end_angle, N)
+    for i, crystal in enumerate(randomized_lattice_crystals):
+        patterns, corn_sizes = get_xy_patterns(
+            crystal,
+            wavelength=1.5406,
+            xs=xs,
+            NO_corn_sizes=1,
+            two_theta_range=(start_angle, end_angle),
+            do_print=False,
+            return_corn_sizes=True,
+            return_angles_intensities=False,
+            return_max_unscaled_intensity_angle=False,
+        )
+        randomized_lattice_patterns.append(patterns[0])
+        randomized_lattice_corn_sizes.append(corn_sizes[0])
+
+    randomized_lattice_labels = []
+    for i in range(0, len(labels)):
+        randomized_lattice_labels.append(spgs.index(labels[i]))
 
 ##############
 
 ####### Generate match (corrected spgs) validation set with randomized lattice and coords:
 
-randomized_both_crystals, _, labels = randomize(
-    icsd_crystals_match_corrected_labels,
-    randomize_coordinates=True,
-    randomize_lattice=True,
-)
+if generate_randomized_validation_datasets:
 
-errors_counter = 0
-for i in reversed(range(len(labels))):
-
-    label = labels[i]
-
-    if label is not None:
-        if label != icsd_labels_match_corrected_labels[i]:
-            errors_counter += 1
-
-            del labels[i]
-            del randomized_both_crystals[i]
-
-print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
-
-randomized_both_crystals = [
-    item for item in randomized_both_crystals if item is not None
-]
-labels = [item for item in labels if item is not None]
-
-randomized_both_patterns = []
-randomized_both_corn_sizes = []
-
-xs = np.linspace(start_angle, end_angle, N)
-for i, crystal in enumerate(randomized_both_crystals):
-    patterns, corn_sizes = get_xy_patterns(
-        crystal,
-        wavelength=1.5406,
-        xs=xs,
-        NO_corn_sizes=1,
-        two_theta_range=(start_angle, end_angle),
-        do_print=False,
-        return_corn_sizes=True,
-        return_angles_intensities=False,
-        return_max_unscaled_intensity_angle=False,
+    randomized_both_crystals, _, labels = randomize(
+        icsd_crystals_match_corrected_labels,
+        randomize_coordinates=True,
+        randomize_lattice=True,
     )
-    randomized_both_patterns.append(patterns[0])
-    randomized_both_corn_sizes.append(corn_sizes[0])
 
-randomized_both_labels = []
-for i in range(0, len(labels)):
-    randomized_both_labels.append(spgs.index(labels[i]))
+    errors_counter = 0
+    for i in reversed(range(len(labels))):
+
+        label = labels[i]
+
+        if label is not None:
+            if label != icsd_labels_match_corrected_labels[i]:
+                errors_counter += 1
+
+                del labels[i]
+                del randomized_both_crystals[i]
+
+    print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
+
+    randomized_both_crystals = [
+        item for item in randomized_both_crystals if item is not None
+    ]
+    labels = [item for item in labels if item is not None]
+
+    randomized_both_patterns = []
+    randomized_both_corn_sizes = []
+
+    xs = np.linspace(start_angle, end_angle, N)
+    for i, crystal in enumerate(randomized_both_crystals):
+        patterns, corn_sizes = get_xy_patterns(
+            crystal,
+            wavelength=1.5406,
+            xs=xs,
+            NO_corn_sizes=1,
+            two_theta_range=(start_angle, end_angle),
+            do_print=False,
+            return_corn_sizes=True,
+            return_angles_intensities=False,
+            return_max_unscaled_intensity_angle=False,
+        )
+        randomized_both_patterns.append(patterns[0])
+        randomized_both_corn_sizes.append(corn_sizes[0])
+
+    randomized_both_labels = []
+    for i in range(0, len(labels)):
+        randomized_both_labels.append(spgs.index(labels[i]))
 
 ##############
 
@@ -672,45 +680,47 @@ for pattern in icsd_patterns_match_corrected_labels_pure:
         val_x_match_correct_spgs_pure.append(sub_pattern)
 
 
-val_y_randomized_coords = []
-for i, label in enumerate(randomized_coords_labels):
-    # val_y_randomized.append(spgs.index(label))
-    val_y_randomized_coords.append(label)
-val_y_randomized_coords = np.array(val_y_randomized_coords)
+if generate_randomized_validation_datasets:
 
-val_x_randomized_coords = []
-for pattern in randomized_coords_patterns:
-    val_x_randomized_coords.append(pattern)
+    val_y_randomized_coords = []
+    for i, label in enumerate(randomized_coords_labels):
+        # val_y_randomized.append(spgs.index(label))
+        val_y_randomized_coords.append(label)
+    val_y_randomized_coords = np.array(val_y_randomized_coords)
 
-val_y_randomized_ref = []
-for i, label in enumerate(randomized_coords_labels):
-    # val_y_randomized_ref.append(spgs.index(label))
-    val_y_randomized_ref.append(label)
-val_y_randomized_ref = np.array(val_y_randomized_ref)
+    val_x_randomized_coords = []
+    for pattern in randomized_coords_patterns:
+        val_x_randomized_coords.append(pattern)
 
-val_x_randomized_ref = []
-for pattern in reference_patterns:
-    val_x_randomized_ref.append(pattern)
+    val_y_randomized_ref = []
+    for i, label in enumerate(randomized_coords_labels):
+        # val_y_randomized_ref.append(spgs.index(label))
+        val_y_randomized_ref.append(label)
+    val_y_randomized_ref = np.array(val_y_randomized_ref)
 
-val_y_randomized_lattice = []
-for i, label in enumerate(randomized_lattice_labels):
-    # val_y_randomized.append(spgs.index(label))
-    val_y_randomized_lattice.append(label)
-val_y_randomized_lattice = np.array(val_y_randomized_lattice)
+    val_x_randomized_ref = []
+    for pattern in reference_patterns:
+        val_x_randomized_ref.append(pattern)
 
-val_x_randomized_lattice = []
-for pattern in randomized_lattice_patterns:
-    val_x_randomized_lattice.append(pattern)
+    val_y_randomized_lattice = []
+    for i, label in enumerate(randomized_lattice_labels):
+        # val_y_randomized.append(spgs.index(label))
+        val_y_randomized_lattice.append(label)
+    val_y_randomized_lattice = np.array(val_y_randomized_lattice)
 
-val_y_randomized_both = []
-for i, label in enumerate(randomized_both_labels):
-    # val_y_randomized.append(spgs.index(label))
-    val_y_randomized_both.append(label)
-val_y_randomized_both = np.array(val_y_randomized_both)
+    val_x_randomized_lattice = []
+    for pattern in randomized_lattice_patterns:
+        val_x_randomized_lattice.append(pattern)
 
-val_x_randomized_both = []
-for pattern in randomized_both_patterns:
-    val_x_randomized_both.append(pattern)
+    val_y_randomized_both = []
+    for i, label in enumerate(randomized_both_labels):
+        # val_y_randomized.append(spgs.index(label))
+        val_y_randomized_both.append(label)
+    val_y_randomized_both = np.array(val_y_randomized_both)
+
+    val_x_randomized_both = []
+    for pattern in randomized_both_patterns:
+        val_x_randomized_both.append(pattern)
 
 
 print("Numbers in validation set (that matches sim parameters):")
@@ -730,10 +740,12 @@ assert len(val_x_match) == len(val_y_match)
 assert len(val_x_match_inorganic) == len(val_y_match_inorganic)
 assert len(val_x_match_correct_spgs) == len(val_y_match_correct_spgs)
 assert len(val_x_match_correct_spgs_pure) == len(val_y_match_correct_spgs_pure)
-assert len(val_x_randomized_coords) == len(val_y_randomized_coords)
-assert len(val_x_randomized_ref) == len(val_y_randomized_ref)
-assert len(val_x_randomized_lattice) == len(val_y_randomized_lattice)
-assert len(val_x_randomized_both) == len(val_y_randomized_both)
+
+if generate_randomized_validation_datasets:
+    assert len(val_x_randomized_coords) == len(val_y_randomized_coords)
+    assert len(val_x_randomized_ref) == len(val_y_randomized_ref)
+    assert len(val_x_randomized_lattice) == len(val_y_randomized_lattice)
+    assert len(val_x_randomized_both) == len(val_y_randomized_both)
 
 
 if not local:
@@ -1004,10 +1016,12 @@ if scale_patterns:
     val_x_match_inorganic = sc.transform(val_x_match_inorganic)
     val_x_match_correct_spgs = sc.transform(val_x_match_correct_spgs)
     val_x_match_correct_spgs_pure = sc.transform(val_x_match_correct_spgs_pure)
-    val_x_randomized_coords = sc.transform(val_x_randomized_coords)
-    val_x_randomized_ref = sc.transform(val_x_randomized_ref)
-    val_x_randomized_lattice = sc.transform(val_x_randomized_lattice)
-    val_x_randomized_both = sc.transform(val_x_randomized_both)
+
+    if generate_randomized_validation_datasets:
+        val_x_randomized_coords = sc.transform(val_x_randomized_coords)
+        val_x_randomized_ref = sc.transform(val_x_randomized_ref)
+        val_x_randomized_lattice = sc.transform(val_x_randomized_lattice)
+        val_x_randomized_both = sc.transform(val_x_randomized_both)
 
 val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match = np.expand_dims(val_x_match, axis=2)
@@ -1015,10 +1029,12 @@ val_x_match_inorganic = np.expand_dims(val_x_match_inorganic, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 val_x_random = np.expand_dims(val_x_random, axis=2)
-val_x_randomized_coords = np.expand_dims(val_x_randomized_coords, axis=2)
-val_x_randomized_ref = np.expand_dims(val_x_randomized_ref, axis=2)
-val_x_randomized_lattice = np.expand_dims(val_x_randomized_lattice, axis=2)
-val_x_randomized_both = np.expand_dims(val_x_randomized_both, axis=2)
+
+if generate_randomized_validation_datasets:
+    val_x_randomized_coords = np.expand_dims(val_x_randomized_coords, axis=2)
+    val_x_randomized_ref = np.expand_dims(val_x_randomized_ref, axis=2)
+    val_x_randomized_lattice = np.expand_dims(val_x_randomized_lattice, axis=2)
+    val_x_randomized_both = np.expand_dims(val_x_randomized_both, axis=2)
 
 """
 for j in range(0, 100):
@@ -1283,18 +1299,20 @@ class CustomCallback(keras.callbacks.Callback):
                 scores_random = self.model.evaluate(
                     x=val_x_random, y=val_y_random, verbose=0
                 )
-                scores_randomized_coords = self.model.evaluate(
-                    x=val_x_randomized_coords, y=val_y_randomized_coords, verbose=0
-                )
-                scores_randomized_ref = self.model.evaluate(
-                    x=val_x_randomized_ref, y=val_y_randomized_ref, verbose=0
-                )
-                scores_randomized_lattice = self.model.evaluate(
-                    x=val_x_randomized_lattice, y=val_y_randomized_lattice, verbose=0
-                )
-                scores_randomized_both = self.model.evaluate(
-                    x=val_x_randomized_both, y=val_y_randomized_both, verbose=0
-                )
+
+                if generate_randomized_validation_datasets:
+                    scores_randomized_coords = self.model.evaluate(
+                        x=val_x_randomized_coords, y=val_y_randomized_coords, verbose=0
+                    )
+                    scores_randomized_ref = self.model.evaluate(
+                        x=val_x_randomized_ref, y=val_y_randomized_ref, verbose=0
+                    )
+                    scores_randomized_lattice = self.model.evaluate(
+                        x=val_x_randomized_lattice, y=val_y_randomized_lattice, verbose=0
+                    )
+                    scores_randomized_both = self.model.evaluate(
+                        x=val_x_randomized_both, y=val_y_randomized_both, verbose=0
+                    )
                 if use_statistics_dataset_as_validation:
                     scores_statistics = self.model.evaluate(
                         x=statistics_x_match, y=statistics_y_match, verbose=0
@@ -1318,24 +1336,25 @@ class CustomCallback(keras.callbacks.Callback):
                     step=epoch,
                 )
                 tf.summary.scalar("loss random", data=scores_random[0], step=epoch)
-                tf.summary.scalar(
-                    "loss randomized coords",
-                    data=scores_randomized_coords[0],
-                    step=epoch,
-                )
-                tf.summary.scalar(
-                    "loss randomized ref", data=scores_randomized_ref[0], step=epoch
-                )
-                tf.summary.scalar(
-                    "loss randomized lattice",
-                    data=scores_randomized_lattice[0],
-                    step=epoch,
-                )
-                tf.summary.scalar(
-                    "loss randomized both",
-                    data=scores_randomized_both[0],
-                    step=epoch,
-                )
+                if generate_randomized_validation_datasets
+                    tf.summary.scalar(
+                        "loss randomized coords",
+                        data=scores_randomized_coords[0],
+                        step=epoch,
+                    )
+                    tf.summary.scalar(
+                        "loss randomized ref", data=scores_randomized_ref[0], step=epoch
+                    )
+                    tf.summary.scalar(
+                        "loss randomized lattice",
+                        data=scores_randomized_lattice[0],
+                        step=epoch,
+                    )
+                    tf.summary.scalar(
+                        "loss randomized both",
+                        data=scores_randomized_both[0],
+                        step=epoch,
+                    )
                 if use_statistics_dataset_as_validation:
                     tf.summary.scalar(
                         "loss statistics", data=scores_statistics[0], step=epoch
@@ -1359,24 +1378,25 @@ class CustomCallback(keras.callbacks.Callback):
                     step=epoch,
                 )
                 tf.summary.scalar("accuracy random", data=scores_random[1], step=epoch)
-                tf.summary.scalar(
-                    "accuracy randomized coords",
-                    data=scores_randomized_coords[1],
-                    step=epoch,
-                )
-                tf.summary.scalar(
-                    "accuracy randomized ref", data=scores_randomized_ref[1], step=epoch
-                )
-                tf.summary.scalar(
-                    "accuracy randomized lattice",
-                    data=scores_randomized_lattice[1],
-                    step=epoch,
-                )
-                tf.summary.scalar(
-                    "accuracy randomized both",
-                    data=scores_randomized_both[1],
-                    step=epoch,
-                )
+                if generate_randomized_validation_datasets:
+                    tf.summary.scalar(
+                        "accuracy randomized coords",
+                        data=scores_randomized_coords[1],
+                        step=epoch,
+                    )
+                    tf.summary.scalar(
+                        "accuracy randomized ref", data=scores_randomized_ref[1], step=epoch
+                    )
+                    tf.summary.scalar(
+                        "accuracy randomized lattice",
+                        data=scores_randomized_lattice[1],
+                        step=epoch,
+                    )
+                    tf.summary.scalar(
+                        "accuracy randomized both",
+                        data=scores_randomized_both[1],
+                        step=epoch,
+                    )
                 if use_statistics_dataset_as_validation:
                     tf.summary.scalar(
                         "accuracy statistics", data=scores_statistics[1], step=epoch
@@ -1465,34 +1485,35 @@ with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
     pickle.dump((rightly_indices_random, falsely_indices_random), file)
 
 # Get predictions for val_x_randomized and write rightly_indices / falsely_indices:
-prediction_randomized_coords = model.predict(val_x_randomized_coords)
-prediction_randomized_coords = np.argmax(prediction_randomized_coords, axis=1)
+if generate_randomized_validation_datasets:
+    prediction_randomized_coords = model.predict(val_x_randomized_coords)
+    prediction_randomized_coords = np.argmax(prediction_randomized_coords, axis=1)
 
-rightly_indices_randomized_coords = np.argwhere(
-    prediction_randomized_coords == val_y_randomized_coords
-)[:, 0]
-falsely_indices_randomized_coords = np.argwhere(
-    prediction_randomized_coords != val_y_randomized_coords
-)[:, 0]
+    rightly_indices_randomized_coords = np.argwhere(
+        prediction_randomized_coords == val_y_randomized_coords
+    )[:, 0]
+    falsely_indices_randomized_coords = np.argwhere(
+        prediction_randomized_coords != val_y_randomized_coords
+    )[:, 0]
 
-with open(out_base + "rightly_falsely_randomized_coords.pickle", "wb") as file:
-    pickle.dump(
-        (rightly_indices_randomized_coords, falsely_indices_randomized_coords), file
-    )
+    with open(out_base + "rightly_falsely_randomized_coords.pickle", "wb") as file:
+        pickle.dump(
+            (rightly_indices_randomized_coords, falsely_indices_randomized_coords), file
+        )
 
-# Get predictions for val_x_randomized_ref and write rightly_indices / falsely_indices:
-prediction_randomized_ref = model.predict(val_x_randomized_ref)
-prediction_randomized_ref = np.argmax(prediction_randomized_ref, axis=1)
+    # Get predictions for val_x_randomized_ref and write rightly_indices / falsely_indices:
+    prediction_randomized_ref = model.predict(val_x_randomized_ref)
+    prediction_randomized_ref = np.argmax(prediction_randomized_ref, axis=1)
 
-rightly_indices_randomized_ref = np.argwhere(
-    prediction_randomized_ref == val_y_randomized_ref
-)[:, 0]
-falsely_indices_randomized_ref = np.argwhere(
-    prediction_randomized_ref != val_y_randomized_ref
-)[:, 0]
+    rightly_indices_randomized_ref = np.argwhere(
+        prediction_randomized_ref == val_y_randomized_ref
+    )[:, 0]
+    falsely_indices_randomized_ref = np.argwhere(
+        prediction_randomized_ref != val_y_randomized_ref
+    )[:, 0]
 
-with open(out_base + "rightly_falsely_randomized_ref.pickle", "wb") as file:
-    pickle.dump((rightly_indices_randomized_ref, falsely_indices_randomized_ref), file)
+    with open(out_base + "rightly_falsely_randomized_ref.pickle", "wb") as file:
+        pickle.dump((rightly_indices_randomized_ref, falsely_indices_randomized_ref), file)
 
 ##########
 
