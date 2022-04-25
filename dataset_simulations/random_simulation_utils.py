@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from pyxtal.symmetry import Group
+from pyxtal.symmetry import get_pbc_and_lattice
 import time
 import pickle
 from dataset_simulations.simulation import Simulation
@@ -1435,6 +1436,110 @@ def load_dataset_info():
         # for sample in kd.sample(15):
         #    print([int(item) if item >= 0 else 0 for item in np.round(sample)])
 
+    ########## Calculate lattice parameter kdes:
+
+    scaled_paras_per_lattice_type = {}
+
+    for spg in all_data_per_spg.keys():
+
+        _, lattice_type = get_pbc_and_lattice(spg, 3)
+
+        for entry in all_data_per_spg[spg]:
+
+            a, b, c, alpha, beta, gamma = entry["lattice_parameters"]
+
+            volume = (
+                a
+                * b
+                * c
+                * np.sqrt(
+                    1
+                    + 2 * np.cos(alpha) * np.cos(beta) * np.cos(gamma)
+                    - np.cos(alpha) ** 2
+                    - np.cos(beta) ** 2
+                    - np.cos(gamma) ** 2
+                )
+            )
+
+            cbrt_volume = np.cbrt(volume)
+
+            a /= cbrt_volume
+            b /= cbrt_volume
+            c /= cbrt_volume
+
+            if lattice_type in ["cubic", "Cubic"]:
+
+                paras = [a]
+
+                assert (
+                    (a == b)
+                    and (b == c)
+                    and (alpha == np.pi / 2)
+                    and (alpha == beta)
+                    and (alpha == gamma)
+                )
+
+                continue  # For cubic unit cells, there is no free parameter after fixing the volume
+
+            elif lattice_type in ["hexagonal", "trigonal", "Hexagonal", "Trigonal"]:
+                paras = [a, c]
+
+                assert (
+                    (a == b)
+                    and (alpha == np.pi / 2)
+                    and (alpha == beta)
+                    and (gamma == np.pi * 2 / 3)
+                )
+
+            elif lattice_type in ["tetragonal", "Tetragonal"]:
+                paras = [a, c]
+
+                assert (
+                    (a == b)
+                    and (alpha == np.pi / 2)
+                    and (alpha == beta)
+                    and (alpha == gamma)
+                )
+
+            elif lattice_type in ["orthorhombic", "Orthorhombic"]:
+
+                paras = [a, b, c]
+
+                assert (alpha == np.pi / 2) and (alpha == beta) and (alpha == gamma)
+
+            elif lattice_type in ["monoclinic", "Monoclinic"]:
+
+                paras = [a, b, c, beta]
+
+                assert (alpha == np.pi / 2) and (alpha == gamma)
+
+            elif lattice_type == "triclinic":
+                paras = [a, b, c, alpha, beta, gamma]
+
+            else:
+
+                raise Exception(f"Invalid lattice type {lattice_type}")
+
+            if lattice_type in scaled_paras_per_lattice_type.keys():
+                scaled_paras_per_lattice_type[lattice_type].append(paras)
+            else:
+                scaled_paras_per_lattice_type[lattice_type] = [paras]
+
+    lattice_paras_density_per_lattice_type = {}
+    for lattice_type in scaled_paras_per_lattice_type.keys():
+
+        input_array = np.array(scaled_paras_per_lattice_type[lattice_type]).T
+        density = kde.gaussian_kde(input_array)
+
+        # print(density.covariance)
+        # print(density.covariance.shape)
+        # print(density.covariance_factor)
+        # print(density.resample(1).T)
+
+        lattice_paras_density_per_lattice_type[lattice_type] = density
+
+    print()
+
     return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn.
         # The only correlation considered is having multiple elements of the same type (less spread in number of unique elements).
         # This is the main assumption of my work.
@@ -1454,6 +1559,7 @@ def load_dataset_info():
         kde_per_spg,
         all_data_per_spg,
         denseness_factors_conditional_sampler_seeds_per_spg,
+        lattice_paras_density_per_lattice_type,
     )
 
 

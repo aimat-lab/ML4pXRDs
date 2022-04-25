@@ -1308,7 +1308,9 @@ class CustomCallback(keras.callbacks.Callback):
                         x=val_x_randomized_ref, y=val_y_randomized_ref, verbose=0
                     )
                     scores_randomized_lattice = self.model.evaluate(
-                        x=val_x_randomized_lattice, y=val_y_randomized_lattice, verbose=0
+                        x=val_x_randomized_lattice,
+                        y=val_y_randomized_lattice,
+                        verbose=0,
                     )
                     scores_randomized_both = self.model.evaluate(
                         x=val_x_randomized_both, y=val_y_randomized_both, verbose=0
@@ -1336,7 +1338,7 @@ class CustomCallback(keras.callbacks.Callback):
                     step=epoch,
                 )
                 tf.summary.scalar("loss random", data=scores_random[0], step=epoch)
-                if generate_randomized_validation_datasets
+                if generate_randomized_validation_datasets:
                     tf.summary.scalar(
                         "loss randomized coords",
                         data=scores_randomized_coords[0],
@@ -1385,7 +1387,9 @@ class CustomCallback(keras.callbacks.Callback):
                         step=epoch,
                     )
                     tf.summary.scalar(
-                        "accuracy randomized ref", data=scores_randomized_ref[1], step=epoch
+                        "accuracy randomized ref",
+                        data=scores_randomized_ref[1],
+                        step=epoch,
                     )
                     tf.summary.scalar(
                         "accuracy randomized lattice",
@@ -1513,7 +1517,9 @@ if generate_randomized_validation_datasets:
     )[:, 0]
 
     with open(out_base + "rightly_falsely_randomized_ref.pickle", "wb") as file:
-        pickle.dump((rightly_indices_randomized_ref, falsely_indices_randomized_ref), file)
+        pickle.dump(
+            (rightly_indices_randomized_ref, falsely_indices_randomized_ref), file
+        )
 
 ##########
 
