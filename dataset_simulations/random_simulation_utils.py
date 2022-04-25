@@ -179,6 +179,7 @@ def generate_structure(
     use_lattice_paras_directly=False,
     use_alternative_structure_generator_implementation=True,
     denseness_factors_conditional_sampler_seeds_per_spg=None,
+    lattice_paras_density_per_lattice_type=None,
 ):
 
     if use_icsd_statistics and (
@@ -298,6 +299,7 @@ def generate_structure(
                 use_lattice_paras_directly=use_lattice_paras_directly,
                 use_alternative_structure_generator_implementation=use_alternative_structure_generator_implementation,
                 denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+                lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -617,7 +619,12 @@ def generate_structure(
 
             if factor is None:
                 raise Exception(
-                    "Conditional kde for denseness_factor not supported in this implementation."
+                    "Conditional kde for denseness_factor not supported in this implementation mode."
+                )
+
+            if lattice_paras_density_per_lattice_type is not None:
+                raise Exception(
+                    "KDE sampling of lattice parameters not supported in this implementation mode."
                 )
 
             my_crystal = pyxtal()
@@ -735,7 +742,7 @@ def generate_structure(
             if (use_coordinates_directly and all_data_per_spg is not None) or (
                 use_lattice_paras_directly and all_data_per_spg is not None
             ):
-                raise Exception("Mode not yet supported.")
+                raise Exception("Mode not supported.")
 
             try:
                 my_crystal = generate_pyxtal_object(
@@ -747,6 +754,7 @@ def generate_structure(
                     max_volume=max_volume,
                     scale_volume_min_density=True,  # TODO: Maybe change
                     denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+                    lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                 )
             except Exception as ex:
                 print(flush=True)
@@ -867,6 +875,7 @@ def generate_structures(
     use_lattice_paras_directly=False,
     group_object=None,  # for speedup
     denseness_factors_conditional_sampler_seeds_per_spg=None,
+    lattice_paras_density_per_lattice_type=None,
 ):
 
     if group_object is None:
@@ -917,6 +926,7 @@ def generate_structures(
             use_coordinates_directly=use_coordinates_directly,
             use_lattice_paras_directly=use_lattice_paras_directly,
             denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+            lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
         )
         for i in range(0, N)
     ]

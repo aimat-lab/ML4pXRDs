@@ -30,7 +30,7 @@ from sklearn.preprocessing import StandardScaler
 from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 
-tag = "2-spg-repetition-conditional_denseness_factors_randomized_paras_validations"
+tag = "2-spg-lattice_paras_kde"
 description = ""
 
 if len(sys.argv) > 1:
@@ -103,6 +103,8 @@ learning_rate = 0.001  # TODO: Change back
 use_denseness_factors_density = True
 use_conditional_density = True
 
+sample_lattice_paras_from_kde = True
+
 load_only_N_patterns_each_test = 1  # None possible
 
 scale_patterns = False
@@ -155,6 +157,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     kde_per_spg,
     all_data_per_spg_tmp,
     denseness_factors_conditional_sampler_seeds_per_spg,
+    lattice_paras_density_per_lattice_type,
 ) = load_dataset_info()
 
 if scale_patterns and use_icsd_structures_directly:
@@ -195,6 +198,9 @@ else:
 
 if not use_conditional_density:
     denseness_factors_conditional_sampler_seeds_per_spg = None
+
+if not sample_lattice_paras_from_kde:
+    lattice_paras_density_per_lattice_type = None
 
 if not use_all_data_per_spg:
     all_data_per_spg = None
@@ -444,6 +450,7 @@ if generate_randomized_validation_datasets:
         icsd_crystals_match_corrected_labels,
         randomize_coordinates=True,
         randomize_lattice=False,
+        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
     )
 
     errors_counter = 0
@@ -529,6 +536,7 @@ if generate_randomized_validation_datasets:
         icsd_crystals_match_corrected_labels,
         randomize_coordinates=False,
         randomize_lattice=True,
+        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
     )
 
     errors_counter = 0
@@ -583,6 +591,7 @@ if generate_randomized_validation_datasets:
         icsd_crystals_match_corrected_labels,
         randomize_coordinates=True,
         randomize_lattice=True,
+        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
     )
 
     errors_counter = 0
@@ -823,6 +832,7 @@ def batch_generator_with_additional(
         use_coordinates_directly=use_coordinates_directly,
         use_lattice_paras_directly=use_lattice_paras_directly,
         denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
     )
 
     # Set the label to the right index:
@@ -890,6 +900,7 @@ def batch_generator_queue(
                 use_lattice_paras_directly=use_lattice_paras_directly,
                 group_object_per_spg=group_object_per_spg,
                 denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+                lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -1258,6 +1269,7 @@ params_txt = (
     f"scale_patterns: {str(scale_patterns)} \n \n \n"
     f"use_conditional_density: {str(use_conditional_density)} \n \n \n"
     f"use_statistics_dataset_as_validation: {str(use_statistics_dataset_as_validation)} \n \n \n"
+    f"sample_lattice_paras_from_kde: {str(sample_lattice_paras_from_kde)} \n \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
