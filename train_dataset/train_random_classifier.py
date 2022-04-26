@@ -48,13 +48,13 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
-NO_epochs = 200
+batches_per_epoch = 150
+NO_epochs = 400
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 10  # for (2,15) tuple
+structures_per_spg = 100  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 5
 # structures_per_spg = 1  # 30-spg
@@ -92,13 +92,12 @@ use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
-use_statistics_dataset_as_validation = True  # TODO: Change this!?
-
-generate_randomized_validation_datasets = True
+use_statistics_dataset_as_validation = False  # TODO: Change this!?
+generate_randomized_validation_datasets = False
 
 use_dropout = False
 
-learning_rate = 0.001  # TODO: Change back
+learning_rate = 0.0003  # TODO: Change back
 
 use_denseness_factors_density = True
 use_conditional_density = True
