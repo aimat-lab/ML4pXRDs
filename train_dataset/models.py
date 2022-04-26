@@ -1,3 +1,4 @@
+from matplotlib.pyplot import plot
 import tensorflow.keras as keras
 import tensorflow.keras.metrics as tfm
 import tensorflow as tf
@@ -296,7 +297,7 @@ def build_model_park_tiny_size(
     return model
 
 
-def build_model_resnet_50(
+def build_model_resnet_50_old(
     hp=None,
     number_of_input_values=8501,
     number_of_output_labels=2,

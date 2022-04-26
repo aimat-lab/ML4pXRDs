@@ -7,7 +7,7 @@ from models import (
     build_model_park_medium_size,
     build_model_park_huge_size,
     build_model_park_tiny_size,
-    build_model_resnet_50,
+    build_model_resnet_50_old,
 )
 import os
 from sklearn.utils import shuffle
