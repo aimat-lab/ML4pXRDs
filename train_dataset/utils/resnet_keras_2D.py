@@ -114,6 +114,161 @@ def make_divisible(
         new_value += divisor
     return int(new_value)
 
+class StochasticDepth(tf.keras.layers.Layer):
+  """Creates a stochastic depth layer."""
+
+  def __init__(self, stochastic_depth_drop_rate, **kwargs):
+    """Initializes a stochastic depth layer.
+    Args:
+      stochastic_depth_drop_rate: A `float` of drop rate.
+      **kwargs: Additional keyword arguments to be passed.
+    Returns:
+      A output `tf.Tensor` of which should have the same shape as input.
+    """
+    super(StochasticDepth, self).__init__(**kwargs)
+    self._drop_rate = stochastic_depth_drop_rate
+
+  def get_config(self):
+    config = {'drop_rate': self._drop_rate}
+    base_config = super(StochasticDepth, self).get_config()
+    return dict(list(base_config.items()) + list(config.items()))
+
+  def call(self, inputs, training=None):
+    if training is None:
+      training = tf.keras.backend.learning_phase()
+    if not training or self._drop_rate is None or self._drop_rate == 0:
+      return inputs
+
+    keep_prob = 1.0 - self._drop_rate
+    batch_size = tf.shape(inputs)[0]
+    random_tensor = keep_prob
+    random_tensor += tf.random.uniform(
+        [batch_size] + [1] * (inputs.shape.rank - 1), dtype=inputs.dtype)
+    binary_tensor = tf.floor(random_tensor)
+    output = tf.math.divide(inputs, keep_prob) * binary_tensor
+    return output
+
+class SqueezeExcitation(tf.keras.layers.Layer):
+    """Creates a squeeze and excitation layer."""
+
+    def __init__(
+        self,
+        in_filters,
+        out_filters,
+        se_ratio,
+        divisible_by=1,
+        use_3d_input=False,
+        kernel_initializer="VarianceScaling",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activation="relu",
+        gating_activation="sigmoid",
+        round_down_protect=True,
+        **kwargs,
+    ):
+        """Initializes a squeeze and excitation layer.
+        Args:
+          in_filters: An `int` number of filters of the input tensor.
+          out_filters: An `int` number of filters of the output tensor.
+          se_ratio: A `float` or None. If not None, se ratio for the squeeze and
+            excitation layer.
+          divisible_by: An `int` that ensures all inner dimensions are divisible by
+            this number.
+          use_3d_input: A `bool` of whether input is 2D or 3D image.
+          kernel_initializer: A `str` of kernel_initializer for convolutional
+            layers.
+          kernel_regularizer: A `tf.keras.regularizers.Regularizer` object for
+            Conv2D. Default to None.
+          bias_regularizer: A `tf.keras.regularizers.Regularizer` object for Conv2d.
+            Default to None.
+          activation: A `str` name of the activation function.
+          gating_activation: A `str` name of the activation function for final
+            gating function.
+          round_down_protect: A `bool` of whether round down more than 10% will be
+            allowed.
+          **kwargs: Additional keyword arguments to be passed.
+        """
+        super(SqueezeExcitation, self).__init__(**kwargs)
+
+        self._in_filters = in_filters
+        self._out_filters = out_filters
+        self._se_ratio = se_ratio
+        self._divisible_by = divisible_by
+        self._round_down_protect = round_down_protect
+        self._use_3d_input = use_3d_input
+        self._activation = activation
+        self._gating_activation = gating_activation
+        self._kernel_initializer = kernel_initializer
+        self._kernel_regularizer = kernel_regularizer
+        self._bias_regularizer = bias_regularizer
+        if tf.keras.backend.image_data_format() == "channels_last":
+            if not use_3d_input:
+                self._spatial_axis = [1, 2]
+            else:
+                self._spatial_axis = [1, 2, 3]
+        else:
+            if not use_3d_input:
+                self._spatial_axis = [2, 3]
+            else:
+                self._spatial_axis = [2, 3, 4]
+        self._activation_fn = keras.layers.Activation(activation)
+        self._gating_activation_fn = keras.layers.Activation(gating_activation)
+
+    def build(self, input_shape):
+        num_reduced_filters = make_divisible(
+            max(1, int(self._in_filters * self._se_ratio)),
+            divisor=self._divisible_by,
+            round_down_protect=self._round_down_protect,
+        )
+
+        self._se_reduce = tf.keras.layers.Conv2D(
+            filters=num_reduced_filters,
+            kernel_size=1,
+            strides=1,
+            padding="same",
+            use_bias=True,
+            kernel_initializer=self._kernel_initializer,
+            kernel_regularizer=self._kernel_regularizer,
+            bias_regularizer=self._bias_regularizer,
+        )
+
+        self._se_expand = tf.keras.layers.Conv2D(
+            filters=self._out_filters,
+            kernel_size=1,
+            strides=1,
+            padding="same",
+            use_bias=True,
+            kernel_initializer=self._kernel_initializer,
+            kernel_regularizer=self._kernel_regularizer,
+            bias_regularizer=self._bias_regularizer,
+        )
+
+        super(SqueezeExcitation, self).build(input_shape)
+
+    def get_config(self):
+        config = {
+            "in_filters": self._in_filters,
+            "out_filters": self._out_filters,
+            "se_ratio": self._se_ratio,
+            "divisible_by": self._divisible_by,
+            "use_3d_input": self._use_3d_input,
+            "kernel_initializer": self._kernel_initializer,
+            "kernel_regularizer": self._kernel_regularizer,
+            "bias_regularizer": self._bias_regularizer,
+            "activation": self._activation,
+            "gating_activation": self._gating_activation,
+            "round_down_protect": self._round_down_protect,
+        }
+        base_config = super(SqueezeExcitation, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def call(self, inputs):
+        x = tf.reduce_mean(inputs, self._spatial_axis, keepdims=True)
+        x = self._activation_fn(self._se_reduce(x))
+        x = self._gating_activation_fn(self._se_expand(x))
+        return x * inputs
+
+
 class ResidualBlock(tf.keras.layers.Layer):
     """A residual block."""
 
@@ -122,7 +277,9 @@ class ResidualBlock(tf.keras.layers.Layer):
         filters,
         strides,
         use_projection=False,
+        se_ratio=None,
         resnetd_shortcut=False,
+        stochastic_depth_drop_rate=None,
         kernel_initializer="VarianceScaling",
         kernel_regularizer=None,
         bias_regularizer=None,
@@ -144,8 +301,11 @@ class ResidualBlock(tf.keras.layers.Layer):
             shortcut (versus the default identity shortcut). This is usually `True`
             for the first block of a block group, which may change the number of
             filters and the resolution.
+          se_ratio: A `float` or None. Ratio of the Squeeze-and-Excitation layer.
           resnetd_shortcut: A `bool` if True, apply the resnetd style modification
             to the shortcut connection. Not implemented in residual blocks.
+          stochastic_depth_drop_rate: A `float` or None. if not None, drop rate for
+            the stochastic depth layer.
           kernel_initializer: A `str` of kernel_initializer for convolutional
             layers.
           kernel_regularizer: A `tf.keras.regularizers.Regularizer` object for
@@ -168,10 +328,12 @@ class ResidualBlock(tf.keras.layers.Layer):
         self._filters = filters
         self._strides = strides
         self._use_projection = use_projection
+        self._se_ratio = se_ratio
         self._resnetd_shortcut = resnetd_shortcut
         self._use_explicit_padding = use_explicit_padding
         self._use_sync_bn = use_sync_bn
         self._activation = activation
+        self._stochastic_depth_drop_rate = stochastic_depth_drop_rate
         self._kernel_initializer = kernel_initializer
         self._norm_momentum = norm_momentum
         self._norm_epsilon = norm_epsilon
@@ -247,6 +409,25 @@ class ResidualBlock(tf.keras.layers.Layer):
             trainable=self._bn_trainable,
         )
 
+        if self._se_ratio and self._se_ratio > 0 and self._se_ratio <= 1:
+            self._squeeze_excitation = SqueezeExcitation(
+                in_filters=self._filters,
+                out_filters=self._filters,
+                se_ratio=self._se_ratio,
+                kernel_initializer=self._kernel_initializer,
+                kernel_regularizer=self._kernel_regularizer,
+                bias_regularizer=self._bias_regularizer,
+            )
+        else:
+            self._squeeze_excitation = None
+
+        if self._stochastic_depth_drop_rate:
+            self._stochastic_depth = StochasticDepth(
+                self._stochastic_depth_drop_rate
+            )
+        else:
+            self._stochastic_depth = None
+
         super(ResidualBlock, self).build(input_shape)
 
     def get_config(self):
@@ -254,7 +435,9 @@ class ResidualBlock(tf.keras.layers.Layer):
             "filters": self._filters,
             "strides": self._strides,
             "use_projection": self._use_projection,
+            "se_ratio": self._se_ratio,
             "resnetd_shortcut": self._resnetd_shortcut,
+            "stochastic_depth_drop_rate": self._stochastic_depth_drop_rate,
             "kernel_initializer": self._kernel_initializer,
             "kernel_regularizer": self._kernel_regularizer,
             "bias_regularizer": self._bias_regularizer,
@@ -283,6 +466,12 @@ class ResidualBlock(tf.keras.layers.Layer):
         x = self._conv2(x)
         x = self._norm2(x)
 
+        if self._squeeze_excitation:
+            x = self._squeeze_excitation(x)
+
+        if self._stochastic_depth:
+            x = self._stochastic_depth(x, training=training)
+
         return self._activation_fn(x + shortcut)
 
 
@@ -295,7 +484,9 @@ class BottleneckBlock(tf.keras.layers.Layer):
         strides,
         dilation_rate=1,
         use_projection=False,
+        se_ratio=None,
         resnetd_shortcut=False,
+        stochastic_depth_drop_rate=None,
         kernel_initializer="VarianceScaling",
         kernel_regularizer=None,
         bias_regularizer=None,
@@ -317,8 +508,11 @@ class BottleneckBlock(tf.keras.layers.Layer):
             shortcut (versus the default identity shortcut). This is usually `True`
             for the first block of a block group, which may change the number of
             filters and the resolution.
+          se_ratio: A `float` or None. Ratio of the Squeeze-and-Excitation layer.
           resnetd_shortcut: A `bool`. If True, apply the resnetd style modification
             to the shortcut connection.
+          stochastic_depth_drop_rate: A `float` or None. If not None, drop rate for
+            the stochastic depth layer.
           kernel_initializer: A `str` of kernel_initializer for convolutional
             layers.
           kernel_regularizer: A `tf.keras.regularizers.Regularizer` object for
@@ -339,9 +533,11 @@ class BottleneckBlock(tf.keras.layers.Layer):
         self._strides = strides
         self._dilation_rate = dilation_rate
         self._use_projection = use_projection
+        self._se_ratio = se_ratio
         self._resnetd_shortcut = resnetd_shortcut
         self._use_sync_bn = use_sync_bn
         self._activation = activation
+        self._stochastic_depth_drop_rate = stochastic_depth_drop_rate
         self._kernel_initializer = kernel_initializer
         self._norm_momentum = norm_momentum
         self._norm_epsilon = norm_epsilon
@@ -443,6 +639,24 @@ class BottleneckBlock(tf.keras.layers.Layer):
         )
         self._activation3 = keras.layers.Activation(self._activation)
 
+        if self._se_ratio and self._se_ratio > 0 and self._se_ratio <= 1:
+            self._squeeze_excitation = SqueezeExcitation(
+                in_filters=self._filters * 4,
+                out_filters=self._filters * 4,
+                se_ratio=self._se_ratio,
+                kernel_initializer=self._kernel_initializer,
+                kernel_regularizer=self._kernel_regularizer,
+                bias_regularizer=self._bias_regularizer,
+            )
+        else:
+            self._squeeze_excitation = None
+
+        if self._stochastic_depth_drop_rate:
+            self._stochastic_depth = StochasticDepth(
+                self._stochastic_depth_drop_rate
+            )
+        else:
+            self._stochastic_depth = None
         self._add = tf.keras.layers.Add()
 
         super(BottleneckBlock, self).build(input_shape)
@@ -453,7 +667,9 @@ class BottleneckBlock(tf.keras.layers.Layer):
             "strides": self._strides,
             "dilation_rate": self._dilation_rate,
             "use_projection": self._use_projection,
+            "se_ratio": self._se_ratio,
             "resnetd_shortcut": self._resnetd_shortcut,
+            "stochastic_depth_drop_rate": self._stochastic_depth_drop_rate,
             "kernel_initializer": self._kernel_initializer,
             "kernel_regularizer": self._kernel_regularizer,
             "bias_regularizer": self._bias_regularizer,
@@ -487,8 +703,32 @@ class BottleneckBlock(tf.keras.layers.Layer):
         x = self._conv3(x)
         x = self._norm3(x)
 
+        if self._squeeze_excitation:
+            x = self._squeeze_excitation(x)
+
+        if self._stochastic_depth:
+            x = self._stochastic_depth(x, training=training)
+
         x = self._add([x, shortcut])
         return self._activation3(x)
+
+
+def get_stochastic_depth_rate(init_rate, i, n):
+    """Get drop connect rate for the ith block.
+    Args:
+      init_rate: A `float` of initial drop rate.
+      i: An `int` of order of the current block.
+      n: An `int` total number of blocks.
+    Returns:
+      Drop rate of the ith block.
+    """
+    if init_rate is not None:
+        if init_rate < 0 or init_rate > 1:
+            raise ValueError("Initial drop rate must be within 0 and 1.")
+        rate = init_rate * float(i) / n
+    else:
+        rate = None
+    return rate
 
 
 class ResNet(tf.keras.Model):
@@ -513,6 +753,8 @@ class ResNet(tf.keras.Model):
         stem_type: str = "v0",
         resnetd_shortcut: bool = False,
         replace_stem_max_pool: bool = False,
+        se_ratio: Optional[float] = None,
+        init_stochastic_depth_rate: float = 0.0,
         scale_stem: bool = True,
         activation: str = "relu",
         use_sync_bn: bool = False,
@@ -537,6 +779,8 @@ class ResNet(tf.keras.Model):
             downsampling blocks.
           replace_stem_max_pool: A `bool` of whether to replace the max pool in stem
             with a stride-2 conv,
+          se_ratio: A `float` or None. Ratio of the Squeeze-and-Excitation layer.
+          init_stochastic_depth_rate: A `float` of initial stochastic depth rate.
           scale_stem: A `bool` of whether to scale stem layers.
           activation: A `str` name of the activation function.
           use_sync_bn: If True, use synchronized batch normalization.
@@ -557,6 +801,8 @@ class ResNet(tf.keras.Model):
         self._stem_type = stem_type
         self._resnetd_shortcut = resnetd_shortcut
         self._replace_stem_max_pool = replace_stem_max_pool
+        self._se_ratio = se_ratio
+        self._init_stochastic_depth_rate = init_stochastic_depth_rate
         self._scale_stem = scale_stem
         self._use_sync_bn = use_sync_bn
         self._activation = activation
@@ -688,6 +934,9 @@ class ResNet(tf.keras.Model):
                 strides=(1 if i == 0 else 2),
                 block_fn=block_fn,
                 block_repeats=spec[2],
+                stochastic_depth_drop_rate=get_stochastic_depth_rate(
+                    self._init_stochastic_depth_rate, i + 2, 5
+                ),
                 name="block_group_l{}".format(i + 2),
             )
             endpoints[str(i + 2)] = x
@@ -703,6 +952,7 @@ class ResNet(tf.keras.Model):
         strides: int,
         block_fn: Callable[..., tf.keras.layers.Layer],
         block_repeats: int = 1,
+        stochastic_depth_drop_rate: float = 0.0,
         name: str = "block_group",
     ):
         """Creates one group of blocks for the ResNet model.
@@ -715,6 +965,8 @@ class ResNet(tf.keras.Model):
           block_fn: The type of block group. Either `nn_blocks.ResidualBlock` or
             `nn_blocks.BottleneckBlock`.
           block_repeats: An `int` number of blocks contained in the layer.
+          stochastic_depth_drop_rate: A `float` of drop rate of the current block
+            group.
           name: A `str` name for the block.
         Returns:
           The output `tf.Tensor` of the block layer.
@@ -723,6 +975,8 @@ class ResNet(tf.keras.Model):
             filters=filters,
             strides=strides,
             use_projection=True,
+            stochastic_depth_drop_rate=stochastic_depth_drop_rate,
+            se_ratio=self._se_ratio,
             resnetd_shortcut=self._resnetd_shortcut,
             kernel_initializer=self._kernel_initializer,
             kernel_regularizer=self._kernel_regularizer,
@@ -739,6 +993,8 @@ class ResNet(tf.keras.Model):
                 filters=filters,
                 strides=1,
                 use_projection=False,
+                stochastic_depth_drop_rate=stochastic_depth_drop_rate,
+                se_ratio=self._se_ratio,
                 resnetd_shortcut=self._resnetd_shortcut,
                 kernel_initializer=self._kernel_initializer,
                 kernel_regularizer=self._kernel_regularizer,
@@ -760,6 +1016,8 @@ class ResNet(tf.keras.Model):
             "resnetd_shortcut": self._resnetd_shortcut,
             "replace_stem_max_pool": self._replace_stem_max_pool,
             "activation": self._activation,
+            "se_ratio": self._se_ratio,
+            "init_stochastic_depth_rate": self._init_stochastic_depth_rate,
             "scale_stem": self._scale_stem,
             "use_sync_bn": self._use_sync_bn,
             "norm_momentum": self._norm_momentum,
