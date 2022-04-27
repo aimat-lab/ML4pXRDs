@@ -114,6 +114,39 @@ def make_divisible(
         new_value += divisor
     return int(new_value)
 
+class StochasticDepth(tf.keras.layers.Layer):
+  """Creates a stochastic depth layer."""
+
+  def __init__(self, stochastic_depth_drop_rate, **kwargs):
+    """Initializes a stochastic depth layer.
+    Args:
+      stochastic_depth_drop_rate: A `float` of drop rate.
+      **kwargs: Additional keyword arguments to be passed.
+    Returns:
+      A output `tf.Tensor` of which should have the same shape as input.
+    """
+    super(StochasticDepth, self).__init__(**kwargs)
+    self._drop_rate = stochastic_depth_drop_rate
+
+  def get_config(self):
+    config = {'drop_rate': self._drop_rate}
+    base_config = super(StochasticDepth, self).get_config()
+    return dict(list(base_config.items()) + list(config.items()))
+
+  def call(self, inputs, training=None):
+    if training is None:
+      training = tf.keras.backend.learning_phase()
+    if not training or self._drop_rate is None or self._drop_rate == 0:
+      return inputs
+
+    keep_prob = 1.0 - self._drop_rate
+    batch_size = tf.shape(inputs)[0]
+    random_tensor = keep_prob
+    random_tensor += tf.random.uniform(
+        [batch_size] + [1] * (inputs.shape.rank - 1), dtype=inputs.dtype)
+    binary_tensor = tf.floor(random_tensor)
+    output = tf.math.divide(inputs, keep_prob) * binary_tensor
+    return output
 
 class SqueezeExcitation(tf.keras.layers.Layer):
     """Creates a squeeze and excitation layer."""
@@ -179,7 +212,7 @@ class SqueezeExcitation(tf.keras.layers.Layer):
             else:
                 self._spatial_axis = [2, 3, 4]
         self._activation_fn = keras.layers.Activation(activation)
-        self._gating_activation_fn = tf_utils.get_activation(gating_activation)
+        self._gating_activation_fn = keras.layers.Activation(gating_activation)
 
     def build(self, input_shape):
         num_reduced_filters = make_divisible(
@@ -377,7 +410,7 @@ class ResidualBlock(tf.keras.layers.Layer):
         )
 
         if self._se_ratio and self._se_ratio > 0 and self._se_ratio <= 1:
-            self._squeeze_excitation = nn_layers.SqueezeExcitation(
+            self._squeeze_excitation = SqueezeExcitation(
                 in_filters=self._filters,
                 out_filters=self._filters,
                 se_ratio=self._se_ratio,
@@ -389,7 +422,7 @@ class ResidualBlock(tf.keras.layers.Layer):
             self._squeeze_excitation = None
 
         if self._stochastic_depth_drop_rate:
-            self._stochastic_depth = nn_layers.StochasticDepth(
+            self._stochastic_depth = StochasticDepth(
                 self._stochastic_depth_drop_rate
             )
         else:
@@ -568,9 +601,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
             epsilon=self._norm_epsilon,
             trainable=self._bn_trainable,
         )
-        self._activation1 = tf_utils.get_activation(
-            self._activation, use_keras_layer=True
-        )
+        self._activation1 = keras.layers.Activation(self._activation)
 
         self._conv2 = tf.keras.layers.Conv2D(
             filters=self._filters,
@@ -589,9 +620,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
             epsilon=self._norm_epsilon,
             trainable=self._bn_trainable,
         )
-        self._activation2 = tf_utils.get_activation(
-            self._activation, use_keras_layer=True
-        )
+        self._activation2 = keras.layers.Activation(self._activation)
 
         self._conv3 = tf.keras.layers.Conv2D(
             filters=self._filters * 4,
@@ -608,12 +637,10 @@ class BottleneckBlock(tf.keras.layers.Layer):
             epsilon=self._norm_epsilon,
             trainable=self._bn_trainable,
         )
-        self._activation3 = tf_utils.get_activation(
-            self._activation, use_keras_layer=True
-        )
+        self._activation3 = keras.layers.Activation(self._activation)
 
         if self._se_ratio and self._se_ratio > 0 and self._se_ratio <= 1:
-            self._squeeze_excitation = nn_layers.SqueezeExcitation(
+            self._squeeze_excitation = SqueezeExcitation(
                 in_filters=self._filters * 4,
                 out_filters=self._filters * 4,
                 se_ratio=self._se_ratio,
@@ -625,7 +652,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
             self._squeeze_excitation = None
 
         if self._stochastic_depth_drop_rate:
-            self._stochastic_depth = nn_layers.StochasticDepth(
+            self._stochastic_depth = StochasticDepth(
                 self._stochastic_depth_drop_rate
             )
         else:
@@ -704,7 +731,6 @@ def get_stochastic_depth_rate(init_rate, i, n):
     return rate
 
 
-@tf.keras.utils.register_keras_serializable(package="Vision")
 class ResNet(tf.keras.Model):
     """Creates ResNet and ResNet-RS family models.
     This implements the Deep Residual Network from:
@@ -1011,3 +1037,16 @@ class ResNet(tf.keras.Model):
     def output_specs(self):
         """A dict of {level: TensorShape} pairs for the model output."""
         return self._output_specs
+
+if __name__ == "__main__":
+
+    resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None,299,299,3)))
+
+    predictions = keras.layers.Flatten()(resnet_model.layers[-1].output)
+    predictions = keras.layers.Dense(100)(predictions)
+
+    model = keras.Model(resnet_model.inputs, outputs=predictions)
+
+    model.summary()
+
+    keras.utils.plot_model(model)
