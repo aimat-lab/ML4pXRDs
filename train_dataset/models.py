@@ -332,6 +332,8 @@ def build_model_resnet_10(
     number_of_input_values=8501,
     number_of_output_labels=2,
     lr=0.0003,
+    momentum=0.0,
+    optimizer="Adam"
 ):
 
     resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None,number_of_input_values,1)))
@@ -343,10 +345,19 @@ def build_model_resnet_10(
     model.summary()
     #keras.utils.plot_model(model, show_shapes=True)
 
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
-        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=[keras.metrics.SparseCategoricalAccuracy()],
-    )
+    if optimizer == "Adam":
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
+            loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=[keras.metrics.SparseCategoricalAccuracy()],
+        )
+    elif optimizer == "SGD":
+        model.compile(
+            optimizer=keras.optimizers.SGD(lr, momentum=momentum),
+            loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=[keras.metrics.SparseCategoricalAccuracy()],
+        )
+    else:
+        raise Exception("Optimizer not supported.")
 
     return model

@@ -31,7 +31,7 @@ from sklearn.preprocessing import StandardScaler
 from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 
-tag = "2-spg-lattice_paras_kde"
+tag = "2-spg-sgd_momentum_lr_plateau_more_workers"
 description = ""
 
 if len(sys.argv) > 1:
@@ -49,13 +49,13 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
-NO_epochs = 200
+batches_per_epoch = 150
+NO_epochs = 600
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 10  # for (2,15) tuple
+structures_per_spg = 100  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 5
 # structures_per_spg = 1  # 30-spg
@@ -65,7 +65,7 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-NO_workers = 127 + 127 + 8  # for int-nano cluster
+NO_workers = int(1.5*(127 + 127 + 8))  # for int-nano cluster
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 
@@ -93,12 +93,15 @@ use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
-use_statistics_dataset_as_validation = False  # TODO: Change this!?
+use_statistics_dataset_as_validation = False
 generate_randomized_validation_datasets = False
 
 use_dropout = False
 
-learning_rate = 0.0003  # TODO: Change back
+learning_rate = 0.0003
+momentum = 0.7
+optimizer = "SGD"
+use_reduce_lr_on_plateau = True
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -111,7 +114,7 @@ scale_patterns = False
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -1448,17 +1451,20 @@ class CustomSequence(keras.utils.Sequence):
 sequence = CustomSequence(batches_per_epoch)
 
 #model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
-model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate)
+model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
+
+if use_reduce_lr_on_plateau:
+    lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="train_loss")
 
 if not use_icsd_structures_directly:
     model.fit(
         x=sequence,
         epochs=NO_epochs,
         # TODO: Removed the batch_size parameter here, any impact?
-        callbacks=[tb_callback, CustomCallback()],
+        callbacks=[tb_callback, CustomCallback()] if not use_reduce_lr_on_plateau else [tb_callback, CustomCallback(), lr_callback],
         verbose=verbosity,
         workers=1,
         max_queue_size=queue_size_tf,
@@ -1471,7 +1477,7 @@ else:
         y=statistics_y_match,
         epochs=NO_epochs,
         batch_size=100,
-        callbacks=[tb_callback, CustomCallback()],
+        callbacks=[tb_callback, CustomCallback()] if not use_reduce_lr_on_plateau else [tb_callback, CustomCallback(), lr_callback],
         verbose=verbosity,
         workers=1,
         max_queue_size=queue_size_tf,
