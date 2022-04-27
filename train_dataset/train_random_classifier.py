@@ -7,6 +7,7 @@ from models import (
     build_model_park_medium_size,
     build_model_park_huge_size,
     build_model_park_tiny_size,
+    build_model_resnet_10,
     build_model_resnet_50_old,
 )
 import os
@@ -48,13 +49,13 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 150
-NO_epochs = 400
+batches_per_epoch = 1500
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 100  # for (2,15) tuple
+structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 5
 # structures_per_spg = 1  # 30-spg
@@ -110,7 +111,7 @@ scale_patterns = False
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -1446,7 +1447,8 @@ class CustomSequence(keras.utils.Sequence):
 
 sequence = CustomSequence(batches_per_epoch)
 
-model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+#model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)

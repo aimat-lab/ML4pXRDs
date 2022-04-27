@@ -149,7 +149,7 @@ class ResidualBlock(tf.keras.layers.Layer):
           kernel_initializer: A `str` of kernel_initializer for convolutional
             layers.
           kernel_regularizer: A `tf.keras.regularizers.Regularizer` object for
-            Conv2D. Default to None.
+            Conv1D. Default to None.
           bias_regularizer: A `tf.keras.regularizers.Regularizer` object for Conv2d.
             Default to None.
           activation: A `str` name of the activation function.
@@ -191,7 +191,7 @@ class ResidualBlock(tf.keras.layers.Layer):
 
     def build(self, input_shape):
         if self._use_projection:
-            self._shortcut = tf.keras.layers.Conv2D(
+            self._shortcut = tf.keras.layers.Conv1D(
                 filters=self._filters,
                 kernel_size=1,
                 strides=self._strides,
@@ -210,10 +210,10 @@ class ResidualBlock(tf.keras.layers.Layer):
         conv1_padding = "same"
         # explicit padding here is added for centernet
         if self._use_explicit_padding:
-            self._pad = tf.keras.layers.ZeroPadding2D(padding=(1, 1))
+            self._pad = keras.layers.ZeroPadding1D(padding=(1,))
             conv1_padding = "valid"
 
-        self._conv1 = tf.keras.layers.Conv2D(
+        self._conv1 = tf.keras.layers.Conv1D(
             filters=self._filters,
             kernel_size=3,
             strides=self._strides,
@@ -230,7 +230,7 @@ class ResidualBlock(tf.keras.layers.Layer):
             trainable=self._bn_trainable,
         )
 
-        self._conv2 = tf.keras.layers.Conv2D(
+        self._conv2 = tf.keras.layers.Conv1D(
             filters=self._filters,
             kernel_size=3,
             strides=1,
@@ -322,7 +322,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
           kernel_initializer: A `str` of kernel_initializer for convolutional
             layers.
           kernel_regularizer: A `tf.keras.regularizers.Regularizer` object for
-            Conv2D. Default to None.
+            Conv1D. Default to None.
           bias_regularizer: A `tf.keras.regularizers.Regularizer` object for Conv2d.
             Default to None.
           activation: A `str` name of the activation function.
@@ -360,10 +360,10 @@ class BottleneckBlock(tf.keras.layers.Layer):
     def build(self, input_shape):
         if self._use_projection:
             if self._resnetd_shortcut:
-                self._shortcut0 = tf.keras.layers.AveragePooling2D(
+                self._shortcut0 = tf.keras.layers.AveragePooling1D(
                     pool_size=2, strides=self._strides, padding="same"
                 )
-                self._shortcut1 = tf.keras.layers.Conv2D(
+                self._shortcut1 = tf.keras.layers.Conv1D(
                     filters=self._filters * 4,
                     kernel_size=1,
                     strides=1,
@@ -373,7 +373,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
                     bias_regularizer=self._bias_regularizer,
                 )
             else:
-                self._shortcut = tf.keras.layers.Conv2D(
+                self._shortcut = tf.keras.layers.Conv1D(
                     filters=self._filters * 4,
                     kernel_size=1,
                     strides=self._strides,
@@ -390,7 +390,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
                 trainable=self._bn_trainable,
             )
 
-        self._conv1 = tf.keras.layers.Conv2D(
+        self._conv1 = tf.keras.layers.Conv1D(
             filters=self._filters,
             kernel_size=1,
             strides=1,
@@ -407,7 +407,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
         )
         self._activation1 = keras.layers.Activation(self._activation)
 
-        self._conv2 = tf.keras.layers.Conv2D(
+        self._conv2 = tf.keras.layers.Conv1D(
             filters=self._filters,
             kernel_size=3,
             strides=self._strides,
@@ -426,7 +426,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
         )
         self._activation2 = keras.layers.Activation(self._activation)
 
-        self._conv3 = tf.keras.layers.Conv2D(
+        self._conv3 = tf.keras.layers.Conv1D(
             filters=self._filters * 4,
             kernel_size=1,
             strides=1,
@@ -544,8 +544,8 @@ class ResNet(tf.keras.Model):
           norm_epsilon: A small `float` added to variance to avoid dividing by zero.
           kernel_initializer: A str for kernel initializer of convolutional layers.
           kernel_regularizer: A `tf.keras.regularizers.Regularizer` object for
-            Conv2D. Default to None.
-          bias_regularizer: A `tf.keras.regularizers.Regularizer` object for Conv2D.
+            Conv1D. Default to None.
+          bias_regularizer: A `tf.keras.regularizers.Regularizer` object for Conv1D.
             Default to None.
           bn_trainable: A `bool` that indicates whether batch norm layers should be
             trainable. Default to True.
@@ -581,7 +581,7 @@ class ResNet(tf.keras.Model):
 
         stem_depth_multiplier = self._depth_multiplier if scale_stem else 1.0
         if stem_type == "v0":
-            x = layers.Conv2D(
+            x = layers.Conv1D(
                 filters=int(64 * stem_depth_multiplier),
                 kernel_size=7,
                 strides=2,
@@ -599,7 +599,7 @@ class ResNet(tf.keras.Model):
             )(x)
             x = keras.layers.Activation(activation)(x)
         elif stem_type == "v1":
-            x = layers.Conv2D(
+            x = layers.Conv1D(
                 filters=int(32 * stem_depth_multiplier),
                 kernel_size=3,
                 strides=2,
@@ -616,7 +616,7 @@ class ResNet(tf.keras.Model):
                 trainable=bn_trainable,
             )(x)
             x = keras.layers.Activation(activation)(x)
-            x = layers.Conv2D(
+            x = layers.Conv1D(
                 filters=int(32 * stem_depth_multiplier),
                 kernel_size=3,
                 strides=1,
@@ -633,7 +633,7 @@ class ResNet(tf.keras.Model):
                 trainable=bn_trainable,
             )(x)
             x = keras.layers.Activation(activation)(x)
-            x = layers.Conv2D(
+            x = layers.Conv1D(
                 filters=int(64 * stem_depth_multiplier),
                 kernel_size=3,
                 strides=1,
@@ -654,7 +654,7 @@ class ResNet(tf.keras.Model):
             raise ValueError("Stem type {} not supported.".format(stem_type))
 
         if replace_stem_max_pool:
-            x = layers.Conv2D(
+            x = layers.Conv1D(
                 filters=int(64 * self._depth_multiplier),
                 kernel_size=3,
                 strides=2,
@@ -672,7 +672,7 @@ class ResNet(tf.keras.Model):
             )(x)
             x = keras.layers.Activation(activation)(x)
         else:
-            x = layers.MaxPool2D(pool_size=3, strides=2, padding="same")(x)
+            x = layers.MaxPool1D(pool_size=3, strides=2, padding="same")(x)
 
         endpoints = {}
         for i, spec in enumerate(RESNET_SPECS[model_id]):
@@ -782,7 +782,7 @@ class ResNet(tf.keras.Model):
 
 if __name__ == "__main__":
 
-    resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None,299,299,3)))
+    resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None,8501,1)))
 
     predictions = keras.layers.Flatten()(resnet_model.layers[-1].output)
     predictions = keras.layers.Dense(100)(predictions)
@@ -791,4 +791,4 @@ if __name__ == "__main__":
 
     model.summary()
 
-    keras.utils.plot_model(model)
+    keras.utils.plot_model(model, show_shapes=True)

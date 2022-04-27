@@ -3,7 +3,7 @@ import tensorflow.keras as keras
 import tensorflow.keras.metrics as tfm
 import tensorflow as tf
 from utils.resnet_v2_1D import ResNetv2
-
+from utils.resnet_keras_1D import ResNet
 
 class BinaryAccuracy(tfm.BinaryAccuracy):
     def __init__(self, from_logits=False, *args, **kwargs):
@@ -326,3 +326,27 @@ def build_model_resnet_50_old(
     Model.summary()
 
     return Model
+
+def build_model_resnet_10(
+    hp=None,
+    number_of_input_values=8501,
+    number_of_output_labels=2,
+    lr=0.0003,
+):
+
+    resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None,number_of_input_values,1)))
+    predictions = keras.layers.Flatten()(resnet_model.layers[-1].output)
+    predictions = keras.layers.Dense(number_of_output_labels)(predictions)
+
+    model = keras.Model(resnet_model.inputs, outputs=predictions)
+
+    model.summary()
+    #keras.utils.plot_model(model, show_shapes=True)
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[keras.metrics.SparseCategoricalAccuracy()],
+    )
+
+    return model
