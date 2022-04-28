@@ -98,7 +98,7 @@ generate_randomized_validation_datasets = False
 
 use_dropout = False
 
-learning_rate = 0.001
+learning_rate = 0.01
 momentum = 0.7
 optimizer = "SGD"
 use_reduce_lr_on_plateau = True
@@ -1457,7 +1457,7 @@ model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=mom
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
 if use_reduce_lr_on_plateau:
-    lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1)
+    lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1, factor=0.5)
 
 if not use_icsd_structures_directly:
     model.fit(
