@@ -115,10 +115,27 @@ def fit_diffractogram(x, y, angles, intensities):
     #    maxfev=10000,
     #)
 
-    model = Model(fit_function)
-    params = model.make_params()
+    def fit_function_wrapped(xs,
+        a0,
+        a1,
+        a2,
+        a3,
+        # a4,
+        # a5,
+        U,
+        V,
+        W,
+        X,
+        Y,
+        eta_0,
+        eta_1,
+        eta_2,
+        intensity_scaling,):
 
-    params["angles"].
+        fit_function(xs, a0, a1, a2, a3, U, V, W, X, Y, eta_0, eta_1, eta_2, intensity_scaling, angles, intensities)
+
+    model = Model(fit_function_wrapped)
+    params = model.make_params(a0=1.0, a1=1.0, a2=1.0, a3=1.0, U=1.0, V=1.0, W=1.0, X=1.0, Y=1.0, eta_0 = 1.0, eta_1 = 1.0, eta_2 = 1.0, intensity_scaling=1.0)
 
     model.fit(y, params, xs=x)
 

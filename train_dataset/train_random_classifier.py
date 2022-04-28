@@ -49,7 +49,7 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 150
+batches_per_epoch = 600
 NO_epochs = 600
 
 # structures_per_spg = 1 # for all spgs
@@ -1457,7 +1457,7 @@ model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=mom
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
 if use_reduce_lr_on_plateau:
-    lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="train_loss")
+    lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss")
 
 if not use_icsd_structures_directly:
     model.fit(
