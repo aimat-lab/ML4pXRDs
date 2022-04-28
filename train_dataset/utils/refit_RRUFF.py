@@ -103,7 +103,7 @@ def fit_function(
 
 def fit_diffractogram(x, y, angles, intensities):
 
-    plt.plot(x, y)
+    plt.plot(x, y, label="Original")
     for angle in angles:
         plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
 
@@ -124,8 +124,9 @@ def fit_diffractogram(x, y, angles, intensities):
     #    print("Bad R2 score.")
     #    return None
 
-    plt.plot(x, fitted_curve)
+    plt.plot(x, fitted_curve, label="Fitted")
 
+    plt.legend()
     plt.show()
 
     return params
