@@ -65,7 +65,7 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-NO_workers = int(1.5*(127 + 127 + 8))  # for int-nano cluster
+NO_workers = 127 + 127 + 8  # for int-nano cluster
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 

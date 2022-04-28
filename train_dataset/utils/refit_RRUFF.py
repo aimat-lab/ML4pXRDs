@@ -5,9 +5,9 @@ import os
 from scipy.optimize import curve_fit
 from functools import partial
 from sklearn.metrics import r2_score
+from lmfit import Model
 
-# Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement
-
+########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement :
 
 def fn_x(theta, mean, H):
     return (2 * theta - 2 * mean) / H
@@ -108,12 +108,21 @@ def fit_diffractogram(x, y, angles, intensities):
         plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
 
     # TODO: Search for reasonable parameter ranges; maybe make a good estimate of the background function based on what you already have (processed)?
-    params, covs = curve_fit(
-        partial(fit_function, angles=angles, intensities=intensities),
-        x,
-        y,
-        maxfev=10000,
-    )
+    #params, covs = curve_fit(
+    #    partial(fit_function, angles=angles, intensities=intensities),
+    #    x,
+    #    y,
+    #    maxfev=10000,
+    #)
+
+    model = Model(fit_function)
+    params = model.make_params()
+
+    params["angles"].
+
+    model.fit(y, params, xs=x)
+
+    exit()
 
     fitted_curve = fit_function(x, *params, angles, intensities)
 
