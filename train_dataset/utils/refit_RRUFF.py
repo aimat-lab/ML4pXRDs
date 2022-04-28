@@ -132,13 +132,20 @@ def fit_diffractogram(x, y, angles, intensities):
         eta_2,
         intensity_scaling,):
 
-        fit_function(xs, a0, a1, a2, a3, U, V, W, X, Y, eta_0, eta_1, eta_2, intensity_scaling, angles, intensities)
+        output = fit_function(xs, a0, a1, a2, a3, U, V, W, X, Y, eta_0, eta_1, eta_2, intensity_scaling, angles, intensities)
 
-    model = Model(fit_function_wrapped)
-    params = model.make_params(a0=1.0, a1=1.0, a2=1.0, a3=1.0, U=1.0, V=1.0, W=1.0, X=1.0, Y=1.0, eta_0 = 1.0, eta_1 = 1.0, eta_2 = 1.0, intensity_scaling=1.0)
+        #if np.any(np.isnan(output)):
+        #    print(repr([a0,a1,a2,a3,U,V,W,X,Y,eta_0, eta_1, eta_2, intensity_scaling]))
 
-    model.fit(y, params, xs=x)
+        print(output.shape)
+        return output
 
+    #fit_function_wrapped(np.linspace(5,90,1000), 1.7026161561556243, -0.1690326633239259, 0.0025585116643204145, -1.0123896779971408e-05, 0.8131574470688545, -1.7071279898103882, 0.7472324773831862, 0.2226751470996659, 0.772880962746507, 2193.5532476458857, -156.5848565793276, -265.9168201692516, 11.05304099502265)
+
+    model = Model(fit_function_wrapped, nan_policy="omit")
+
+    # TODO: Fix x range
+    model.fit(y, xs=x, a0=1.0, a1=1.0, a2=1.0, a3=1.0, U=1.0, V=1.0, W=1.0, X=1.0, Y=1.0, eta_0 = 1.0, eta_1 = 1.0, eta_2 = 1.0, intensity_scaling=1.0)
     exit()
 
     fitted_curve = fit_function(x, *params, angles, intensities)
