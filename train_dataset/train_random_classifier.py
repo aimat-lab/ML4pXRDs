@@ -98,7 +98,7 @@ generate_randomized_validation_datasets = False
 
 use_dropout = False
 
-learning_rate = 1e-4 
+learning_rate = 1e-5
 momentum = 0.7
 optimizer = "SGD"
 use_reduce_lr_on_plateau = True
