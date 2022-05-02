@@ -31,7 +31,7 @@ from sklearn.preprocessing import StandardScaler
 from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 
-tag = "2-spg-sgd_momentum_lr_plateau_more_workers"
+tag = "2-spg-normal"
 description = ""
 
 if len(sys.argv) > 1:
@@ -49,13 +49,13 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 600
+batches_per_epoch = 150
 NO_epochs = 600
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 25  # for (2,15) tuple
+structures_per_spg = 100  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 5
 # structures_per_spg = 1  # 30-spg
@@ -98,10 +98,10 @@ generate_randomized_validation_datasets = False
 
 use_dropout = False
 
-learning_rate = 1e-5
-momentum = 0.7
-optimizer = "SGD"
-use_reduce_lr_on_plateau = True
+learning_rate = 1e-3
+#momentum = 0.7
+#optimizer = "SGD"
+use_reduce_lr_on_plateau = False
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -1450,8 +1450,8 @@ class CustomSequence(keras.utils.Sequence):
 
 sequence = CustomSequence(batches_per_epoch)
 
-#model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
-model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
+model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+# model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
