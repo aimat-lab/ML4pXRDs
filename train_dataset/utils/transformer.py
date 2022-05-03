@@ -8,6 +8,7 @@ import tensorflow.keras as keras
 from tensorflow_addons.layers import MultiHeadAttention
 from tensorflow.keras import backend as K
 import numpy as np
+from functools import partial
 
 class TransformerPositionalEmbedding(keras.Model):
     """
@@ -111,6 +112,21 @@ def build_model_transformer(
 
     return model
 
+def lr_scheduler_warmup(epoch, lr, warmup_epochs=15, decay_epochs=100, initial_lr=1e-6, base_lr=1e-3, min_lr=5e-5):
+
+    if epoch <= warmup_epochs:
+        pct = epoch / warmup_epochs
+        return ((base_lr - initial_lr) * pct) + initial_lr
+
+    if epoch > warmup_epochs and epoch < warmup_epochs+decay_epochs:
+        pct = 1 - ((epoch - warmup_epochs) / decay_epochs)
+        return ((base_lr - min_lr) * pct) + min_lr
+
+    return min_lr
+
+def get_lr_scheduler_warmup_callback(warmup_epochs=15, decay_epochs=100, initial_lr=1e-6, base_lr=1e-3, min_lr=5e-5):
+
+    return keras.callbacks.LearningRateScheduler(partial(lr_scheduler_warmup, warmup_epochs=warmup_epochs, decay_epochs=decay_epochs, initial_lr=initial_lr, base_lr=base_lr, min_lr=min_lr), verbose=1)
 
 def get_transformer_test():
 
