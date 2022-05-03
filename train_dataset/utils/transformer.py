@@ -1,35 +1,39 @@
-# Parts are from https://towardsdatascience.com/the-time-series-transformer-2a521a0efad3
+# Base is from https://towardsdatascience.com/the-time-series-transformer-2a521a0efad3
+# Time2vec has been replaced with trainable embeddings here, similar to https://github.com/adonis1022/time_series_Transformer/blob/master/TrainablePositionalEmbeddings.py
+# and https://keras.io/examples/vision/image_classification_with_vision_transformer/
+
+# TODO: Maybe rather use d-space instead of angle, because then periodic positional embeddings make more sense.
 
 import tensorflow.keras as keras
 from tensorflow_addons.layers import MultiHeadAttention
 from tensorflow.keras import backend as K
 import numpy as np
 
-class Time2Vec(keras.layers.Layer):
-    def __init__(self, kernel_size=1):
-        super(Time2Vec, self).__init__(trainable=True, name='Time2VecLayer')
-        self.k = kernel_size
-    
-    def build(self, input_shape):
-        # trend
-        self.wb = self.add_weight(name='wb',shape=(input_shape[1],),initializer='uniform',trainable=True)
-        self.bb = self.add_weight(name='bb',shape=(input_shape[1],),initializer='uniform',trainable=True)
-        # periodic
-        self.wa = self.add_weight(name='wa',shape=(1, input_shape[1], self.k),initializer='uniform',trainable=True)
-        self.ba = self.add_weight(name='ba',shape=(1, input_shape[1], self.k),initializer='uniform',trainable=True)
-        super(Time2Vec, self).build(input_shape)
-    
-    def call(self, inputs, **kwargs):
-        bias = self.wb * inputs + self.bb
-        dp = K.dot(inputs, self.wa) + self.ba
-        wgts = K.sin(dp) # or K.cos(.)
+class TransformerPositionalEmbedding(keras.Model):
+    """
+    Trainable positional embeddings: to be added to the inputs of Transformer block to learn 
+    sequence information carried by the sentences.
+    """
 
-        ret = K.concatenate([K.expand_dims(bias, -1), wgts], -1)
-        ret = K.reshape(ret, (-1, inputs.shape[1]*(self.k+1)))
-        return ret
-    
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], input_shape[1]*(self.k + 1))
+    def __init__(self, width, **kwargs):
+        super().__init__(**kwargs)
+
+        self.input_embedding_width = width
+        self.embedding = keras.layers.Dense(self.input_embedding_width)
+
+    def build(self, input_shape):
+
+        sequence_length = input_shape[-2]
+
+        self.position_embedding = self.add_weight(
+            shape=(sequence_length, self.input_embedding_width),
+            initializer='uniform',
+            name='position_embeddings',
+            trainable=True)
+
+    def call(self, inputs, **kwargs):
+        x = keras.layers.TimeDistributed(self.embedding)(inputs) # embed 1D sequence into self.width-D sequence (time-independently)
+        return x + self.position_embedding
 
 class AttentionBlock(keras.Model):
     def __init__(self, name='AttentionBlock', num_heads=2, head_size=128, ff_dim=None, dropout=0, **kwargs):
@@ -63,26 +67,21 @@ class AttentionBlock(keras.Model):
         return x
 
 class ModelTrunk(keras.Model):
-    def __init__(self, input_shape, name='ModelTrunk', time2vec_dim=1, num_heads=2, head_size=128, ff_dim=None, num_layers=1, dropout=0, **kwargs):
+    def __init__(self, input_shape, name='ModelTrunk', num_heads=2, head_size=128, ff_dim=None, num_layers=1, dropout=0, input_embedding_width=2, **kwargs):
         super().__init__(name=name, **kwargs)
-        self.time2vec = Time2Vec(kernel_size=time2vec_dim)
+        self.pos_embedding = TransformerPositionalEmbedding(input_embedding_width)
         if ff_dim is None:
             ff_dim = head_size
         self.dropout = dropout
         self.attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, dropout=dropout) for _ in range(num_layers)]
         self.shape = input_shape
-
         
     def call(self, inputs):
-        time_embedding = keras.layers.TimeDistributed(self.time2vec, input_shape=self.shape)(inputs)
-        x = K.concatenate([inputs, time_embedding], -1) # 1+2=3
 
-        #print(x.shape)
+        x = self.pos_embedding(inputs)
 
         for attention_layer in self.attention_layers:
             x = attention_layer(x)
-
-            #print(x.shape)
 
         return K.reshape(x, (-1, x.shape[1] * x.shape[2])) # flat vector of features out
 
@@ -104,9 +103,7 @@ if __name__ == "__main__":
 
     model = get_transformer()
 
-    print(model.predict(np.expand_dims(np.array([[1,5,2,4,5,2,5]], dtype=float), -1)))
-
-    # TODO: Remove the periodic component
+    print(model.predict(np.expand_dims(np.array([[1.5,5.3,2.5,4.1,5.8,2.1,5.7]], dtype=float), -1)))
 
     # Why do we call MultiHeadAttention only with key, value?
     #query = inputs[0]
