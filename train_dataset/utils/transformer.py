@@ -12,7 +12,7 @@ from functools import partial
 from train_dataset.utils.AdamWarmup import AdamWarmup
 from train_dataset.utils.AdamWarmup import calc_train_steps
 
-class TransformerPositionalEmbedding(keras.Model):
+class TransformerPositionalEmbedding(keras.layers.Layer):
     """
     Trainable positional embeddings: to be added to the inputs of Transformer block to learn 
     sequence information carried by the sentences.
@@ -38,7 +38,7 @@ class TransformerPositionalEmbedding(keras.Model):
         x = keras.layers.TimeDistributed(self.embedding)(inputs) # embed 1D sequence into self.width-D sequence (time-independently)
         return x + self.position_embedding
 
-class AttentionBlock(keras.Model):
+class AttentionBlock(keras.layers.Layer):
     def __init__(self, name='AttentionBlock', num_heads=2, head_size=128, ff_dim=None, dropout=0, **kwargs):
         super().__init__(name=name, **kwargs)
 
@@ -102,7 +102,7 @@ def build_model_transformer(
 
     inputs = keras.Input(shape=(number_of_input_values,1))
 
-    transformer_model = ModelTrunk((None,number_of_input_values,1), num_heads=2, head_size=32, num_layers=1, input_embedding_width=2) # TODO: Switch back to 128 head_size
+    transformer_model = ModelTrunk((None,number_of_input_values,1), num_heads=2, head_size=64, num_layers=1, input_embedding_width=2) # TODO: Switch back to 128 head_size
     transformer_model.call(inputs)
 
     predictions = transformer_model.layers[-1].output
