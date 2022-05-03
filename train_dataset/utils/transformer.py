@@ -82,10 +82,37 @@ class ModelTrunk(keras.Model):
 
         for attention_layer in self.attention_layers:
             x = attention_layer(x)
+            #print(x.shape)
 
         return K.reshape(x, (-1, x.shape[1] * x.shape[2])) # flat vector of features out
 
-def get_transformer():
+def build_model_transformer(
+    hp=None,
+    number_of_input_values=8501,
+    number_of_output_labels=2,
+    lr=0.0003,
+):
+
+    transformer_model = ModelTrunk((None,number_of_input_values,1), num_heads=2, head_size=128, num_layers=1, input_embedding_width=2)
+
+    predictions = keras.layers.Flatten()(transformer_model.layers[-1].output)
+    predictions = keras.layers.Dense(number_of_output_labels)(predictions)
+
+    model = keras.Model(transformer_model.inputs, outputs=predictions)
+    model.summary()
+
+    #keras.utils.plot_model(model, show_shapes=True)
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=lr),
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[keras.metrics.SparseCategoricalAccuracy()],
+    )
+
+    return model
+
+
+def get_transformer_test():
 
     model = ModelTrunk((None,7,1), num_heads=2, head_size=128)
 
@@ -101,7 +128,7 @@ def get_transformer():
 
 if __name__ == "__main__":
 
-    model = get_transformer()
+    model = get_transformer_test()
 
     print(model.predict(np.expand_dims(np.array([[1.5,5.3,2.5,4.1,5.8,2.1,5.7]], dtype=float), -1)))
 
