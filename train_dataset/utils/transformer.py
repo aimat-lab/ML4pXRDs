@@ -2,6 +2,8 @@
 # Time2vec has been replaced with trainable embeddings here, similar to https://github.com/adonis1022/time_series_Transformer/blob/master/TrainablePositionalEmbeddings.py
 # and https://keras.io/examples/vision/image_classification_with_vision_transformer/
 
+# https://keras.io/examples/vision/image_classification_with_vision_transformer/
+
 # TODO: Maybe rather use d-space instead of angle, because then periodic positional embeddings make more sense.
 
 import tensorflow.keras as keras
@@ -58,6 +60,9 @@ class AttentionBlock(keras.layers.Layer):
         self.ff_conv2 = keras.layers.Conv1D(filters=input_shape[-1], kernel_size=1) 
 
     def call(self, inputs):
+
+        print(inputs.shape)
+
         x = self.attention([inputs, inputs])
         x = self.attention_dropout(x)
         x = self.attention_norm(inputs + x)
@@ -86,6 +91,8 @@ class ModelTrunk(keras.Model):
 
         for attention_layer in self.attention_layers:
             x = attention_layer(x)
+
+            print(x.shape)
             #print(x.shape)
 
         #return K.reshape(x, (-1, x.shape[1] * x.shape[2])) # flat vector of features
@@ -102,7 +109,7 @@ def build_model_transformer(
 
     inputs = keras.Input(shape=(number_of_input_values,1))
 
-    transformer_model = ModelTrunk((None,number_of_input_values,1), num_heads=2, head_size=64, num_layers=1, input_embedding_width=2) # TODO: Switch back to 128 head_size
+    transformer_model = ModelTrunk((None,number_of_input_values,1), num_heads=8, head_size=16, num_layers=1, input_embedding_width=2) # TODO: Switch back to 128 head_size
     transformer_model.call(inputs)
 
     predictions = transformer_model.layers[-1].output
@@ -162,13 +169,13 @@ def get_transformer_test():
 
 if __name__ == "__main__":
 
-    build_model_transformer()
+    model = build_model_transformer(number_of_input_values=8501)
 
-    exit()
+    #model = get_transformer_test()
 
-    model = get_transformer_test()
+    #print(model.predict(np.expand_dims(np.array([[1.5,5.3,2.5,4.1,5.8,2.1,5.7]], dtype=float), -1)))
 
-    print(model.predict(np.expand_dims(np.array([[1.5,5.3,2.5,4.1,5.8,2.1,5.7]], dtype=float), -1)))
+    print(model.predict(np.random.random(size=(1,8501,1))))
 
     # Why do we call MultiHeadAttention only with key, value?
     #query = inputs[0]

@@ -57,7 +57,7 @@ NO_epochs = 200
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 100  # for (2,15) tuple
+structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 5
 # structures_per_spg = 1  # 30-spg
@@ -120,6 +120,7 @@ local = True
 if local:
     NO_workers = 8
     verbosity = 1
+    NO_random_samples_per_spg = 10
 
 git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
