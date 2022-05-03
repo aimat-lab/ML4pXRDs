@@ -5,6 +5,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from train_dataset.utils.AdamWarmup import AdamWarmup
 from train_dataset.utils.AdamWarmup import calc_train_steps
+import numpy as np
 
 def mlp(x, hidden_units, dropout_rate):
     for units in hidden_units:
@@ -21,6 +22,8 @@ class Patches(layers.Layer):
 
         # TODO: Print the dimensions
 
+        #print(inputs.shape)
+
         images = inputs[:,:,None,:] # add a pseudo second dimensions to be able to use extract_patches function
 
         batch_size = tf.shape(images)[0]
@@ -35,6 +38,8 @@ class Patches(layers.Layer):
         patch_dims = patches.shape[-1]
         patches = tf.reshape(patches, [batch_size, -1, patch_dims])
 
+        #print(patches.shape)
+
         return patches
 
 class PatchEncoder(layers.Layer):
@@ -48,6 +53,7 @@ class PatchEncoder(layers.Layer):
         )
 
     def call(self, patch):
+
         positions = tf.range(start=0, limit=self.num_patches, delta=1)
         encoded = self.projection(patch) + self.position_embedding(positions)
         return encoded
@@ -148,4 +154,5 @@ def build_model_transformer_vit(
 
 if __name__ == "__main__":
 
-    build_model_transformer_vit()
+    model = build_model_transformer_vit()
+    print(model.predict(np.random.random(size=(1,8501,1))))
