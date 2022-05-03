@@ -10,6 +10,8 @@ from models import (
     build_model_resnet_10,
     build_model_resnet_50_old,
 )
+from utils.transformer import get_lr_scheduler_warmup_callback
+from utils.transformer import build_model_transformer
 import os
 from sklearn.utils import shuffle
 from dataset_simulations.simulation import Simulation
@@ -1450,11 +1452,13 @@ class CustomSequence(keras.utils.Sequence):
 
 sequence = CustomSequence(batches_per_epoch)
 
-model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+# model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
+
+model = build_model_transformer(None, N, len(spgs), )
 
 if use_reduce_lr_on_plateau:
     lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1, factor=0.5)
