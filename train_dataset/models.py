@@ -2,8 +2,8 @@ from matplotlib.pyplot import plot
 import tensorflow.keras as keras
 import tensorflow.keras.metrics as tfm
 import tensorflow as tf
-from utils.resnet_v2_1D import ResNetv2
-from utils.resnet_keras_1D import ResNet
+from train_dataset.utils.resnet_v2_1D import ResNetv2
+from train_dataset.utils.resnet_keras_1D import ResNet
 
 class BinaryAccuracy(tfm.BinaryAccuracy):
     def __init__(self, from_logits=False, *args, **kwargs):

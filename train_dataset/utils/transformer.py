@@ -9,6 +9,8 @@ from tensorflow_addons.layers import MultiHeadAttention
 from tensorflow.keras import backend as K
 import numpy as np
 from functools import partial
+from train_dataset.utils.AdamWarmup import AdamWarmup
+from train_dataset.utils.AdamWarmup import calc_train_steps
 
 class TransformerPositionalEmbedding(keras.Model):
     """
@@ -70,12 +72,13 @@ class AttentionBlock(keras.Model):
 class ModelTrunk(keras.Model):
     def __init__(self, input_shape, name='ModelTrunk', num_heads=2, head_size=128, ff_dim=None, num_layers=1, dropout=0, input_embedding_width=2, **kwargs):
         super().__init__(name=name, **kwargs)
+
         self.pos_embedding = TransformerPositionalEmbedding(input_embedding_width)
         if ff_dim is None:
             ff_dim = head_size
         self.dropout = dropout
         self.attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, dropout=dropout) for _ in range(num_layers)]
-        self.shape = input_shape
+        self.flatten = keras.layers.Flatten()
         
     def call(self, inputs):
 
@@ -85,27 +88,42 @@ class ModelTrunk(keras.Model):
             x = attention_layer(x)
             #print(x.shape)
 
-        return K.reshape(x, (-1, x.shape[1] * x.shape[2])) # flat vector of features out
+        #return K.reshape(x, (-1, x.shape[1] * x.shape[2])) # flat vector of features
+        return self.flatten(x)
 
 def build_model_transformer(
     hp=None,
     number_of_input_values=8501,
     number_of_output_labels=2,
-    lr=0.0003,
+    lr=0.001,
+    epochs=200,
+    steps_per_epoch=1500,
 ):
 
-    transformer_model = ModelTrunk((None,number_of_input_values,1), num_heads=2, head_size=128, num_layers=1, input_embedding_width=2)
+    inputs = keras.Input(shape=(number_of_input_values,1))
 
-    predictions = keras.layers.Flatten()(transformer_model.layers[-1].output)
+    transformer_model = ModelTrunk((None,number_of_input_values,1), num_heads=2, head_size=32, num_layers=1, input_embedding_width=2) # TODO: Switch back to 128 head_size
+    transformer_model.call(inputs)
+
+    predictions = transformer_model.layers[-1].output
     predictions = keras.layers.Dense(number_of_output_labels)(predictions)
 
-    model = keras.Model(transformer_model.inputs, outputs=predictions)
+    model = keras.Model(inputs, outputs=predictions)
+    model.call(inputs)
+
     model.summary()
 
     #keras.utils.plot_model(model, show_shapes=True)
 
+    total_steps, warmup_steps = calc_train_steps(
+        steps_per_epoch=steps_per_epoch,
+        epochs=epochs,
+        warmup_proportion=0.1,
+    )
+
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=lr),
+        #optimizer=keras.optimizers.Adam(learning_rate=lr),
+        optimizer=AdamWarmup(total_steps, warmup_steps, learning_rate=lr),
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=[keras.metrics.SparseCategoricalAccuracy()],
     )
@@ -143,6 +161,10 @@ def get_transformer_test():
     return model
 
 if __name__ == "__main__":
+
+    build_model_transformer()
+
+    exit()
 
     model = get_transformer_test()
 

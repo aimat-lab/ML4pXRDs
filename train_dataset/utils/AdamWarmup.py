@@ -180,7 +180,7 @@ class AdamWarmup(Optimizer):
         })
         return config
 
-def calc_train_steps(num_example, batch_size, epochs, warmup_proportion=0.1):
+def calc_train_steps(steps_per_epoch, epochs, warmup_proportion=0.1):
     """Calculate the number of total and warmup steps.
     >>> calc_train_steps(num_example=1024, batch_size=32, epochs=10, warmup_proportion=0.1)
     (320, 32)
@@ -190,7 +190,7 @@ def calc_train_steps(num_example, batch_size, epochs, warmup_proportion=0.1):
     :param warmup_proportion: The proportion of warmup steps.
     :return: Total steps and warmup steps.
     """
-    steps = (num_example + batch_size - 1) // batch_size
-    total = steps * epochs
+
+    total = steps_per_epoch * epochs
     warmup = int(total * warmup_proportion)
     return total, warmup

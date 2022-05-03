@@ -52,7 +52,7 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 150
-NO_epochs = 600
+NO_epochs = 200
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
@@ -116,7 +116,7 @@ scale_patterns = False
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -1458,7 +1458,7 @@ sequence = CustomSequence(batches_per_epoch)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
-model = build_model_transformer(None, N, len(spgs), )
+model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
 if use_reduce_lr_on_plateau:
     lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1, factor=0.5)
