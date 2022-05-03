@@ -53,12 +53,12 @@ analysis_per_spg = True
 
 test_every_X_epochs = 1
 batches_per_epoch = 150
-NO_epochs = 200
+NO_epochs = 600
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 10  # for (2,15) tuple
+structures_per_spg = 100  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 5
 # structures_per_spg = 1  # 30-spg
@@ -117,7 +117,7 @@ scale_patterns = False
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
