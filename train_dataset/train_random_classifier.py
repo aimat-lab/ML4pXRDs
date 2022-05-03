@@ -11,7 +11,7 @@ from models import (
     build_model_resnet_50_old,
 )
 from utils.transformer import get_lr_scheduler_warmup_callback
-from utils.transformer import build_model_transformer
+#from utils.transformer import build_model_transformer
 from utils.transformer_vit import build_model_transformer_vit
 import os
 from sklearn.utils import shuffle
