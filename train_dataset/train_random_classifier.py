@@ -32,6 +32,7 @@ import psutil
 from sklearn.preprocessing import StandardScaler
 from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
+import random
 
 tag = "2-spg-transformer-vit"
 description = ""
@@ -51,13 +52,13 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 150
+batches_per_epoch = 15
 NO_epochs = 600
 
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 100  # for (2,15) tuple
+structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 5
 # structures_per_spg = 1  # 30-spg
@@ -114,9 +115,12 @@ load_only_N_patterns_each_test = 1  # None possible
 
 scale_patterns = False
 
+use_retention_of_patterns = True
+retention_rate = 0.8
+
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -1437,21 +1441,76 @@ class CustomCallback(keras.callbacks.Callback):
 
 
 class CustomSequence(keras.utils.Sequence):
+
     def __init__(self, number_of_batches):
         self.number_of_batches = number_of_batches
+
+        if use_retention_of_patterns:
+            self.patterns = None
+            self.labels = None
+            self.indices = None
 
     def __len__(self):
         return self.number_of_batches
 
-    def __getitem__(self, idx):
-        start = time.time()
-        result = queue.get()
-        log_wait_timings.append(time.time() - start)
-        auto_garbage_collect()
-        return result
+    def on_epoch_end(self):
 
+        if use_retention_of_patterns:
+
+            self.replace_patterns()
+            random.shuffle(self.indices) 
+
+    def __getitem__(self, idx):
+        
+        if not use_retention_of_patterns:
+
+            start = time.time()
+            result = queue.get()
+            log_wait_timings.append(time.time() - start)
+            auto_garbage_collect()
+            return result
+
+        else:
+
+            log_wait_timings.append(0)
+
+            indices = self.indices[idx*structures_per_spg*NO_corn_sizes*len(spgs):(idx+1)*structures_per_spg*NO_corn_sizes*len(spgs)]
+            return self.patterns[indices,:,:], self.labels[indices]
+ 
+    def pre_compute(self):
+
+        # Pre-compute a whole epoch
+
+        self.patterns = np.empty(shape=(self.number_of_batches*structures_per_spg*NO_corn_sizes*len(spgs),N,1))
+        self.labels = np.empty(shape=(self.number_of_batches*structures_per_spg*NO_corn_sizes*len(spgs)))
+
+        for i in range(0, self.number_of_batches):
+
+            (patterns, labels) = queue.get()
+            self.patterns[i*structures_per_spg*NO_corn_sizes*len(spgs):(i+1)*structures_per_spg*NO_corn_sizes*len(spgs),:,:] = patterns
+            self.labels[i*structures_per_spg*NO_corn_sizes*len(spgs):(i+1)*structures_per_spg*NO_corn_sizes*len(spgs)] = labels
+
+        self.indices = list(range(0, self.patterns.shape[0]))
+        random.shuffle(self.indices) 
+
+    def replace_patterns(self):
+
+        for i in range(0, int(self.number_of_batches*(1-retention_rate))):
+
+            (patterns, labels) = queue.get()
+
+            indices_to_replace = self.indices[i*structures_per_spg*NO_corn_sizes*len(spgs):(i+1)*structures_per_spg*NO_corn_sizes*len(spgs)]
+
+            self.patterns[indices_to_replace,:,:] = patterns
+            self.labels[indices_to_replace] = labels
+
+
+# TODO: Make the queue in this case the same size that you need to refill on_epoch_end + a little bit
 
 sequence = CustomSequence(batches_per_epoch)
+
+if use_retention_of_patterns:
+    sequence.pre_compute()
 
 # model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
