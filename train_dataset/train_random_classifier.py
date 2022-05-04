@@ -115,7 +115,7 @@ load_only_N_patterns_each_test = 1  # None possible
 
 scale_patterns = False
 
-use_retention_of_patterns = True
+use_retention_of_patterns = False
 retention_rate = 0.7
 
 verbosity = 2
@@ -1510,14 +1510,14 @@ sequence = CustomSequence(batches_per_epoch)
 if use_retention_of_patterns:
     sequence.pre_compute()
 
-model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+# model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
 #model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
-#model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
+model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
 if use_reduce_lr_on_plateau:
     lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1, factor=0.5)
