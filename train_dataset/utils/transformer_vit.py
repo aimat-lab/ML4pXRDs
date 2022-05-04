@@ -7,10 +7,12 @@ from train_dataset.utils.AdamWarmup import AdamWarmup
 from train_dataset.utils.AdamWarmup import calc_train_steps
 import numpy as np
 from addons.tensorflow_addons.layers import MultiHeadAttention
+from addons.tensorflow_addons.activations import gelu
 
 def mlp(x, hidden_units, dropout_rate):
     for units in hidden_units:
-        x = layers.Dense(units, activation=tf.nn.gelu)(x)
+        #x = layers.Dense(units, activation=tf.nn.gelu)(x)
+        x = layers.Dense(units, activation=lambda x: gelu(x, approximate=False))(x)
         #x = layers.Dropout(dropout_rate)(x)
     return x
 
