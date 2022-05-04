@@ -6,6 +6,7 @@ from tensorflow.keras import layers
 from train_dataset.utils.AdamWarmup import AdamWarmup
 from train_dataset.utils.AdamWarmup import calc_train_steps
 import numpy as np
+from addons.tensorflow_addons.layers import MultiHeadAttention
 
 def mlp(x, hidden_units, dropout_rate):
     for units in hidden_units:
@@ -19,8 +20,6 @@ class Patches(layers.Layer):
         self.patch_size = patch_size
 
     def call(self, inputs):
-
-        # TODO: Print the dimensions
 
         #print(inputs.shape)
 
@@ -88,7 +87,7 @@ def build_model_transformer_vit(
     patch_size = 32
     num_patches = number_of_input_values // patch_size
 
-    projection_dim = 32 # 64
+    projection_dim = 64 
     num_heads = 4
     transformer_units = [
         projection_dim * 2,
@@ -110,10 +109,18 @@ def build_model_transformer_vit(
     for _ in range(transformer_layers):
         # Layer normalization 1.
         x1 = layers.LayerNormalization(epsilon=1e-6)(encoded_patches)
+
         # Create a multi-head attention layer.
-        attention_output = layers.MultiHeadAttention(
-            num_heads=num_heads, key_dim=projection_dim, dropout=0.1
-        )(x1, x1)
+        #attention_output = layers.MultiHeadAttention(
+        #    num_heads=num_heads, key_dim=projection_dim, dropout=0.1
+        #)(x1, x1)
+
+        print("##### ", x1.shape)
+
+        attention_output = MultiHeadAttention(
+            num_heads=num_heads, head_size=projection_dim #, dropout=0.1
+        )([x1, x1])
+
         # Skip connection 1.
         x2 = layers.Add()([attention_output, encoded_patches])
         # Layer normalization 2.

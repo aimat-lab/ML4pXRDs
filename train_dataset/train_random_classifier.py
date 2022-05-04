@@ -33,7 +33,7 @@ from sklearn.preprocessing import StandardScaler
 from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 
-tag = "2-spg-normal"
+tag = "2-spg-transformer-vit"
 description = ""
 
 if len(sys.argv) > 1:
