@@ -72,7 +72,7 @@ NO_workers = 127 + 127 + 8  # for int-nano cluster
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 
-queue_size = 120
+queue_size = 120 # if use_retention_of_patterns==True, then this is not used
 queue_size_tf = 60
 
 # NO_random_batches = 20
@@ -781,7 +781,7 @@ print()
 print(ray.cluster_resources())
 print()
 
-queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
+queue = Queue(maxsize=queue_size if not use_retention_of_patterns else int(batches_per_epoch*(1-retention_rate)))  # store a maximum of `queue_size` batches
 
 # all_data_per_spg_handle = ray.put(all_data_per_spg)
 
