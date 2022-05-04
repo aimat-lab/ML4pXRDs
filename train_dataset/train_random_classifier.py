@@ -52,7 +52,7 @@ run_analysis_after_run = True
 analysis_per_spg = True
 
 test_every_X_epochs = 1
-batches_per_epoch = 15
+batches_per_epoch = 150
 NO_epochs = 600
 
 # structures_per_spg = 1 # for all spgs
@@ -116,7 +116,7 @@ load_only_N_patterns_each_test = 1  # None possible
 scale_patterns = False
 
 use_retention_of_patterns = True
-retention_rate = 0.8
+retention_rate = 0.7
 
 verbosity = 2
 
@@ -124,7 +124,6 @@ local = True
 if local:
     NO_workers = 8
     verbosity = 1
-    NO_random_samples_per_spg = 10
 
 git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
@@ -1461,7 +1460,7 @@ class CustomSequence(keras.utils.Sequence):
             random.shuffle(self.indices) 
 
     def __getitem__(self, idx):
-        
+
         if not use_retention_of_patterns:
 
             start = time.time()
@@ -1475,6 +1474,7 @@ class CustomSequence(keras.utils.Sequence):
             log_wait_timings.append(0)
 
             indices = self.indices[idx*structures_per_spg*NO_corn_sizes*len(spgs):(idx+1)*structures_per_spg*NO_corn_sizes*len(spgs)]
+
             return self.patterns[indices,:,:], self.labels[indices]
  
     def pre_compute(self):
@@ -1505,21 +1505,19 @@ class CustomSequence(keras.utils.Sequence):
             self.labels[indices_to_replace] = labels
 
 
-# TODO: Make the queue in this case the same size that you need to refill on_epoch_end + a little bit
-
 sequence = CustomSequence(batches_per_epoch)
 
 if use_retention_of_patterns:
     sequence.pre_compute()
 
-# model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
 #model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
-model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
+#model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
 if use_reduce_lr_on_plateau:
     lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1, factor=0.5)

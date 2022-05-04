@@ -6,19 +6,21 @@ from scipy.optimize import curve_fit
 from functools import partial
 from sklearn.metrics import r2_score
 from lmfit import Model
+import random
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement :
 
 def fn_x(theta, mean, H):
     return (2 * theta - 2 * mean) / H
 
+# Constraint: U*tan_min**2 + V*tan_min + W > 0, U*tan_max**2 + V*tan_max + W > 0
 
 def fn_H(theta, U, V, W):
-    return np.sqrt(
-        U * np.tan(theta / 360 * 2 * np.pi) ** 2
-        + V * np.tan(theta / 360 * 2 * np.pi)
-        + W
-    )
+
+    H_squared = U * np.tan(theta / 360 * 2 * np.pi) ** 2 + V * np.tan(theta / 360 * 2 * np.pi) + W
+
+    #return np.nan_to_num(np.sqrt(H_squared)) + 0.0001 # TODO: Changed
+    return np.sqrt(H_squared)
 
 
 def fn_H_dash(theta, X, Y):
@@ -65,28 +67,28 @@ def smeared_peaks(
 
         ys += peak
 
-    return ys / np.max(ys)
+    return ys
 
 
 def fit_function(
     xs,
-    a0,
-    a1,
-    a2,
-    a3,
+    a0=0.0,
+    a1=0.0,
+    a2=0.0,
+    a3=0.0,
     # a4,
     # a5,
-    U,
-    V,
-    W,
-    X,
-    Y,
-    eta_0,
-    eta_1,
-    eta_2,
-    intensity_scaling,
-    angles,
-    intensities,
+    U=0.001,
+    V=0.001,
+    W=0.001,
+    X=0.001,
+    Y=0.001,
+    eta_0=0.0,
+    eta_1=0.0,
+    eta_2=0.0,
+    intensity_scaling=1.0,
+    angles=None,
+    intensities=None,
 ):
 
     polynomial = (
@@ -107,14 +109,17 @@ def fit_diffractogram(x, y, angles, intensities):
     for angle in angles:
         plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
 
-    # TODO: Search for reasonable parameter ranges; maybe make a good estimate of the background function based on what you already have (processed)?
-    #params, covs = curve_fit(
-    #    partial(fit_function, angles=angles, intensities=intensities),
-    #    x,
-    #    y,
-    #    maxfev=10000,
-    #)
+    plt.plot(x, fit_function(x, angles=angles, intensities=intensities), label="Initial")
 
+    # TODO: Search for reasonable parameter ranges; maybe make a good estimate of the background function based on what you already have (processed)?
+    params, covs = curve_fit(
+        partial(fit_function, angles=angles, intensities=intensities),
+        x,
+        y,
+        maxfev=100000,
+    )
+
+    """
     def fit_function_wrapped(xs,
         a0,
         a1,
@@ -142,11 +147,12 @@ def fit_diffractogram(x, y, angles, intensities):
 
     #fit_function_wrapped(np.linspace(5,90,1000), 1.7026161561556243, -0.1690326633239259, 0.0025585116643204145, -1.0123896779971408e-05, 0.8131574470688545, -1.7071279898103882, 0.7472324773831862, 0.2226751470996659, 0.772880962746507, 2193.5532476458857, -156.5848565793276, -265.9168201692516, 11.05304099502265)
 
-    model = Model(fit_function_wrapped, nan_policy="omit")
-
+    #model = Model(fit_function_wrapped, nan_policy="omit")
     # TODO: Fix x range
-    model.fit(y, xs=x, a0=1.0, a1=1.0, a2=1.0, a3=1.0, U=1.0, V=1.0, W=1.0, X=1.0, Y=1.0, eta_0 = 1.0, eta_1 = 1.0, eta_2 = 1.0, intensity_scaling=1.0)
-    exit()
+    #model.fit(y, xs=x, a0=1.0, a1=1.0, a2=1.0, a3=1.0, U=1.0, V=1.0, W=1.0, X=1.0, Y=1.0, eta_0 = 1.0, eta_1 = 1.0, eta_2 = 1.0, intensity_scaling=1.0)
+    #exit()
+
+    """
 
     fitted_curve = fit_function(x, *params, angles, intensities)
 
@@ -158,6 +164,8 @@ def fit_diffractogram(x, y, angles, intensities):
     #    return None
 
     plt.plot(x, fitted_curve, label="Fitted")
+
+    plt.plot(x, params[0] + params[1] * x + params[2] * x ** 2 + params[3] * x ** 3, label="BG")
 
     plt.legend()
     plt.show()
@@ -229,6 +237,8 @@ intensities = []
 counter_processed = 0
 counter_dif = 0
 
+random.shuffle(raw_files)
+
 for i, raw_file in enumerate(raw_files):
 
     print(f"{(i+1)/len(raw_files)*100:.2f}% processed")
@@ -244,9 +254,11 @@ for i, raw_file in enumerate(raw_files):
     processed_file = glob(processed_file)
     if len(processed_file) > 0:
         counter_processed += 1
+        found_processed_file = True
         processed_file = processed_file[0]
         processed_files.append(processed_file)
     else:
+        found_processed_file = False
         processed_files.append(None)
         pass
 
@@ -268,29 +280,37 @@ for i, raw_file in enumerate(raw_files):
 
         dif_files.append(None)
 
-    if data is not None:  # if nothing went wrong
+    if found_processed_file:
+
+        processed_xy = np.genfromtxt(
+            processed_file, dtype=float, delimiter=",", comments="#"
+        )
+        processed_xys.append(processed_xy)
+
+    if True and data is not None: # and found_processed_file:  # if nothing went wrong
 
         angles.append(data[:, 0])
         intensities.append(data[:, 1])
 
+        #plt.plot(processed_xy[:,0][::10], processed_xy[:,1][::10], label="Processed")
+        #plt.plot(raw_xy[:,0][::10], raw_xy[:,1][::10], label="Raw")
+        #plt.plot(raw_xy[:,0][::10], raw_xy[:,1][::10] - processed_xy[:,1][::10], label="BG")
+        #plt.legend()
+        #plt.show()
+
         result = fit_diffractogram(
             raw_xys[-1][:, 0],
-            raw_xys[-1][:, 1],
+            raw_xys[-1][:, 1] / np.max(raw_xys[-1][:,1]),
+            #processed_xy[:,0],
+            #processed_xy[:,1] / np.max(processed_xy[:,1]),
             angles[-1],
-            intensities[-1],
+            intensities[-1] / np.max(intensities[-1]),
         )
 
     else:
 
         angles.append(None)
         intensities.append(None)
-
-    """
-        processed_xy = np.genfromtxt(
-        processed_file, dtype=float, delimiter=",", comments="#"
-    )
-    processed_xys.append(processed_xy)
-    """
 
     pass
 
