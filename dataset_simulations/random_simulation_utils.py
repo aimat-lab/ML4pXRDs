@@ -981,6 +981,9 @@ def prepare_training():
     if strategy != "random":
 
         group_labels = []
+
+        counter = 0
+
         for i, meta in enumerate(sim.sim_metas):
 
             print(f"{i/len(sim.sim_metas)}")
@@ -996,11 +999,17 @@ def prepare_training():
             else:
                 raise Exception("Grouping strategy not supported.")
 
+            # TODO: Handle nan in group label
+
+            if group_label == np.nan:
+                group_label = f"alone_{counter}"
+                counter += 1
+
             group_labels.append(group_label)
 
         gss = GroupShuffleSplit(1, test_size = 0.3, train_size=0.7)
 
-        train_metas_splitted, test_metas_splitted= gss.split(X=[item[0] for item in sim.sim_metas], groups=group_labels)[0]
+        train_metas_splitted, test_metas_splitted = list(gss.split(X=[item[0] for item in sim.sim_metas], groups=group_labels))[0]
 
     else:
 
