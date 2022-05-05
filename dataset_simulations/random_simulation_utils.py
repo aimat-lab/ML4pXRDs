@@ -981,7 +981,9 @@ def prepare_training():
     if strategy != "random":
 
         group_labels = []
-        for meta in sim.sim_metas:
+        for i, meta in enumerate(sim.sim_metas):
+
+            print(f"{i/len(sim.sim_metas)}")
             
             index = sim.icsd_ids.index(meta[0])
 
@@ -1246,7 +1248,7 @@ def prepare_training():
     print("Processing test dataset...")
     start = time.time()
 
-    corrected_labels = []
+    corrected_labels = {}
     count_mismatches = 0
 
     for i, crystal in enumerate(test_crystals):
@@ -1270,14 +1272,17 @@ def prepare_training():
             if spg_analyzer != spg_number_icsd:
                 count_mismatches += 1
 
-            corrected_labels.append(spg_analyzer)
+            if test_metas[i][0] in corrected_labels.keys():
+                raise Exception("Key already in use. Something went wrong.")
+            else:
+                corrected_labels[test_metas[i][0]] = spg_analyzer
 
         except Exception as ex:
 
             print(f"Error processing structure, skipping in test set:")
             print(ex)
 
-            corrected_labels.append(None)
+            corrected_labels[test_metas[i][0]] = None
 
     print(f"{count_mismatches/len(test_crystals)*100}% mismatches in test set.")
 
@@ -1313,7 +1318,8 @@ def load_dataset_info():
         counts_per_spg_per_element_per_wyckoff = data[1]
         NO_wyckoffs_prob_per_spg = data[2]
         corrected_labels = data[3]
-        files_to_use_for_test_set = data[4]
+        statistics_metas = data[4]
+        test_metas = data[5]
         represented_spgs = data[5]
         NO_unique_elements_prob_per_spg = data[6]
         NO_repetitions_prob_per_spg_per_element = data[7]
@@ -1607,7 +1613,8 @@ def load_dataset_info():
         probability_per_spg_per_element_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
         corrected_labels,
-        files_to_use_for_test_set,
+        statistics_metas,
+        test_metas,
         represented_spgs,  # spgs represented in the statistics dataset (70%)
         NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element,
