@@ -254,6 +254,7 @@ else:  # local
 
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
+    stop = 8 if local else None,
     metas_to_load=test_metas
 )  # to not overflow the memory
 
@@ -1122,7 +1123,8 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
         else None,
-        metas_to_load=statistics_metas
+        metas_to_load=statistics_metas,
+        stop = 8 if local else None
     )  # to not overflow the memory if local
 
     statistics_icsd_patterns_match = icsd_sim_statistics.sim_patterns

@@ -999,8 +999,6 @@ def prepare_training():
             else:
                 raise Exception("Grouping strategy not supported.")
 
-            # TODO: Handle nan in group label
-
             if group_label == np.nan:
                 group_label = f"alone_{counter}"
                 counter += 1
