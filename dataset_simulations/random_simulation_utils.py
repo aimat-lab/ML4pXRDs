@@ -954,36 +954,29 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30% of the data
     path_to_patterns = "./patterns/icsd_vecsei/"
 
     if jobid is not None and jobid != "":
-        sim_test = Simulation(
+        sim= Simulation(
             os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
             os.path.expanduser("~/Databases/ICSD/cif/"),
         )
-        sim_test.output_dir = path_to_patterns
+        sim.output_dir = path_to_patterns
 
-        sim_statistics = Simulation(
-            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
-            os.path.expanduser("~/Databases/ICSD/cif/"),
-        )
-        sim_statistics.output_dir = path_to_patterns
     else:  # local
-        sim_test = Simulation(
+        sim= Simulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
-        sim_test.output_dir = path_to_patterns
+        sim.output_dir = path_to_patterns
 
-        sim_statistics = Simulation(
-            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-        )
-        sim_statistics.output_dir = path_to_patterns
+    sim.load(
+        load_patterns_angles_intensities=False
+    )
 
-    sim_test.load(
-        load_patterns_angles_intensities=False, start=0, stop=files_to_use_for_test_set
-    )
-    sim_statistics.load(
-        load_patterns_angles_intensities=False, start=files_to_use_for_test_set
-    )
+    ### Train / test splitting:
+    ### Three strategies: structure type full, main structure type, sum formula
+
+    
+
+    ##########
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
