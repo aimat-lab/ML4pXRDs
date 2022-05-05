@@ -20,6 +20,7 @@ from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 from dataset_simulations.core.structure_generation import generate_pyxtal_object
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.model_selection import train_test_split
+import math
 
 import statsmodels.api as sm
 from dataset_simulations.core.structure_generation import sample_denseness_factor
@@ -986,7 +987,7 @@ def prepare_training():
 
         for i, meta in enumerate(sim.sim_metas):
 
-            print(f"{i/len(sim.sim_metas)}")
+            print(f"{i/len(sim.sim_metas)*100}%")
             
             index = sim.icsd_ids.index(meta[0])
 
@@ -999,9 +1000,12 @@ def prepare_training():
             else:
                 raise Exception("Grouping strategy not supported.")
 
-            if group_label == np.nan:
-                group_label = f"alone_{counter}"
-                counter += 1
+            if not isinstance(group_label, str):
+                if math.isnan(group_label):
+                    group_label = f"alone_{counter}"
+                    counter += 1
+                else:
+                    raise Exception("Something went wrong.")
 
             group_labels.append(group_label)
 
