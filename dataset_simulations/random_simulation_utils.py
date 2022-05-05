@@ -19,6 +19,7 @@ from pyxtal.lattice import Lattice
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 from dataset_simulations.core.structure_generation import generate_pyxtal_object
 from sklearn.model_selection import GroupShuffleSplit
+from sklearn.model_selection import train_test_split
 
 import statsmodels.api as sm
 from dataset_simulations.core.structure_generation import sample_denseness_factor
@@ -987,7 +988,7 @@ def prepare_training():
             if strategy == "structure type full":
                 group_label = sim.icsd_structure_types[index]
             elif strategy == "main structure type":
-                pass
+                group_label = sim.icsd_structure_types[index].split("#")[0] # only use the main part of the structure type
             elif strategy == "sum formula":
                 group_label = sim.icsd_sumformulas[index]
             else:
@@ -997,12 +998,14 @@ def prepare_training():
 
         gss = GroupShuffleSplit(1, test_size = 0.3, train_size=0.7)
 
-        train_indices, test_indices = gss.split(X=sim.sim_metas, groups=group_labels)[0]
+        train_metas, test_metas = gss.split(X=sim.sim_metas, groups=group_labels)[0]
 
     else:
-        
-        pass
-        # TODO: Split randomly (as in training script)
+
+        (
+            train_metas,
+            test_metas
+        ) = train_test_split(sim.sim_metas, test_size=0.3)
 
     ##########
 
