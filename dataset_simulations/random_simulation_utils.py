@@ -18,6 +18,7 @@ from pyxtal.crystal import atom_site
 from pyxtal.lattice import Lattice
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
 from dataset_simulations.core.structure_generation import generate_pyxtal_object
+from sklearn.model_selection import GroupShuffleSplit
 
 import statsmodels.api as sm
 from dataset_simulations.core.structure_generation import sample_denseness_factor
@@ -946,7 +947,7 @@ def get_wyckoff_info(pyxtal_crystal):
     return len(pyxtal_crystal.atom_sites), elements
 
 
-def prepare_training(files_to_use_for_test_set=40):  # roughly 30% of the data
+def prepare_training():
 
     spgs = range(1, 231)
 
@@ -971,10 +972,37 @@ def prepare_training(files_to_use_for_test_set=40):  # roughly 30% of the data
         load_patterns_angles_intensities=False
     )
 
-    ### Train / test splitting:
-    ### Three strategies: structure type full, main structure type, sum formula
+    ########## Train (statistics) / test splitting:
 
-    
+    ### Four strategies: random, structure type full, main structure type, sum formula
+    strategy = "structure type full"
+
+    if strategy != "random":
+
+        group_labels = []
+        for meta in sim.sim_metas:
+            
+            index = sim.icsd_ids.index(meta[0])
+
+            if strategy == "structure type full":
+                group_label = sim.icsd_structure_types[index]
+            elif strategy == "main structure type":
+                pass
+            elif strategy == "sum formula":
+                group_label = sim.icsd_sumformulas[index]
+            else:
+                raise Exception("Grouping strategy not supported.")
+
+            group_labels.append(group_label)
+
+        gss = GroupShuffleSplit(1, test_size = 0.3, train_size=0.7)
+
+        train_indices, test_indices = gss.split(X=sim.sim_metas, groups=group_labels)[0]
+
+    else:
+        
+        pass
+        # TODO: Split randomly (as in training script)
 
     ##########
 
@@ -1566,7 +1594,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1708,7 +1736,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
     if False:

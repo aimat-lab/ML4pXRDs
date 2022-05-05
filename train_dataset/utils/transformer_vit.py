@@ -89,10 +89,10 @@ def build_model_transformer_vit(
     patch_size = 16 
     num_patches = number_of_input_values // patch_size
 
-    projection_dim = 8*8
+    projection_dim = 4*8
     num_heads = 8
     transformer_units = [
-        projection_dim * 2,
+        projection_dim * 4,
         projection_dim,
     ]  # Size of the transformer layers
     transformer_layers = 8 # 8
