@@ -998,14 +998,37 @@ def prepare_training():
 
         gss = GroupShuffleSplit(1, test_size = 0.3, train_size=0.7)
 
-        train_metas, test_metas = gss.split(X=sim.sim_metas, groups=group_labels)[0]
+        train_metas_splitted, test_metas_splitted= gss.split(X=[item[0] for item in sim.sim_metas], groups=group_labels)[0]
 
     else:
 
         (
-            train_metas,
-            test_metas
+            train_metas_splitted, # statistics
+            test_metas_splitted
         ) = train_test_split(sim.sim_metas, test_size=0.3)
+
+
+    statistics_crystals = []
+    statistics_metas = []
+    statistics_variations = []
+    statistics_labels = []
+
+    test_crystals = []
+    test_metas = []
+    test_variations = []
+    test_labels = []
+
+    for i, meta in enumerate(sim.sim_metas):
+        if meta[0] in train_metas_splitted:
+            statistics_crystals.append(sim.sim_crystals[i])
+            statistics_metas.append(sim.sim_metas[i])
+            statistics_variations.append(sim.sim_variations[i])
+            statistics_labels.append(sim.sim_labels[i])
+        elif meta[0] in test_metas_splitted:
+            test_crystals.append(sim.sim_crystals[i])
+            test_metas.append(sim.sim_metas[i])
+            test_variations.append(sim.sim_variations[i])
+            test_labels.append(sim.sim_labels[i])
 
     ##########
 
@@ -1045,10 +1068,10 @@ def prepare_training():
 
     start = time.time()
 
-    for i, crystal in enumerate(sim_statistics.sim_crystals):
+    for i, crystal in enumerate(statistics_crystals):
 
         if (i % 100) == 0:
-            print(f"{i / len(sim_statistics.sim_crystals) * 100} % processed.")
+            print(f"{i / len(statistics_crystals) * 100} % processed.")
 
         try:
 
@@ -1079,8 +1102,8 @@ def prepare_training():
             success = True
             try:
 
-                _, NO_wyckoffs, _, _, _, _, _, _ = sim_statistics.get_wyckoff_info(
-                    sim_statistics.sim_metas[i][0]
+                _, NO_wyckoffs, _, _, _, _, _, _ = sim.get_wyckoff_info(
+                    statistics_metas[i][0]
                 )
 
                 # if NO_wyckoffs != NO_wyckoffs_meta:
@@ -1089,8 +1112,8 @@ def prepare_training():
                 #    )
 
                 if (
-                    np.any(np.isnan(sim_statistics.sim_variations[i][0]))
-                    or sim_statistics.sim_labels[i][0] not in spgs
+                    np.any(np.isnan(statistics_variations[i][0]))
+                    or statistics_labels[i][0] not in spgs
                 ):
                     continue
 
@@ -1226,14 +1249,14 @@ def prepare_training():
     corrected_labels = []
     count_mismatches = 0
 
-    for i, crystal in enumerate(sim_test.sim_crystals):
+    for i, crystal in enumerate(test_crystals):
 
         if (i % 100) == 0:
-            print(f"{i / len(sim_test.sim_crystals) * 100} % processed.")
+            print(f"{i / len(test_crystals) * 100} % processed.")
 
         try:
 
-            spg_number_icsd = sim_test.sim_labels[i][0]
+            spg_number_icsd = test_labels[i][0]
 
             analyzer = SpacegroupAnalyzer(
                 crystal,
@@ -1256,7 +1279,7 @@ def prepare_training():
 
             corrected_labels.append(None)
 
-    print(f"{count_mismatches/len(sim_test.sim_crystals)*100}% mismatches in test set.")
+    print(f"{count_mismatches/len(test_crystals)*100}% mismatches in test set.")
 
     print(f"Took {time.time() - start} s to process the test dataset.")
 
@@ -1267,7 +1290,8 @@ def prepare_training():
                 counts_per_spg_per_element_per_wyckoff,
                 NO_wyckoffs_prob_per_spg,
                 corrected_labels,
-                files_to_use_for_test_set,
+                statistics_metas,
+                test_metas,
                 represented_spgs,
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element,
