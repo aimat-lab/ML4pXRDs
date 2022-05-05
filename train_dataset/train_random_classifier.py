@@ -253,9 +253,8 @@ else:  # local
     icsd_sim_test.output_dir = path_to_patterns
 
 icsd_sim_test.load(
-    start=0,
-    stop=files_to_use_for_test_set if not local else 4,
     load_only_N_patterns_each=load_only_N_patterns_each_test,
+    metas_to_load=test_metas
 )  # to not overflow the memory
 
 n_patterns_per_crystal = len(icsd_sim_test.sim_patterns[0])
@@ -276,7 +275,7 @@ print(
 
 for i in reversed(range(0, len(icsd_crystals_all))):
     # Only needed if the sample will actually be used later!
-    if icsd_labels_all[i][0] in spgs or corrected_labels[i] in spgs:
+    if icsd_labels_all[i][0] in spgs or corrected_labels[icsd_metas_all[i][0]] in spgs:
         conventional_counter += 1
         try:
             current_struc = icsd_crystals_all[i]
@@ -296,12 +295,10 @@ print(
 )
 
 icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
-icsd_labels_match_corrected_labels = corrected_labels[
-    : len(icsd_labels_all)
-]  # corrected labels from spglib
 icsd_crystals_match_corrected_labels = icsd_crystals_all.copy()
 icsd_variations_match_corrected_labels = icsd_variations_all.copy()
 icsd_metas_match_corrected_labels = icsd_metas_all.copy()
+icsd_labels_match_corrected_labels = [corrected_labels[meta[0]] for meta in icsd_metas_match_corrected_labels]  # corrected labels from spglib
 
 assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
 
@@ -1122,11 +1119,10 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         icsd_sim_statistics.output_dir = path_to_patterns
 
     icsd_sim_statistics.load(
-        start=files_to_use_for_test_set,
-        stop=None if not local else files_to_use_for_test_set + 4,
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
         else None,
+        metas_to_load=statistics_metas
     )  # to not overflow the memory if local
 
     statistics_icsd_patterns_match = icsd_sim_statistics.sim_patterns
