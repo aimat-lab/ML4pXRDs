@@ -444,7 +444,7 @@ class Simulation:
         if load_patterns_angles_intensities:
 
             for file in patterns_files[first_index:last_index]:
-                if load_only_N_patterns_each is not None and metas_to_load is not None: # load patterns using memory mapping
+                if load_only_N_patterns_each is not None: # load patterns using memory mapping
                     self.sim_patterns.extend(
                         np.load(file, allow_pickle=True, mmap_mode="r")[
                             :, 0:load_only_N_patterns_each
