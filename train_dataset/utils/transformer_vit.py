@@ -95,8 +95,8 @@ def build_model_transformer_vit(
         projection_dim * 2,
         projection_dim,
     ]  # Size of the transformer layers
-    transformer_layers = 4 # 8
-    mlp_head_units = [64]  # Size of the dense layers of the final classifier # [2048, 1024]
+    transformer_layers = 8 # 8
+    mlp_head_units = [32]  # Size of the dense layers of the final classifier # [2048, 1024]
 
     ##########
 
