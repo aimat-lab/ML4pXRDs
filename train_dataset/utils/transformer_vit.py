@@ -89,7 +89,7 @@ def build_model_transformer_vit(
     patch_size = 16 
     num_patches = number_of_input_values // patch_size
 
-    projection_dim = 16*8
+    projection_dim = 8*8
     num_heads = 8
     transformer_units = [
         projection_dim * 2,
@@ -116,8 +116,6 @@ def build_model_transformer_vit(
         #attention_output = layers.MultiHeadAttention(
         #    num_heads=num_heads, key_dim=projection_dim, dropout=0.1
         #)(x1, x1)
-
-        print("##### ", x1.shape)
 
         attention_output = MultiHeadAttention(
             num_heads=num_heads, head_size=projection_dim #, dropout=0.1
