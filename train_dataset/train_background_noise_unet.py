@@ -182,7 +182,9 @@ if training_mode == "train":
         workers=NO_workers,
         use_multiprocessing=True,
         # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
-        callbacks=[keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+        callbacks=[
+            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
+        ],
         steps_per_epoch=number_of_batches,
     )
 
@@ -203,6 +205,13 @@ else:
 
     x_test, y_test = test_batch[0], test_batch[1]
 
+    if True:
+        for i in range(x_test.shape[0]):
+            repeated_x = np.repeat(x_test[i, 1700:1701], x_test.shape[1] - 1700)
+            repeated_y = np.repeat([0], y_test.shape[1] - 1700)
+            x_test[i, :] = np.concatenate((x_test[i, 0:1700], repeated_x))
+            y_test[i, :] = np.concatenate((y_test[i, 0:1700], repeated_y))
+
     if mode == "removal":
         predictions = model.predict(x_test)
     else:
@@ -221,17 +230,21 @@ else:
             plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
             plt.plot(
-                pattern_x, test_batch[0][:][i], label="Input pattern",
+                pattern_x,
+                test_batch[0][:][i],
+                label="Input pattern",
             )
 
             plt.plot(
-                pattern_x, test_batch[1][:][i], label="Target",
+                pattern_x,
+                test_batch[1][:][i],
+                label="Target",
             )
 
             plt.plot(
                 pattern_x,
                 test_batch[0][:][i] - prediction[:, 0],
-                label="Background and noise",
+                label="Prediced background and noise",
                 linestyle="dotted",
             )
 
