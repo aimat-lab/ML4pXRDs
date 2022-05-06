@@ -93,6 +93,8 @@ if __name__ == "__main__":
     xrds_random_rightly_average = None
     xrds_random_falsely_average = None
 
+    make_random_and_icsd_same_length = True
+
     out_base = "comparison_plots/" + tag + "/"
     os.system("mkdir -p " + out_base)
 
@@ -133,6 +135,16 @@ if __name__ == "__main__":
 
     with open(in_base + "rightly_falsely_random.pickle", "rb") as file:
         rightly_indices_random, falsely_indices_random = pickle.load(file)
+
+    if make_random_and_icsd_same_length:
+        length = min(len(random_crystals), len(icsd_crystals))
+        random_crystals = random_crystals[0:length]
+        random_labels = random_labels[0:length]
+        random_variations = random_variations[0:length]
+        icsd_crystals = icsd_crystals[0:length]
+        icsd_labels = icsd_labels[0:length]
+        icsd_variations = icsd_variations[0:length]
+        icsd_metas = icsd_metas[0:length]
 
     # limit the range:
     if False:
