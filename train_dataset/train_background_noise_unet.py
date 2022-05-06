@@ -12,25 +12,19 @@ import generate_background_noise_utils
 from datetime import datetime
 
 tag = "UNetPP"
-mode = "removal"  # possible: "info", "removal"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
 to_test = "removal_06-12-2021_10-06-13_UNetPP"
 
-start_x = 10.015
-end_x = 50.155
-N = 2677
+start_x = 0.0
+end_x = 90.0
+N = 9001
 pattern_x = np.linspace(start_x, end_x, N)
 
-# UNet only works for certain input sizes
-# works: 2672, 2688
-pattern_x = pattern_x[0:2672]
-N = 2672
-
-batch_size = 128
+batch_size = 512
 number_of_batches = 500
-number_of_epochs = 1000
+number_of_epochs = 5000
 NO_workers = 32
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
@@ -39,15 +33,7 @@ print(f"Training with {batch_size * number_of_batches * number_of_epochs} sample
 
 print(f"Actual N of used range: {N}")
 
-out_base = (
-    "unet/"
-    + mode
-    + "_"
-    + datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-    + "_"
-    + tag
-    + "/"
-)
+out_base = "unet/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
 
 # with open("unet/scaler", "rb") as file:
 #    scaler = pickle.load(file)
@@ -55,10 +41,9 @@ out_base = (
 if training_mode == "train":
 
     class CustomSequence(keras.utils.Sequence):
-        def __init__(self, batch_size, number_of_batches, mode):
+        def __init__(self, batch_size, number_of_batches):
             self.batch_size = batch_size
             self.number_of_batches = number_of_batches
-            self.mode = mode
 
             self.data = None
             self.counter = 0
@@ -157,16 +142,7 @@ if training_mode == "train":
 
     model.summary()
 
-    if mode == "removal":
-        model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError())
-    elif mode == "info":
-        model.compile(
-            optimizer="adam",
-            loss=keras.losses.BinaryCrossentropy(from_logits=True),
-            metrics=["binary_crossentropy", "mean_squared_error"],
-        )
-    else:
-        raise Exception("Mode not supported.")
+    model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError())
 
     # cp_callback = keras.callbacks.ModelCheckpoint(
     #    filepath=out_base + "cps" + "/weights{epoch}",
@@ -175,7 +151,7 @@ if training_mode == "train":
     # )
 
     model.fit(
-        x=CustomSequence(batch_size, number_of_batches, mode),
+        x=CustomSequence(batch_size, number_of_batches),
         epochs=number_of_epochs,
         verbose=2,
         max_queue_size=500,
@@ -198,7 +174,7 @@ else:
         100, (start_x, end_x), n_angles_output=N
     )
 
-    # test_batch = generate_nackground_noise_utils_old.generate_samples(N=100, mode=mode)
+    # test_batch = generate_nackground_noise_utils_old.generate_samples(N=100)
 
     # test_xs = scaler.transform(test_batch[0])
     test_xs = test_batch[0]
@@ -212,55 +188,38 @@ else:
             x_test[i, :] = np.concatenate((x_test[i, 0:1700], repeated_x))
             y_test[i, :] = np.concatenate((y_test[i, 0:1700], repeated_y))
 
-    if mode == "removal":
-        predictions = model.predict(x_test)
-    else:
-        probability_model = keras.Sequential(
-            [model, keras.layers.Activation("sigmoid")]
-        )
-        predictions = probability_model.predict(x_test)
+    predictions = model.predict(x_test)
 
     os.system("mkdir -p predictions")
     for i, prediction in enumerate(predictions):
-        if mode == "removal":
 
-            plt.xlabel(r"$2 \theta$")
-            plt.ylabel("Intensity")
+        plt.xlabel(r"$2 \theta$")
+        plt.ylabel("Intensity")
 
-            plt.plot(pattern_x, prediction[:, 0], label="Prediction")
+        plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
-            plt.plot(
-                pattern_x,
-                test_batch[0][:][i],
-                label="Input pattern",
-            )
+        plt.plot(
+            pattern_x,
+            test_batch[0][:][i],
+            label="Input pattern",
+        )
 
-            plt.plot(
-                pattern_x,
-                test_batch[1][:][i],
-                label="Target",
-            )
+        plt.plot(
+            pattern_x,
+            test_batch[1][:][i],
+            label="Target",
+        )
 
-            plt.plot(
-                pattern_x,
-                test_batch[0][:][i] - prediction[:, 0],
-                label="Prediced background and noise",
-                linestyle="dotted",
-            )
+        plt.plot(
+            pattern_x,
+            test_batch[0][:][i] - prediction[:, 0],
+            label="Prediced background and noise",
+            linestyle="dotted",
+        )
 
-            plt.legend()
+        plt.legend()
 
-            # plt.savefig(f"predictions/prediction_{i}.png")
+        # plt.savefig(f"predictions/prediction_{i}.png")
 
-            plt.show()
-            plt.figure()
-        elif mode == "info":
-            plt.scatter(pattern_x, prediction, s=3)
-            plt.scatter(pattern_x, y_test[i], s=3)
-
-            plt.plot(pattern_x, x_test[i])
-            # plt.savefig(f"predictions/prediction_{i}.pdf")
-            plt.show()
-            plt.figure()
-        else:
-            raise Exception("Mode not recognized.")
+        plt.show()
+        plt.figure()
