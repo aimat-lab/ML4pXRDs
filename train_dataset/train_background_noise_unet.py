@@ -17,21 +17,19 @@ training_mode = "train"  # possible: train and test
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
 to_test = "removal_06-12-2021_10-06-13_UNetPP"
 
-start_x = 0.0
-end_x = 90.0
-N = 9001
-pattern_x = np.linspace(start_x, end_x, N)
+pattern_x = np.arange(0, 90.24, 0.02)
+start_x = pattern_x[0]
+end_x = pattern_x[-1]
+N = len(pattern_x)  # UNet works without error for N ~ 2^model_depth
 
-batch_size = 512
-number_of_batches = 500
+print(pattern_x)
+
+batch_size = 400
+number_of_batches = 250
 number_of_epochs = 5000
 NO_workers = 32
 
 print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
-
-# only use a restricted range of the simulated patterns
-
-print(f"Actual N of used range: {N}")
 
 out_base = "unet/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
 
@@ -45,69 +43,20 @@ if training_mode == "train":
             self.batch_size = batch_size
             self.number_of_batches = number_of_batches
 
-            self.data = None
-            self.counter = 0
-            # self.cache_multiplier = cache_multiplier
-
         def __len__(self):
             return self.number_of_batches
 
         def __getitem__(self, idx):
-            """
-            # print()
-            # print(self.counter)
-            # print()
-
-            # cache patterns to make it faster
-            if self.data is None or self.counter == self.cache_multiplier:
-                self.data = generate_background_noise_utils.generate_samples_gp(
-                    n_samples=self.batch_size * self.cache_multiplier,
-                    mode=self.mode,
-                    do_plot=False,
-                )
-                print()
-                print()
-                print("New data")
-                print()
-                print()
-
-                # self.data = generate_nackground_noise_utils_old.generate_samples(
-                #    N=self.cache_multiplier * self.batch_size
-                # )
-
-                self.counter = 0
-
-            # xs = scaler.transform(batch[0])
-
-            # print(self.counter)
-
-            """
 
             data = generate_background_noise_utils.generate_samples_gp(
                 self.batch_size, (start_x, end_x), n_angles_output=N
             )
-
-            """
-            xs = self.data[0][
-                self.counter * self.batch_size : (self.counter + 1) * self.batch_size, :
-            ]
-            ys = self.data[1][
-                self.counter * self.batch_size : (self.counter + 1) * self.batch_size, :
-            ]
-            """
-
-            # self.counter += 1
 
             return (
                 data[0],
                 data[1],
             )
 
-    # for i in range(1000, 2000):
-    # my_unet = UNet(N, 3, 1, 5, 64, output_nums=1, problem_type="Regression")
-    # try:
-
-    # UNet works without error for N ~ 2^model_depth
     my_unet = UNet(
         length=N,
         model_depth=4,  # height
@@ -119,11 +68,6 @@ if training_mode == "train":
     )
     # model = my_unet.UNet()
     model = my_unet.UNetPP()
-
-    # print(f"Worked {i}")
-    # except:
-    # pass
-    # exit()
 
     # length: Input Signal Length
     # model_depth: Depth of the Model
@@ -173,8 +117,6 @@ else:
     test_batch = generate_background_noise_utils.generate_samples_gp(
         100, (start_x, end_x), n_angles_output=N
     )
-
-    # test_batch = generate_nackground_noise_utils_old.generate_samples(N=100)
 
     # test_xs = scaler.transform(test_batch[0])
     test_xs = test_batch[0]
