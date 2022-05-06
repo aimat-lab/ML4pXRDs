@@ -957,22 +957,20 @@ def prepare_training():
     path_to_patterns = "./patterns/icsd_vecsei/"
 
     if jobid is not None and jobid != "":
-        sim= Simulation(
+        sim = Simulation(
             os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
             os.path.expanduser("~/Databases/ICSD/cif/"),
         )
         sim.output_dir = path_to_patterns
 
     else:  # local
-        sim= Simulation(
+        sim = Simulation(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
         sim.output_dir = path_to_patterns
 
-    sim.load(
-        load_patterns_angles_intensities=False
-    )
+    sim.load(load_patterns_angles_intensities=False)
 
     ########## Train (statistics) / test splitting:
 
@@ -988,13 +986,15 @@ def prepare_training():
         for i, meta in enumerate(sim.sim_metas):
 
             print(f"{i/len(sim.sim_metas)*100}%")
-            
+
             index = sim.icsd_ids.index(meta[0])
 
             if strategy == "structure type full":
                 group_label = sim.icsd_structure_types[index]
             elif strategy == "main structure type":
-                group_label = sim.icsd_structure_types[index].split("#")[0] # only use the main part of the structure type
+                group_label = sim.icsd_structure_types[index].split("#")[
+                    0
+                ]  # only use the main part of the structure type
             elif strategy == "sum formula":
                 group_label = sim.icsd_sumformulas[index]
             else:
@@ -1009,17 +1009,17 @@ def prepare_training():
 
             group_labels.append(group_label)
 
-        gss = GroupShuffleSplit(1, test_size = 0.3, train_size=0.7)
+        gss = GroupShuffleSplit(1, test_size=0.3, train_size=0.7)
 
-        train_metas_splitted, test_metas_splitted = list(gss.split(X=[item[0] for item in sim.sim_metas], groups=group_labels))[0]
+        train_metas_splitted, test_metas_splitted = list(
+            gss.split(X=[item[0] for item in sim.sim_metas], groups=group_labels)
+        )[0]
 
     else:
 
-        (
-            train_metas_splitted, # statistics
-            test_metas_splitted
-        ) = train_test_split(sim.sim_metas, test_size=0.3)
-
+        (train_metas_splitted, test_metas_splitted) = train_test_split(  # statistics
+            sim.sim_metas, test_size=0.3
+        )
 
     statistics_crystals = []
     statistics_metas = []
@@ -1339,13 +1339,15 @@ def load_dataset_info():
 
     print("Info about statistics (prepared) dataset:")
     total = 0
-    total_below_100 = 0
+    X = 100
+
+    total_below_X = 0
     for spg in denseness_factors_per_spg.keys():
         total += len(denseness_factors_per_spg[spg])
-        if len(denseness_factors_per_spg[spg]) < 100:
-            total_below_100 += 1
+        if len(denseness_factors_per_spg[spg]) < X:
+            total_below_X += 1
     print(f"{total} total entries.")
-    print(f"{total_below_100} spgs below 100 entries.")
+    print(f"{total_below_X} spgs below {X} entries.")
 
     denseness_factors_density_per_spg = {}
     denseness_factors_conditional_sampler_seeds_per_spg = {}
@@ -1361,10 +1363,11 @@ def load_dataset_info():
 
         ########## 1D densities:
 
-        if len(denseness_factors) > 100:
+        if len(denseness_factors) > 50:
             denseness_factors_density = kde.gaussian_kde(denseness_factors)
         else:
             denseness_factors_density = None
+
         denseness_factors_density_per_spg[spg] = denseness_factors_density
 
         if (
@@ -1384,7 +1387,7 @@ def load_dataset_info():
 
         ########## 2D densities (p(factor | volume)):
 
-        if len(denseness_factors) < 100:
+        if len(denseness_factors) < 50:
             denseness_factors_conditional_sampler_seeds_per_spg[spg] = None
             continue
 
@@ -1488,7 +1491,7 @@ def load_dataset_info():
 
     for spg in all_data_per_spg.keys():
 
-        if len(all_data_per_spg[spg]) < 100:
+        if len(all_data_per_spg[spg]) < X:
             kde_per_spg[spg] = None
             continue
 
@@ -1781,10 +1784,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
-    if False:
+    if True:
 
         data = load_dataset_info()
         print()

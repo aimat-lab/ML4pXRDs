@@ -6,11 +6,13 @@ from models import (
     build_model_park,
     build_model_park_medium_size,
     build_model_park_huge_size,
+    build_model_park_original_spg,
     build_model_park_tiny_size,
     build_model_resnet_10,
     build_model_resnet_50_old,
 )
-#from utils.transformer import build_model_transformer
+
+# from utils.transformer import build_model_transformer
 from utils.transformer_vit import build_model_transformer_vit
 import os
 from sklearn.utils import shuffle
@@ -33,7 +35,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 
-tag = "2-spg-normal-new-split"
+tag = "all-spg-normal-new-split"
 description = ""
 
 if len(sys.argv) > 1:
@@ -48,7 +50,7 @@ os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
 
 run_analysis_after_run = True
-analysis_per_spg = True
+analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150
@@ -71,7 +73,7 @@ NO_workers = 127 + 127 + 8  # for int-nano cluster
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 
-queue_size = 120 # if use_retention_of_patterns==True, then this is not used
+queue_size = 120  # if use_retention_of_patterns==True, then this is not used
 queue_size_tf = 60
 
 # NO_random_batches = 20
@@ -100,9 +102,10 @@ generate_randomized_validation_datasets = True
 
 use_dropout = False
 
-learning_rate = 1e-3
-#momentum = 0.7
-#optimizer = "SGD"
+learning_rate = 0.0003
+
+# momentum = 0.7
+# optimizer = "SGD"
 use_reduce_lr_on_plateau = False
 
 use_denseness_factors_density = True
@@ -130,10 +133,10 @@ git_revision_hash = (
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-spgs = [
-    2,
-    15,
-]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+# spgs = [
+#   2,
+#   15,
+# ]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
 # spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
@@ -143,6 +146,8 @@ spgs = [
 # spgs = list(range(10, 21))
 # spgs = list(range(150, 231))
 # spgs = list(range(100, 231))
+
+spgs = list(range(1, 231))
 
 # as Park:
 # start_angle, end_angle, N = 10, 110, 10001
@@ -253,8 +258,8 @@ else:  # local
 
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
-    stop = 6 if local else None,
-    metas_to_load=test_metas
+    stop=6 if local else None,
+    metas_to_load=test_metas,
 )  # to not overflow the memory
 
 n_patterns_per_crystal = len(icsd_sim_test.sim_patterns[0])
@@ -298,7 +303,9 @@ icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
 icsd_crystals_match_corrected_labels = icsd_crystals_all.copy()
 icsd_variations_match_corrected_labels = icsd_variations_all.copy()
 icsd_metas_match_corrected_labels = icsd_metas_all.copy()
-icsd_labels_match_corrected_labels = [corrected_labels[meta[0]] for meta in icsd_metas_match_corrected_labels]  # corrected labels from spglib
+icsd_labels_match_corrected_labels = [
+    corrected_labels[meta[0]] for meta in icsd_metas_match_corrected_labels
+]  # corrected labels from spglib
 
 assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
 
@@ -778,7 +785,11 @@ print()
 print(ray.cluster_resources())
 print()
 
-queue = Queue(maxsize=queue_size if not use_retention_of_patterns else int(batches_per_epoch*(1-retention_rate)))  # store a maximum of `queue_size` batches
+queue = Queue(
+    maxsize=queue_size
+    if not use_retention_of_patterns
+    else int(batches_per_epoch * (1 - retention_rate))
+)  # store a maximum of `queue_size` batches
 
 # all_data_per_spg_handle = ray.put(all_data_per_spg)
 
@@ -1123,7 +1134,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         if use_statistics_dataset_as_validation
         else None,
         metas_to_load=statistics_metas,
-        stop = 6 if local else None
+        stop=6 if local else None,
     )  # to not overflow the memory if local
 
     statistics_icsd_patterns_match = icsd_sim_statistics.sim_patterns
@@ -1438,7 +1449,6 @@ class CustomCallback(keras.callbacks.Callback):
 
 
 class CustomSequence(keras.utils.Sequence):
-
     def __init__(self, number_of_batches):
         self.number_of_batches = number_of_batches
 
@@ -1455,7 +1465,7 @@ class CustomSequence(keras.utils.Sequence):
         if use_retention_of_patterns:
 
             self.replace_patterns()
-            random.shuffle(self.indices) 
+            random.shuffle(self.indices)
 
     def __getitem__(self, idx):
 
@@ -1471,35 +1481,79 @@ class CustomSequence(keras.utils.Sequence):
 
             log_wait_timings.append(0)
 
-            indices = self.indices[idx*structures_per_spg*NO_corn_sizes*len(spgs):(idx+1)*structures_per_spg*NO_corn_sizes*len(spgs)]
+            indices = self.indices[
+                idx
+                * structures_per_spg
+                * NO_corn_sizes
+                * len(spgs) : (idx + 1)
+                * structures_per_spg
+                * NO_corn_sizes
+                * len(spgs)
+            ]
 
-            return self.patterns[indices,:,:], self.labels[indices]
- 
+            return self.patterns[indices, :, :], self.labels[indices]
+
     def pre_compute(self):
 
         # Pre-compute a whole epoch
 
-        self.patterns = np.empty(shape=(self.number_of_batches*structures_per_spg*NO_corn_sizes*len(spgs),N,1))
-        self.labels = np.empty(shape=(self.number_of_batches*structures_per_spg*NO_corn_sizes*len(spgs)))
+        self.patterns = np.empty(
+            shape=(
+                self.number_of_batches * structures_per_spg * NO_corn_sizes * len(spgs),
+                N,
+                1,
+            )
+        )
+        self.labels = np.empty(
+            shape=(
+                self.number_of_batches * structures_per_spg * NO_corn_sizes * len(spgs)
+            )
+        )
 
         for i in range(0, self.number_of_batches):
 
             (patterns, labels) = queue.get()
-            self.patterns[i*structures_per_spg*NO_corn_sizes*len(spgs):(i+1)*structures_per_spg*NO_corn_sizes*len(spgs),:,:] = patterns
-            self.labels[i*structures_per_spg*NO_corn_sizes*len(spgs):(i+1)*structures_per_spg*NO_corn_sizes*len(spgs)] = labels
+            self.patterns[
+                i
+                * structures_per_spg
+                * NO_corn_sizes
+                * len(spgs) : (i + 1)
+                * structures_per_spg
+                * NO_corn_sizes
+                * len(spgs),
+                :,
+                :,
+            ] = patterns
+            self.labels[
+                i
+                * structures_per_spg
+                * NO_corn_sizes
+                * len(spgs) : (i + 1)
+                * structures_per_spg
+                * NO_corn_sizes
+                * len(spgs)
+            ] = labels
 
         self.indices = list(range(0, self.patterns.shape[0]))
-        random.shuffle(self.indices) 
+        random.shuffle(self.indices)
 
     def replace_patterns(self):
 
-        for i in range(0, int(self.number_of_batches*(1-retention_rate))):
+        for i in range(0, int(self.number_of_batches * (1 - retention_rate))):
 
             (patterns, labels) = queue.get()
 
-            indices_to_replace = self.indices[i*structures_per_spg*NO_corn_sizes*len(spgs):(i+1)*structures_per_spg*NO_corn_sizes*len(spgs)]
+            indices_to_replace = self.indices[
+                i
+                * structures_per_spg
+                * NO_corn_sizes
+                * len(spgs) : (i + 1)
+                * structures_per_spg
+                * NO_corn_sizes
+                * len(spgs)
+            ]
 
-            self.patterns[indices_to_replace,:,:] = patterns
+            self.patterns[indices_to_replace, :, :] = patterns
             self.labels[indices_to_replace] = labels
 
 
@@ -1508,24 +1562,32 @@ sequence = CustomSequence(batches_per_epoch)
 if use_retention_of_patterns:
     sequence.pre_compute()
 
-model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+# model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
-#model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
-#model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
+# model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
+# model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
+
+model = build_model_park_original_spg(
+    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+)
 
 if use_reduce_lr_on_plateau:
-    lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1, factor=0.5)
+    lr_callback = keras.callbacks.ReduceLROnPlateau(
+        monitor="loss", verbose=1, factor=0.5
+    )
 
 if not use_icsd_structures_directly:
     model.fit(
         x=sequence,
         epochs=NO_epochs,
         # TODO: Removed the batch_size parameter here, any impact?
-        callbacks=[tb_callback, CustomCallback()] if not use_reduce_lr_on_plateau else [tb_callback, CustomCallback(), lr_callback],
+        callbacks=[tb_callback, CustomCallback()]
+        if not use_reduce_lr_on_plateau
+        else [tb_callback, CustomCallback(), lr_callback],
         verbose=verbosity,
         workers=1,
         max_queue_size=queue_size_tf,
@@ -1538,7 +1600,9 @@ else:
         y=statistics_y_match,
         epochs=NO_epochs,
         batch_size=100,
-        callbacks=[tb_callback, CustomCallback()] if not use_reduce_lr_on_plateau else [tb_callback, CustomCallback(), lr_callback],
+        callbacks=[tb_callback, CustomCallback()]
+        if not use_reduce_lr_on_plateau
+        else [tb_callback, CustomCallback(), lr_callback],
         verbose=verbosity,
         workers=1,
         max_queue_size=queue_size_tf,
