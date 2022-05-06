@@ -1311,6 +1311,9 @@ class CustomCallback(keras.callbacks.Callback):
                 # gather metric names form model
                 metric_names = [metric.name for metric in self.model.metrics]
 
+                print("########## Metric names:")
+                print(metric_names)
+
                 scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
                 scores_match = self.model.evaluate(
                     x=val_x_match, y=val_y_match, verbose=0
@@ -1435,6 +1438,8 @@ class CustomCallback(keras.callbacks.Callback):
                     tf.summary.scalar(
                         "accuracy statistics", data=scores_statistics[1], step=epoch
                     )
+
+                tf.summary.scalar("top-5 accuracy match", data=scores_match[2], step=epoch)
 
                 tf.summary.scalar(
                     "accuracy gap", data=scores_random[1] - scores_match[1], step=epoch

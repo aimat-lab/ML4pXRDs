@@ -1,4 +1,3 @@
-from matplotlib.pyplot import plot
 import tensorflow.keras as keras
 import tensorflow.keras.metrics as tfm
 import tensorflow as tf
@@ -84,7 +83,8 @@ def build_model_park(
         optimizer=optimizer,
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=[
-            keras.metrics.SparseCategoricalAccuracy()
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
         ],  # here from_logits is not needed, since argmax will be the same
     )
 
@@ -164,7 +164,8 @@ def build_model_park_medium_size(
         optimizer=optimizer,
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=[
-            keras.metrics.SparseCategoricalAccuracy()
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
         ],  # here from_logits is not needed, since argmax will be the same
     )
 
@@ -243,7 +244,8 @@ def build_model_park_huge_size(
         optimizer=optimizer,
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=[
-            keras.metrics.SparseCategoricalAccuracy()
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
         ],  # here from_logits is not needed, since argmax will be the same
     )
 
@@ -322,7 +324,8 @@ def build_model_park_original_spg(
         optimizer=optimizer,
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=[
-            keras.metrics.SparseCategoricalAccuracy()
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
         ],  # here from_logits is not needed, since argmax will be the same
     )
 
@@ -370,7 +373,8 @@ def build_model_park_tiny_size(
         optimizer=optimizer,
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=[
-            keras.metrics.SparseCategoricalAccuracy()
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
         ],  # here from_logits is not needed, since argmax will be the same
     )
 
@@ -400,7 +404,10 @@ def build_model_resnet_50_old(
     Model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=[keras.metrics.SparseCategoricalAccuracy()],
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+        ],
     )
 
     Model.summary()
@@ -432,13 +439,19 @@ def build_model_resnet_10(
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
             loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=[keras.metrics.SparseCategoricalAccuracy()],
+            metrics=[
+                keras.metrics.SparseCategoricalAccuracy(),
+                keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+            ],
         )
     elif optimizer == "SGD":
         model.compile(
             optimizer=keras.optimizers.SGD(lr, momentum=momentum),
             loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            metrics=[keras.metrics.SparseCategoricalAccuracy()],
+            metrics=[
+                keras.metrics.SparseCategoricalAccuracy(),
+                keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+            ],
         )
     else:
         raise Exception("Optimizer not supported.")

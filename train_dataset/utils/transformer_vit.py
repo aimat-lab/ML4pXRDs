@@ -9,12 +9,14 @@ import numpy as np
 from addons.tensorflow_addons.layers import MultiHeadAttention
 from addons.tensorflow_addons.activations import gelu
 
+
 def mlp(x, hidden_units, dropout_rate):
     for units in hidden_units:
-        #x = layers.Dense(units, activation=tf.nn.gelu)(x)
+        # x = layers.Dense(units, activation=tf.nn.gelu)(x)
         x = layers.Dense(units, activation=lambda x: gelu(x, approximate=False))(x)
-        #x = layers.Dropout(dropout_rate)(x)
+        # x = layers.Dropout(dropout_rate)(x)
     return x
+
 
 class Patches(layers.Layer):
     def __init__(self, patch_size):
@@ -23,9 +25,11 @@ class Patches(layers.Layer):
 
     def call(self, inputs):
 
-        #print(inputs.shape)
+        # print(inputs.shape)
 
-        images = inputs[:,:,None,:] # add a pseudo second dimensions to be able to use extract_patches function
+        images = inputs[
+            :, :, None, :
+        ]  # add a pseudo second dimensions to be able to use extract_patches function
 
         batch_size = tf.shape(images)[0]
 
@@ -39,9 +43,10 @@ class Patches(layers.Layer):
         patch_dims = patches.shape[-1]
         patches = tf.reshape(patches, [batch_size, -1, patch_dims])
 
-        #print(patches.shape)
+        # print(patches.shape)
 
         return patches
+
 
 class PatchEncoder(layers.Layer):
     def __init__(self, num_patches, projection_dim):
@@ -77,6 +82,7 @@ could also be used instead to aggregate the outputs of the Transformer block,
 especially when the number of patches and the projection dimensions are large.
 """
 
+
 def build_model_transformer_vit(
     hp=None,
     number_of_input_values=8501,
@@ -86,21 +92,23 @@ def build_model_transformer_vit(
     steps_per_epoch=1500,
 ):
 
-    patch_size = 32 
+    patch_size = 32
     num_patches = number_of_input_values // patch_size
 
-    projection_dim = 4*32
+    projection_dim = 4 * 32
     num_heads = 8
     transformer_units = [
         projection_dim * 2,
         projection_dim,
     ]  # Size of the transformer layers
-    transformer_layers = 4 # 8
-    mlp_head_units = [32]  # Size of the dense layers of the final classifier # [2048, 1024]
+    transformer_layers = 4  # 8
+    mlp_head_units = [
+        32
+    ]  # Size of the dense layers of the final classifier # [2048, 1024]
 
     ##########
 
-    inputs = layers.Input(shape=(8501,1))
+    inputs = layers.Input(shape=(8501, 1))
 
     # Create patches.
     patches = Patches(patch_size)(inputs)
@@ -113,12 +121,12 @@ def build_model_transformer_vit(
         x1 = layers.LayerNormalization(epsilon=1e-6)(encoded_patches)
 
         # Create a multi-head attention layer.
-        #attention_output = layers.MultiHeadAttention(
+        # attention_output = layers.MultiHeadAttention(
         #    num_heads=num_heads, key_dim=projection_dim, dropout=0.1
-        #)(x1, x1)
+        # )(x1, x1)
 
         attention_output = MultiHeadAttention(
-            num_heads=num_heads, head_size=projection_dim #, dropout=0.1
+            num_heads=num_heads, head_size=projection_dim  # , dropout=0.1
         )([x1, x1])
 
         # Skip connection 1.
@@ -133,7 +141,7 @@ def build_model_transformer_vit(
     # Create a [batch_size, projection_dim] tensor.
     representation = layers.LayerNormalization(epsilon=1e-6)(encoded_patches)
     representation = layers.Flatten()(representation)
-    #representation = layers.Dropout(0.5)(representation)
+    # representation = layers.Dropout(0.5)(representation)
     # Add MLP.
     features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
     # Classify outputs.
@@ -154,12 +162,16 @@ def build_model_transformer_vit(
     model.compile(
         optimizer=AdamWarmup(total_steps, warmup_steps, learning_rate=lr),
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=[keras.metrics.SparseCategoricalAccuracy()],
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+        ],
     )
 
     return model
 
+
 if __name__ == "__main__":
 
     model = build_model_transformer_vit()
-    print(model.predict(np.random.random(size=(1,8501,1))))
+    print(model.predict(np.random.random(size=(1, 8501, 1))))
