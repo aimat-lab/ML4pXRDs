@@ -34,7 +34,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 
-tag = "2-spg-transformer-vit"
+tag = "2-spg-normal-new-split"
 description = ""
 
 if len(sys.argv) > 1:
@@ -120,7 +120,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -254,7 +254,7 @@ else:  # local
 
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
-    stop = 8 if local else None,
+    stop = 6 if local else None,
     metas_to_load=test_metas
 )  # to not overflow the memory
 
@@ -1124,7 +1124,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         if use_statistics_dataset_as_validation
         else None,
         metas_to_load=statistics_metas,
-        stop = 8 if local else None
+        stop = 6 if local else None
     )  # to not overflow the memory if local
 
     statistics_icsd_patterns_match = icsd_sim_statistics.sim_patterns
@@ -1509,14 +1509,14 @@ sequence = CustomSequence(batches_per_epoch)
 if use_retention_of_patterns:
     sequence.pre_compute()
 
-# model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
 # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
 # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
 #model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
-model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
+#model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
 if use_reduce_lr_on_plateau:
     lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1, factor=0.5)

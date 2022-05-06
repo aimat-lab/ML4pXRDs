@@ -1331,11 +1331,11 @@ def load_dataset_info():
         corrected_labels = data[3]
         statistics_metas = data[4]
         test_metas = data[5]
-        represented_spgs = data[5]
-        NO_unique_elements_prob_per_spg = data[6]
-        NO_repetitions_prob_per_spg_per_element = data[7]
-        denseness_factors_per_spg = data[8]
-        all_data_per_spg = data[9]
+        represented_spgs = data[6]
+        NO_unique_elements_prob_per_spg = data[7]
+        NO_repetitions_prob_per_spg_per_element = data[8]
+        denseness_factors_per_spg = data[9]
+        all_data_per_spg = data[10]
 
     print("Info about statistics (prepared) dataset:")
     total = 0
