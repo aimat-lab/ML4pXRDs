@@ -24,7 +24,6 @@ from datetime import datetime
 import time
 import subprocess
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 import gc
@@ -96,8 +95,8 @@ use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
-use_statistics_dataset_as_validation = False
-generate_randomized_validation_datasets = False
+use_statistics_dataset_as_validation = True
+generate_randomized_validation_datasets = True
 
 use_dropout = False
 
@@ -120,7 +119,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
