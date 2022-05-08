@@ -14,6 +14,7 @@ from models import (
 
 # from utils.transformer import build_model_transformer
 from utils.transformer_vit import build_model_transformer_vit
+from utils.distributed_utils import map_to_remote
 import os
 from sklearn.utils import shuffle
 from dataset_simulations.simulation import Simulation
@@ -964,43 +965,23 @@ print(
     flush=True,
 )
 
-total = 0
-results = []
-finished = False
-while True:
 
-    object_refs = []
+scheduler_fn = lambda input: batch_generator_with_additional.remote(
+    spgs,
+    1,
+    N,
+    start_angle,
+    end_angle,
+    generation_max_NO_wyckoffs,
+    1,
+    # all_data_per_spg_handle,
+)
+results = map_to_remote(
+    scheduler_fn=scheduler_fn,
+    inputs=range(NO_random_samples_per_spg),
+    NO_workers=NO_workers,
+)
 
-    for i in range(NO_workers):
-
-        if total == NO_random_samples_per_spg:
-            finished = True
-            break
-
-        ref = batch_generator_with_additional.remote(
-            spgs,
-            1,
-            N,
-            start_angle,
-            end_angle,
-            generation_max_NO_wyckoffs,
-            1,
-            # all_data_per_spg_handle,
-        )
-        # ref = batch_generator_with_additional(
-        #    spgs, 1, N, start_angle, end_angle, max_NO_elements, 1
-        # )
-        object_refs.append(ref)
-
-        total += 1
-
-    results.extend(
-        ray.get(object_refs)
-    )  # wait for everything to finish before starting the next batch
-    # results = object_refs
-
-    if finished:
-        break
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Finished generating validation random structures.",
