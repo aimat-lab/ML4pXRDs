@@ -241,6 +241,7 @@ for spg in spgs:
 ray.init(
     address="auto",
     include_dashboard=False,
+    num_cpus=NO_workers,  # TODO: Maybe change back
 )
 
 # Construct validation sets
