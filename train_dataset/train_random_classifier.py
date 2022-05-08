@@ -79,7 +79,7 @@ queue_size_tf = 60
 # NO_random_batches = 20
 # NO_random_swipes = 1000  # make this smaller for the all-spgs run
 # NO_random_swipes = 300 # 30-spg
-NO_random_samples_per_spg = 500
+NO_random_samples_per_spg = 200  # TODO: Maybe change back
 
 generation_max_volume = 7000
 generation_max_NO_wyckoffs = 100
@@ -233,6 +233,18 @@ for i in reversed(range(len(represented_spgs))):
 for spg in spgs:
     if spg not in represented_spgs:
         raise Exception("Requested space group not represented in prepared statistics.")
+
+
+if not local:
+    # ray.init(include_dashboard=True, num_cpus=NO_workers)
+    ray.init(
+        address="auto", include_dashboard=False, _temp_dir="/home/ws/uvgnh/ray_tmp"
+    )
+else:
+    # ray.init(include_dashboard=False, _temp_dir=temp_dir)
+    # ray.init(include_dashboard=False, _temp_dir="/home/henrik/ray_tmp")
+    ray.init(include_dashboard=False)
+
 
 # Construct validation sets
 # Used validation sets:
@@ -769,17 +781,6 @@ if generate_randomized_validation_datasets:
     assert len(val_x_randomized_ref) == len(val_y_randomized_ref)
     assert len(val_x_randomized_lattice) == len(val_y_randomized_lattice)
     assert len(val_x_randomized_both) == len(val_y_randomized_both)
-
-
-if not local:
-    # ray.init(include_dashboard=True, num_cpus=NO_workers)
-    ray.init(
-        address="auto", include_dashboard=False, _temp_dir="/home/ws/uvgnh/ray_tmp"
-    )
-else:
-    # ray.init(include_dashboard=False, _temp_dir=temp_dir)
-    # ray.init(include_dashboard=False, _temp_dir="/home/henrik/ray_tmp")
-    ray.init(include_dashboard=False)
 
 print()
 print(ray.cluster_resources())
@@ -1439,7 +1440,9 @@ class CustomCallback(keras.callbacks.Callback):
                         "accuracy statistics", data=scores_statistics[1], step=epoch
                     )
 
-                tf.summary.scalar("top-5 accuracy match", data=scores_match[2], step=epoch)
+                tf.summary.scalar(
+                    "top-5 accuracy match", data=scores_match[2], step=epoch
+                )
 
                 tf.summary.scalar(
                     "accuracy gap", data=scores_random[1] - scores_match[1], step=epoch
