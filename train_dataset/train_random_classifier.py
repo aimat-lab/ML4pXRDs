@@ -123,9 +123,10 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
-    NO_workers = 8
+    # NO_workers = 8
+    NO_workers = 127 + 127 + 8  # TODO: Change back
     verbosity = 1
 
 git_revision_hash = (
@@ -236,16 +237,11 @@ for spg in spgs:
         raise Exception("Requested space group not represented in prepared statistics.")
 
 
-if not local:
-    # ray.init(include_dashboard=True, num_cpus=NO_workers)
-    ray.init(
-        address="auto", include_dashboard=False, _temp_dir="/home/ws/uvgnh/ray_tmp"
-    )
-else:
-    # ray.init(include_dashboard=False, _temp_dir=temp_dir)
-    # ray.init(include_dashboard=False, _temp_dir="/home/henrik/ray_tmp")
-    ray.init(include_dashboard=False)
-
+# TODO: Maybe change back
+ray.init(
+    address="auto",
+    include_dashboard=False,
+)
 
 # Construct validation sets
 # Used validation sets:
