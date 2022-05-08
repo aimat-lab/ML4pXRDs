@@ -469,6 +469,26 @@ with open(out_base + "icsd_data.pickle", "wb") as file:
         file,
     )
 
+
+@ray.remote(num_cpus=1, num_gpus=0)
+def get_xy_pattern_wrapper(
+    crystal,
+):
+    xs = np.linspace(start_angle, end_angle, N)
+    patterns, corn_sizes = get_xy_patterns(
+        crystal,
+        wavelength=1.5406,
+        xs=xs,
+        NO_corn_sizes=1,
+        two_theta_range=(start_angle, end_angle),
+        do_print=False,
+        return_corn_sizes=True,
+        return_angles_intensities=False,
+        return_max_unscaled_intensity_angle=False,
+    )
+    return patterns[0], corn_sizes[0]
+
+
 ####### Generate match (corrected spgs) validation set with randomized coordinates and reference:
 
 if generate_randomized_validation_datasets:
@@ -501,41 +521,23 @@ if generate_randomized_validation_datasets:
     reference_crystals = [item for item in reference_crystals if item is not None]
     labels = [item for item in labels if item is not None]
 
-    randomized_coords_patterns = []
-    randomized_coords_corn_sizes = []
-    reference_patterns = []
-    reference_corn_sizes = []
+    # Simulate on ray cluster:
+    scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
+    results = map_to_remote(
+        scheduler_fn=scheduler_fn,
+        inputs=randomized_coords_crystals,
+        NO_workers=NO_workers,
+    )
+    randomized_coords_patterns = [result[0] for result in results]
+    randomized_coords_corn_sizes = [result[1] for result in results]
 
-    xs = np.linspace(start_angle, end_angle, N)
-    for i, crystal in enumerate(randomized_coords_crystals):
-        patterns, corn_sizes = get_xy_patterns(
-            crystal,
-            wavelength=1.5406,
-            xs=xs,
-            NO_corn_sizes=1,
-            two_theta_range=(start_angle, end_angle),
-            do_print=False,
-            return_corn_sizes=True,
-            return_angles_intensities=False,
-            return_max_unscaled_intensity_angle=False,
-        )
-        randomized_coords_patterns.append(patterns[0])
-        randomized_coords_corn_sizes.append(corn_sizes[0])
-
-    for i, crystal in enumerate(reference_crystals):
-        patterns, corn_sizes = get_xy_patterns(
-            crystal,
-            wavelength=1.5406,
-            xs=xs,
-            NO_corn_sizes=1,
-            two_theta_range=(start_angle, end_angle),
-            do_print=False,
-            return_corn_sizes=True,
-            return_angles_intensities=False,
-            return_max_unscaled_intensity_angle=False,
-        )
-        reference_patterns.append(patterns[0])
-        reference_corn_sizes.append(corn_sizes[0])
+    results = map_to_remote(
+        scheduler_fn=scheduler_fn,
+        inputs=reference_crystals,
+        NO_workers=NO_workers,
+    )
+    reference_patterns = [result[0] for result in results]
+    reference_corn_sizes = [result[1] for result in results]
 
     randomized_coords_labels = []
     for i in range(0, len(labels)):
@@ -585,24 +587,15 @@ if generate_randomized_validation_datasets:
     ]
     labels = [item for item in labels if item is not None]
 
-    randomized_lattice_patterns = []
-    randomized_lattice_corn_sizes = []
-
-    xs = np.linspace(start_angle, end_angle, N)
-    for i, crystal in enumerate(randomized_lattice_crystals):
-        patterns, corn_sizes = get_xy_patterns(
-            crystal,
-            wavelength=1.5406,
-            xs=xs,
-            NO_corn_sizes=1,
-            two_theta_range=(start_angle, end_angle),
-            do_print=False,
-            return_corn_sizes=True,
-            return_angles_intensities=False,
-            return_max_unscaled_intensity_angle=False,
-        )
-        randomized_lattice_patterns.append(patterns[0])
-        randomized_lattice_corn_sizes.append(corn_sizes[0])
+    # Simulate on ray cluster:
+    scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
+    results = map_to_remote(
+        scheduler_fn=scheduler_fn,
+        inputs=randomized_lattice_crystals,
+        NO_workers=NO_workers,
+    )
+    randomized_lattice_patterns = [result[0] for result in results]
+    randomized_lattice_corn_sizes = [result[1] for result in results]
 
     randomized_lattice_labels = []
     for i in range(0, len(labels)):
@@ -640,24 +633,15 @@ if generate_randomized_validation_datasets:
     ]
     labels = [item for item in labels if item is not None]
 
-    randomized_both_patterns = []
-    randomized_both_corn_sizes = []
-
-    xs = np.linspace(start_angle, end_angle, N)
-    for i, crystal in enumerate(randomized_both_crystals):
-        patterns, corn_sizes = get_xy_patterns(
-            crystal,
-            wavelength=1.5406,
-            xs=xs,
-            NO_corn_sizes=1,
-            two_theta_range=(start_angle, end_angle),
-            do_print=False,
-            return_corn_sizes=True,
-            return_angles_intensities=False,
-            return_max_unscaled_intensity_angle=False,
-        )
-        randomized_both_patterns.append(patterns[0])
-        randomized_both_corn_sizes.append(corn_sizes[0])
+    # Simulate on ray cluster:
+    scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
+    results = map_to_remote(
+        scheduler_fn=scheduler_fn,
+        inputs=randomized_both_crystals,
+        NO_workers=NO_workers,
+    )
+    randomized_both_patterns = [result[0] for result in results]
+    randomized_both_corn_sizes = [result[1] for result in results]
 
     randomized_both_labels = []
     for i in range(0, len(labels)):
