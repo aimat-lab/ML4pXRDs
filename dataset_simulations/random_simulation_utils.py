@@ -1642,14 +1642,16 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
+
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
             NO_wyckoffs_prob_per_spg,
             corrected_labels,
-            files_to_use_for_test_set,
-            represented_spgs,
+            statistics_metas,
+            test_metas,
+            represented_spgs,  # spgs represented in the statistics dataset (70%)
             NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element,
             denseness_factors_density_per_spg,
@@ -1659,80 +1661,50 @@ if __name__ == "__main__":
             lattice_paras_density_per_lattice_type,
         ) = load_dataset_info()
 
-        volumes = []
-        for i in range(0, 200):
+        timings = []
+        for i in range(0, 10):
             # for spg in represented_spgs:
-            for spg in [2, 15]:
 
+            start = time.time()
+            for spg in range(1, 231):
+
+                print(spg)
                 if denseness_factors_density_per_spg[spg] is None:
                     continue
-                print(spg)
 
-                if True:
-                    structure = generate_structures(
-                        spg,
-                        1,
-                        100,
-                        -1,
-                        False,
-                        None,
-                        False,
-                        True,
-                        probability_per_spg_per_element,
-                        probability_per_spg_per_element_per_wyckoff,
-                        7000,
-                        False,
-                        NO_wyckoffs_prob_per_spg,
-                        True,
-                        False,
-                        True,
-                        True,
-                        NO_unique_elements_prob_per_spg,
-                        NO_repetitions_prob_per_spg_per_element,
-                        False,
-                        denseness_factors_density_per_spg,
-                        None,
-                        None,
-                        False,
-                        False,
-                        None,
-                        denseness_factors_conditional_sampler_seeds_per_spg,
-                        lattice_paras_density_per_lattice_type,
-                    )[0]
-                    volumes.append(structure.volume)
+                structure = generate_structures(
+                    spg,
+                    1,
+                    100,
+                    -1,
+                    False,
+                    None,
+                    False,
+                    True,
+                    probability_per_spg_per_element,
+                    probability_per_spg_per_element_per_wyckoff,
+                    7000,
+                    False,
+                    NO_wyckoffs_prob_per_spg,
+                    True,
+                    False,
+                    True,
+                    True,
+                    NO_unique_elements_prob_per_spg,
+                    NO_repetitions_prob_per_spg_per_element,
+                    False,
+                    denseness_factors_density_per_spg,
+                    None,
+                    None,
+                    False,
+                    False,
+                    None,
+                    denseness_factors_conditional_sampler_seeds_per_spg,
+                    lattice_paras_density_per_lattice_type,
+                )[0]
+            timings.append(time.time() - start)
 
-                else:
-                    generate_structures(
-                        spg,
-                        1,
-                        100,
-                        -1,
-                        False,
-                        None,
-                        False,
-                        True,
-                        probability_per_spg_per_element,
-                        probability_per_spg_per_element_per_wyckoff,
-                        7000,
-                        False,
-                        NO_wyckoffs_prob_per_spg,
-                        True,
-                        False,
-                        True,
-                        True,
-                        NO_unique_elements_prob_per_spg,
-                        NO_repetitions_prob_per_spg_per_element,
-                        False,
-                        denseness_factors_density_per_spg,
-                        kde_per_spg,
-                        all_data_per_spg,  # 1by1
-                        False,
-                        False,
-                        None,
-                    )
-
-        plt.hist(volumes, bins=40)
-        plt.show()
+        print(np.average(timings))
 
     if False:
 
@@ -1787,7 +1759,7 @@ if __name__ == "__main__":
     if False:
         prepare_training()
 
-    if True:
+    if False:
 
         data = load_dataset_info()
         print()
