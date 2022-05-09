@@ -60,7 +60,7 @@ NO_epochs = 600
 # structures_per_spg = 1 # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 100  # for (2,15) tuple
+structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
 NO_corn_sizes = 5
 # structures_per_spg = 1  # 30-spg
@@ -98,8 +98,8 @@ use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
-use_statistics_dataset_as_validation = True
-generate_randomized_validation_datasets = True
+use_statistics_dataset_as_validation = False
+generate_randomized_validation_datasets = False
 
 use_dropout = False
 
@@ -125,8 +125,7 @@ verbosity = 2
 
 local = True
 if local:
-    # NO_workers = 8
-    NO_workers = 127 + 127 + 8  # TODO: Change back
+    NO_workers = 8
     verbosity = 1
 
 git_revision_hash = (
@@ -135,10 +134,10 @@ git_revision_hash = (
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-# spgs = [
-#   2,
-#   15,
-# ]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+spgs = [
+    2,
+    15,
+]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
 # spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
@@ -149,7 +148,7 @@ git_revision_hash = (
 # spgs = list(range(150, 231))
 # spgs = list(range(100, 231))
 
-spgs = list(range(1, 231))
+# spgs = list(range(1, 231))
 
 # as Park:
 # start_angle, end_angle, N = 10, 110, 10001
@@ -238,7 +237,7 @@ for spg in spgs:
 
 
 ray.init(
-    address="auto",
+    address="auto" if not local else None,
     include_dashboard=False,
 )
 
@@ -1537,11 +1536,19 @@ if use_retention_of_patterns:
 # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
 
 # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
-# model = build_model_transformer_vit(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
-model = build_model_park_original_spg(
-    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+model = build_model_transformer_vit(
+    None,
+    N,
+    len(spgs),
+    lr=learning_rate,
+    epochs=NO_epochs,
+    steps_per_epoch=batches_per_epoch,
 )
+
+# model = build_model_park_original_spg(
+#    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+# )
 
 if use_reduce_lr_on_plateau:
     lr_callback = keras.callbacks.ReduceLROnPlateau(
