@@ -39,4 +39,4 @@ def map_to_remote(scheduler_fn, inputs, NO_workers):
 
     # print("Finished.", flush=True)
 
-    return inputs
+    return results
