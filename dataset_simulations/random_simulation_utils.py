@@ -1410,6 +1410,7 @@ def load_dataset_info():
             conditional_density,
             min(denseness_factors),
             max(denseness_factors),
+            max(sums_cov_volumes),
         )
         denseness_factors_conditional_sampler_seeds_per_spg[spg] = sampler_seed
 

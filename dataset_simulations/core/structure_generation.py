@@ -7,11 +7,19 @@ import time
 
 
 def rejection_sampler(p, xbounds, pmax):
+
+    counter = 0
+
     while True:
         x = (np.random.rand(1) * (xbounds[1] - xbounds[0]) + xbounds[0])[0]
         y = (np.random.rand(1) * pmax)[0]
         if y <= p(x):
             return x
+
+        if counter > 10000:
+            return None
+
+        counter += 1
 
 
 def sample_denseness_factor(volume, seed):
@@ -168,10 +176,22 @@ def generate_pyxtal_object(
     if factor is not None:
         volume *= factor
     else:
+
+        max_sum_cov_volumes = denseness_factors_conditional_sampler_seeds_per_spg[
+            group_object.number
+        ][3]
+
+        if volume > max_sum_cov_volumes:
+            return False
+
         factor = sample_denseness_factor(
             volume,
             denseness_factors_conditional_sampler_seeds_per_spg[group_object.number],
         )
+
+        if factor is None:  # rejection sampler didn't converge
+            return False
+
         volume *= factor
 
     if scale_volume_min_density:

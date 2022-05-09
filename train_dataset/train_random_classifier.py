@@ -80,7 +80,7 @@ queue_size_tf = 60
 # NO_random_batches = 20
 # NO_random_swipes = 1000  # make this smaller for the all-spgs run
 # NO_random_swipes = 300 # 30-spg
-NO_random_samples_per_spg = 200  # TODO: Maybe change back
+NO_random_samples_per_spg = 200
 
 generation_max_volume = 7000
 generation_max_NO_wyckoffs = 100
@@ -237,11 +237,14 @@ for spg in spgs:
         raise Exception("Requested space group not represented in prepared statistics.")
 
 
-# TODO: Maybe change back
 ray.init(
     address="auto",
     include_dashboard=False,
 )
+
+print()
+print(ray.cluster_resources())
+print()
 
 # Construct validation sets
 # Used validation sets:
@@ -763,9 +766,6 @@ if generate_randomized_validation_datasets:
     assert len(val_x_randomized_lattice) == len(val_y_randomized_lattice)
     assert len(val_x_randomized_both) == len(val_y_randomized_both)
 
-print()
-print(ray.cluster_resources())
-print()
 
 queue = Queue(
     maxsize=queue_size
@@ -954,7 +954,6 @@ scheduler_fn = lambda input: batch_generator_with_additional.remote(
     end_angle,
     generation_max_NO_wyckoffs,
     1,
-    # all_data_per_spg_handle,
 )
 results = map_to_remote(
     scheduler_fn=scheduler_fn,

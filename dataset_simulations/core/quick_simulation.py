@@ -572,7 +572,8 @@ def get_random_xy_patterns(
     xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
 
     for spg in spgs:
-        # print(spg)
+
+        #print(spg)
 
         if do_print:
             start = time.time()
@@ -614,6 +615,8 @@ def get_random_xy_patterns(
             timings_generation.append(time.time() - start)
 
         for structure in structures:
+
+            #print(structure.volume)
 
             try:
 
@@ -1022,39 +1025,53 @@ if __name__ == "__main__":
             probability_per_spg_per_element_per_wyckoff,
             NO_wyckoffs_prob_per_spg,
             corrected_labels,
-            files_to_use_for_test_set,
+            statistics_metas,
+            test_metas,
             represented_spgs,  # spgs represented in the statistics dataset (70%)
             NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element,
             denseness_factors_density_per_spg,
             kde_per_spg,
             all_data_per_spg,
+            denseness_factors_conditional_sampler_seeds_per_spg,
+            lattice_paras_density_per_lattice_type,
         ) = load_dataset_info()
 
-        result = get_random_xy_patterns(
-            [15],
-            1,
-            1.5,
-            9000,
-            1,
-            (0, 90),
-            100,
-            False,
-            False,
-            True,
-            None,
-            False,
-            True,
-            probability_per_spg_per_element,
-            probability_per_spg_per_element_per_wyckoff,
-            7000,
-            NO_wyckoffs_prob_per_spg,
-            True,
-            False,
-            True,
-            True,
-            NO_unique_elements_prob_per_spg,
-            NO_repetitions_prob_per_spg_per_element,
-        )
+        # spgs = [
+        #    spg
+        #    for spg in range(1, 231)
+        #    if denseness_factors_density_per_spg[spg] is not None
+        # ]
 
-        print()
+        spgs = [205]
+
+        patterns, labels, structures, corn_sizes = get_random_xy_patterns(
+            spgs=spgs,
+            structures_per_spg=10000,
+            wavelength=1.5406,  # Cu-Ka line
+            N=8501,
+            NO_corn_sizes=1,
+            two_theta_range=(5, 90),
+            max_NO_elements=100,
+            do_print=False,
+            return_additional=True,
+            do_distance_checks=False,
+            do_merge_checks=False,
+            use_icsd_statistics=True,
+            probability_per_spg_per_element=probability_per_spg_per_element,
+            probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+            max_volume=7000,
+            NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
+            do_symmetry_checks=True,
+            force_wyckoff_indices=True,
+            use_element_repetitions_instead_of_NO_wyckoffs=True,
+            NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+            denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+            kde_per_spg=None,
+            all_data_per_spg=None,
+            use_coordinates_directly=False,
+            use_lattice_paras_directly=False,
+            denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+            lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+        )
