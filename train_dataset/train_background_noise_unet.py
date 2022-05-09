@@ -26,7 +26,7 @@ print(pattern_x)
 
 batch_size = 400
 number_of_batches = 375
-number_of_epochs = 2000
+number_of_epochs = 400
 NO_workers = 32
 
 print(
