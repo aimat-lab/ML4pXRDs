@@ -36,7 +36,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 
-tag = "2-spg-transformer-vit"
+tag = "all-spgs-normal-new-split"
 description = ""
 
 if len(sys.argv) > 1:
@@ -54,15 +54,15 @@ run_analysis_after_run = True
 analysis_per_spg = False
 
 test_every_X_epochs = 1
-batches_per_epoch = 1500
+batches_per_epoch = 150
 NO_epochs = 600
 
-# structures_per_spg = 1 # for all spgs
+structures_per_spg = 2  # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
-structures_per_spg = 10  # for (2,15) tuple
+# structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
-NO_corn_sizes = 5
+NO_corn_sizes = 4
 # structures_per_spg = 1  # 30-spg
 # NO_corn_sizes = 3 # 30-spg
 
@@ -99,8 +99,8 @@ use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
 
-use_statistics_dataset_as_validation = False
-generate_randomized_validation_datasets = False
+use_statistics_dataset_as_validation = True
+generate_randomized_validation_datasets = True
 
 use_dropout = False
 
@@ -135,10 +135,10 @@ git_revision_hash = (
 
 # spgs = [14, 104] # works well, relatively high val_acc
 # spgs = [129, 176] # 93.15%, pretty damn well!
-spgs = [
-    2,
-    15,
-]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
+# spgs = [
+#    2,
+#    15,
+# ]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
 # after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
 # spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
 # all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
@@ -149,7 +149,7 @@ spgs = [
 # spgs = list(range(150, 231))
 # spgs = list(range(100, 231))
 
-# spgs = list(range(1, 231))
+spgs = list(range(1, 231))
 
 if len(spgs) == 2:
     NO_random_samples_per_spg = 500
@@ -1541,18 +1541,18 @@ if use_retention_of_patterns:
 
 # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
-model = build_model_transformer_vit(
-    None,
-    N,
-    len(spgs),
-    lr=learning_rate,
-    epochs=NO_epochs,
-    steps_per_epoch=batches_per_epoch,
-)
-
-# model = build_model_park_original_spg(
-#    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+# model = build_model_transformer_vit(
+#    None,
+#    N,
+#    len(spgs),
+#    lr=learning_rate,
+#    epochs=NO_epochs,
+#    steps_per_epoch=batches_per_epoch,
 # )
+
+model = build_model_park_original_spg(
+    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+)
 
 if use_reduce_lr_on_plateau:
     lr_callback = keras.callbacks.ReduceLROnPlateau(
