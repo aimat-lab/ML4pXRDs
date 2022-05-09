@@ -36,7 +36,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 
-tag = "all-spg-normal-new-split"
+tag = "2-spg-transformer-vit"
 description = ""
 
 if len(sys.argv) > 1:
@@ -54,7 +54,7 @@ run_analysis_after_run = True
 analysis_per_spg = False
 
 test_every_X_epochs = 1
-batches_per_epoch = 150
+batches_per_epoch = 1500
 NO_epochs = 600
 
 # structures_per_spg = 1 # for all spgs
@@ -80,6 +80,7 @@ queue_size_tf = 60
 # NO_random_batches = 20
 # NO_random_swipes = 1000  # make this smaller for the all-spgs run
 # NO_random_swipes = 300 # 30-spg
+
 NO_random_samples_per_spg = 200
 
 generation_max_volume = 7000
@@ -123,7 +124,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -149,6 +150,9 @@ spgs = [
 # spgs = list(range(100, 231))
 
 # spgs = list(range(1, 231))
+
+if len(spgs) == 2:
+    NO_random_samples_per_spg = 500
 
 # as Park:
 # start_angle, end_angle, N = 10, 110, 10001

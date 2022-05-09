@@ -103,7 +103,8 @@ def build_model_transformer_vit(
     ]  # Size of the transformer layers
     transformer_layers = 4  # 8
     mlp_head_units = [
-        32
+        64,
+        64,
     ]  # Size of the dense layers of the final classifier # [2048, 1024]
 
     ##########
