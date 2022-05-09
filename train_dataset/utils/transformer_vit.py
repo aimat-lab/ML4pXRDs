@@ -47,6 +47,9 @@ class Patches(layers.Layer):
 
         return patches
 
+    def get_config(self):
+        return {"patch_size": self.patch_size}
+
 
 class PatchEncoder(layers.Layer):
     def __init__(self, num_patches, projection_dim):
@@ -57,12 +60,16 @@ class PatchEncoder(layers.Layer):
         self.position_embedding = layers.Embedding(
             input_dim=num_patches, output_dim=projection_dim
         )
+        self.projection_dim = projection_dim
 
     def call(self, patch):
 
         positions = tf.range(start=0, limit=self.num_patches, delta=1)
         encoded = self.projection(patch) + self.position_embedding(positions)
         return encoded
+
+    def get_config(self):
+        return {"num_patches": self.num_patches, "projection_dim": self.projection_dim}
 
 
 """
