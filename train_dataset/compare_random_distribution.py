@@ -2424,6 +2424,75 @@ if __name__ == "__main__":
 
     for flag in [True, False]:
         create_histogram(
+            "lattice_paras_0_over_1",
+            [
+                [item[0] / item[1] for item in icsd_rightly_lattice_paras],
+                [item[0] / item[1] for item in icsd_falsely_lattice_paras],
+            ],
+            [
+                [item[0] / item[1] for item in random_rightly_lattice_paras],
+                [item[0] / item[1] for item in random_falsely_lattice_paras],
+            ],
+            "lattice parameters 0 over 1",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "lattice_paras_0_over_2",
+            [
+                [item[0] / item[2] for item in icsd_rightly_lattice_paras],
+                [item[0] / item[2] for item in icsd_falsely_lattice_paras],
+            ],
+            [
+                [item[0] / item[2] for item in random_rightly_lattice_paras],
+                [item[0] / item[2] for item in random_falsely_lattice_paras],
+            ],
+            "lattice parameters 0 over 2",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
+            "lattice_paras_1_over_2",
+            [
+                [item[1] / item[2] for item in icsd_rightly_lattice_paras],
+                [item[1] / item[2] for item in icsd_falsely_lattice_paras],
+            ],
+            [
+                [item[1] / item[2] for item in random_rightly_lattice_paras],
+                [item[1] / item[2] for item in random_falsely_lattice_paras],
+            ],
+            "lattice parameters 1 over 2",
+            [
+                "ICSD correctly classified",
+                "ICSD incorrectly classified",
+                "Random correctly classified",
+                "Random incorrectly classified",
+            ],
+            is_int=False,
+            only_proportions=flag,
+            min_is_zero=True,
+        )
+
+    for flag in [True, False]:
+        create_histogram(
             "lattice_para_0",
             [
                 [item[0] for item in icsd_rightly_lattice_paras],
