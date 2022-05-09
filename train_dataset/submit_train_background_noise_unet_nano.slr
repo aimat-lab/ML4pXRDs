@@ -14,6 +14,6 @@ export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 
 source ~/mambaforge/etc/profile.d/conda.sh
 
-conda activate tf
+conda activate pyxtal
 
 python train_background_noise_unet.py

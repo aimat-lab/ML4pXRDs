@@ -25,11 +25,13 @@ N = len(pattern_x)  # UNet works without error for N ~ 2^model_depth
 print(pattern_x)
 
 batch_size = 400
-number_of_batches = 250
-number_of_epochs = 5000
+number_of_batches = 375
+number_of_epochs = 2000
 NO_workers = 32
 
-print(f"Training with {batch_size * number_of_batches * number_of_epochs} samples")
+print(
+    f"Training with {batch_size * number_of_batches * number_of_epochs} samples in total"
+)
 
 out_base = "unet/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
 

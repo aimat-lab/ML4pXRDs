@@ -151,7 +151,13 @@ def generate_samples_gp(
 
     # start = time.time()
     result = add_peaks(
-        n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x,
+        n_samples,
+        n_angles_output,
+        xs_gp,
+        ys_gp,
+        pattern_xs,
+        min_x,
+        max_x,
     )
     # stop = time.time()
     # print(f"Took {(stop-start)} for add_peaks")
@@ -293,7 +299,9 @@ if __name__ == "__main__":
     start = time.time()
     for i in range(0, total):
         ys_altered_all, ys_unaltered_all = generate_samples_gp(
-            n_samples, (10.0, 50.0), n_angles_output=2672,
+            n_samples,
+            (10.0, 50.0),
+            n_angles_output=2672,
         )
     stop = time.time()
     print(f"Took {(stop-start)/total} s per iteration")
