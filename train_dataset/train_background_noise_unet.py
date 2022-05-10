@@ -12,10 +12,10 @@ import generate_background_noise_utils
 from datetime import datetime
 
 tag = "UNetPP"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
-to_test = "removal_06-12-2021_10-06-13_UNetPP"
+to_test = "09-05-2022_12-24-34_UNetPP"
 
 pattern_x = np.arange(0, 90.24, 0.02)
 start_x = pattern_x[0]
@@ -125,7 +125,7 @@ else:
 
     x_test, y_test = test_batch[0], test_batch[1]
 
-    if True:
+    if False:
         for i in range(x_test.shape[0]):
             repeated_x = np.repeat(x_test[i, 1700:1701], x_test.shape[1] - 1700)
             repeated_y = np.repeat([0], y_test.shape[1] - 1700)

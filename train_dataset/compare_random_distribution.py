@@ -45,7 +45,8 @@ if __name__ == "__main__":
     else:
 
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
         # tag = "magpie_10-03-2022_14-34-51"
@@ -57,7 +58,7 @@ if __name__ == "__main__":
         # tag = "volumes_densenesses_2-spg_test/15"
 
         # tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
-        tag = "2-spgs-ratios"
+        tag = "2-spgs-lattice_paras_kde"
 
         # spgs_to_analyze = [14, 104, 176, 129]
         spgs_to_analyze = [2, 15]
