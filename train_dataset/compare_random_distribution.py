@@ -57,7 +57,7 @@ if __name__ == "__main__":
         # tag = "volumes_densenesses_2-spg_test/15"
 
         # tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
-        tag = "2-spgs-new"
+        tag = "2-spgs-ratios"
 
         # spgs_to_analyze = [14, 104, 176, 129]
         spgs_to_analyze = [2, 15]
@@ -2046,6 +2046,44 @@ if __name__ == "__main__":
     plt.legend()
     plt.savefig(
         f"{out_base}3D_angles_scatter.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+    plt.show()
+
+    ##### Lattice paras 3D scatter plot
+
+    plt.close("all")
+
+    fig = plt.figure(figsize=(12, 12))
+    ax = fig.add_subplot(projection="3d")
+    ax.scatter(
+        [item[0] for item in random_rightly_lattice_paras],
+        [item[1] for item in random_rightly_lattice_paras],
+        [item[2] for item in random_rightly_lattice_paras],
+        label="Random rightly",
+    )
+    ax.scatter(
+        [item[0] for item in random_falsely_lattice_paras],
+        [item[1] for item in random_falsely_lattice_paras],
+        [item[2] for item in random_falsely_lattice_paras],
+        label="Random falsely",
+    )
+    ax.scatter(
+        [item[0] for item in icsd_rightly_lattice_paras],
+        [item[1] for item in icsd_rightly_lattice_paras],
+        [item[2] for item in icsd_rightly_lattice_paras],
+        label="ICSD rightly",
+    )
+    ax.scatter(
+        [item[0] for item in icsd_falsely_lattice_paras],
+        [item[1] for item in icsd_falsely_lattice_paras],
+        [item[2] for item in icsd_falsely_lattice_paras],
+        label="ICSD falsely",
+    )
+    plt.legend()
+    plt.savefig(
+        f"{out_base}3D_lattice_paras_scatter.png",
         bbox_inches="tight",
         dpi=300,
     )
