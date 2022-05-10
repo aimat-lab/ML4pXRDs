@@ -2013,6 +2013,44 @@ if __name__ == "__main__":
         dpi=300,
     )
 
+    ##### Angles 3D scatter plot
+
+    plt.close("all")
+
+    fig = plt.figure(figsize=(12, 12))
+    ax = fig.add_subplot(projection="3d")
+    ax.scatter(
+        [item[0] for item in random_rightly_angles],
+        [item[1] for item in random_rightly_angles],
+        [item[2] for item in random_rightly_angles],
+        label="Random rightly",
+    )
+    ax.scatter(
+        [item[0] for item in random_falsely_angles],
+        [item[1] for item in random_falsely_angles],
+        [item[2] for item in random_falsely_angles],
+        label="Random falsely",
+    )
+    ax.scatter(
+        [item[0] for item in icsd_rightly_angles],
+        [item[1] for item in icsd_rightly_angles],
+        [item[2] for item in icsd_rightly_angles],
+        label="ICSD rightly",
+    )
+    ax.scatter(
+        [item[0] for item in icsd_falsely_angles],
+        [item[1] for item in icsd_falsely_angles],
+        [item[2] for item in icsd_falsely_angles],
+        label="ICSD falsely",
+    )
+    plt.legend()
+    plt.savefig(
+        f"{out_base}3D_angles_scatter.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+    plt.show()
+
     ################# hist plotting ################
 
     def create_histogram(
