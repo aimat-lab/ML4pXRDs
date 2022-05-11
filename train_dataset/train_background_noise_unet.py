@@ -12,7 +12,7 @@ import generate_background_noise_utils
 from datetime import datetime
 
 tag = "UNetPP"
-training_mode = "test"  # possible: train and test
+training_mode = "train"  # possible: train and test
 
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
 to_test = "09-05-2022_12-24-34_UNetPP"
