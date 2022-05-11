@@ -41,7 +41,9 @@ for i, raw_file in enumerate(raw_files):
     x_test = x_test[::2]
     y_test = y_test[::2]
 
-    y_test = np.array(y_test) / np.max(y_test)
+    y_test = np.array(y_test)
+    y_test -= min(y_test)
+    y_test = y_test / np.max(y_test)
 
     if x_test[0] > 0.0:
         to_add = np.arange(0.0, x_test[0] - 0.02, 0.02)

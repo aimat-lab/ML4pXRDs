@@ -251,17 +251,15 @@ def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x
 
         ys_altered_all[i, :] += ys_unaltered_all[i, :]
 
-        # base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)
-        # TODO: Change back
-        base_noise_level = base_noise_level_max
+        base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)
+        # base_noise_level = base_noise_level_max
 
         ys_altered_all[i, :] += np.random.normal(0.0, base_noise_level, n_angles_output)
 
-        # fluct_noise_level = np.random.uniform(
-        #    fluct_noise_level_min, fluct_noise_level_max
-        # )
-        # TODO: Change back
-        fluct_noise_level = fluct_noise_level_max
+        fluct_noise_level = np.random.uniform(
+            fluct_noise_level_min, fluct_noise_level_max
+        )
+        # fluct_noise_level = fluct_noise_level_max
 
         ys_altered_all[i, :] *= np.random.normal(
             1.0, fluct_noise_level, n_angles_output
@@ -273,23 +271,6 @@ def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x
 
         ys_altered_all[i, :] /= normalizer
         ys_unaltered_all[i, :] /= normalizer
-
-        """ TODO: Update this for "info" mode
-        if mode == "removal":
-
-            ys_altered_all.append(ys_altered_all[i, :])
-            ys_unaltered_all.append(ys_unaltered_all[i, :])
-            # ys_all.append(background_noise / scaler)
-
-        elif mode == "info":
-
-            peak_info_disc, peak_size_disc = convert_to_discrete(
-                peak_positions, peak_sizes, do_print=False
-            )
-
-            ys_altered_all.append(ys_altered_all[i, :])
-            ys_unaltered_all.append(peak_info_disc)
-        """
 
     return ys_altered_all, ys_unaltered_all
 
@@ -315,7 +296,9 @@ if __name__ == "__main__":
         x_test = raw_xy[:, 0]
         y_test = raw_xy[:, 1]
 
-        y_test = np.array(y_test) / np.max(y_test)
+        y_test = np.array(y_test)
+        y_test -= min(y_test)
+        y_test = y_test / np.max(y_test)
 
         plt.plot(x_test, y_test, label="Experimental")
         plt.plot(pattern_x, xs_generated[i, :], label="Generated")
