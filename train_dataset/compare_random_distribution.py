@@ -2426,8 +2426,8 @@ if __name__ == "__main__":
         create_histogram(
             "corn_sizes",
             [
-                [j for i in icsd_rightly_corn_sizes for j in i],
-                [j for i in icsd_falsely_corn_sizes for j in i],
+                [j for i in icsd_rightly_corn_sizes if i is not None for j in i],
+                [j for i in icsd_falsely_corn_sizes if i is not None for j in i],
             ],
             [random_rightly_corn_sizes, random_falsely_corn_sizes],
             "corn size",
@@ -2480,12 +2480,12 @@ if __name__ == "__main__":
         create_histogram(
             "lattice_paras_all",
             [
-                [j for i in icsd_rightly_lattice_paras for j in i],
-                [j for i in icsd_falsely_lattice_paras for j in i],
+                [j for i in icsd_rightly_lattice_paras if i is not None for j in i],
+                [j for i in icsd_falsely_lattice_paras if i is not None for j in i],
             ],
             [
-                [j for i in random_rightly_lattice_paras for j in i],
-                [j for i in random_falsely_lattice_paras for j in i],
+                [j for i in random_rightly_lattice_paras if i is not None for j in i],
+                [j for i in random_falsely_lattice_paras if i is not None for j in i],
             ],
             r"lattice parameters all / $Å$",
             [
@@ -2681,8 +2681,8 @@ if __name__ == "__main__":
         create_histogram(
             "occupancies_weighted",
             [
-                [j for i in icsd_rightly_occupancies for j in i],
-                [j for i in icsd_falsely_occupancies for j in i],
+                [j for i in icsd_rightly_occupancies if i is not None for j in i],
+                [j for i in icsd_falsely_occupancies if i is not None for j in i],
             ],
             None,
             "occupancy",
@@ -2703,8 +2703,8 @@ if __name__ == "__main__":
         create_histogram(
             "occupancies",
             [
-                [j for i in icsd_rightly_occupancies for j in i],
-                [j for i in icsd_falsely_occupancies for j in i],
+                [j for i in icsd_rightly_occupancies if i is not None for j in i],
+                [j for i in icsd_falsely_occupancies if i is not None for j in i],
             ],
             None,
             "occupancy",
@@ -2721,12 +2721,32 @@ if __name__ == "__main__":
         create_histogram(
             "element_repetitions",
             [
-                [j for i in icsd_rightly_element_repetitions for j in i],
-                [j for i in icsd_falsely_element_repetitions for j in i],
+                [
+                    j
+                    for i in icsd_rightly_element_repetitions
+                    if i is not None
+                    for j in i
+                ],
+                [
+                    j
+                    for i in icsd_falsely_element_repetitions
+                    if i is not None
+                    for j in i
+                ],
             ],
             [
-                [j for i in random_rightly_element_repetitions for j in i],
-                [j for i in random_falsely_element_repetitions for j in i],
+                [
+                    j
+                    for i in random_rightly_element_repetitions
+                    if i is not None
+                    for j in i
+                ],
+                [
+                    j
+                    for i in random_falsely_element_repetitions
+                    if i is not None
+                    for j in i
+                ],
             ],
             "Number of element repetitions on wyckoff sites",
             [
@@ -2744,12 +2764,32 @@ if __name__ == "__main__":
         create_histogram(
             "wyckoff_repetitions",
             [
-                [j for i in icsd_rightly_wyckoff_repetitions for j in i],
-                [j for i in icsd_falsely_wyckoff_repetitions for j in i],
+                [
+                    j
+                    for i in icsd_rightly_wyckoff_repetitions
+                    if i is not None
+                    for j in i
+                ],
+                [
+                    j
+                    for i in icsd_falsely_wyckoff_repetitions
+                    if i is not None
+                    for j in i
+                ],
             ],
             [
-                [j for i in random_rightly_wyckoff_repetitions for j in i],
-                [j for i in random_falsely_wyckoff_repetitions for j in i],
+                [
+                    j
+                    for i in random_rightly_wyckoff_repetitions
+                    if i is not None
+                    for j in i
+                ],
+                [
+                    j
+                    for i in random_falsely_wyckoff_repetitions
+                    if i is not None
+                    for j in i
+                ],
             ],
             "Number of wyckoff repetitions per element",
             [
