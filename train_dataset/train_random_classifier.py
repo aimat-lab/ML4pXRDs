@@ -128,6 +128,7 @@ local = True
 if local:
     NO_workers = 8
     verbosity = 1
+    NO_random_samples_per_spg = 20
 
 git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
@@ -279,7 +280,7 @@ icsd_sim_test.load(
     metas_to_load=[item[0] for item in test_metas],
 )  # to not overflow the memory
 
-n_patterns_per_crystal = len(icsd_sim_test.sim_patterns[0])
+n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
 
 icsd_patterns_all = icsd_sim_test.sim_patterns
 icsd_labels_all = icsd_sim_test.sim_labels
@@ -655,7 +656,7 @@ if generate_randomized_validation_datasets:
 
 val_y_all = []
 for i, label in enumerate(icsd_labels_all):
-    val_y_all.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+    val_y_all.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
 val_y_all = np.array(val_y_all)
 
 val_x_all = []
@@ -665,7 +666,7 @@ for pattern in icsd_patterns_all:
 
 val_y_match = []
 for i, label in enumerate(icsd_labels_match):
-    val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+    val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
 val_y_match = np.array(val_y_match)
 
 val_x_match = []
@@ -675,7 +676,7 @@ for pattern in icsd_patterns_match:
 
 val_y_match_inorganic = []
 for i, label in enumerate(icsd_labels_match_inorganic):
-    val_y_match_inorganic.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+    val_y_match_inorganic.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
 val_y_match_inorganic = np.array(val_y_match_inorganic)
 
 val_x_match_inorganic = []
@@ -685,7 +686,7 @@ for pattern in icsd_patterns_match_inorganic:
 
 val_y_match_correct_spgs = []
 for i, label in enumerate(icsd_labels_match_corrected_labels):
-    val_y_match_correct_spgs.extend([spgs.index(label)] * n_patterns_per_crystal)
+    val_y_match_correct_spgs.extend([spgs.index(label)] * n_patterns_per_crystal_test)
 val_y_match_correct_spgs = np.array(val_y_match_correct_spgs)
 
 val_x_match_correct_spgs = []
@@ -695,7 +696,7 @@ for pattern in icsd_patterns_match_corrected_labels:
 
 val_y_match_correct_spgs_pure = []
 for i, label in enumerate(icsd_labels_match_corrected_labels_pure):
-    val_y_match_correct_spgs_pure.extend([spgs.index(label)] * n_patterns_per_crystal)
+    val_y_match_correct_spgs_pure.extend([spgs.index(label)] * n_patterns_per_crystal_test)
 val_y_match_correct_spgs_pure = np.array(val_y_match_correct_spgs_pure)
 
 val_x_match_correct_spgs_pure = []
@@ -973,14 +974,14 @@ print(
 )
 
 print("Sizes of validation sets:")
-print(f"all: {len(icsd_labels_all)} * {n_patterns_per_crystal}")
-print(f"match: {len(icsd_labels_match)} * {n_patterns_per_crystal}")
-print(f"match_inorganic: {len(icsd_labels_match_inorganic)} * {n_patterns_per_crystal}")
+print(f"all: {len(icsd_labels_all)} * {n_patterns_per_crystal_test}")
+print(f"match: {len(icsd_labels_match)} * {n_patterns_per_crystal_test}")
+print(f"match_inorganic: {len(icsd_labels_match_inorganic)} * {n_patterns_per_crystal_test}")
 print(
-    f"match_correct_spgs: {len(icsd_labels_match_corrected_labels)} * {n_patterns_per_crystal}"
+    f"match_correct_spgs: {len(icsd_labels_match_corrected_labels)} * {n_patterns_per_crystal_test}"
 )
 print(
-    f"match_correct_spgs_pure: {len(icsd_labels_match_corrected_labels_pure)} * {n_patterns_per_crystal}"
+    f"match_correct_spgs_pure: {len(icsd_labels_match_corrected_labels_pure)} * {n_patterns_per_crystal_test}"
 )
 print(f"random: {len(results)}")
 
@@ -1176,9 +1177,11 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
             del statistics_icsd_crystals_match[i]
             del statistics_icsd_metas_match[i]
 
+    n_patterns_per_crystal_statistics = len(icsd_sim_statistics.sim_patterns[0])
+
     statistics_y_match = []
     for i, label in enumerate(statistics_icsd_labels_match):
-        statistics_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal)
+        statistics_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_statistics)
 
     statistics_x_match = []
     for pattern in statistics_icsd_patterns_match:
