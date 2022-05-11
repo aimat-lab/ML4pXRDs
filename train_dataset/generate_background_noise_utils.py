@@ -14,7 +14,7 @@ import os
 
 
 n_angles_gp = 60
-max_peaks_per_sample = 22  # max number of peaks per sample
+max_peaks_per_sample = 140  # max number of peaks per sample
 # min_peak_height = 0.010
 min_peak_height = 0
 
@@ -43,18 +43,18 @@ if not use_fluct_noise:
 else:
 
     base_noise_level_min = 0.0
-    base_noise_level_max = 0.015
+    base_noise_level_max = 0.05
 
     fluct_noise_level_min = 0.0
-    fluct_noise_level_max = 0.04
+    fluct_noise_level_max = 0.09
 
 # sigma_min = 0.1
 # sigma_max = 0.5
 
-crystallite_size_gauss_min = 5
+crystallite_size_gauss_min = 15
 # crystallite_size_gauss_max = 100
 crystallite_size_gauss_max = (
-    30  # TODO: maybe use this altered range for the classification / simulation, too!
+    50  # TODO: maybe use this altered range for the classification / simulation, too!
 )
 
 
@@ -209,6 +209,7 @@ def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x
         domain_size = np.random.uniform(
             crystallite_size_gauss_min, crystallite_size_gauss_max
         )
+        # domain_size = crystallite_size_gauss_max
 
         peak_sizes = []
 
@@ -250,12 +251,18 @@ def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x
 
         ys_altered_all[i, :] += ys_unaltered_all[i, :]
 
-        base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)
+        # base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)
+        # TODO: Change back
+        base_noise_level = base_noise_level_max
+
         ys_altered_all[i, :] += np.random.normal(0.0, base_noise_level, n_angles_output)
 
-        fluct_noise_level = np.random.uniform(
-            fluct_noise_level_min, fluct_noise_level_max
-        )
+        # fluct_noise_level = np.random.uniform(
+        #    fluct_noise_level_min, fluct_noise_level_max
+        # )
+        # TODO: Change back
+        fluct_noise_level = fluct_noise_level_max
+
         ys_altered_all[i, :] *= np.random.normal(
             1.0, fluct_noise_level, n_angles_output
         )
