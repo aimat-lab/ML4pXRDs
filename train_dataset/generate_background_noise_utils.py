@@ -7,9 +7,10 @@ from scipy import interpolate as ip
 import pandas as pd
 from scipy.stats import truncnorm
 import time
-
 import numba
 from interp_utils import spline_numba
+from glob import glob
+import os
 
 
 n_angles_gp = 60
@@ -288,50 +289,28 @@ def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x
 
 if __name__ == "__main__":
 
-    do_plot = True
-    to_compare_to_exp = False
-    n_samples = 128 * 10
-    pattern_xs = np.linspace(10, 50, 2672)
+    pattern_x = np.arange(0, 90.24, 0.02)
+    start_x = pattern_x[0]
+    end_x = pattern_x[-1]
+    N = len(pattern_x)  # UNet works without error for N ~ 2^model_depth
 
-    generate_samples_gp(128, (10.0, 50.0), n_angles_output=2672)
+    xs_generated, ys_generated = generate_samples_gp(
+        100, (start_x, end_x), n_angles_output=N
+    )
 
-    total = 10
-    start = time.time()
-    for i in range(0, total):
-        ys_altered_all, ys_unaltered_all = generate_samples_gp(
-            n_samples,
-            (10.0, 50.0),
-            n_angles_output=2672,
-        )
-    stop = time.time()
-    print(f"Took {(stop-start)/total} s per iteration")
+    raw_files = glob("./RRUFF_data/XY_RAW/*.txt")
 
-    if do_plot:
+    for i, raw_file in enumerate(raw_files):
 
-        for i in range(0, n_samples):
-            plt.plot(pattern_xs, ys_altered_all[i, :])
-            plt.xlabel(r"2 $\theta$")
-            plt.ylabel(r"Intensity")
-            # plt.figure()
-            plt.plot(pattern_xs, ys_unaltered_all[i, :])
-            # plt.xlabel(r"2 $\theta$")
-            # plt.ylabel(r"Intensity")
-            # plt.show()
-            # plt.show()
+        raw_filename = os.path.basename(raw_file)
+        raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
 
-            if to_compare_to_exp:
-                for i in range(0, 6):
-                    index = i
-                    path = "exp_data/XRDdata_classification.csv"
-                    data = pd.read_csv(path, delimiter=",", skiprows=1)
-                    xs = np.array(
-                        data.iloc[:, list(range(0, len(data.columns.values), 2))]
-                    )
-                    ys = np.array(
-                        data.iloc[:, list(range(1, len(data.columns.values), 2))]
-                    )
-                    ys[:, index] = ys[:, index] - np.min(ys[:, index])
-                    ys[:, index] = ys[:, index] / np.max(ys[:, index])
-                    plt.plot(xs[:, index], ys[:, index], label=str(index))
+        x_test = raw_xy[:, 0]
+        y_test = raw_xy[:, 1]
 
-            plt.show()
+        y_test = np.array(y_test) / np.max(y_test)
+
+        plt.plot(x_test, y_test, label="Experimental")
+        plt.plot(pattern_x, xs_generated[i, :], label="Generated")
+        plt.legend()
+        plt.show()
