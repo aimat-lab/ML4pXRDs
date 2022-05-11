@@ -55,7 +55,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150
-NO_epochs = 400  # equivalent to the 600 epochs used for training on random data
+NO_epochs = 800  # roughly equivalent to the 600 epochs used for training on random data
 
 structures_per_spg = 2  # for all spgs
 # structures_per_spg = 5
@@ -97,7 +97,7 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly!
+use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
 
 use_statistics_dataset_as_validation = False
 generate_randomized_validation_datasets = False
@@ -124,11 +124,11 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
-    NO_random_samples_per_spg = 20
+    # NO_random_samples_per_spg = 20
 
 git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
@@ -152,7 +152,6 @@ git_revision_hash = (
 
 spgs = list(range(1, 231))
 
-batch_size = NO_corn_sizes * structures_per_spg * len(spgs)
 
 if len(spgs) == 2:
     NO_random_samples_per_spg = 500
@@ -242,6 +241,7 @@ for spg in spgs:
     if spg not in represented_spgs:
         raise Exception("Requested space group not represented in prepared statistics.")
 
+batch_size = NO_corn_sizes * structures_per_spg * len(spgs)
 
 ray.init(
     address="auto" if not local else None,
@@ -696,7 +696,9 @@ for pattern in icsd_patterns_match_corrected_labels:
 
 val_y_match_correct_spgs_pure = []
 for i, label in enumerate(icsd_labels_match_corrected_labels_pure):
-    val_y_match_correct_spgs_pure.extend([spgs.index(label)] * n_patterns_per_crystal_test)
+    val_y_match_correct_spgs_pure.extend(
+        [spgs.index(label)] * n_patterns_per_crystal_test
+    )
 val_y_match_correct_spgs_pure = np.array(val_y_match_correct_spgs_pure)
 
 val_x_match_correct_spgs_pure = []
@@ -976,7 +978,9 @@ print(
 print("Sizes of validation sets:")
 print(f"all: {len(icsd_labels_all)} * {n_patterns_per_crystal_test}")
 print(f"match: {len(icsd_labels_match)} * {n_patterns_per_crystal_test}")
-print(f"match_inorganic: {len(icsd_labels_match_inorganic)} * {n_patterns_per_crystal_test}")
+print(
+    f"match_inorganic: {len(icsd_labels_match_inorganic)} * {n_patterns_per_crystal_test}"
+)
 print(
     f"match_correct_spgs: {len(icsd_labels_match_corrected_labels)} * {n_patterns_per_crystal_test}"
 )
@@ -1181,7 +1185,9 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     statistics_y_match = []
     for i, label in enumerate(statistics_icsd_labels_match):
-        statistics_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_statistics)
+        statistics_y_match.extend(
+            [spgs.index(label[0])] * n_patterns_per_crystal_statistics
+        )
 
     statistics_x_match = []
     for pattern in statistics_icsd_patterns_match:
