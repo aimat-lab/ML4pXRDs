@@ -124,7 +124,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -274,7 +274,7 @@ else:  # local
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
     stop=6 if local else None,
-    metas_to_load=test_metas,
+    metas_to_load=[item[0] for item in test_metas],
 )  # to not overflow the memory
 
 n_patterns_per_crystal = len(icsd_sim_test.sim_patterns[0])
@@ -1097,7 +1097,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
         else None,
-        metas_to_load=statistics_metas,
+        metas_to_load=[item[0] for item in statistics_metas],
         stop=6 if local else None,
     )  # to not overflow the memory if local
 
