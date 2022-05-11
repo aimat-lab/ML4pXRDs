@@ -36,7 +36,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 
-tag = "all-spgs-normal-new-split"
+tag = "all-spgs-normal-direct-training"
 description = ""
 
 if len(sys.argv) > 1:
@@ -55,7 +55,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150
-NO_epochs = 600
+NO_epochs = 400  # equivalent to the 600 epochs used for training on random data
 
 structures_per_spg = 2  # for all spgs
 # structures_per_spg = 5
@@ -97,12 +97,12 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = False  # This overwrites mose of the previous settings and doesn't generate any crystals randomly!
+use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly!
 
-use_statistics_dataset_as_validation = True
-generate_randomized_validation_datasets = True
+use_statistics_dataset_as_validation = False
+generate_randomized_validation_datasets = False
 
-use_dropout = False
+use_dropout = True
 
 learning_rate = 0.0003
 
@@ -150,6 +150,8 @@ git_revision_hash = (
 # spgs = list(range(100, 231))
 
 spgs = list(range(1, 231))
+
+batch_size = NO_corn_sizes * structures_per_spg * len(spgs)
 
 if len(spgs) == 2:
     NO_random_samples_per_spg = 500
@@ -1222,7 +1224,7 @@ params_txt = (
     f"NO_epochs: {NO_epochs}  \n"
     f"structures_per_spg: {structures_per_spg}  \n"
     f"NO_corn_sizes: {NO_corn_sizes}  \n"
-    f"-> batch size: {NO_corn_sizes*structures_per_spg*len(spgs)}  \n  \n"
+    f"-> batch size: {batch_size}  \n  \n"
     f"NO_workers: {NO_workers}  \n"
     f"queue_size: {queue_size}  \n"
     f"queue_size_tf: {queue_size_tf}  \n  \n"
@@ -1578,7 +1580,7 @@ else:
         x=statistics_x_match,
         y=statistics_y_match,
         epochs=NO_epochs,
-        batch_size=100,
+        batch_size=batch_size,
         callbacks=[tb_callback, CustomCallback()]
         if not use_reduce_lr_on_plateau
         else [tb_callback, CustomCallback(), lr_callback],
