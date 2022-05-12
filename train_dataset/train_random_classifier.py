@@ -128,6 +128,7 @@ verbosity = 2
 local = True  # TODO: Change back
 if local:
     NO_workers = 8
+    NO_workers = 127 + 127 + 8  # for int-nano cluster # TODO: Change back
     verbosity = 1
     NO_random_samples_per_spg = 20
 
