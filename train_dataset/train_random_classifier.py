@@ -124,11 +124,11 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
-    # NO_random_samples_per_spg = 20
+    NO_random_samples_per_spg = 20
 
 git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
@@ -1113,6 +1113,37 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     statistics_icsd_variations_match = icsd_sim_statistics.sim_variations
     statistics_icsd_crystals_match = icsd_sim_statistics.sim_crystals
     statistics_icsd_metas_match = icsd_sim_statistics.sim_metas
+
+    if True:
+        overlap_counter = 0
+
+        statistics_icsd_metas_match_unpacked = [
+            item[0] for item in statistics_icsd_metas_match
+        ]
+        icsd_metas_match_unpacked = [item[0] for item in icsd_metas_match]
+
+        prototypes_match = [
+            icsd_sim_statistics.icsd_structure_types[
+                icsd_sim_statistics.icsd_ids.index(meta)
+            ]
+            for meta in icsd_metas_match_unpacked
+        ]
+
+        for meta in statistics_icsd_metas_match_unpacked:
+
+            prototype_statistics = icsd_sim_statistics.icsd_structure_types[
+                icsd_sim_statistics.icsd_ids.index(meta)
+            ]
+
+            if meta in icsd_metas_match_unpacked or (
+                isinstance(prototype_statistics, str)
+                and prototype_statistics in prototypes_match
+            ):
+                overlap_counter += 1
+
+        print(
+            f"{overlap_counter} of {len(statistics_icsd_metas_match_unpacked)} prototypes overlapped."
+        )
 
     # Mainly to make the volume constraints correct:
     conventional_errors_counter = 0
