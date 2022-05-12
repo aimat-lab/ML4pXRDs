@@ -129,7 +129,8 @@ local = True  # TODO: Change back
 if local:
     NO_workers = 8
     NO_workers = 127 + 127 + 8  # for int-nano cluster # TODO: Change back
-    verbosity = 1
+    verbosity = 1  # TODO: Change back
+    verbosity = 2
     NO_random_samples_per_spg = 20
 
 git_revision_hash = (
