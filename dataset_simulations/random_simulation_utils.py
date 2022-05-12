@@ -970,7 +970,7 @@ def prepare_training():
         )
         sim.output_dir = path_to_patterns
 
-    sim.load(load_patterns_angles_intensities=False, stop=1)
+    sim.load(load_patterns_angles_intensities=False)
 
     ########## Train (statistics) / test splitting:
 
