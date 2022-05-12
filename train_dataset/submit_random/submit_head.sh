@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=32
 #SBATCH --ntasks=1
 #SBATCH --mem=128000mb
 #SBATCH --tasks-per-node=1

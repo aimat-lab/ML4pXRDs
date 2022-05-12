@@ -36,7 +36,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 
-tag = "all-spgs-normal-direct-training"
+tag = "multi-runs-test"
 description = ""
 
 if len(sys.argv) > 1:
@@ -97,7 +97,8 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+# TODO: Change back
 
 use_statistics_dataset_as_validation = False
 generate_randomized_validation_datasets = False
@@ -124,7 +125,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = True
+local = True  # TODO: Change back
 if local:
     NO_workers = 8
     verbosity = 1
@@ -243,8 +244,8 @@ for spg in spgs:
 
 batch_size = NO_corn_sizes * structures_per_spg * len(spgs)
 
-ray.init(
-    address="auto" if not local else None,
+ray.init(  # TODO: Change back
+    address="localhost:6379",  # if not local else None,
     include_dashboard=False,
 )
 
