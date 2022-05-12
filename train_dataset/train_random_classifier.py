@@ -1286,8 +1286,8 @@ class CustomCallback(keras.callbacks.Callback):
                 # gather metric names form model
                 metric_names = [metric.name for metric in self.model.metrics]
 
-                print("########## Metric names:")
-                print(metric_names)
+                # print("########## Metric names:")
+                # print(metric_names)
 
                 scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
                 scores_match = self.model.evaluate(
