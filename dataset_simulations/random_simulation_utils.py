@@ -970,7 +970,7 @@ def prepare_training():
         )
         sim.output_dir = path_to_patterns
 
-    sim.load(load_patterns_angles_intensities=False)
+    sim.load(load_patterns_angles_intensities=False, stop=1)
 
     ########## Train (statistics) / test splitting:
 
@@ -1011,15 +1011,42 @@ def prepare_training():
 
         gss = GroupShuffleSplit(1, test_size=0.3, train_size=0.7)
 
-        train_metas_splitted, test_metas_splitted = list(
+        train_metas_splitted_indices, test_metas_splitted_indices = list(
             gss.split(X=[item[0] for item in sim.sim_metas], groups=group_labels)
         )[0]
+
+        train_metas_splitted = [
+            sim.sim_metas[i][0] for i in train_metas_splitted_indices
+        ]
+        test_metas_splitted = [sim.sim_metas[i][0] for i in test_metas_splitted_indices]
 
     else:
 
         (train_metas_splitted, test_metas_splitted) = train_test_split(  # statistics
             sim.sim_metas, test_size=0.3
         )
+
+    # Check if they are distinct
+
+    overlap_counter = 0
+    for meta in train_metas_splitted:
+        prototype_statistics = sim.icsd_structure_types[sim.icsd_ids.index(meta)]
+
+        if meta in test_metas_splitted or (
+            isinstance(prototype_statistics, str)
+            and prototype_statistics in test_metas_splitted
+        ):
+            overlap_counter += 1
+    print(f"{overlap_counter} of {len(train_metas_splitted)} overlapped.")
+
+    all_metas = train_metas_splitted + test_metas_splitted
+    if sorted(all_metas) != sorted([item[0] for item in sim.sim_metas]):
+        raise Exception("Something went wrong while splitting train / test.")
+
+    if overlap_counter > 0:
+        raise Exception("Something went wrong while splitting train / test.")
+
+    # Check if train_metas_splitted and test_metas_splitted together yield sim.sim_metas
 
     statistics_crystals = []
     statistics_metas = []
@@ -1042,6 +1069,8 @@ def prepare_training():
             test_metas.append(sim.sim_metas[i])
             test_variations.append(sim.sim_variations[i])
             test_labels.append(sim.sim_labels[i])
+        else:
+            raise Exception("Something went wrong while splitting train / test.")
 
     ##########
 
@@ -1643,7 +1672,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
 
         (
             probability_per_spg_per_element,
@@ -1757,7 +1786,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
+    if True:
         prepare_training()
 
     if False:

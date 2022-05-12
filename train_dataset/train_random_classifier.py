@@ -1114,7 +1114,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     statistics_icsd_crystals_match = icsd_sim_statistics.sim_crystals
     statistics_icsd_metas_match = icsd_sim_statistics.sim_metas
 
-    if True:
+    if False: # Check for overlaps (in structure prototypes) between the test and statistics dataset
         overlap_counter = 0
 
         statistics_icsd_metas_match_unpacked = [
