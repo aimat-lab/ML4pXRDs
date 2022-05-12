@@ -1672,7 +1672,7 @@ def load_dataset_info():
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
 
         (
             probability_per_spg_per_element,
@@ -1696,42 +1696,44 @@ if __name__ == "__main__":
             # for spg in represented_spgs:
 
             start = time.time()
-            for spg in range(1, 231):
 
-                print(spg)
-                if denseness_factors_density_per_spg[spg] is None:
-                    continue
+            for j in range(0, 2):
+                for spg in range(1, 231):
 
-                structure = generate_structures(
-                    spg,
-                    1,
-                    100,
-                    -1,
-                    False,
-                    None,
-                    False,
-                    True,
-                    probability_per_spg_per_element,
-                    probability_per_spg_per_element_per_wyckoff,
-                    7000,
-                    False,
-                    NO_wyckoffs_prob_per_spg,
-                    True,
-                    False,
-                    True,
-                    True,
-                    NO_unique_elements_prob_per_spg,
-                    NO_repetitions_prob_per_spg_per_element,
-                    False,
-                    denseness_factors_density_per_spg,
-                    None,
-                    None,
-                    False,
-                    False,
-                    None,
-                    denseness_factors_conditional_sampler_seeds_per_spg,
-                    lattice_paras_density_per_lattice_type,
-                )[0]
+                    print(spg)
+                    if denseness_factors_density_per_spg[spg] is None:
+                        continue
+
+                    structure = generate_structures(
+                        spg,
+                        1,
+                        100,
+                        -1,
+                        False,
+                        None,
+                        False,
+                        True,
+                        probability_per_spg_per_element,
+                        probability_per_spg_per_element_per_wyckoff,
+                        7000,
+                        False,
+                        NO_wyckoffs_prob_per_spg,
+                        True,
+                        False,
+                        True,
+                        True,
+                        NO_unique_elements_prob_per_spg,
+                        NO_repetitions_prob_per_spg_per_element,
+                        False,
+                        denseness_factors_density_per_spg,
+                        None,
+                        None,
+                        False,
+                        False,
+                        None,
+                        denseness_factors_conditional_sampler_seeds_per_spg,
+                        lattice_paras_density_per_lattice_type,
+                    )[0]
             timings.append(time.time() - start)
 
         print(np.average(timings))
@@ -1786,7 +1788,7 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
     if False:
