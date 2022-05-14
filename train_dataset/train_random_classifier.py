@@ -124,7 +124,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -151,7 +151,6 @@ git_revision_hash = (
 # spgs = list(range(100, 231))
 
 spgs = list(range(1, 231))
-
 
 if len(spgs) == 2:
     NO_random_samples_per_spg = 500
@@ -1233,6 +1232,8 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     statistics_y_match = np.array(statistics_y_match)
     statistics_x_match = np.expand_dims(statistics_x_match, axis=2)
+
+    print("Size of statistics / training dataset: ", statistics_x_match.shape)
 
 #########################################################
 

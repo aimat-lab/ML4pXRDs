@@ -1039,14 +1039,14 @@ def prepare_training():
             overlap_counter += 1
     print(f"{overlap_counter} of {len(train_metas_splitted)} overlapped.")
 
+    # Check if train_metas_splitted and test_metas_splitted together yield sim.sim_metas
+
     all_metas = train_metas_splitted + test_metas_splitted
     if sorted(all_metas) != sorted([item[0] for item in sim.sim_metas]):
         raise Exception("Something went wrong while splitting train / test.")
 
     if overlap_counter > 0:
         raise Exception("Something went wrong while splitting train / test.")
-
-    # Check if train_metas_splitted and test_metas_splitted together yield sim.sim_metas
 
     statistics_crystals = []
     statistics_metas = []
