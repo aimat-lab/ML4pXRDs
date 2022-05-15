@@ -116,6 +116,7 @@ use_conditional_density = True
 sample_lattice_paras_from_kde = True
 
 load_only_N_patterns_each_test = 1  # None possible
+load_only_N_patterns_each_train = 3  # None possible
 
 scale_patterns = False
 
@@ -124,7 +125,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -244,8 +245,6 @@ batch_size = NO_corn_sizes * structures_per_spg * len(spgs)
 
 print("len(spgs): ", len(spgs))
 print("batch_size: ", batch_size)
-
-exit()  # TODO: Remove
 
 ray.init(
     address="localhost:6379" if not local else None,
@@ -1107,7 +1106,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     icsd_sim_statistics.load(
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
-        else None,
+        else load_only_N_patterns_each_train,
         metas_to_load=[item[0] for item in statistics_metas],
         stop=6 if local else None,
     )  # to not overflow the memory if local
