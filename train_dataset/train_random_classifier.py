@@ -124,7 +124,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -241,6 +241,11 @@ for spg in spgs:
         raise Exception("Requested space group not represented in prepared statistics.")
 
 batch_size = NO_corn_sizes * structures_per_spg * len(spgs)
+
+print("len(spgs): ", len(spgs))
+print("batch_size: ", batch_size)
+
+exit()  # TODO: Remove
 
 ray.init(
     address="localhost:6379" if not local else None,
@@ -1233,7 +1238,9 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     statistics_y_match = np.array(statistics_y_match)
     statistics_x_match = np.expand_dims(statistics_x_match, axis=2)
 
-    print("Size of statistics / training dataset: ", statistics_x_match.shape)
+    print(
+        "Size of statistics / training dataset: ", statistics_x_match.shape, flush=True
+    )
 
 #########################################################
 

@@ -1368,12 +1368,17 @@ def load_dataset_info():
 
     print("Info about statistics (prepared) dataset:")
     total = 0
-    X = 100
+    X = 50
 
     total_below_X = 0
     for spg in denseness_factors_per_spg.keys():
-        total += len(denseness_factors_per_spg[spg])
-        if len(denseness_factors_per_spg[spg]) < X:
+        total += len(
+            [item for item in denseness_factors_per_spg[spg] if item is not None]
+        )
+        if (
+            len([item for item in denseness_factors_per_spg[spg] if item is not None])
+            < X
+        ):
             total_below_X += 1
     print(f"{total} total entries.")
     print(f"{total_below_X} spgs below {X} entries.")
@@ -1392,7 +1397,7 @@ def load_dataset_info():
 
         ########## 1D densities:
 
-        if len(denseness_factors) > 50:
+        if len(denseness_factors) >= X:
             denseness_factors_density = kde.gaussian_kde(denseness_factors)
         else:
             denseness_factors_density = None
@@ -1416,7 +1421,7 @@ def load_dataset_info():
 
         ########## 2D densities (p(factor | volume)):
 
-        if len(denseness_factors) < 50:
+        if len(denseness_factors) < X:
             denseness_factors_conditional_sampler_seeds_per_spg[spg] = None
             continue
 
@@ -1788,10 +1793,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training()
 
-    if False:
+    if True:
 
         data = load_dataset_info()
         print()
