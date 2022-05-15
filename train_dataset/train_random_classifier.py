@@ -55,7 +55,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150
-NO_epochs = 600  # roughly equivalent to 2100 epochs used for training on random data
+NO_epochs = 600  # roughly equivalent to 1400 epochs used for training on random data
 
 structures_per_spg = 2  # for all spgs
 # structures_per_spg = 5
@@ -116,7 +116,7 @@ use_conditional_density = True
 sample_lattice_paras_from_kde = True
 
 load_only_N_patterns_each_test = 1  # None possible
-load_only_N_patterns_each_train = 3  # None possible
+load_only_N_patterns_each_train = 2  # None possible
 
 scale_patterns = False
 
