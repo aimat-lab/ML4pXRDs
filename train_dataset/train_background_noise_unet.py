@@ -63,7 +63,7 @@ if training_mode == "train":
         length=N,
         model_depth=5,  # height
         num_channel=1,  # input
-        model_width=10,  # first conv number of channels, danach immer verdoppeln
+        model_width=5,  # first conv number of channels, danach immer verdoppeln
         kernel_size=64,
         output_nums=1,
         problem_type="Regression",

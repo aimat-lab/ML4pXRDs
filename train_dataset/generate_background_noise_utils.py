@@ -14,7 +14,7 @@ import os
 
 
 n_angles_gp = 60
-max_peaks_per_sample = 250  # max number of peaks per sample
+max_peaks_per_sample = 200  # max number of peaks per sample
 # min_peak_height = 0.010
 min_peak_height = 0
 
@@ -238,7 +238,7 @@ def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x
             else:
 
                 # peak_size = trunc.rvs()
-                peak_size = samples_truncnorm(0, 0.2, [min_peak_height, 1.0])
+                peak_size = samples_truncnorm(0, 0.1, [min_peak_height, 1.0])
 
             # TODO: Maybe!: Change this behavior: For small peaks, the diffractograms appear to have "less" noise.
             ys_unaltered_all[i, :] += (
