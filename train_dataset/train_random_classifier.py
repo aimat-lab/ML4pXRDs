@@ -36,7 +36,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 
-tag = "all-spgs-direct-original-new-split"
+tag = "all-spgs-random-original-new-split"
 description = ""
 
 if len(sys.argv) > 1:
@@ -55,7 +55,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150
-NO_epochs = 600  # roughly equivalent to 1400 epochs used for training on random data
+NO_epochs = 600
 
 structures_per_spg = 2  # for all spgs
 # structures_per_spg = 5
@@ -97,12 +97,12 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
 
-use_statistics_dataset_as_validation = False
-generate_randomized_validation_datasets = False
+use_statistics_dataset_as_validation = True
+generate_randomized_validation_datasets = True
 
-use_dropout = True
+use_dropout = False
 
 learning_rate = 0.0003
 
@@ -125,7 +125,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
