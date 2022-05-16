@@ -24,9 +24,9 @@ N = len(pattern_x)  # UNet works without error for N ~ 2^model_depth
 
 print(pattern_x)
 
-batch_size = 400
-number_of_batches = 375
-number_of_epochs = 400
+batch_size = 300
+number_of_batches = 500
+number_of_epochs = 600
 NO_workers = 32
 
 print(
