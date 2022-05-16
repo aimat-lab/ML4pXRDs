@@ -14,7 +14,7 @@ import os
 
 
 n_angles_gp = 60
-max_peaks_per_sample = 140  # max number of peaks per sample
+max_peaks_per_sample = 250  # max number of peaks per sample
 # min_peak_height = 0.010
 min_peak_height = 0
 
