@@ -125,7 +125,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -320,6 +320,8 @@ print(
     flush=True,
 )
 
+start_generate_test_sets = time.time()
+
 icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
 icsd_crystals_match_corrected_labels = icsd_crystals_all.copy()
 icsd_variations_match_corrected_labels = icsd_variations_all.copy()
@@ -398,6 +400,8 @@ icsd_variations_match_corrected_labels_pure = (
 icsd_crystals_match_corrected_labels_pure = icsd_crystals_match_corrected_labels.copy()
 icsd_metas_match_corrected_labels_pure = icsd_metas_match_corrected_labels.copy()
 
+start_match_get_wyckoff_loop = time.time()
+
 for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 
     if validation_max_NO_wyckoffs is not None:
@@ -445,6 +449,10 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
         del icsd_crystals_match_corrected_labels_pure[i]
         del icsd_metas_match_corrected_labels_pure[i]
 
+print(
+    f"{time.time()-start_match_get_wyckoff_loop}s for loop to get wyckoff information."
+)
+
 icsd_patterns_match_inorganic = icsd_patterns_match.copy()
 icsd_labels_match_inorganic = icsd_labels_match.copy()
 icsd_variations_match_inorganic = icsd_variations_match.copy()
@@ -462,6 +470,8 @@ for i in reversed(range(0, len(icsd_patterns_match_inorganic))):
         del icsd_variations_match_inorganic[i]
         del icsd_crystals_match_inorganic[i]
         del icsd_metas_match_inorganic[i]
+
+print(f"{time.time()-start_generate_test_sets}s to generate test datasets.")
 
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)
@@ -657,6 +667,8 @@ if generate_randomized_validation_datasets:
 
 ##############
 
+start_construct_np_arrays = time.time()
+
 val_y_all = []
 for i, label in enumerate(icsd_labels_all):
     val_y_all.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
@@ -777,6 +789,8 @@ if generate_randomized_validation_datasets:
     assert len(val_x_randomized_lattice) == len(val_y_randomized_lattice)
     assert len(val_x_randomized_both) == len(val_y_randomized_both)
 
+
+print(f"{time.time()-start_construct_np_arrays}s to construct np arrays from datasets.")
 
 queue = Queue(
     maxsize=queue_size
