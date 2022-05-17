@@ -949,7 +949,7 @@ def get_wyckoff_info(pyxtal_crystal):
     return len(pyxtal_crystal.atom_sites), elements
 
 
-def prepare_training():
+def prepare_training(per_element=False):
 
     spgs = range(1, 231)
 
@@ -1076,7 +1076,11 @@ def prepare_training():
 
     # Calculate the statistics from the sim_statistics part of the simulation:
 
-    counts_per_spg_per_element_per_wyckoff = {}
+    if per_element:
+        counts_per_spg_per_element_per_wyckoff = {}
+    else:
+        counts_per_spg_per_wyckoff = {}
+
     counter_per_spg_per_element = {}
 
     NO_wyckoffs_per_spg = {}
@@ -1094,7 +1098,10 @@ def prepare_training():
         # group = Group(spg_number, dim=3)
         # names = [(str(x.multiplicity) + x.letter) for x in group]
 
-        counts_per_spg_per_element_per_wyckoff[spg_number] = {}
+        if per_element:
+            counts_per_spg_per_element_per_wyckoff[spg_number] = {}
+        else:
+            counts_per_spg_per_wyckoff[spg_number] = {}
 
         NO_wyckoffs_per_spg[spg_number] = []
         NO_unique_elements_per_spg[spg_number] = []
@@ -1218,23 +1225,36 @@ def prepare_training():
 
             all_data_entry["occupations"].append((specie_str, name, site.position))
 
-            if specie_str in counts_per_spg_per_element_per_wyckoff[spg_number].keys():
+            if per_element:
                 if (
-                    name
-                    in counts_per_spg_per_element_per_wyckoff[spg_number][
-                        specie_str
-                    ].keys()
+                    specie_str
+                    in counts_per_spg_per_element_per_wyckoff[spg_number].keys()
                 ):
-                    counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][
+                    if (
                         name
-                    ] += 1
+                        in counts_per_spg_per_element_per_wyckoff[spg_number][
+                            specie_str
+                        ].keys()
+                    ):
+                        counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][
+                            name
+                        ] += 1
+                    else:
+                        counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][
+                            name
+                        ] = 1
                 else:
+                    counts_per_spg_per_element_per_wyckoff[spg_number][specie_str] = {}
                     counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][
                         name
                     ] = 1
+
             else:
-                counts_per_spg_per_element_per_wyckoff[spg_number][specie_str] = {}
-                counts_per_spg_per_element_per_wyckoff[spg_number][specie_str][name] = 1
+
+                if name in counts_per_spg_per_wyckoff[spg_number].keys():
+                    counts_per_spg_per_wyckoff[spg_number][name] += 1
+                else:
+                    counts_per_spg_per_wyckoff[spg_number][name] = 0
 
         for specie_str in np.unique(specie_strs):
             if specie_str in counter_per_spg_per_element[spg_number].keys():
@@ -1332,7 +1352,9 @@ def prepare_training():
         pickle.dump(
             (
                 counter_per_spg_per_element,
-                counts_per_spg_per_element_per_wyckoff,
+                counts_per_spg_per_element_per_wyckoff
+                if per_element
+                else counts_per_spg_per_wyckoff,
                 NO_wyckoffs_prob_per_spg,
                 corrected_labels,
                 statistics_metas,
@@ -1347,7 +1369,7 @@ def prepare_training():
         )
 
 
-def load_dataset_info():
+def load_dataset_info(per_element=False):
 
     with open(
         os.path.join(os.path.dirname(__file__), "prepared_training"),
@@ -1355,7 +1377,12 @@ def load_dataset_info():
     ) as file:
         data = pickle.load(file)
         counter_per_spg_per_element = data[0]
-        counts_per_spg_per_element_per_wyckoff = data[1]
+
+        if per_element:
+            counts_per_spg_per_element_per_wyckoff = data[1]
+        else:
+            counts_per_spg_per_wyckoff = data[1]
+
         NO_wyckoffs_prob_per_spg = data[2]
         corrected_labels = data[3]
         statistics_metas = data[4]
@@ -1505,22 +1532,43 @@ def load_dataset_info():
 
     probability_per_spg_per_element = counter_per_spg_per_element
 
-    for spg in counts_per_spg_per_element_per_wyckoff.keys():
-        for el in counts_per_spg_per_element_per_wyckoff[spg].keys():
-            total = 0
-            for wyckoff_site in counts_per_spg_per_element_per_wyckoff[spg][el].keys():
-                total += counts_per_spg_per_element_per_wyckoff[spg][el][wyckoff_site]
-
-            for wyckoff_site in counts_per_spg_per_element_per_wyckoff[spg][el].keys():
-                if total > 0:
-                    counts_per_spg_per_element_per_wyckoff[spg][el][
+    if per_element:
+        for spg in counts_per_spg_per_element_per_wyckoff.keys():
+            for el in counts_per_spg_per_element_per_wyckoff[spg].keys():
+                total = 0
+                for wyckoff_site in counts_per_spg_per_element_per_wyckoff[spg][
+                    el
+                ].keys():
+                    total += counts_per_spg_per_element_per_wyckoff[spg][el][
                         wyckoff_site
-                    ] /= total
+                    ]
+
+                for wyckoff_site in counts_per_spg_per_element_per_wyckoff[spg][
+                    el
+                ].keys():
+                    if total > 0:
+                        counts_per_spg_per_element_per_wyckoff[spg][el][
+                            wyckoff_site
+                        ] /= total
+                    else:
+                        counts_per_spg_per_element_per_wyckoff[spg][el][
+                            wyckoff_site
+                        ] = 0
+            probability_per_spg_per_element_per_wyckoff = (
+                counts_per_spg_per_element_per_wyckoff
+            )
+    else:
+        for spg in counts_per_spg_per_wyckoff.keys():
+            total = 0
+            for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+                total += counts_per_spg_per_wyckoff[spg][wyckoff_site]
+
+            for wyckoff_site in counts_per_spg_per_wyckoff[spg].keys():
+                if total > 0:
+                    counts_per_spg_per_wyckoff[spg][wyckoff_site] /= total
                 else:
-                    counts_per_spg_per_element_per_wyckoff[spg][el][wyckoff_site] = 0
-        probability_per_spg_per_element_per_wyckoff = (
-            counts_per_spg_per_element_per_wyckoff
-        )
+                    counts_per_spg_per_wyckoff[spg][wyckoff_site] = 0
+        probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff
 
     kde_per_spg = {}
 
@@ -1659,7 +1707,9 @@ def load_dataset_info():
         # We just want to resemble the occupation of wyckoff sites realistically in the most straightforward way.
         # More than that is not needed for merely extracting symmetry information.
         probability_per_spg_per_element,
-        probability_per_spg_per_element_per_wyckoff,
+        probability_per_spg_per_element_per_wyckoff
+        if per_element
+        else probability_per_spg_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
         corrected_labels,
         statistics_metas,
