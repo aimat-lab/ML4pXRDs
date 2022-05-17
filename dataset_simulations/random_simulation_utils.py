@@ -183,6 +183,7 @@ def generate_structure(
     use_alternative_structure_generator_implementation=True,
     denseness_factors_conditional_sampler_seeds_per_spg=None,
     lattice_paras_density_per_lattice_type=None,
+    per_element=False,
 ):
 
     if use_icsd_statistics and (
@@ -879,6 +880,7 @@ def generate_structures(
     group_object=None,  # for speedup
     denseness_factors_conditional_sampler_seeds_per_spg=None,
     lattice_paras_density_per_lattice_type=None,
+    per_element=False,
 ):
 
     if group_object is None:
@@ -930,6 +932,7 @@ def generate_structures(
             use_lattice_paras_directly=use_lattice_paras_directly,
             denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
             lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+            per_element=per_element,
         )
         for i in range(0, N)
     ]
@@ -1754,6 +1757,7 @@ def load_dataset_info(per_element=False):
         all_data_per_spg,
         denseness_factors_conditional_sampler_seeds_per_spg,
         lattice_paras_density_per_lattice_type,
+        per_element,
     )
 
 

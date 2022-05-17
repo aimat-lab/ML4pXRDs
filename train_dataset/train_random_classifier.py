@@ -179,6 +179,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     all_data_per_spg_tmp,
     denseness_factors_conditional_sampler_seeds_per_spg,
     lattice_paras_density_per_lattice_type,
+    per_element,
 ) = load_dataset_info()
 
 if scale_patterns and use_icsd_structures_directly:
@@ -859,6 +860,7 @@ def batch_generator_with_additional(
         use_lattice_paras_directly=use_lattice_paras_directly,
         denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+        per_element=per_element,
     )
 
     # Set the label to the right index:
@@ -927,6 +929,7 @@ def batch_generator_queue(
                 group_object_per_spg=group_object_per_spg,
                 denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                 lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+                per_element=per_element,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -1318,6 +1321,7 @@ params_txt = (
     f"use_conditional_density: {str(use_conditional_density)} \n \n \n"
     f"use_statistics_dataset_as_validation: {str(use_statistics_dataset_as_validation)} \n \n \n"
     f"sample_lattice_paras_from_kde: {str(sample_lattice_paras_from_kde)} \n \n \n"
+    f"per_element: {str(per_element)} \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
