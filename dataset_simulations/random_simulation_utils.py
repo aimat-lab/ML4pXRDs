@@ -1046,13 +1046,18 @@ def prepare_training(
 
     # Check if they are distinct
 
+    prototypes_test = [
+        sim.icsd_structure_types[sim.icsd_ids.index(meta)]
+        for meta in test_metas_splitted
+    ]
+
     overlap_counter = 0
     for meta in train_metas_splitted:
         prototype_statistics = sim.icsd_structure_types[sim.icsd_ids.index(meta)]
 
         if meta in test_metas_splitted or (
             isinstance(prototype_statistics, str)
-            and prototype_statistics in test_metas_splitted
+            and prototype_statistics in prototypes_test
         ):
             overlap_counter += 1
     print(f"{overlap_counter} of {len(train_metas_splitted)} overlapped.")
@@ -1129,8 +1134,11 @@ def prepare_training(
 
         NO_wyckoffs_per_spg[spg_number] = []
         NO_unique_elements_per_spg[spg_number] = []
-        NO_repetitions_per_spg_per_element[spg_number] = {}
-        NO_repetitions_per_spg[spg_number] = []
+
+        if per_element:
+            NO_repetitions_per_spg_per_element[spg_number] = {}
+        else:
+            NO_repetitions_per_spg[spg_number] = []
 
         counter_per_spg_per_element[spg_number] = {}
 
@@ -1194,8 +1202,9 @@ def prepare_training(
                     continue
 
                 if (
-                    NO_wyckoffs > 100 or crystal.volume > 7000
-                ):  # only consider matching structures for statistics
+                    NO_wyckoffs > validation_max_NO_wyckoffs
+                    or crystal.volume > validation_max_volume
+                ):  # only consider matching structures for statistics, too
                     continue
 
                 NO_wyckoffs, elements = get_wyckoff_info(struc)
@@ -1288,7 +1297,7 @@ def prepare_training(
                 if name in counts_per_spg_per_wyckoff[spg_number].keys():
                     counts_per_spg_per_wyckoff[spg_number][name] += 1
                 else:
-                    counts_per_spg_per_wyckoff[spg_number][name] = 0
+                    counts_per_spg_per_wyckoff[spg_number][name] = 1
 
         for specie_str in np.unique(specie_strs):
             if specie_str in counter_per_spg_per_element[spg_number].keys():
@@ -1346,7 +1355,11 @@ def prepare_training(
         else:
             NO_wyckoffs_prob_per_spg[spg] = []
             NO_unique_elements_prob_per_spg[spg] = []
-            NO_repetitions_prob_per_spg_per_element[spg] = {}
+
+            if per_element:
+                NO_repetitions_prob_per_spg_per_element[spg] = {}
+            else:
+                NO_repetitions_prob_per_spg[spg] = []
 
     print(f"Took {time.time() - start} s to calculate the statistics.")
 
@@ -1373,6 +1386,12 @@ def prepare_training(
             is_pure, NO_wyckoffs, _, _, _, _, _, _ = sim.get_wyckoff_info(
                 test_metas[i][0]
             )
+
+            # Get conventional structure
+            analyzer = SpacegroupAnalyzer(crystal)
+            conv = analyzer.get_conventional_standard_structure()
+            test_crystals[i] = conv
+            crystal = conv
 
             if not (
                 (
@@ -1407,11 +1426,6 @@ def prepare_training(
 
             spg_analyzer = analyzer.get_space_group_number()
 
-            # Get conventional structure
-            analyzer = SpacegroupAnalyzer(crystal)
-            conv = analyzer.get_conventional_standard_structure()
-            test_crystals[i] = conv
-
             if spg_analyzer != spg_number_icsd:
                 count_mismatches += 1
 
@@ -1427,6 +1441,11 @@ def prepare_training(
     print(f"{count_mismatches/len(test_crystals)*100}% mismatches in test set.")
 
     print(f"Took {time.time() - start} s to process the test dataset.")
+
+    print(f"Size of statistics dataset: {len(statistics_crystals)}")
+    print(f"Size of test dataset: {len(test_crystals)}")
+    print(f"Size of test_match dataset: {len(test_match_metas)}")
+    print(f"Size of test_match_pure_metas dataset: {len(test_match_pure_metas)}")
 
     with open("prepared_training", "wb") as file:
         pickle.dump(
@@ -1954,10 +1973,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if False:
-        prepare_training()
-
     if True:
+        prepare_training(per_element=False)
+
+    if False:
 
         data = load_dataset_info()
         print()
