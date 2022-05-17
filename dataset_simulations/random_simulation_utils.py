@@ -304,6 +304,7 @@ def generate_structure(
                 use_alternative_structure_generator_implementation=use_alternative_structure_generator_implementation,
                 denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                 lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+                per_element=per_element,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -395,6 +396,10 @@ def generate_structure(
                                         NO_repetitions_prob_per_spg_per_element[
                                             group_object.number
                                         ][current_element]
+                                        if per_element
+                                        else NO_repetitions_prob_per_spg_per_element[
+                                            group_object.number
+                                        ]
                                     )
                                     + 1,
                                 ),
@@ -403,6 +408,10 @@ def generate_structure(
                                     NO_repetitions_prob_per_spg_per_element[
                                         group_object.number
                                     ][current_element]
+                                    if per_element
+                                    else NO_repetitions_prob_per_spg_per_element[
+                                        group_object.number
+                                    ]
                                 ),
                             )[0]
                             current_repetition_counter = 1
@@ -424,6 +433,10 @@ def generate_structure(
                             probability_per_spg_per_element_per_wyckoff[
                                 group_object.number
                             ][current_element]
+                            if per_element
+                            else probability_per_spg_per_element_per_wyckoff[
+                                group_object.number
+                            ]
                         )
 
                         chosen_wyckoff = np.random.choice(
