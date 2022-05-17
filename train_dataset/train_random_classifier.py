@@ -364,6 +364,8 @@ icsd_metas_match = icsd_metas_all.copy()
 NO_wyckoffs_cached = {}
 is_pure_counter = 0
 
+start_match_get_wyckoff_loop = time.time()
+
 for i in reversed(range(0, len(icsd_patterns_match))):
 
     if validation_max_NO_wyckoffs is not None:
@@ -390,6 +392,9 @@ for i in reversed(range(0, len(icsd_patterns_match))):
         if is_pure:
             is_pure_counter += 1
 
+print(
+    f"{time.time()-start_match_get_wyckoff_loop}s for loop to get wyckoff information."
+)
 print(f"is_pure: {is_pure_counter} of {len(icsd_patterns_match)}")
 
 icsd_patterns_match_corrected_labels_pure = icsd_patterns_match_corrected_labels.copy()
@@ -400,7 +405,6 @@ icsd_variations_match_corrected_labels_pure = (
 icsd_crystals_match_corrected_labels_pure = icsd_crystals_match_corrected_labels.copy()
 icsd_metas_match_corrected_labels_pure = icsd_metas_match_corrected_labels.copy()
 
-start_match_get_wyckoff_loop = time.time()
 
 for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
 
@@ -449,9 +453,6 @@ for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
         del icsd_crystals_match_corrected_labels_pure[i]
         del icsd_metas_match_corrected_labels_pure[i]
 
-print(
-    f"{time.time()-start_match_get_wyckoff_loop}s for loop to get wyckoff information."
-)
 
 icsd_patterns_match_inorganic = icsd_patterns_match.copy()
 icsd_labels_match_inorganic = icsd_labels_match.copy()
