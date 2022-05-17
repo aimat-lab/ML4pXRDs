@@ -1085,7 +1085,11 @@ def prepare_training(per_element=False):
 
     NO_wyckoffs_per_spg = {}
     NO_unique_elements_per_spg = {}
-    NO_repetitions_per_spg_per_element = {}
+
+    if per_element:
+        NO_repetitions_per_spg_per_element = {}
+    else:
+        NO_repetitions_per_spg = {}
 
     denseness_factors_per_spg = {}
 
@@ -1106,6 +1110,7 @@ def prepare_training(per_element=False):
         NO_wyckoffs_per_spg[spg_number] = []
         NO_unique_elements_per_spg[spg_number] = []
         NO_repetitions_per_spg_per_element[spg_number] = {}
+        NO_repetitions_per_spg[spg_number] = []
 
         counter_per_spg_per_element[spg_number] = {}
 
@@ -1198,10 +1203,15 @@ def prepare_training(per_element=False):
                 for el in elements_unique:
                     reps = np.sum(np.array(elements) == el)
 
-                    if el in NO_repetitions_per_spg_per_element[spg_number].keys():
-                        NO_repetitions_per_spg_per_element[spg_number][el].append(reps)
+                    if per_element:
+                        if el in NO_repetitions_per_spg_per_element[spg_number].keys():
+                            NO_repetitions_per_spg_per_element[spg_number][el].append(
+                                reps
+                            )
+                        else:
+                            NO_repetitions_per_spg_per_element[spg_number][el] = [reps]
                     else:
-                        NO_repetitions_per_spg_per_element[spg_number][el] = [reps]
+                        NO_repetitions_per_spg[spg_number].append(reps)
 
         except Exception as ex:
 
@@ -1268,7 +1278,10 @@ def prepare_training(per_element=False):
     NO_wyckoffs_prob_per_spg = {}
 
     NO_unique_elements_prob_per_spg = {}
-    NO_repetitions_prob_per_spg_per_element = {}
+    if per_element:
+        NO_repetitions_prob_per_spg_per_element = {}
+    else:
+        NO_repetitions_prob_per_spg = {}
 
     for spg in NO_wyckoffs_per_spg.keys():
         if len(NO_wyckoffs_per_spg[spg]) > 0:
@@ -1283,19 +1296,29 @@ def prepare_training(per_element=False):
                 1:
             ] / np.sum(bincounted_NO_unique_elements[1:])
 
-            NO_repetitions_prob_per_spg_per_element[spg] = {}
+            if per_element:
 
-            for el in NO_repetitions_per_spg_per_element[spg].keys():
+                NO_repetitions_prob_per_spg_per_element[spg] = {}
 
-                bincounted_NO_repetitions = np.bincount(
-                    NO_repetitions_per_spg_per_element[spg][el]
-                )
+                for el in NO_repetitions_per_spg_per_element[spg].keys():
 
-                NO_repetitions_prob_per_spg_per_element[spg][
-                    el
-                ] = bincounted_NO_repetitions[1:] / np.sum(
-                    bincounted_NO_repetitions[1:]
-                )
+                    bincounted_NO_repetitions = np.bincount(
+                        NO_repetitions_per_spg_per_element[spg][el]
+                    )
+
+                    NO_repetitions_prob_per_spg_per_element[spg][
+                        el
+                    ] = bincounted_NO_repetitions[1:] / np.sum(
+                        bincounted_NO_repetitions[1:]
+                    )
+
+            else:
+
+                bincounted_NO_repetitions = np.bincount(NO_repetitions_per_spg[spg])
+
+                NO_repetitions_prob_per_spg[spg] = bincounted_NO_repetitions[
+                    1:
+                ] / np.sum(bincounted_NO_repetitions[1:])
 
             represented_spgs.append(spg)
         else:
@@ -1361,7 +1384,9 @@ def prepare_training(per_element=False):
                 test_metas,
                 represented_spgs,
                 NO_unique_elements_prob_per_spg,
-                NO_repetitions_prob_per_spg_per_element,
+                NO_repetitions_prob_per_spg_per_element
+                if per_element
+                else NO_repetitions_prob_per_spg,
                 denseness_factors_per_spg,
                 all_data_per_spg,
             ),
@@ -1389,7 +1414,12 @@ def load_dataset_info(per_element=False):
         test_metas = data[5]
         represented_spgs = data[6]
         NO_unique_elements_prob_per_spg = data[7]
-        NO_repetitions_prob_per_spg_per_element = data[8]
+
+        if per_element:
+            NO_repetitions_prob_per_spg_per_element = data[8]
+        else:
+            NO_repetitions_prob_per_spg = data[8]
+
         denseness_factors_per_spg = data[9]
         all_data_per_spg = data[10]
 
@@ -1716,7 +1746,9 @@ def load_dataset_info(per_element=False):
         test_metas,
         represented_spgs,  # spgs represented in the statistics dataset (70%)
         NO_unique_elements_prob_per_spg,
-        NO_repetitions_prob_per_spg_per_element,
+        NO_repetitions_prob_per_spg_per_element
+        if per_element
+        else NO_repetitions_prob_per_spg,
         denseness_factors_density_per_spg,
         kde_per_spg,
         all_data_per_spg,
