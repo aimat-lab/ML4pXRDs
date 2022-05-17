@@ -1362,7 +1362,7 @@ def prepare_training(
     corrected_labels = []
     count_mismatches = 0
 
-    for i in range(len(test_crystals)):
+    for i in reversed(range(len(test_crystals))):
         crystal = test_crystals[i]
 
         if (i % 100) == 0:
@@ -1388,6 +1388,13 @@ def prepare_training(
                 test_match_metas.append(test_metas[i])
                 if is_pure:
                     test_match_pure_metas.append(test_metas[i])
+
+            if np.any(np.isnan(test_variations[i][0])):
+                del test_crystals[i]
+                del test_metas[i]
+                del test_variations[i]
+                del test_labels[i]
+                continue
 
             spg_number_icsd = test_labels[i][0]
 

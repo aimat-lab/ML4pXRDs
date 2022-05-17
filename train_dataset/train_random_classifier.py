@@ -171,7 +171,6 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     corrected_labels,
     statistics_metas,
     test_metas,
-    represented_spgs,
     NO_unique_elements_prob_per_spg,
     NO_repetitions_prob_per_spg_per_element,
     denseness_factors_density_per_spg,
@@ -180,6 +179,17 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     denseness_factors_conditional_sampler_seeds_per_spg,
     lattice_paras_density_per_lattice_type,
     per_element,
+    represented_spgs,
+    (
+        statistics_metas,
+        statistics_crystals,
+        test_metas,
+        test_labels,
+        test_crystals,
+        corrected_labels,
+        test_match_metas,
+        test_match_pure_metas,
+    ),
 ) = load_dataset_info()
 
 if scale_patterns and use_icsd_structures_directly:
@@ -210,13 +220,6 @@ if not use_element_repetitions:
 
 if not use_denseness_factors_density:
     denseness_factors_density_per_spg = None
-else:
-    for i in reversed(range(0, len(spgs))):
-        if denseness_factors_density_per_spg[spgs[i]] is None:
-            print(
-                f"Excluded spg {spgs[i]} due to missing denseness_factor density (not enough statistics)."
-            )
-            del spgs[i]
 
 if not use_conditional_density:
     denseness_factors_conditional_sampler_seeds_per_spg = None
@@ -231,16 +234,10 @@ else:
     for spg in spgs:
         all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
 
-for i in reversed(range(len(represented_spgs))):
-    if np.sum(NO_wyckoffs_prob_per_spg[represented_spgs[i]][0:100]) <= 0.01:
-        print(
-            f"Excluded spg {represented_spgs[i]} from represented_spgs due to low probability in NO_wyckoffs < 100."
-        )
-        del represented_spgs[i]
-
-for spg in spgs:
-    if spg not in represented_spgs:
-        raise Exception("Requested space group not represented in prepared statistics.")
+for i in reversed(range(0, len(spgs))):
+    if spgs[i] not in represented_spgs:
+        print(f"Excluded spg {spgs[i]} (not enough statistics).")
+        del spgs[i]
 
 batch_size = NO_corn_sizes * structures_per_spg * len(spgs)
 
@@ -278,202 +275,127 @@ else:  # local
     )
     icsd_sim_test.output_dir = path_to_patterns
 
+##### Prepare test datasets #####
+
+test_metas_flat = [item[0] for item in test_metas]
+test_match_metas_flat = [item[0] for item in test_match_metas]
+test_match_pure_metas_flat = [item[0] for item in test_match_pure_metas]
+
+metas_to_load_test = []
+for i, meta in enumerate(test_metas_flat):
+    if test_labels[i][0] in spgs or corrected_labels[i] in spgs:
+        metas_to_load_test.append(meta)
+
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
     stop=6 if local else None,
-    metas_to_load=[item[0] for item in test_metas],
+    metas_to_load=metas_to_load_test,
 )  # to not overflow the memory
+
+# Remove all spgs that are not needed
+for i in reversed(range(len(test_metas))):
+
+    if not test_labels[i][0] in spgs:
+
+        if test_metas[i][0] in test_match_metas_flat:
+            del test_match_metas[test_match_metas_flat.index(test_metas[i][0])]
+
+        if test_metas[i][0] in test_match_pure_metas_flat:
+            del test_match_pure_metas[
+                test_match_pure_metas_flat.index(test_metas[i][0])
+            ]
+
+        del test_metas[i]
+        del test_labels[i]
+        del test_crystals[i]
+        del corrected_labels[i]
 
 n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
 
-icsd_patterns_all = icsd_sim_test.sim_patterns
-icsd_labels_all = icsd_sim_test.sim_labels
-icsd_variations_all = icsd_sim_test.sim_variations
-icsd_crystals_all = icsd_sim_test.sim_crystals
-icsd_metas_all = icsd_sim_test.sim_metas
+icsd_patterns_all = []
+icsd_labels_all = []
+icsd_variations_all = []
+icsd_crystals_all = []
+icsd_metas_all = []
 
-# Mainly to make the volume constraints correct:
-conventional_errors_counter = 0
-conventional_counter = 0
-print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures...",
-    flush=True,
-)
+icsd_patterns_match = []
+icsd_labels_match = []
+icsd_variations_match = []
+icsd_crystals_match = []
+icsd_metas_match = []
 
-for i in reversed(range(0, len(icsd_crystals_all))):
-    # Only needed if the sample will actually be used later!
-    if icsd_labels_all[i][0] in spgs or corrected_labels[icsd_metas_all[i][0]] in spgs:
-        conventional_counter += 1
-        try:
-            current_struc = icsd_crystals_all[i]
-            analyzer = SpacegroupAnalyzer(current_struc)
-            conv = analyzer.get_conventional_standard_structure()
-            icsd_crystals_all[i] = conv
+icsd_patterns_match_corrected_labels = []
+icsd_labels_match_corrected_labels = []
+icsd_variations_match_corrected_labels = []
+icsd_crystals_match_corrected_labels = []
+icsd_metas_match_corrected_labels = []
 
-        except Exception as ex:
+icsd_patterns_match_corrected_labels_pure = []
+icsd_labels_match_corrected_labels_pure = []
+icsd_variations_match_corrected_labels_pure = []
+icsd_crystals_match_corrected_labels_pure = []
+icsd_metas_match_corrected_labels_pure = []
 
-            print("Error calculating conventional cell of ICSD:")
-            print(ex)
-            conventional_errors_counter += 1
+for i in range(len(icsd_sim_test.sim_crystals)):
 
-print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {conventional_counter} failed to convert to conventional cell.",
-    flush=True,
-)
+    if icsd_sim_test.sim_metas[i][0] in test_metas_flat:
+        icsd_patterns_all.append(icsd_sim_test.sim_patterns[i])
+        icsd_labels_all.append(icsd_sim_test.sim_labels[i])
+        icsd_variations_all.append(icsd_sim_test.sim_variations[i])
+        icsd_crystals_all.append(
+            test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+        )  # use the converted structure (conventional cell)
+        icsd_metas_all.append(icsd_sim_test.sim_metas[i])
+    else:
+        raise Exception("There is a mismatch somewhere.")
 
-start_generate_test_sets = time.time()
+    if icsd_sim_test.sim_metas[i][0] in test_match_metas_flat:
 
-icsd_patterns_match_corrected_labels = icsd_patterns_all.copy()
-icsd_crystals_match_corrected_labels = icsd_crystals_all.copy()
-icsd_variations_match_corrected_labels = icsd_variations_all.copy()
-icsd_metas_match_corrected_labels = icsd_metas_all.copy()
-icsd_labels_match_corrected_labels = [
-    corrected_labels[meta[0]] for meta in icsd_metas_match_corrected_labels
-]  # corrected labels from spglib
+        if icsd_sim_test.sim_labels[i][0] in spgs:
+            icsd_patterns_match.append(icsd_sim_test.sim_patterns[i])
+            icsd_labels_match.append(icsd_sim_test.sim_labels[i])
+            icsd_variations_match.append(icsd_sim_test.sim_variations[i])
+            icsd_crystals_match.append(
+                test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+            )  # use the converted structure (conventional cell)
+            icsd_metas_match.append(icsd_sim_test.sim_metas[i])
+
+        if (
+            corrected_labels[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+            in spgs  # also excludes "None"
+        ):
+            icsd_patterns_match_corrected_labels.append(icsd_sim_test.sim_patterns[i])
+            icsd_labels_match_corrected_labels.append(
+                corrected_labels[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+            )  # Use the corrected label
+            icsd_variations_match_corrected_labels.append(
+                icsd_sim_test.sim_variations[i]
+            )
+            icsd_crystals_match_corrected_labels.append(
+                test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+            )  # use the converted structure (conventional cell)
+            icsd_metas_match_corrected_labels.append(icsd_sim_test.sim_metas[i])
+
+    if icsd_sim_test.sim_metas[i][0] in test_match_pure_metas_flat:
+        if (
+            corrected_labels[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+            in spgs  # also excludes "None"
+        ):
+            icsd_patterns_match_corrected_labels_pure.append(
+                icsd_sim_test.sim_patterns[i]
+            )
+            icsd_labels_match_corrected_labels_pure.append(
+                corrected_labels[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+            )  # Use the corrected label
+            icsd_variations_match_corrected_labels_pure.append(
+                icsd_sim_test.sim_variations[i]
+            )
+            icsd_crystals_match_corrected_labels_pure.append(
+                test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+            )  # use the converted structure (conventional cell)
+            icsd_metas_match_corrected_labels_pure.append(icsd_sim_test.sim_metas[i])
 
 assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
-
-for i in reversed(range(0, len(icsd_patterns_all))):
-
-    if np.any(np.isnan(icsd_variations_all[i][0])) or icsd_labels_all[i][0] not in spgs:
-        del icsd_patterns_all[i]
-        del icsd_labels_all[i]
-        del icsd_variations_all[i]
-        del icsd_crystals_all[i]
-        del icsd_metas_all[i]
-
-for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
-
-    if (
-        np.any(np.isnan(icsd_variations_match_corrected_labels[i][0]))
-        or icsd_labels_match_corrected_labels[i] is None
-        or icsd_labels_match_corrected_labels[i] not in spgs
-    ):
-        del icsd_patterns_match_corrected_labels[i]
-        del icsd_labels_match_corrected_labels[i]
-        del icsd_variations_match_corrected_labels[i]
-        del icsd_crystals_match_corrected_labels[i]
-        del icsd_metas_match_corrected_labels[i]
-
-# patterns that fall into the simulation parameter range (volume and NO_wyckoffs)
-icsd_patterns_match = icsd_patterns_all.copy()
-icsd_labels_match = icsd_labels_all.copy()
-icsd_variations_match = icsd_variations_all.copy()
-icsd_crystals_match = icsd_crystals_all.copy()
-icsd_metas_match = icsd_metas_all.copy()
-
-NO_wyckoffs_cached = {}
-is_pure_counter = 0
-
-start_match_get_wyckoff_loop = time.time()
-
-for i in reversed(range(0, len(icsd_patterns_match))):
-
-    if validation_max_NO_wyckoffs is not None:
-        is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim_test.get_wyckoff_info(
-            icsd_metas_match[i][0]
-        )
-
-        if icsd_metas_match[i][0] not in NO_wyckoffs_cached.keys():
-            NO_wyckoffs_cached[icsd_metas_match[i][0]] = is_pure, NO_wyckoffs
-
-    if (
-        validation_max_volume is not None
-        and icsd_crystals_match[i].volume > validation_max_volume
-    ) or (
-        validation_max_NO_wyckoffs is not None
-        and NO_wyckoffs > validation_max_NO_wyckoffs
-    ):
-        del icsd_patterns_match[i]
-        del icsd_labels_match[i]
-        del icsd_variations_match[i]
-        del icsd_crystals_match[i]
-        del icsd_metas_match[i]
-    else:
-        if is_pure:
-            is_pure_counter += 1
-
-print(
-    f"{time.time()-start_match_get_wyckoff_loop}s for loop to get wyckoff information."
-)
-print(f"is_pure: {is_pure_counter} of {len(icsd_patterns_match)}")
-
-icsd_patterns_match_corrected_labels_pure = icsd_patterns_match_corrected_labels.copy()
-icsd_labels_match_corrected_labels_pure = icsd_labels_match_corrected_labels.copy()
-icsd_variations_match_corrected_labels_pure = (
-    icsd_variations_match_corrected_labels.copy()
-)
-icsd_crystals_match_corrected_labels_pure = icsd_crystals_match_corrected_labels.copy()
-icsd_metas_match_corrected_labels_pure = icsd_metas_match_corrected_labels.copy()
-
-
-for i in reversed(range(0, len(icsd_patterns_match_corrected_labels))):
-
-    if validation_max_NO_wyckoffs is not None:
-        if icsd_metas_match_corrected_labels[i][0] not in NO_wyckoffs_cached.keys():
-            is_pure, NO_wyckoffs, _, _, _, _, _, _ = icsd_sim_test.get_wyckoff_info(
-                icsd_metas_match_corrected_labels[i][0]
-            )
-        else:
-            is_pure, NO_wyckoffs = NO_wyckoffs_cached[
-                icsd_metas_match_corrected_labels[i][0]
-            ]
-
-    if is_pure != icsd_crystals_match_corrected_labels[i].is_ordered:
-        print("########## Warning: is_pure != is_ordered")
-
-    if (
-        validation_max_volume is not None
-        and icsd_crystals_match_corrected_labels[i].volume > validation_max_volume
-    ) or (
-        validation_max_NO_wyckoffs is not None
-        and NO_wyckoffs > validation_max_NO_wyckoffs
-    ):
-        del icsd_patterns_match_corrected_labels[i]
-        del icsd_labels_match_corrected_labels[i]
-        del icsd_variations_match_corrected_labels[i]
-        del icsd_crystals_match_corrected_labels[i]
-        del icsd_metas_match_corrected_labels[i]
-
-    if (
-        (
-            validation_max_volume is not None
-            and icsd_crystals_match_corrected_labels_pure[i].volume
-            > validation_max_volume
-        )
-        or (
-            validation_max_NO_wyckoffs is not None
-            and NO_wyckoffs > validation_max_NO_wyckoffs
-        )
-        or not is_pure
-    ):
-
-        del icsd_patterns_match_corrected_labels_pure[i]
-        del icsd_labels_match_corrected_labels_pure[i]
-        del icsd_variations_match_corrected_labels_pure[i]
-        del icsd_crystals_match_corrected_labels_pure[i]
-        del icsd_metas_match_corrected_labels_pure[i]
-
-
-icsd_patterns_match_inorganic = icsd_patterns_match.copy()
-icsd_labels_match_inorganic = icsd_labels_match.copy()
-icsd_variations_match_inorganic = icsd_variations_match.copy()
-icsd_crystals_match_inorganic = icsd_crystals_match.copy()
-icsd_metas_match_inorganic = icsd_metas_match.copy()
-
-exp_inorganic, exp_metalorganic, theoretical = icsd_sim_test.get_content_types()
-
-for i in reversed(range(0, len(icsd_patterns_match_inorganic))):
-
-    if icsd_metas_match_inorganic[i][0] not in exp_inorganic:
-
-        del icsd_patterns_match_inorganic[i]
-        del icsd_labels_match_inorganic[i]
-        del icsd_variations_match_inorganic[i]
-        del icsd_crystals_match_inorganic[i]
-        del icsd_metas_match_inorganic[i]
-
-print(f"{time.time()-start_generate_test_sets}s to generate test datasets.")
 
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)
@@ -691,16 +613,6 @@ for pattern in icsd_patterns_match:
     for sub_pattern in pattern:
         val_x_match.append(sub_pattern)
 
-val_y_match_inorganic = []
-for i, label in enumerate(icsd_labels_match_inorganic):
-    val_y_match_inorganic.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
-val_y_match_inorganic = np.array(val_y_match_inorganic)
-
-val_x_match_inorganic = []
-for pattern in icsd_patterns_match_inorganic:
-    for sub_pattern in pattern:
-        val_x_match_inorganic.append(sub_pattern)
-
 val_y_match_correct_spgs = []
 for i, label in enumerate(icsd_labels_match_corrected_labels):
     val_y_match_correct_spgs.extend([spgs.index(label)] * n_patterns_per_crystal_test)
@@ -781,7 +693,6 @@ assert not np.any(np.isnan(val_x_match_correct_spgs_pure))
 assert not np.any(np.isnan(val_y_match_correct_spgs_pure))
 assert len(val_x_all) == len(val_y_all)
 assert len(val_x_match) == len(val_y_match)
-assert len(val_x_match_inorganic) == len(val_y_match_inorganic)
 assert len(val_x_match_correct_spgs) == len(val_y_match_correct_spgs)
 assert len(val_x_match_correct_spgs_pure) == len(val_y_match_correct_spgs_pure)
 
@@ -1000,9 +911,6 @@ print("Sizes of validation sets:")
 print(f"all: {len(icsd_labels_all)} * {n_patterns_per_crystal_test}")
 print(f"match: {len(icsd_labels_match)} * {n_patterns_per_crystal_test}")
 print(
-    f"match_inorganic: {len(icsd_labels_match_inorganic)} * {n_patterns_per_crystal_test}"
-)
-print(
     f"match_correct_spgs: {len(icsd_labels_match_corrected_labels)} * {n_patterns_per_crystal_test}"
 )
 print(
@@ -1034,7 +942,6 @@ if scale_patterns:
 
     val_x_all = sc.transform(val_x_all)
     val_x_match = sc.transform(val_x_match)
-    val_x_match_inorganic = sc.transform(val_x_match_inorganic)
     val_x_match_correct_spgs = sc.transform(val_x_match_correct_spgs)
     val_x_match_correct_spgs_pure = sc.transform(val_x_match_correct_spgs_pure)
 
@@ -1046,7 +953,6 @@ if scale_patterns:
 
 val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match = np.expand_dims(val_x_match, axis=2)
-val_x_match_inorganic = np.expand_dims(val_x_match_inorganic, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 val_x_random = np.expand_dims(val_x_random, axis=2)
@@ -1056,37 +962,6 @@ if generate_randomized_validation_datasets:
     val_x_randomized_ref = np.expand_dims(val_x_randomized_ref, axis=2)
     val_x_randomized_lattice = np.expand_dims(val_x_randomized_lattice, axis=2)
     val_x_randomized_both = np.expand_dims(val_x_randomized_both, axis=2)
-
-"""
-for j in range(0, 100):
-
-    plt.figure()
-    for i in range(j * 4, (j + 1) * 4):
-        plt.plot(
-            angle_range,
-            val_x_random[i, :, 0],
-            label="Random "
-            + str(val_y_random[i])
-            + " "
-            + str(random_comparison_crystals[i].volume),
-        )
-    plt.legend()
-
-    plt.figure()
-    for i in range(j * 4, (j + 1) * 4):
-        plt.plot(
-            angle_range,
-            val_x_match[i * 5, :, 0],
-            label="ICSD "
-            + str(val_y_match[i])
-            + " "
-            + str(icsd_crystals_match[i].volume)
-            + " "
-            + str(icsd_metas_match[i][0]),
-        )
-    plt.legend()
-    plt.show()
-"""
 
 with open(out_base + "random_data.pickle", "wb") as file:
     pickle.dump(
@@ -1135,67 +1010,12 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     statistics_icsd_crystals_match = icsd_sim_statistics.sim_crystals
     statistics_icsd_metas_match = icsd_sim_statistics.sim_metas
 
-    if (
-        True
-    ):  # Check for overlaps (in structure prototypes) between the test and statistics dataset
-        overlap_counter = 0
-
-        statistics_icsd_metas_match_unpacked = [
-            item[0] for item in statistics_icsd_metas_match
-        ]
-        icsd_metas_match_unpacked = [item[0] for item in icsd_metas_match]
-
-        prototypes_match = [
-            icsd_sim_statistics.icsd_structure_types[
-                icsd_sim_statistics.icsd_ids.index(meta)
-            ]
-            for meta in icsd_metas_match_unpacked
+    for i, meta in enumerate(statistics_icsd_metas_match):
+        statistics_icsd_crystals_match[i] = statistics_crystals[
+            statistics_metas.index(meta)
         ]
 
-        for meta in statistics_icsd_metas_match_unpacked:
-
-            prototype_statistics = icsd_sim_statistics.icsd_structure_types[
-                icsd_sim_statistics.icsd_ids.index(meta)
-            ]
-
-            if meta in icsd_metas_match_unpacked or (
-                isinstance(prototype_statistics, str)
-                and prototype_statistics in prototypes_match
-            ):
-                overlap_counter += 1
-
-        print(
-            f"{overlap_counter} of {len(statistics_icsd_metas_match_unpacked)} prototypes overlapped."
-        )
-
-    # Mainly to make the volume constraints correct:
-    conventional_errors_counter = 0
-    conventional_counter = 0
-    print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Calculating conventional structures for statistics dataset...",
-        flush=True,
-    )
-    for i in reversed(range(0, len(statistics_icsd_crystals_match))):
-
-        if statistics_icsd_labels_match[i][0] in spgs:  # speedup
-
-            conventional_counter += 1
-            try:
-                current_struc = statistics_icsd_crystals_match[i]
-                analyzer = SpacegroupAnalyzer(current_struc)
-                conv = analyzer.get_conventional_standard_structure()
-                statistics_icsd_crystals_match[i] = conv
-
-            except Exception as ex:
-
-                print("Error calculating conventional cell of ICSD (statistics):")
-                print(ex)
-                conventional_errors_counter += 1
-
-    print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: {conventional_errors_counter} of {conventional_counter} failed to convert to conventional cell (statistics).",
-        flush=True,
-    )
+    # TODO: Move this stuff to the preparation script, too!
 
     for i in reversed(range(0, len(statistics_icsd_patterns_match))):
 
