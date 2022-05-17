@@ -1064,6 +1064,8 @@ def prepare_training(per_element=False):
     if overlap_counter > 0:
         raise Exception("Something went wrong while splitting train / test.")
 
+    ##########
+
     statistics_crystals = []
     statistics_metas = []
     statistics_variations = []
@@ -1138,7 +1140,8 @@ def prepare_training(per_element=False):
 
     start = time.time()
 
-    for i, crystal in enumerate(statistics_crystals):
+    for i in range(len(statistics_crystals)):
+        crystal = statistics_crystals[i]
 
         if (i % 100) == 0:
             print(f"{i / len(statistics_crystals) * 100} % processed.")
@@ -1161,6 +1164,7 @@ def prepare_training(per_element=False):
             analyzer = SpacegroupAnalyzer(crystal)
             conv = analyzer.get_conventional_standard_structure()
             crystal = conv
+            statistics_crystals[i] = conv
 
             struc = pyxtal()
             struc.from_seed(crystal)
@@ -1187,7 +1191,9 @@ def prepare_training(per_element=False):
                 ):
                     continue
 
-                if NO_wyckoffs > 100 or crystal.volume > 7000:
+                if (
+                    NO_wyckoffs > 100 or crystal.volume > 7000
+                ):  # only consider matching structures for statistics
                     continue
 
                 NO_wyckoffs, elements = get_wyckoff_info(struc)
@@ -1344,13 +1350,18 @@ def prepare_training(per_element=False):
 
     print(f"Took {time.time() - start} s to calculate the statistics.")
 
+    ##########
+
+    # TODO: Pretty much put the stuff from train_script in here and spit out the correct metas
+
     print("Processing test dataset...")
     start = time.time()
 
-    corrected_labels = {}
+    corrected_labels = []
     count_mismatches = 0
 
-    for i, crystal in enumerate(test_crystals):
+    for i in range(len(test_crystals)):
+        crystal = test_crystals[i]
 
         if (i % 100) == 0:
             print(f"{i / len(test_crystals) * 100} % processed.")
@@ -1368,20 +1379,22 @@ def prepare_training(per_element=False):
 
             spg_analyzer = analyzer.get_space_group_number()
 
+            # Get conventional structure
+            analyzer = SpacegroupAnalyzer(crystal)
+            conv = analyzer.get_conventional_standard_structure()
+            test_crystals[i] = conv
+
             if spg_analyzer != spg_number_icsd:
                 count_mismatches += 1
 
-            if test_metas[i][0] in corrected_labels.keys():
-                raise Exception("Key already in use. Something went wrong.")
-            else:
-                corrected_labels[test_metas[i][0]] = spg_analyzer
+            corrected_labels.append(spg_analyzer)
 
         except Exception as ex:
 
             print(f"Error processing structure, skipping in test set:")
             print(ex)
 
-            corrected_labels[test_metas[i][0]] = None
+            corrected_labels.append(None)
 
     print(f"{count_mismatches/len(test_crystals)*100}% mismatches in test set.")
 
@@ -1395,9 +1408,6 @@ def prepare_training(per_element=False):
                 if per_element
                 else counts_per_spg_per_wyckoff,
                 NO_wyckoffs_prob_per_spg,
-                corrected_labels,
-                statistics_metas,
-                test_metas,
                 represented_spgs,
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element
@@ -1405,6 +1415,13 @@ def prepare_training(per_element=False):
                 else NO_repetitions_prob_per_spg,
                 denseness_factors_per_spg,
                 all_data_per_spg,
+                (
+                    statistics_metas,
+                    statistics_crystals,
+                    test_metas,
+                    test_crystals,
+                    corrected_labels,
+                ),
             ),
             file,
         )
