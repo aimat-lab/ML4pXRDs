@@ -1726,6 +1726,8 @@ report = classification_report(
     [spgs[i] for i in prediction_match],
     output_dict=True,
 )
+print("Classification report on match validation dataset:")
+print(report)
 with open(out_base + "classification_report_match.pickle", "wb") as file:
     pickle.dump(report, file)
 
@@ -1734,6 +1736,8 @@ report = classification_report(
     [spgs[i] for i in prediction_random],
     output_dict=True,
 )
+print("Classification report on random dataset:")
+print(report)
 with open(out_base + "classification_report_random.pickle", "wb") as file:
     pickle.dump(report, file)
 
