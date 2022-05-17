@@ -1060,7 +1060,7 @@ def prepare_training(
             and prototype_statistics in prototypes_test
         ):
             overlap_counter += 1
-    print(f"{overlap_counter} of {len(train_metas_splitted)} overlapped.")
+    print(f"{overlap_counter} of {len(train_metas_splitted)} overlapped.", flush=True)
 
     # Check if train_metas_splitted and test_metas_splitted together yield sim.sim_metas
 
@@ -1150,6 +1150,8 @@ def prepare_training(
 
     start = time.time()
 
+    statistics_match_metas = []
+
     for i in range(len(statistics_crystals)):
         crystal = statistics_crystals[i]
 
@@ -1176,42 +1178,28 @@ def prepare_training(
             crystal = conv
             statistics_crystals[i] = conv
 
+            _, NO_wyckoffs, _, _, _, _, _, _ = sim.get_wyckoff_info(
+                statistics_metas[i][0]
+            )
+
+            if np.any(np.isnan(statistics_variations[i][0])):
+                continue
+
+            if (
+                NO_wyckoffs > validation_max_NO_wyckoffs
+                or crystal.volume > validation_max_volume
+            ):  # only consider matching structures for statistics, too
+                continue
+
+            statistics_match_metas.append(statistics_metas[i])
+
             struc = pyxtal()
             struc.from_seed(crystal)
-
             spg_number = (
                 struc.group.number
             )  # use the group as calculated by pyxtal for statistics; this should be fine.
 
-            success = True
-            try:
-
-                _, NO_wyckoffs, _, _, _, _, _, _ = sim.get_wyckoff_info(
-                    statistics_metas[i][0]
-                )
-
-                # if NO_wyckoffs != NO_wyckoffs_meta:
-                #    print(
-                #        "Oh ##########################################################"
-                #    )
-
-                if (
-                    np.any(np.isnan(statistics_variations[i][0]))
-                    or statistics_labels[i][0] not in spgs
-                ):
-                    continue
-
-                if (
-                    NO_wyckoffs > validation_max_NO_wyckoffs
-                    or crystal.volume > validation_max_volume
-                ):  # only consider matching structures for statistics, too
-                    continue
-
-                NO_wyckoffs, elements = get_wyckoff_info(struc)
-
-            except Exception as ex:
-                print(ex)
-                success = False
+            NO_wyckoffs, elements = get_wyckoff_info(struc)
 
             NO_wyckoffs_per_spg[spg_number].append(len(struc.atom_sites))
 
@@ -1219,32 +1207,27 @@ def prepare_training(
                 denseness_factor = get_denseness_factor(crystal)
                 denseness_factors_per_spg[spg_number].append(denseness_factor)
             except Exception as ex:
-
                 print("Exception while calculating denseness factor.")
                 print(ex)
 
-            if success:
+            elements_unique = np.unique(elements)
 
-                elements_unique = np.unique(elements)
+            for el in elements_unique:
+                if "+" in el or "-" in el or "." in el or "," in el:
+                    print("Ohoh")
 
-                for el in elements_unique:
-                    if "+" in el or "-" in el or "." in el or "," in el:
-                        print("Ohoh")
+            NO_unique_elements_per_spg[spg_number].append(len(elements_unique))
 
-                NO_unique_elements_per_spg[spg_number].append(len(elements_unique))
+            for el in elements_unique:
+                reps = np.sum(np.array(elements) == el)
 
-                for el in elements_unique:
-                    reps = np.sum(np.array(elements) == el)
-
-                    if per_element:
-                        if el in NO_repetitions_per_spg_per_element[spg_number].keys():
-                            NO_repetitions_per_spg_per_element[spg_number][el].append(
-                                reps
-                            )
-                        else:
-                            NO_repetitions_per_spg_per_element[spg_number][el] = [reps]
+                if per_element:
+                    if el in NO_repetitions_per_spg_per_element[spg_number].keys():
+                        NO_repetitions_per_spg_per_element[spg_number][el].append(reps)
                     else:
-                        NO_repetitions_per_spg[spg_number].append(reps)
+                        NO_repetitions_per_spg_per_element[spg_number][el] = [reps]
+                else:
+                    NO_repetitions_per_spg[spg_number].append(reps)
 
         except Exception as ex:
 
@@ -1361,7 +1344,7 @@ def prepare_training(
             else:
                 NO_repetitions_prob_per_spg[spg] = []
 
-    print(f"Took {time.time() - start} s to calculate the statistics.")
+    print(f"Took {time.time() - start} s to calculate the statistics.", flush=True)
 
     ##########
 
@@ -1369,7 +1352,7 @@ def prepare_training(
     test_match_metas = []
     test_match_pure_metas = []
 
-    print("Processing test dataset...")
+    print("Processing test dataset...", flush=True)
     start = time.time()
 
     corrected_labels = []
@@ -1445,7 +1428,10 @@ def prepare_training(
     print(f"Size of statistics dataset: {len(statistics_crystals)}")
     print(f"Size of test dataset: {len(test_crystals)}")
     print(f"Size of test_match dataset: {len(test_match_metas)}")
-    print(f"Size of test_match_pure_metas dataset: {len(test_match_pure_metas)}")
+    print(
+        f"Size of test_match_pure_metas dataset: {len(test_match_pure_metas)}",
+        flush=True,
+    )
 
     with open("prepared_training", "wb") as file:
         pickle.dump(
@@ -1465,6 +1451,7 @@ def prepare_training(
                 (
                     statistics_metas,
                     statistics_crystals,
+                    statistics_match_metas,
                     test_metas,
                     test_labels,
                     test_crystals,
