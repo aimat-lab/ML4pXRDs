@@ -965,7 +965,9 @@ def get_wyckoff_info(pyxtal_crystal):
     return len(pyxtal_crystal.atom_sites), elements
 
 
-def prepare_training(per_element=False):
+def prepare_training(
+    per_element=False, validation_max_volume=7000, validation_max_NO_wyckoffs=100
+):
 
     spgs = range(1, 231)
 
@@ -1296,7 +1298,6 @@ def prepare_training(per_element=False):
 
         all_data_per_spg[spg_number].append(all_data_entry)
 
-    represented_spgs = []
     NO_wyckoffs_prob_per_spg = {}
 
     NO_unique_elements_prob_per_spg = {}
@@ -1342,7 +1343,6 @@ def prepare_training(per_element=False):
                     1:
                 ] / np.sum(bincounted_NO_repetitions[1:])
 
-            represented_spgs.append(spg)
         else:
             NO_wyckoffs_prob_per_spg[spg] = []
             NO_unique_elements_prob_per_spg[spg] = []
@@ -1352,7 +1352,9 @@ def prepare_training(per_element=False):
 
     ##########
 
-    # TODO: Pretty much put the stuff from train_script in here and spit out the correct metas
+    # Find the meta ids of the two test datasets:
+    test_match_metas = []
+    test_match_pure_metas = []
 
     print("Processing test dataset...")
     start = time.time()
@@ -1367,6 +1369,25 @@ def prepare_training(per_element=False):
             print(f"{i / len(test_crystals) * 100} % processed.")
 
         try:
+
+            is_pure, NO_wyckoffs, _, _, _, _, _, _ = sim.get_wyckoff_info(
+                test_metas[i][0]
+            )
+
+            if not (
+                (
+                    validation_max_volume is not None
+                    and test_crystals[i].volume > validation_max_volume
+                )
+                or (
+                    validation_max_NO_wyckoffs is not None
+                    and NO_wyckoffs > validation_max_NO_wyckoffs
+                )
+            ) and not np.any(np.isnan(test_variations[i][0])):
+
+                test_match_metas.append(test_metas[i])
+                if is_pure:
+                    test_match_pure_metas.append(test_metas[i])
 
             spg_number_icsd = test_labels[i][0]
 
@@ -1408,26 +1429,29 @@ def prepare_training(per_element=False):
                 if per_element
                 else counts_per_spg_per_wyckoff,
                 NO_wyckoffs_prob_per_spg,
-                represented_spgs,
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element
                 if per_element
                 else NO_repetitions_prob_per_spg,
                 denseness_factors_per_spg,
                 all_data_per_spg,
+                per_element,
                 (
                     statistics_metas,
                     statistics_crystals,
                     test_metas,
+                    test_labels,
                     test_crystals,
                     corrected_labels,
+                    test_match_metas,
+                    test_match_pure_metas,
                 ),
             ),
             file,
         )
 
 
-def load_dataset_info(per_element=False):
+def load_dataset_info(X=50):
 
     with open(
         os.path.join(os.path.dirname(__file__), "prepared_training"),
@@ -1435,32 +1459,34 @@ def load_dataset_info(per_element=False):
     ) as file:
         data = pickle.load(file)
         counter_per_spg_per_element = data[0]
-
         if per_element:
             counts_per_spg_per_element_per_wyckoff = data[1]
         else:
             counts_per_spg_per_wyckoff = data[1]
-
         NO_wyckoffs_prob_per_spg = data[2]
-        corrected_labels = data[3]
-        statistics_metas = data[4]
-        test_metas = data[5]
-        represented_spgs = data[6]
-        NO_unique_elements_prob_per_spg = data[7]
-
+        NO_unique_elements_prob_per_spg = data[3]
         if per_element:
-            NO_repetitions_prob_per_spg_per_element = data[8]
+            NO_repetitions_prob_per_spg_per_element = data[4]
         else:
-            NO_repetitions_prob_per_spg = data[8]
-
-        denseness_factors_per_spg = data[9]
-        all_data_per_spg = data[10]
+            NO_repetitions_prob_per_spg = data[4]
+        denseness_factors_per_spg = data[5]
+        all_data_per_spg = data[6]
+        per_element = data[7]
+        (
+            statistics_metas,
+            statistics_crystals,
+            test_metas,
+            test_labels,
+            test_crystals,
+            corrected_labels,
+            test_match_metas,
+            test_match_pure_metas,
+        ) = data[8]
 
     print("Info about statistics (prepared) dataset:")
     total = 0
-    X = 50
-
     total_below_X = 0
+    represented_spgs = []
     for spg in denseness_factors_per_spg.keys():
         total += len(
             [item for item in denseness_factors_per_spg[spg] if item is not None]
@@ -1470,6 +1496,8 @@ def load_dataset_info(per_element=False):
             < X
         ):
             total_below_X += 1
+        else:
+            represented_spgs.append(spg)
     print(f"{total} total entries.")
     print(f"{total_below_X} spgs below {X} entries.")
 
@@ -1777,7 +1805,6 @@ def load_dataset_info(per_element=False):
         corrected_labels,
         statistics_metas,
         test_metas,
-        represented_spgs,  # spgs represented in the statistics dataset (70%)
         NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element
         if per_element
@@ -1788,6 +1815,17 @@ def load_dataset_info(per_element=False):
         denseness_factors_conditional_sampler_seeds_per_spg,
         lattice_paras_density_per_lattice_type,
         per_element,
+        represented_spgs,
+        (
+            statistics_metas,
+            statistics_crystals,
+            test_metas,
+            test_labels,
+            test_crystals,
+            corrected_labels,
+            test_match_metas,
+            test_match_pure_metas,
+        ),
     )
 
 
