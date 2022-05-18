@@ -988,7 +988,7 @@ def prepare_training(
         )
         sim.output_dir = path_to_patterns
 
-    sim.load(load_patterns_angles_intensities=False)
+    sim.load(load_patterns_angles_intensities=False, stop=2)
 
     ########## Train (statistics) / test splitting:
 
@@ -1456,17 +1456,15 @@ def prepare_training(
                 denseness_factors_per_spg,
                 all_data_per_spg,
                 per_element,
-                (
-                    statistics_metas,
-                    statistics_crystals,
-                    statistics_match_metas,
-                    test_metas,
-                    test_labels,
-                    test_crystals,
-                    corrected_labels,
-                    test_match_metas,
-                    test_match_pure_metas,
-                ),
+                statistics_metas,
+                statistics_crystals,
+                statistics_match_metas,
+                test_metas,
+                test_labels,
+                test_crystals,
+                corrected_labels,
+                test_match_metas,
+                test_match_pure_metas,
             ),
             file,
         )
@@ -1479,6 +1477,7 @@ def load_dataset_info(X=50):
         "rb",
     ) as file:
         data = pickle.load(file)
+        per_element = data[7]
         counter_per_spg_per_element = data[0]
         if per_element:
             counts_per_spg_per_element_per_wyckoff = data[1]
@@ -1492,7 +1491,6 @@ def load_dataset_info(X=50):
             NO_repetitions_prob_per_spg = data[4]
         denseness_factors_per_spg = data[5]
         all_data_per_spg = data[6]
-        per_element = data[7]
         (
             statistics_metas,
             statistics_crystals,
@@ -1974,7 +1972,6 @@ if __name__ == "__main__":
         prepare_training(per_element=False)
 
     if False:
-
         data = load_dataset_info()
         print()
 
