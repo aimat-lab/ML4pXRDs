@@ -993,7 +993,7 @@ def prepare_training(
         )
         sim.output_dir = path_to_patterns
 
-    sim.load(load_patterns_angles_intensities=False, stop=4)  # TODO: Change back
+    sim.load(load_patterns_angles_intensities=False)
 
     ########## Train (statistics) / test splitting:
 
@@ -1869,8 +1869,6 @@ def load_dataset_info(X=50):
         if per_element
         else probability_per_spg_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
-        statistics_metas,
-        test_metas,
         NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element
         if per_element

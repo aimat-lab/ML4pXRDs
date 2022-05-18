@@ -125,7 +125,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
@@ -168,9 +168,6 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     probability_per_spg_per_element,
     probability_per_spg_per_element_per_wyckoff,
     NO_wyckoffs_prob_per_spg,
-    corrected_labels,
-    statistics_metas,
-    test_metas,
     NO_unique_elements_prob_per_spg,
     NO_repetitions_prob_per_spg_per_element,
     denseness_factors_density_per_spg,
@@ -292,24 +289,6 @@ icsd_sim_test.load(
     stop=6 if local else None,
     metas_to_load=metas_to_load_test,
 )  # to not overflow the memory
-
-# Remove all spgs that are not needed
-for i in reversed(range(len(test_metas))):
-
-    if not test_labels[i][0] in spgs:
-
-        if test_metas[i][0] in test_match_metas_flat:
-            del test_match_metas[test_match_metas_flat.index(test_metas[i][0])]
-
-        if test_metas[i][0] in test_match_pure_metas_flat:
-            del test_match_pure_metas[
-                test_match_pure_metas_flat.index(test_metas[i][0])
-            ]
-
-        del test_metas[i]
-        del test_labels[i]
-        del test_crystals[i]
-        del corrected_labels[i]
 
 n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
 
