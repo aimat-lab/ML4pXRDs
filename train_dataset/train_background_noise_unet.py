@@ -27,7 +27,7 @@ print(pattern_x)
 batch_size = 300
 number_of_batches = 500
 number_of_epochs = 600
-NO_workers = 32
+NO_workers = 30
 
 print(
     f"Training with {batch_size * number_of_batches * number_of_epochs} samples in total"
