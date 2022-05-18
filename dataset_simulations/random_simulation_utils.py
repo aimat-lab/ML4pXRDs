@@ -1496,6 +1496,7 @@ def load_dataset_info(X=50):
         (
             statistics_metas,
             statistics_crystals,
+            statistics_match_metas,
             test_metas,
             test_labels,
             test_crystals,
@@ -1840,6 +1841,7 @@ def load_dataset_info(X=50):
         (
             statistics_metas,
             statistics_crystals,
+            statistics_match_metas,
             test_metas,
             test_labels,
             test_crystals,

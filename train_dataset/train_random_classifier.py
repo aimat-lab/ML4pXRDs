@@ -183,6 +183,7 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
     (
         statistics_metas,
         statistics_crystals,
+        statistics_match_metas,
         test_metas,
         test_labels,
         test_crystals,
@@ -335,6 +336,8 @@ icsd_labels_match_corrected_labels_pure = []
 icsd_variations_match_corrected_labels_pure = []
 icsd_crystals_match_corrected_labels_pure = []
 icsd_metas_match_corrected_labels_pure = []
+
+# TODO: Check spgs properly
 
 for i in range(len(icsd_sim_test.sim_crystals)):
 
@@ -1004,56 +1007,30 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         stop=6 if local else None,
     )  # to not overflow the memory if local
 
-    statistics_icsd_patterns_match = icsd_sim_statistics.sim_patterns
-    statistics_icsd_labels_match = icsd_sim_statistics.sim_labels
-    statistics_icsd_variations_match = icsd_sim_statistics.sim_variations
-    statistics_icsd_crystals_match = icsd_sim_statistics.sim_crystals
-    statistics_icsd_metas_match = icsd_sim_statistics.sim_metas
+    statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
 
-    for i, meta in enumerate(statistics_icsd_metas_match):
-        statistics_icsd_crystals_match[i] = statistics_crystals[
-            statistics_metas.index(meta)
-        ]
+    statistics_icsd_patterns_match = []
+    statistics_icsd_labels_match = []
+    statistics_icsd_variations_match = []
+    statistics_icsd_crystals_match = []
+    statistics_icsd_metas_match = []
 
-    # TODO: Move this stuff to the preparation script, too!
-
-    for i in reversed(range(0, len(statistics_icsd_patterns_match))):
-
+    for i in range(len(icsd_sim_statistics.sim_crystals)):
         if (
-            np.any(np.isnan(statistics_icsd_variations_match[i][0]))
-            or statistics_icsd_labels_match[i][0] not in spgs
+            icsd_sim_statistics.sim_metas[i][0] in statistics_match_metas
+            and icsd_sim_statistics.sim_labels[i][0] in spgs
         ):
-            del statistics_icsd_patterns_match[i]
-            del statistics_icsd_labels_match[i]
-            del statistics_icsd_variations_match[i]
-            del statistics_icsd_crystals_match[i]
-            del statistics_icsd_metas_match[i]
-
-    for i in reversed(range(0, len(statistics_icsd_patterns_match))):
-        if validation_max_NO_wyckoffs is not None:
-            (
-                is_pure,
-                NO_wyckoffs,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-            ) = icsd_sim_statistics.get_wyckoff_info(statistics_icsd_metas_match[i][0])
-
-        if (
-            validation_max_volume is not None
-            and statistics_icsd_crystals_match[i].volume > validation_max_volume
-        ) or (
-            validation_max_NO_wyckoffs is not None
-            and NO_wyckoffs > validation_max_NO_wyckoffs
-        ):
-            del statistics_icsd_patterns_match[i]
-            del statistics_icsd_labels_match[i]
-            del statistics_icsd_variations_match[i]
-            del statistics_icsd_crystals_match[i]
-            del statistics_icsd_metas_match[i]
+            statistics_icsd_patterns_match.append(icsd_sim_statistics.sim_patterns[i])
+            statistics_icsd_labels_match.append(icsd_sim_statistics.sim_labels[i])
+            statistics_icsd_variations_match.append(
+                icsd_sim_statistics.sim_variations[i]
+            )
+            statistics_icsd_crystals_match.append(
+                statistics_crystals[
+                    statistics_match_metas.index(icsd_sim_statistics.sim_metas[i][0])
+                ]
+            )  # use the converted structure (conventional cell)
+            statistics_icsd_metas_match.append(icsd_sim_statistics.sim_metas[i])
 
     n_patterns_per_crystal_statistics = len(icsd_sim_statistics.sim_patterns[0])
 
