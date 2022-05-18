@@ -1896,6 +1896,80 @@ def load_dataset_info(X=50):
     )
 
 
+def convert_to_new_format(input_file="prepared_training_old_format"):
+
+    with open(
+        input_file,
+        "rb",
+    ) as file:
+        data = pickle.load(file)
+        per_element = data[7]
+        counter_per_spg_per_element = data[0]
+        if per_element:
+            counts_per_spg_per_element_per_wyckoff = data[1]
+        else:
+            counts_per_spg_per_wyckoff = data[1]
+        NO_wyckoffs_prob_per_spg = data[2]
+        NO_unique_elements_prob_per_spg = data[3]
+        if per_element:
+            NO_repetitions_prob_per_spg_per_element = data[4]
+        else:
+            NO_repetitions_prob_per_spg = data[4]
+        denseness_factors_per_spg = data[5]
+        all_data_per_spg = data[6]
+        (
+            statistics_metas,
+            statistics_crystals,
+            statistics_match_metas,
+            test_metas,
+            test_labels,
+            test_crystals,
+            corrected_labels,
+            test_match_metas,
+            test_match_pure_metas,
+        ) = data[8]
+
+    os.system("mkdir -p prepared_training")
+
+    with open("prepared_training/meta", "wb") as file:
+        pickle.dump(
+            (
+                counter_per_spg_per_element,
+                counts_per_spg_per_element_per_wyckoff
+                if per_element
+                else counts_per_spg_per_wyckoff,
+                NO_wyckoffs_prob_per_spg,
+                NO_unique_elements_prob_per_spg,
+                NO_repetitions_prob_per_spg_per_element
+                if per_element
+                else NO_repetitions_prob_per_spg,
+                denseness_factors_per_spg,
+                per_element,
+                statistics_metas,
+                statistics_match_metas,
+                test_metas,
+                test_labels,
+                corrected_labels,
+                test_match_metas,
+                test_match_pure_metas,
+            ),
+            file,
+        )
+
+    # Split array in parts to lower memory requirements:
+
+    for i in range(0, int(len(test_crystals) / 1000) + 1):
+        with open(f"prepared_training/test_crystals_{i}", "wb") as file:
+            pickle.dump(test_crystals[i * 1000 : (i + 1) * 1000], file)
+
+    for i in range(0, int(len(statistics_crystals) / 1000) + 1):
+        with open(f"prepared_training/statistics_crystals_{i}", "wb") as file:
+            pickle.dump(statistics_crystals[i * 1000 : (i + 1) * 1000], file)
+
+    with open("prepared_training/all_data_per_spg", "wb") as file:
+        pickle.dump(all_data_per_spg, file)
+
+
 if __name__ == "__main__":
 
     if False:
@@ -2017,9 +2091,13 @@ if __name__ == "__main__":
     if False:
         prepare_training(per_element=False)
 
-    if True:
+    if False:
         data = load_dataset_info()
         print()
+
+    if True:
+
+        convert_to_new_format()
 
     if False:
         data = load_dataset_info()
