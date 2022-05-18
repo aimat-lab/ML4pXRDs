@@ -74,14 +74,14 @@ NO_workers = 127 + 127 + 8  # for int-nano cluster
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 
-queue_size = 120  # if use_retention_of_patterns==True, then this is not used
-queue_size_tf = 60
+queue_size = 100  # if use_retention_of_patterns==True, then this is not used
+queue_size_tf = 50
 
 # NO_random_batches = 20
 # NO_random_swipes = 1000  # make this smaller for the all-spgs run
 # NO_random_swipes = 300 # 30-spg
 
-NO_random_samples_per_spg = 200
+NO_random_samples_per_spg = 100
 
 generation_max_volume = 7000
 generation_max_NO_wyckoffs = 100
