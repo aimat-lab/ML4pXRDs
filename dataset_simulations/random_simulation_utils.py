@@ -21,6 +21,7 @@ from dataset_simulations.core.structure_generation import generate_pyxtal_object
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.model_selection import train_test_split
 import math
+from glob import glob
 
 import statsmodels.api as sm
 from dataset_simulations.core.structure_generation import sample_denseness_factor
@@ -969,6 +970,10 @@ def prepare_training(
     per_element=False, validation_max_volume=7000, validation_max_NO_wyckoffs=100
 ):
 
+    if os.path.exists("prepared_training"):
+        print("Please remove existing prepared_training folder first.")
+        exit()
+
     spgs = range(1, 231)
 
     jobid = os.getenv("SLURM_JOB_ID")
@@ -988,7 +993,7 @@ def prepare_training(
         )
         sim.output_dir = path_to_patterns
 
-    sim.load(load_patterns_angles_intensities=False, stop=2)
+    sim.load(load_patterns_angles_intensities=False, stop=4)  # TODO: Change back
 
     ########## Train (statistics) / test splitting:
 
@@ -1441,7 +1446,9 @@ def prepare_training(
     print(f"Nan-counter test dataset: {nan_counter_test}")
     print(f"Nan-counter statistics dataset: {nan_counter_statistics}")
 
-    with open("prepared_training", "wb") as file:
+    os.system("mkdir -p prepared_training")
+
+    with open("prepared_training/meta", "wb") as file:
         pickle.dump(
             (
                 counter_per_spg_per_element,
@@ -1454,14 +1461,11 @@ def prepare_training(
                 if per_element
                 else NO_repetitions_prob_per_spg,
                 denseness_factors_per_spg,
-                all_data_per_spg,
                 per_element,
                 statistics_metas,
-                statistics_crystals,
                 statistics_match_metas,
                 test_metas,
                 test_labels,
-                test_crystals,
                 corrected_labels,
                 test_match_metas,
                 test_match_pure_metas,
@@ -1469,15 +1473,29 @@ def prepare_training(
             file,
         )
 
+    # Split array in parts to lower memory requirements:
+
+    for i in range(0, int(len(test_crystals) / 1000) + 1):
+        with open(f"prepared_training/test_crystals_{i}", "wb") as file:
+            pickle.dump(test_crystals[i * 1000 : (i + 1) * 1000], file)
+
+    for i in range(0, int(len(statistics_crystals) / 1000) + 1):
+        with open(f"prepared_training/statistics_crystals_{i}", "wb") as file:
+            pickle.dump(statistics_crystals[i * 1000 : (i + 1) * 1000], file)
+
+    with open("prepared_training/all_data_per_spg", "wb") as file:
+        pickle.dump(all_data_per_spg, file)
+
 
 def load_dataset_info(X=50):
 
     with open(
-        os.path.join(os.path.dirname(__file__), "prepared_training"),
-        "rb",
+        os.path.join(os.path.dirname(__file__), "prepared_training/meta"), "rb"
     ) as file:
         data = pickle.load(file)
-        per_element = data[7]
+
+        per_element = data[6]
+
         counter_per_spg_per_element = data[0]
         if per_element:
             counts_per_spg_per_element_per_wyckoff = data[1]
@@ -1485,23 +1503,51 @@ def load_dataset_info(X=50):
             counts_per_spg_per_wyckoff = data[1]
         NO_wyckoffs_prob_per_spg = data[2]
         NO_unique_elements_prob_per_spg = data[3]
+
         if per_element:
             NO_repetitions_prob_per_spg_per_element = data[4]
         else:
             NO_repetitions_prob_per_spg = data[4]
         denseness_factors_per_spg = data[5]
-        all_data_per_spg = data[6]
-        (
-            statistics_metas,
-            statistics_crystals,
-            statistics_match_metas,
-            test_metas,
-            test_labels,
-            test_crystals,
-            corrected_labels,
-            test_match_metas,
-            test_match_pure_metas,
-        ) = data[8]
+        statistics_metas = data[7]
+        statistics_match_metas = data[8]
+        test_metas = data[9]
+        test_labels = data[10]
+        corrected_labels = data[11]
+        test_match_metas = data[12]
+        test_match_pure_metas = data[13]
+
+    # Split array in parts to lower memory requirements:
+    test_crystals_files = sorted(
+        glob(
+            os.path.join(os.path.dirname(__file__), "prepared_training/test_crystals_*")
+        ),
+        key=lambda x: int(os.path.basename(x).replace("test_crystals_", "")),
+    )
+    statistics_crystals_files = sorted(
+        glob(
+            os.path.join(
+                os.path.dirname(__file__), "prepared_training/statistics_crystals_*"
+            )
+        ),
+        key=lambda x: int(os.path.basename(x).replace("statistics_crystals_", "")),
+    )
+
+    test_crystals = []
+    for file in test_crystals_files:
+        with open(file, "rb") as file:
+            test_crystals.extend(pickle.load(file))
+
+    statistics_crystals = []
+    for file in statistics_crystals_files:
+        with open(file, "rb") as file:
+            statistics_crystals.extend(pickle.load(file))
+
+    with open(
+        os.path.join(os.path.dirname(__file__), "prepared_training/all_data_per_spg"),
+        "rb",
+    ) as file:
+        all_data_per_spg = pickle.load(file)
 
     print("Info about statistics (prepared) dataset:")
     total = 0
@@ -1968,10 +2014,10 @@ if __name__ == "__main__":
                 #    print("Ohoh")
                 #    exit()
 
-    if True:
+    if False:
         prepare_training(per_element=False)
 
-    if False:
+    if True:
         data = load_dataset_info()
         print()
 
