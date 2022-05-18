@@ -337,18 +337,17 @@ icsd_variations_match_corrected_labels_pure = []
 icsd_crystals_match_corrected_labels_pure = []
 icsd_metas_match_corrected_labels_pure = []
 
-# TODO: Check spgs properly
-
 for i in range(len(icsd_sim_test.sim_crystals)):
 
     if icsd_sim_test.sim_metas[i][0] in test_metas_flat:
-        icsd_patterns_all.append(icsd_sim_test.sim_patterns[i])
-        icsd_labels_all.append(icsd_sim_test.sim_labels[i])
-        icsd_variations_all.append(icsd_sim_test.sim_variations[i])
-        icsd_crystals_all.append(
-            test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
-        )  # use the converted structure (conventional cell)
-        icsd_metas_all.append(icsd_sim_test.sim_metas[i])
+        if icsd_sim_test.sim_labels[i][0] in spgs:
+            icsd_patterns_all.append(icsd_sim_test.sim_patterns[i])
+            icsd_labels_all.append(icsd_sim_test.sim_labels[i])
+            icsd_variations_all.append(icsd_sim_test.sim_variations[i])
+            icsd_crystals_all.append(
+                test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
+            )  # use the converted structure (conventional cell)
+            icsd_metas_all.append(icsd_sim_test.sim_metas[i])
     else:
         raise Exception("There is a mismatch somewhere.")
 
