@@ -1149,6 +1149,7 @@ def prepare_training(
     # Analyse the statistics:
 
     start = time.time()
+    nan_counter_statistics = 0
 
     statistics_match_metas = []
 
@@ -1183,6 +1184,7 @@ def prepare_training(
             )
 
             if np.any(np.isnan(statistics_variations[i][0])):
+                nan_counter_statistics += 1
                 continue
 
             if (
@@ -1358,6 +1360,8 @@ def prepare_training(
     corrected_labels = []
     count_mismatches = 0
 
+    nan_counter_test = 0
+
     for i in reversed(range(len(test_crystals))):
         crystal = test_crystals[i]
 
@@ -1396,6 +1400,7 @@ def prepare_training(
                 del test_metas[i]
                 del test_variations[i]
                 del test_labels[i]
+                nan_counter_test += 1
                 continue
 
             spg_number_icsd = test_labels[i][0]
@@ -1426,12 +1431,15 @@ def prepare_training(
     print(f"Took {time.time() - start} s to process the test dataset.")
 
     print(f"Size of statistics dataset: {len(statistics_crystals)}")
+    print(f"Size of statistics_match dataset: {len(statistics_match_metas)}")
     print(f"Size of test dataset: {len(test_crystals)}")
     print(f"Size of test_match dataset: {len(test_match_metas)}")
     print(
         f"Size of test_match_pure_metas dataset: {len(test_match_pure_metas)}",
         flush=True,
     )
+    print(f"Nan-counter test dataset: {nan_counter_test}")
+    print(f"Nan-counter statistics dataset: {nan_counter_statistics}")
 
     with open("prepared_training", "wb") as file:
         pickle.dump(
