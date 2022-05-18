@@ -125,7 +125,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity = 1
@@ -375,8 +375,6 @@ for i in range(len(icsd_sim_test.sim_crystals)):
                 test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
             )  # use the converted structure (conventional cell)
             icsd_metas_match_corrected_labels_pure.append(icsd_sim_test.sim_metas[i])
-
-assert len(icsd_labels_match_corrected_labels) == len(icsd_labels_all)
 
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)
@@ -977,15 +975,15 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         )
         icsd_sim_statistics.output_dir = path_to_patterns
 
+    statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
+
     icsd_sim_statistics.load(
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
         else load_only_N_patterns_each_train,
-        metas_to_load=[item[0] for item in statistics_metas],
+        metas_to_load=statistics_match_metas_flat,
         stop=6 if local else None,
     )  # to not overflow the memory if local
-
-    statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
 
     statistics_icsd_patterns_match = []
     statistics_icsd_labels_match = []
@@ -995,7 +993,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     for i in range(len(icsd_sim_statistics.sim_crystals)):
         if (
-            icsd_sim_statistics.sim_metas[i][0] in statistics_match_metas
+            icsd_sim_statistics.sim_metas[i][0] in statistics_match_metas_flat
             and icsd_sim_statistics.sim_labels[i][0] in spgs
         ):
             statistics_icsd_patterns_match.append(icsd_sim_statistics.sim_patterns[i])
@@ -1005,7 +1003,9 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
             )
             statistics_icsd_crystals_match.append(
                 statistics_crystals[
-                    statistics_match_metas.index(icsd_sim_statistics.sim_metas[i][0])
+                    statistics_match_metas_flat.index(
+                        icsd_sim_statistics.sim_metas[i][0]
+                    )
                 ]
             )  # use the converted structure (conventional cell)
             statistics_icsd_metas_match.append(icsd_sim_statistics.sim_metas[i])
@@ -1127,9 +1127,6 @@ class CustomCallback(keras.callbacks.Callback):
                 scores_match = self.model.evaluate(
                     x=val_x_match, y=val_y_match, verbose=0
                 )
-                scores_match_inorganic = self.model.evaluate(
-                    x=val_x_match_inorganic, y=val_y_match_inorganic, verbose=0
-                )
                 scores_match_correct_spgs = self.model.evaluate(
                     x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
                 )
@@ -1167,9 +1164,6 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar("loss all", data=scores_all[0], step=epoch)
                 tf.summary.scalar("loss match", data=scores_match[0], step=epoch)
                 tf.summary.scalar(
-                    "loss match_inorganic", data=scores_match_inorganic[0], step=epoch
-                )
-                tf.summary.scalar(
                     "loss match_correct_spgs",
                     data=scores_match_correct_spgs[0],
                     step=epoch,
@@ -1206,11 +1200,6 @@ class CustomCallback(keras.callbacks.Callback):
 
                 tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
                 tf.summary.scalar("accuracy match", data=scores_match[1], step=epoch)
-                tf.summary.scalar(
-                    "accuracy match_inorganic",
-                    data=scores_match_inorganic[1],
-                    step=epoch,
-                )
                 tf.summary.scalar(
                     "accuracy match_correct_spgs",
                     data=scores_match_correct_spgs[1],
@@ -1254,11 +1243,6 @@ class CustomCallback(keras.callbacks.Callback):
 
                 tf.summary.scalar(
                     "accuracy gap", data=scores_random[1] - scores_match[1], step=epoch
-                )
-                tf.summary.scalar(
-                    "accuracy gap inorganic",
-                    data=scores_random[1] - scores_match_inorganic[1],
-                    step=epoch,
                 )
 
                 tf.summary.scalar("test time", data=time.time() - start, step=epoch)
