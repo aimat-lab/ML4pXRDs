@@ -1509,11 +1509,12 @@ def load_dataset_info(X=50):
         else:
             NO_repetitions_prob_per_spg = data[4]
         denseness_factors_per_spg = data[5]
+
         statistics_metas = data[7]
         statistics_match_metas = data[8]
         test_metas = data[9]
         test_labels = data[10]
-        corrected_labels = data[11]
+        corrected_labels = list(reversed(data[11]))
         test_match_metas = data[12]
         test_match_pure_metas = data[13]
 
@@ -1868,7 +1869,6 @@ def load_dataset_info(X=50):
         if per_element
         else probability_per_spg_per_wyckoff,
         NO_wyckoffs_prob_per_spg,
-        corrected_labels,
         statistics_metas,
         test_metas,
         NO_unique_elements_prob_per_spg,
@@ -2091,11 +2091,11 @@ if __name__ == "__main__":
     if False:
         prepare_training(per_element=False)
 
-    if False:
+    if True:
         data = load_dataset_info()
         print()
 
-    if True:
+    if False:
 
         convert_to_new_format()
 
