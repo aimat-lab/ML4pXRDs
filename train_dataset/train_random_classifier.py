@@ -165,6 +165,11 @@ start_angle, end_angle, N = 5, 90, 8501
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start loading dataset info.",
+    flush=True,
+)
+
 (
     probability_per_spg_per_element,
     probability_per_spg_per_element_per_wyckoff,
@@ -190,6 +195,11 @@ print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
         test_match_pure_metas,
     ),
 ) = load_dataset_info()
+
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading dataset info.",
+    flush=True,
+)
 
 if scale_patterns and use_icsd_structures_directly:
     raise Exception(
@@ -285,11 +295,21 @@ for i, meta in enumerate(test_metas_flat):
     if test_labels[i][0] in spgs or corrected_labels[i] in spgs:
         metas_to_load_test.append(meta)
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start loading patterns for test dataset.",
+    flush=True,
+)
+
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
     stop=6 if local else None,
     metas_to_load=metas_to_load_test,
 )  # to not overflow the memory
+
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading patterns for test dataset.",
+    flush=True,
+)
 
 n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
 
@@ -413,6 +433,11 @@ def get_xy_pattern_wrapper(
 
 ####### Generate match (corrected spgs) validation set with randomized coordinates and reference:
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates).",
+    flush=True,
+)
+
 if generate_randomized_validation_datasets:
 
     randomized_coords_crystals, reference_crystals, labels = randomize(
@@ -481,6 +506,11 @@ if generate_randomized_validation_datasets:
 
 ####### Generate match (corrected spgs) validation set with randomized lattice:
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized lattice).",
+    flush=True,
+)
+
 if generate_randomized_validation_datasets:
 
     randomized_lattice_crystals, _, labels = randomize(
@@ -527,6 +557,11 @@ if generate_randomized_validation_datasets:
 
 ####### Generate match (corrected spgs) validation set with randomized lattice and coords:
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates and lattice).",
+    flush=True,
+)
+
 if generate_randomized_validation_datasets:
 
     randomized_both_crystals, _, labels = randomize(
@@ -569,9 +604,17 @@ if generate_randomized_validation_datasets:
     for i in range(0, len(labels)):
         randomized_both_labels.append(spgs.index(labels[i]))
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done generating randomized datasets.",
+    flush=True,
+)
+
 ##############
 
-start_construct_np_arrays = time.time()
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start constructing numpy arrays.",
+    flush=True,
+)
 
 val_y_all = []
 for i, label in enumerate(icsd_labels_all):
@@ -658,6 +701,10 @@ if generate_randomized_validation_datasets:
     for pattern in randomized_both_patterns:
         val_x_randomized_both.append(pattern)
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done constructing numpy arrays.",
+    flush=True,
+)
 
 print("Numbers in validation set (that matches sim parameters):")
 for i in range(0, len(spgs)):
@@ -681,9 +728,6 @@ if generate_randomized_validation_datasets:
     assert len(val_x_randomized_ref) == len(val_y_randomized_ref)
     assert len(val_x_randomized_lattice) == len(val_y_randomized_lattice)
     assert len(val_x_randomized_both) == len(val_y_randomized_both)
-
-
-print(f"{time.time()-start_construct_np_arrays}s to construct np arrays from datasets.")
 
 queue = Queue(
     maxsize=queue_size
@@ -865,7 +909,6 @@ print(
     flush=True,
 )
 
-
 scheduler_fn = lambda input: batch_generator_with_additional.remote(
     spgs,
     1,
@@ -881,9 +924,8 @@ results = map_to_remote(
     NO_workers=NO_workers,
 )
 
-
 print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Finished generating validation random structures.",
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done generating validation random structures.",
     flush=True,
 )
 
@@ -978,6 +1020,11 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
 
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start loading patterns for statistics / training.",
+        flush=True,
+    )
+
     icsd_sim_statistics.load(
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
@@ -985,6 +1032,11 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         metas_to_load=statistics_match_metas_flat,
         stop=6 if local else None,
     )  # to not overflow the memory if local
+
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading patterns for statistics / training.",
+        flush=True,
+    )
 
     statistics_icsd_patterns_match = []
     statistics_icsd_labels_match = []
@@ -1389,6 +1441,11 @@ if use_reduce_lr_on_plateau:
         monitor="loss", verbose=1, factor=0.5
     )
 
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start training.",
+    flush=True,
+)
+
 if not use_icsd_structures_directly:
     model.fit(
         x=sequence,
@@ -1417,6 +1474,11 @@ else:
         max_queue_size=queue_size_tf,
         use_multiprocessing=False,
     )
+
+print(
+    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Finished training.",
+    flush=True,
+)
 
 model.save(out_base + "final")
 
