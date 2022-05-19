@@ -132,7 +132,8 @@ local = True
 if local:
     NO_workers = 8
     verbosity = 1
-    NO_random_samples_per_spg = 20
+    NO_random_samples_per_spg = 5
+    randomization_step = 20
 
 git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
@@ -304,7 +305,7 @@ print(
 
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
-    stop=6 if local else None,
+    stop=2 if local else None,
     metas_to_load=metas_to_load_test,
 )  # to not overflow the memory
 
@@ -1032,7 +1033,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         if use_statistics_dataset_as_validation
         else load_only_N_patterns_each_train,
         metas_to_load=statistics_match_metas_flat,
-        stop=6 if local else None,
+        stop=2 if local else None,
     )  # to not overflow the memory if local
 
     print(
