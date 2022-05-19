@@ -101,6 +101,7 @@ use_icsd_structures_directly = False  # This overwrites most of the previous set
 
 use_statistics_dataset_as_validation = True
 generate_randomized_validation_datasets = True
+randomization_step = 10  # Only use every n'th sample for the randomization process
 
 use_dropout = False
 
@@ -415,7 +416,7 @@ def get_xy_pattern_wrapper(
 if generate_randomized_validation_datasets:
 
     randomized_coords_crystals, reference_crystals, labels = randomize(
-        icsd_crystals_match_corrected_labels,
+        icsd_crystals_match_corrected_labels[::randomization_step],
         randomize_coordinates=True,
         randomize_lattice=False,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
@@ -427,7 +428,7 @@ if generate_randomized_validation_datasets:
         label = labels[i]
 
         if label is not None:
-            if label != icsd_labels_match_corrected_labels[i]:
+            if label != icsd_labels_match_corrected_labels[::randomization_step][i]:
                 errors_counter += 1
 
                 del labels[i]
@@ -483,7 +484,7 @@ if generate_randomized_validation_datasets:
 if generate_randomized_validation_datasets:
 
     randomized_lattice_crystals, _, labels = randomize(
-        icsd_crystals_match_corrected_labels,
+        icsd_crystals_match_corrected_labels[::randomization_step],
         randomize_coordinates=False,
         randomize_lattice=True,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
@@ -495,7 +496,7 @@ if generate_randomized_validation_datasets:
         label = labels[i]
 
         if label is not None:
-            if label != icsd_labels_match_corrected_labels[i]:
+            if label != icsd_labels_match_corrected_labels[::randomization_step][i]:
                 errors_counter += 1
 
                 del labels[i]
@@ -529,7 +530,7 @@ if generate_randomized_validation_datasets:
 if generate_randomized_validation_datasets:
 
     randomized_both_crystals, _, labels = randomize(
-        icsd_crystals_match_corrected_labels,
+        icsd_crystals_match_corrected_labels[::randomization_step],
         randomize_coordinates=True,
         randomize_lattice=True,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
@@ -541,7 +542,7 @@ if generate_randomized_validation_datasets:
         label = labels[i]
 
         if label is not None:
-            if label != icsd_labels_match_corrected_labels[i]:
+            if label != icsd_labels_match_corrected_labels[::randomization_step][i]:
                 errors_counter += 1
 
                 del labels[i]
