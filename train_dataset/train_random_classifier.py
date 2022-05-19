@@ -54,8 +54,10 @@ run_analysis_after_run = True
 analysis_per_spg = False
 
 test_every_X_epochs = 1
-batches_per_epoch = 150
-NO_epochs = 600
+# batches_per_epoch = 150
+batches_per_epoch = 15  # TODO: Change back
+# NO_epochs = 600
+NO_epochs = 2  # TODO: Change back
 
 structures_per_spg = 2  # for all spgs
 # structures_per_spg = 5
@@ -126,7 +128,7 @@ retention_rate = 0.7
 
 verbosity = 2
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity = 1
