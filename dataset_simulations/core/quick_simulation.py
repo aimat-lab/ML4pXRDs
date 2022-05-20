@@ -563,6 +563,7 @@ def get_random_xy_patterns(
     denseness_factors_conditional_sampler_seeds_per_spg=None,
     lattice_paras_density_per_lattice_type=None,
     per_element=False,
+    verbosity=2,
 ):
 
     result_patterns_y = []
@@ -611,6 +612,7 @@ def get_random_xy_patterns(
             denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
             lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
             per_element=per_element,
+            verbosity=verbosity,
         )
 
         if do_print:

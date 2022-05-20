@@ -185,6 +185,7 @@ def generate_structure(
     denseness_factors_conditional_sampler_seeds_per_spg=None,
     lattice_paras_density_per_lattice_type=None,
     per_element=False,
+    verbosity=2,
 ):
 
     if use_icsd_statistics and (
@@ -306,6 +307,7 @@ def generate_structure(
                 denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                 lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                 per_element=per_element,
+                verbosity=verbosity,
             )
 
         number_of_atoms_per_site = np.zeros(len(names))
@@ -601,9 +603,10 @@ def generate_structure(
             or all_data_per_spg is not None
         ):
             if len(chosen_numbers) > max_NO_elements:
-                print(
-                    f"Too many total number of set wyckoff sites for spg {group_object.number}, regenerating..."
-                )
+                if verbosity != 2:
+                    print(
+                        f"Too many total number of set wyckoff sites for spg {group_object.number}, regenerating..."
+                    )
                 continue  # but do not increase tries_counter, this is totally fine and expected!
 
         if verbose:
@@ -676,20 +679,21 @@ def generate_structure(
                 if not volume_ok:
                     tries_counter += 1
 
-                    if (
-                        not use_element_repetitions_instead_of_NO_wyckoffs
-                        and kde_per_spg is None
-                        and all_data_per_spg is None
-                    ):
-                        print(
-                            f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
-                        )
-                    elif all_data_per_spg is None:
-                        print(
-                            f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
-                        )
-                    else:
-                        print(f"Volume too high, regenerating.")
+                    if verbosity != 2:
+                        if (
+                            not use_element_repetitions_instead_of_NO_wyckoffs
+                            and kde_per_spg is None
+                            and all_data_per_spg is None
+                        ):
+                            print(
+                                f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
+                            )
+                        elif all_data_per_spg is None:
+                            print(
+                                f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
+                            )
+                        else:
+                            print(f"Volume too high, regenerating.")
 
                     continue
 
@@ -789,20 +793,21 @@ def generate_structure(
             if not my_crystal:
                 tries_counter += 1
 
-                if (
-                    not use_element_repetitions_instead_of_NO_wyckoffs
-                    and kde_per_spg is None
-                    and all_data_per_spg is None
-                ):
-                    print(
-                        f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
-                    )
-                elif all_data_per_spg is None:
-                    print(
-                        f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
-                    )
-                else:
-                    print(f"Volume too high, regenerating.")
+                if verbosity != 2:
+                    if (
+                        not use_element_repetitions_instead_of_NO_wyckoffs
+                        and kde_per_spg is None
+                        and all_data_per_spg is None
+                    ):
+                        print(
+                            f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
+                        )
+                    elif all_data_per_spg is None:
+                        print(
+                            f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
+                        )
+                    else:
+                        print(f"Volume too high, regenerating.")
 
                 continue
 
@@ -826,14 +831,15 @@ def generate_structure(
                 checked_spg = analyzer.get_space_group_number()
                 if checked_spg != group_object.number:
 
-                    if not use_element_repetitions_instead_of_NO_wyckoffs:
-                        print(
-                            f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; NO_elements: {NO_elements}"
-                        )
-                    else:
-                        print(
-                            f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; Number of unique elements: {NO_unique_elements}"
-                        )
+                    if verbosity != 2:
+                        if not use_element_repetitions_instead_of_NO_wyckoffs:
+                            print(
+                                f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; NO_elements: {NO_elements}"
+                            )
+                        else:
+                            print(
+                                f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; Number of unique elements: {NO_unique_elements}"
+                            )
 
                     tries_counter += 1
 
@@ -895,6 +901,7 @@ def generate_structures(
     denseness_factors_conditional_sampler_seeds_per_spg=None,
     lattice_paras_density_per_lattice_type=None,
     per_element=False,
+    verbosity=2,
 ):
 
     if group_object is None:
@@ -947,6 +954,7 @@ def generate_structures(
             denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
             lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
             per_element=per_element,
+            verbosity=verbosity,
         )
         for i in range(0, N)
     ]

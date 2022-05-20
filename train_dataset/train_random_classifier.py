@@ -124,12 +124,14 @@ scale_patterns = False
 use_retention_of_patterns = False
 retention_rate = 0.7
 
-verbosity = 2
+verbosity_tf = 2
+verbosity_generator = 2
 
 local = False
 if local:
     NO_workers = 8
-    verbosity = 1
+    verbosity_tf = 1
+    verbosity_generator = 1
     NO_random_samples_per_spg = 5
     randomization_step = 20
 
@@ -797,6 +799,7 @@ def batch_generator_with_additional(
         denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
         per_element=per_element,
+        verbosity=1,  # Show everything here
     )
 
     # Set the label to the right index:
@@ -866,6 +869,7 @@ def batch_generator_queue(
                 denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                 lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                 per_element=per_element,
+                verbosity=verbosity_generator,
             )
 
             patterns, labels = shuffle(patterns, labels)
@@ -1455,7 +1459,7 @@ if not use_icsd_structures_directly:
         callbacks=[tb_callback, CustomCallback()]
         if not use_reduce_lr_on_plateau
         else [tb_callback, CustomCallback(), lr_callback],
-        verbose=verbosity,
+        verbose=verbosity_tf,
         workers=1,
         max_queue_size=queue_size_tf,
         use_multiprocessing=False,
@@ -1470,7 +1474,7 @@ else:
         callbacks=[tb_callback, CustomCallback()]
         if not use_reduce_lr_on_plateau
         else [tb_callback, CustomCallback(), lr_callback],
-        verbose=verbosity,
+        verbose=verbosity_tf,
         workers=1,
         max_queue_size=queue_size_tf,
         use_multiprocessing=False,
