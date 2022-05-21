@@ -57,12 +57,12 @@ test_every_X_epochs = 1
 batches_per_epoch = 150
 NO_epochs = 600
 
-structures_per_spg = 2  # for all spgs
+structures_per_spg = 3  # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
 # structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
-NO_corn_sizes = 3
+NO_corn_sizes = 2
 # structures_per_spg = 1  # 30-spg
 # NO_corn_sizes = 3 # 30-spg
 
@@ -99,8 +99,8 @@ use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
 
-use_statistics_dataset_as_validation = True
-generate_randomized_validation_datasets = True
+use_statistics_dataset_as_validation = False
+generate_randomized_validation_datasets = False
 randomization_step = 10  # Only use every n'th sample for the randomization process
 
 use_dropout = False
