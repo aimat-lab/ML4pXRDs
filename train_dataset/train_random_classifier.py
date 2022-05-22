@@ -57,12 +57,14 @@ test_every_X_epochs = 1
 batches_per_epoch = 150
 NO_epochs = 600
 
-structures_per_spg = 3  # for all spgs
+# structures_per_spg = 3  # for all spgs
+structures_per_spg = 1  # TODO: Change back for CNN
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
 # structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
-NO_corn_sizes = 2
+NO_corn_sizes = 1  # TODO: Change back for CNN
+# NO_corn_sizes = 2
 # structures_per_spg = 1  # 30-spg
 # NO_corn_sizes = 3 # 30-spg
 
