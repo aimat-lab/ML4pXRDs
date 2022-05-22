@@ -36,7 +36,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 
-tag = "all-spgs-random-original-new-split"
+tag = "all-spgs-random-vit"
 description = ""
 
 if len(sys.argv) > 1:
@@ -1428,18 +1428,18 @@ if use_retention_of_patterns:
 
 # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
-# model = build_model_transformer_vit(
-#    None,
-#    N,
-#    len(spgs),
-#    lr=learning_rate,
-#    epochs=NO_epochs,
-#    steps_per_epoch=batches_per_epoch,
-# )
-
-model = build_model_park_original_spg(
-    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+model = build_model_transformer_vit(
+    None,
+    N,
+    len(spgs),
+    lr=learning_rate,
+    epochs=NO_epochs,
+    steps_per_epoch=batches_per_epoch,
 )
+
+# model = build_model_park_original_spg(
+#    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+# )
 
 if use_reduce_lr_on_plateau:
     lr_callback = keras.callbacks.ReduceLROnPlateau(
