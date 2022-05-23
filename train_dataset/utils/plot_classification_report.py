@@ -9,7 +9,7 @@ import numpy as np
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
 
         # report = classification_report(
         #    [1, 2, 3, 4, 5, 6, 10, 2, 5, 6, 3, 6, 7, 1, 2, 1, 3, 6, 4],
@@ -27,9 +27,13 @@ if __name__ == "__main__":
 
     with open(os.path.join(path, "classification_report_match.pickle"), "rb") as file:
         report_match = pickle.load(file)
+    print("Classification report match:")
+    print(report_match)
 
     with open(os.path.join(path, "classification_report_random.pickle"), "rb") as file:
         report_random = pickle.load(file)
+    print("Classification report random:")
+    print(report_random)
 
     def process_report(report):
 
