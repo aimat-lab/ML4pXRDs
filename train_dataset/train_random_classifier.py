@@ -1,3 +1,4 @@
+from black import nullcontext
 import tensorflow.keras as keras
 from dataset_simulations.core.quick_simulation import get_random_xy_patterns
 from dataset_simulations.random_simulation_utils import load_dataset_info
@@ -130,7 +131,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = True
+use_distributed_strategy = False
 
 local = True
 if local:
@@ -1328,10 +1329,10 @@ class CustomSequence(keras.utils.Sequence):
         """Return next batch using an infinite generator model."""
         self._current_index = (self._current_index + 1) % self.number_of_batches
         result = self[self._current_index]
-        print(result[0].shape)
-        print(result[0].dtype)
-        print(result[1].shape)
-        print(result[1].dtype)
+        # print(result[0].shape)
+        # print(result[0].dtype)
+        # print(result[1].shape)
+        # print(result[1].dtype)
         return result
 
     def __len__(self):
@@ -1439,9 +1440,10 @@ print(
     flush=True,
 )
 
+if use_distributed_strategy:
+    strategy = tf.distribute.MirroredStrategy()
 
-strategy = tf.distribute.MirroredStrategy()
-with strategy.scope():
+with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()):
 
     if use_reduce_lr_on_plateau:
         lr_callback = keras.callbacks.ReduceLROnPlateau(
@@ -1453,14 +1455,15 @@ with strategy.scope():
     if use_retention_of_patterns:
         sequence.pre_compute()
 
-    dataset = tf.data.Dataset.from_generator(
-        sequence,
-        output_types=(tf.float64, tf.int64),
-        output_shapes=(
-            tf.TensorShape([None, None, None]),
-            tf.TensorShape([None, None]),
-        ),
-    )
+    if use_distributed_strategy:
+        dataset = tf.data.Dataset.from_generator(
+            sequence,
+            output_types=(tf.float64, tf.int64),
+            output_shapes=(
+                tf.TensorShape([None, None, None]),
+                tf.TensorShape([None, None]),
+            ),
+        )
 
     # train_dist_dataset = strategy.experimental_distribute_dataset(dataset)
 
@@ -1488,7 +1491,7 @@ with strategy.scope():
     if not use_icsd_structures_directly:
         model.fit(
             # x=sequence,
-            x=dataset,
+            x=dataset if use_distributed_strategy else sequence,
             epochs=NO_epochs,
             # TODO: Removed the batch_size parameter here, any impact?
             callbacks=[tb_callback, CustomCallback()]
