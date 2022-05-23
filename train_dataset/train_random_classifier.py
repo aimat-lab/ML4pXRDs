@@ -35,6 +35,7 @@ from sklearn.preprocessing import StandardScaler
 from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
+import contextlib
 
 tag = "all-spgs-random-vit"
 description = ""
@@ -129,7 +130,9 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-local = False
+use_distributed_strategy = True
+
+local = True
 if local:
     NO_workers = 8
     verbosity_tf = 1
@@ -200,6 +203,7 @@ print(
         test_match_pure_metas,
     ),
 ) = load_dataset_info()
+
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading dataset info.",
@@ -307,7 +311,7 @@ print(
 
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
-    stop=2 if local else None,
+    stop=1 if local else None,
     metas_to_load=metas_to_load_test,
 )  # to not overflow the memory
 
@@ -1037,7 +1041,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         if use_statistics_dataset_as_validation
         else load_only_N_patterns_each_train,
         metas_to_load=statistics_match_metas_flat,
-        stop=2 if local else None,
+        stop=1 if local else None,
     )  # to not overflow the memory if local
 
     print(
@@ -1309,13 +1313,26 @@ class CustomCallback(keras.callbacks.Callback):
 
 
 class CustomSequence(keras.utils.Sequence):
-    def __init__(self, number_of_batches):
+    def __init__(self, number_of_batches, batch_size):
         self.number_of_batches = number_of_batches
+        self._batch_size = batch_size
+
+        self._current_index = 0
 
         if use_retention_of_patterns:
             self.patterns = None
             self.labels = None
             self.indices = None
+
+    def __call__(self):
+        """Return next batch using an infinite generator model."""
+        self._current_index = (self._current_index + 1) % self.number_of_batches
+        result = self[self._current_index]
+        print(result[0].shape)
+        print(result[0].dtype)
+        print(result[1].shape)
+        print(result[1].dtype)
+        return result
 
     def __len__(self):
         return self.number_of_batches
@@ -1417,70 +1434,86 @@ class CustomSequence(keras.utils.Sequence):
             self.labels[indices_to_replace] = labels
 
 
-sequence = CustomSequence(batches_per_epoch)
-
-if use_retention_of_patterns:
-    sequence.pre_compute()
-
-# model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
-# model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
-# model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
-# model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
-# model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
-
-# model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
-
-model = build_model_transformer_vit(
-    None,
-    N,
-    len(spgs),
-    lr=learning_rate,
-    epochs=NO_epochs,
-    steps_per_epoch=batches_per_epoch,
-)
-
-# model = build_model_park_original_spg(
-#    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-# )
-
-if use_reduce_lr_on_plateau:
-    lr_callback = keras.callbacks.ReduceLROnPlateau(
-        monitor="loss", verbose=1, factor=0.5
-    )
-
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start training.",
     flush=True,
 )
 
-if not use_icsd_structures_directly:
-    model.fit(
-        x=sequence,
+
+strategy = tf.distribute.MirroredStrategy()
+with strategy.scope():
+
+    if use_reduce_lr_on_plateau:
+        lr_callback = keras.callbacks.ReduceLROnPlateau(
+            monitor="loss", verbose=1, factor=0.5
+        )
+
+    sequence = CustomSequence(batches_per_epoch, batch_size)
+
+    if use_retention_of_patterns:
+        sequence.pre_compute()
+
+    dataset = tf.data.Dataset.from_generator(
+        sequence,
+        output_types=(tf.float64, tf.int64),
+        output_shapes=(
+            tf.TensorShape([None, None, None]),
+            tf.TensorShape([None, None]),
+        ),
+    )
+
+    # train_dist_dataset = strategy.experimental_distribute_dataset(dataset)
+
+    # model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+    # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
+    # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
+    # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
+    # model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
+
+    # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
+
+    model = build_model_transformer_vit(
+        None,
+        N,
+        len(spgs),
+        lr=learning_rate,
         epochs=NO_epochs,
-        # TODO: Removed the batch_size parameter here, any impact?
-        callbacks=[tb_callback, CustomCallback()]
-        if not use_reduce_lr_on_plateau
-        else [tb_callback, CustomCallback(), lr_callback],
-        verbose=verbosity_tf,
-        workers=1,
-        max_queue_size=queue_size_tf,
-        use_multiprocessing=False,
         steps_per_epoch=batches_per_epoch,
     )
-else:
-    model.fit(
-        x=statistics_x_match,
-        y=statistics_y_match,
-        epochs=NO_epochs,
-        batch_size=batch_size,
-        callbacks=[tb_callback, CustomCallback()]
-        if not use_reduce_lr_on_plateau
-        else [tb_callback, CustomCallback(), lr_callback],
-        verbose=verbosity_tf,
-        workers=1,
-        max_queue_size=queue_size_tf,
-        use_multiprocessing=False,
-    )
+
+    # model = build_model_park_original_spg(
+    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    # )
+
+    if not use_icsd_structures_directly:
+        model.fit(
+            # x=sequence,
+            x=dataset,
+            epochs=NO_epochs,
+            # TODO: Removed the batch_size parameter here, any impact?
+            callbacks=[tb_callback, CustomCallback()]
+            if not use_reduce_lr_on_plateau
+            else [tb_callback, CustomCallback(), lr_callback],
+            verbose=verbosity_tf,
+            workers=1,
+            max_queue_size=queue_size_tf,
+            use_multiprocessing=False,
+            steps_per_epoch=batches_per_epoch,
+        )
+    else:
+        model.fit(
+            x=statistics_x_match,
+            y=statistics_y_match,
+            epochs=NO_epochs,
+            batch_size=batch_size,
+            callbacks=[tb_callback, CustomCallback()]
+            if not use_reduce_lr_on_plateau
+            else [tb_callback, CustomCallback(), lr_callback],
+            verbose=verbosity_tf,
+            workers=1,
+            max_queue_size=queue_size_tf,
+            use_multiprocessing=False,
+        )
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Finished training.",

@@ -1495,7 +1495,7 @@ def prepare_training(
         pickle.dump(all_data_per_spg, file)
 
 
-def load_dataset_info(X=50):
+def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
 
     with open(
         os.path.join(os.path.dirname(__file__), "prepared_training/meta"), "rb"
@@ -1525,6 +1525,79 @@ def load_dataset_info(X=50):
         corrected_labels = list(reversed(data[11]))
         test_match_metas = data[12]
         test_match_pure_metas = data[13]
+
+    if check_for_sum_formula_overlap:
+        # Check for overlap in sum formulas between
+        # test_metas and statistics_metas
+
+        path_to_patterns = "./patterns/icsd_vecsei/"
+        jobid = os.getenv("SLURM_JOB_ID")
+        if jobid is not None and jobid != "":
+            sim = Simulation(
+                os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+                os.path.expanduser("~/Databases/ICSD/cif/"),
+            )
+            sim.output_dir = path_to_patterns
+        else:  # local
+            sim = Simulation(
+                "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+                "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+            )
+            sim.output_dir = path_to_patterns
+
+        # statistics_metas = statistics_metas[0:1000]
+        # test_metas = test_metas[0:1000]
+
+        statistics_sum_formulas = [
+            sim.icsd_sumformulas[sim.icsd_ids.index(meta[0])]
+            for meta in statistics_metas
+        ]
+        statistics_sum_formulas_set = set(statistics_sum_formulas)
+
+        overlap_counter = 0
+        overlap_matching_spgs_counter = 0
+        for meta in test_metas:
+            test_index = sim.icsd_ids.index(meta[0])
+            test_sum_formula = sim.icsd_sumformulas[test_index]
+
+            if test_sum_formula in statistics_sum_formulas_set:
+                overlap_counter += 1
+
+                # test_prototype = sim.icsd_structure_types[test_index]
+                test_spg = sim.get_space_group_number(meta[0])
+
+                # statistics_index = sim.icsd_ids.index(
+                #    statistics_metas[statistics_sum_formulas.index(test_sum_formula)][0]
+                # )
+                # statistics_prototype = sim.icsd_structure_types[statistics_index]
+                # statistics_spg = sim.get_space_group_number(
+                #    sim.icsd_ids[statistics_index]
+                # )
+                # print(
+                #    f"Overlap: sum formular {test_sum_formula}, prototypes {test_prototype} (test) and {statistics_prototype} (statistics), spgs {test_spg} (test) and {statistics_spg} (statistics)"
+                # )
+
+                matching_indices = [
+                    item[0]
+                    for item in enumerate(statistics_sum_formulas)
+                    if item[1] == test_sum_formula
+                ]
+
+                for matching_index in matching_indices:
+                    if (
+                        sim.get_space_group_number(statistics_metas[matching_index][0])
+                        == test_spg
+                    ):
+                        overlap_matching_spgs_counter += 1
+                        break
+
+        print(
+            f"{overlap_counter} of {len(test_metas)} sample sum formulas in the test set are also in the train set."
+        )
+        print(
+            f"{overlap_matching_spgs_counter} of {len(test_metas)} sample sum formulas WITH THE SAME SPG in the test set are also in the train set."
+        )
+        exit()
 
     # Split array in parts to lower memory requirements:
     test_crystals_files = sorted(
@@ -2098,8 +2171,7 @@ if __name__ == "__main__":
         prepare_training(per_element=False)
 
     if True:
-        data = load_dataset_info()
-        print()
+        data = load_dataset_info(check_for_sum_formula_overlap=True)
 
     if False:
 
