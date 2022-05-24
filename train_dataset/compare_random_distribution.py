@@ -2067,7 +2067,7 @@ if __name__ == "__main__":
         bbox_inches="tight",
         dpi=300,
     )
-    plt.show()
+    # plt.show()
 
     ##### Lattice paras 3D scatter plot
 
@@ -2105,7 +2105,7 @@ if __name__ == "__main__":
         bbox_inches="tight",
         dpi=300,
     )
-    plt.show()
+    # plt.show()
 
     ################# hist plotting ################
 
