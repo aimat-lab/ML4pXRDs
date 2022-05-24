@@ -1315,9 +1315,10 @@ class CustomCallback(keras.callbacks.Callback):
 
 
 class CustomSequence(keras.utils.Sequence):
-    def __init__(self, number_of_batches, batch_size):
+    def __init__(self, number_of_batches, batch_size, number_of_epochs):
         self.number_of_batches = number_of_batches
         self._batch_size = batch_size
+        self._number_of_epochs = number_of_epochs
 
         self._current_index = 0
 
@@ -1329,10 +1330,10 @@ class CustomSequence(keras.utils.Sequence):
     def __call__(self):
         """Return next batch using an infinite generator model."""
 
-        for i in range(self.__len__()):
+        for i in range(self.__len__() * self._number_of_epochs):
             yield self.__getitem__(i)
 
-            if i == self.__len__() - 1:
+            if (i + 1) % self.__len__() == 0:
                 self.on_epoch_end()
 
         # self._current_index = (self._current_index + 1) % self.number_of_batches
@@ -1454,7 +1455,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             monitor="loss", verbose=1, factor=0.5
         )
 
-    sequence = CustomSequence(batches_per_epoch, batch_size)
+    sequence = CustomSequence(batches_per_epoch, batch_size, NO_epochs)
 
     if use_retention_of_patterns:
         sequence.pre_compute()
