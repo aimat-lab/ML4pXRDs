@@ -1478,9 +1478,12 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
     # model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
     # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
-    # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout)
+    # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
     # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
-    model = build_model_park_huge_size(None, N, len(spgs), use_dropout=use_dropout)
+
+    model = build_model_park_huge_size(
+        None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    )
 
     # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 

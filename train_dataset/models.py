@@ -3,6 +3,7 @@ import tensorflow.keras.metrics as tfm
 import tensorflow as tf
 from train_dataset.utils.resnet_v2_1D import ResNetv2
 from train_dataset.utils.resnet_keras_1D import ResNet
+from train_dataset.utils.transformer_vit import build_model_transformer_vit
 
 
 class BinaryAccuracy(tfm.BinaryAccuracy):
@@ -88,11 +89,17 @@ def build_model_park(
         ],  # here from_logits is not needed, since argmax will be the same
     )
 
+    model.summary()
+
     return model
 
 
 def build_model_park_medium_size(
-    hp=None, number_of_input_values=9018, number_of_output_labels=2, use_dropout=False
+    hp=None,
+    number_of_input_values=9018,
+    number_of_output_labels=2,
+    use_dropout=False,
+    lr=0.001,
 ):
 
     # From Park:
@@ -151,7 +158,7 @@ def build_model_park_medium_size(
         keras.layers.Dense(number_of_output_labels)
     )
 
-    optimizer = keras.optimizers.Adam(learning_rate=0.001)
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
 
     # if number_of_output_labels == 2:
     #    model.compile(
@@ -169,11 +176,17 @@ def build_model_park_medium_size(
         ],  # here from_logits is not needed, since argmax will be the same
     )
 
+    model.summary()
+
     return model
 
 
 def build_model_park_huge_size(
-    hp=None, number_of_input_values=9018, number_of_output_labels=2, use_dropout=False
+    hp=None,
+    number_of_input_values=9018,
+    number_of_output_labels=2,
+    use_dropout=False,
+    lr=0.001,
 ):
     # From Park:
     # They actually train for 5000 epochs and batch size 1000 in the original paper
@@ -231,7 +244,7 @@ def build_model_park_huge_size(
         keras.layers.Dense(number_of_output_labels)
     )
 
-    optimizer = keras.optimizers.Adam(learning_rate=0.001)
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
 
     # if number_of_output_labels == 2:
     #    model.compile(
@@ -248,6 +261,8 @@ def build_model_park_huge_size(
             keras.metrics.SparseTopKCategoricalAccuracy(k=5),
         ],  # here from_logits is not needed, since argmax will be the same
     )
+
+    model.summary()
 
     return model
 
@@ -321,11 +336,17 @@ def build_model_park_original_spg(
         ],  # here from_logits is not needed, since argmax will be the same
     )
 
+    model.summary()
+
     return model
 
 
 def build_model_park_tiny_size(
-    hp=None, number_of_input_values=9018, number_of_output_labels=2, use_dropout=False
+    hp=None,
+    number_of_input_values=9018,
+    number_of_output_labels=2,
+    use_dropout=False,
+    lr=0.001,
 ):
 
     model = keras.models.Sequential()
@@ -359,7 +380,7 @@ def build_model_park_tiny_size(
 
     model.add(keras.layers.Dense(number_of_output_labels))
 
-    optimizer = keras.optimizers.Adam(learning_rate=0.001)
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
 
     model.compile(
         optimizer=optimizer,
@@ -369,6 +390,8 @@ def build_model_park_tiny_size(
             keras.metrics.SparseTopKCategoricalAccuracy(k=5),
         ],  # here from_logits is not needed, since argmax will be the same
     )
+
+    model.summary()
 
     return model
 
@@ -424,7 +447,6 @@ def build_model_resnet_10(
 
     model = keras.Model(resnet_model.inputs, outputs=predictions)
 
-    model.summary()
     # keras.utils.plot_model(model, show_shapes=True)
 
     if optimizer == "Adam":
@@ -448,4 +470,26 @@ def build_model_resnet_10(
     else:
         raise Exception("Optimizer not supported.")
 
+    model.summary()
+
     return model
+
+
+if __name__ == "__main__":
+
+    model = build_model_park_tiny_size(
+        None, 8501, 145, False, 0.0001
+    )  # only one conv layer but with more filters (120 instead of 80)
+    model = build_model_park(None, 8501, 145, False, 0.0001)  # 7-label version
+    model = build_model_park_medium_size(
+        None, 8501, 145, False, 0.0001
+    )  # 101-label version
+    model = build_model_park_original_spg(
+        None, 8501, 145, False, 0.0001
+    )  # 230-label version
+    model = build_model_park_huge_size(
+        None, 8501, 145, False, 0.0001
+    )  # my version: original 230-label + more filters
+
+    model = build_model_resnet_10(None, 8501, 145, 0.0001, 0, "Adam")
+    model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
