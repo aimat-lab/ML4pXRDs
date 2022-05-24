@@ -37,7 +37,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 
-tag = "all-spgs-huge-lr-0.0001"
+tag = "all-spgs-huge-lr-0.00001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -110,7 +110,7 @@ randomization_step = 10  # Only use every n'th sample for the randomization proc
 
 use_dropout = False
 
-learning_rate = 0.0001
+learning_rate = 0.00001
 
 # momentum = 0.7
 # optimizer = "SGD"
@@ -134,7 +134,7 @@ verbosity_generator = 2
 
 use_distributed_strategy = True
 
-local = True
+local = False
 if local:
     NO_workers = 8
     verbosity_tf = 1
