@@ -158,6 +158,7 @@ if __name__ == "__main__":
         icsd_variations = icsd_variations[0:to_process]
         icsd_metas = icsd_metas[0:to_process]
 
+    """
     # TODO: Actually not really needed, because this is already done in the training script for icsd crystals.
     print("Calculating conventional structures...")
     for i in reversed(range(0, len(icsd_crystals))):
@@ -195,6 +196,7 @@ if __name__ == "__main__":
             print("Error calculating conventional cell of random:")
             print("(doesn't matter)")
             print(ex)
+    """
 
     # Get infos from icsd crystals:
 
