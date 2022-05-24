@@ -230,47 +230,62 @@ if __name__ == "__main__":
 
     for i in range(0, len(icsd_variations)):
 
-        (
-            is_pure,
-            NO_wyckoffs,
-            elements,
-            occupancies,
-            wyckoff_repetitions,
-            NO_unique_wyckoffs,
-            NO_unique_wyckoffs_summed_over_els,
-            unique_wyckoffs,
-        ) = sim.get_wyckoff_info(icsd_metas[i][0])
+        if icsd_labels[i][0] in spgs_to_analyze or spgs_to_analyze is None:
 
-        elements_unique = np.unique(elements)
+            (
+                is_pure,
+                NO_wyckoffs,
+                elements,
+                occupancies,
+                wyckoff_repetitions,
+                NO_unique_wyckoffs,
+                NO_unique_wyckoffs_summed_over_els,
+                unique_wyckoffs,
+            ) = sim.get_wyckoff_info(icsd_metas[i][0])
 
-        try:
+            elements_unique = np.unique(elements)
 
-            Zs = [Species(name).Z for name in elements_unique]
-            icsd_max_Zs.append(max(Zs))
+            try:
 
-        except Exception as ex:
+                Zs = [Species(name).Z for name in elements_unique]
+                icsd_max_Zs.append(max(Zs))
+
+            except Exception as ex:
+
+                icsd_max_Zs.append(None)
+
+            icsd_NO_wyckoffs.append(NO_wyckoffs)
+            icsd_NO_elements.append(len(elements_unique))
+            icsd_occupancies.append(occupancies)
+            icsd_occupancies_weights.append([1 / len(occupancies)] * len(occupancies))
+
+            icsd_NO_unique_wyckoffs.append(NO_unique_wyckoffs)
+            icsd_NO_unique_wyckoffs_summed_over_els.append(
+                NO_unique_wyckoffs_summed_over_els
+            )
+
+            icsd_wyckoff_repetitions.append(wyckoff_repetitions)
+
+            reps = []
+            for el in elements_unique:
+                reps.append(np.sum(np.array(elements) == el))
+
+            icsd_element_repetitions.append(reps)
+
+            icsd_set_wyckoffs.append(unique_wyckoffs)
+
+        else:
 
             icsd_max_Zs.append(None)
-
-        icsd_NO_wyckoffs.append(NO_wyckoffs)
-        icsd_NO_elements.append(len(elements_unique))
-        icsd_occupancies.append(occupancies)
-        icsd_occupancies_weights.append([1 / len(occupancies)] * len(occupancies))
-
-        icsd_NO_unique_wyckoffs.append(NO_unique_wyckoffs)
-        icsd_NO_unique_wyckoffs_summed_over_els.append(
-            NO_unique_wyckoffs_summed_over_els
-        )
-
-        icsd_wyckoff_repetitions.append(wyckoff_repetitions)
-
-        reps = []
-        for el in elements_unique:
-            reps.append(np.sum(np.array(elements) == el))
-
-        icsd_element_repetitions.append(reps)
-
-        icsd_set_wyckoffs.append(unique_wyckoffs)
+            icsd_NO_wyckoffs.append(None)
+            icsd_NO_elements.append(None)
+            icsd_occupancies.append(None)
+            icsd_occupancies_weights.append(None)
+            icsd_NO_unique_wyckoffs.append(None)
+            icsd_NO_unique_wyckoffs_summed_over_els.append(None)
+            icsd_wyckoff_repetitions.append(None)
+            icsd_element_repetitions.append(None)
+            icsd_set_wyckoffs.append(None)
 
     # preprocess random data:
 
@@ -335,18 +350,21 @@ if __name__ == "__main__":
 
         print(f"Processing random: {i} of {len(random_variations)}")
 
-        success = True
-        try:
-            (
-                NO_wyckoffs,
-                elements,
-                wyckoff_repetitions,
-                NO_unique_wyckoffs,
-                NO_unique_wyckoffs_summed_over_els,
-                unique_wyckoffs,
-            ) = get_wyckoff_info(random_crystals[i])
-        except Exception as ex:
-            print(ex)
+        if random_labels[i] in spgs_to_analyze or spgs_to_analyze is None:
+            success = True
+            try:
+                (
+                    NO_wyckoffs,
+                    elements,
+                    wyckoff_repetitions,
+                    NO_unique_wyckoffs,
+                    NO_unique_wyckoffs_summed_over_els,
+                    unique_wyckoffs,
+                ) = get_wyckoff_info(random_crystals[i])
+            except Exception as ex:
+                print(ex)
+                success = False
+        else:
             success = False
 
         if success:
@@ -383,12 +401,9 @@ if __name__ == "__main__":
             random_NO_elements.append(None)
             random_element_repetitions.append(None)
             random_wyckoff_repetitions.append(None)
-
             random_NO_unique_wyckoffs.append(None)
             random_NO_unique_wyckoffs_summed_over_els.append(None)
-
             random_max_Zs.append(None)
-
             random_set_wyckoffs.append(None)
 
     ############## Calculate histograms:
