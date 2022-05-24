@@ -132,9 +132,9 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False
+use_distributed_strategy = True
 
-local = False
+local = True
 if local:
     NO_workers = 8
     verbosity_tf = 1
@@ -1328,13 +1328,16 @@ class CustomSequence(keras.utils.Sequence):
 
     def __call__(self):
         """Return next batch using an infinite generator model."""
-        self._current_index = (self._current_index + 1) % self.number_of_batches
-        result = self[self._current_index]
-        # print(result[0].shape)
-        # print(result[0].dtype)
-        # print(result[1].shape)
-        # print(result[1].dtype)
-        return result
+
+        for i in range(self.__len__()):
+            yield self.__getitem__(i)
+
+            if i == self.__len__() - 1:
+                self.on_epoch_end()
+
+        # self._current_index = (self._current_index + 1) % self.number_of_batches
+        # result = self[self._current_index]
+        # return result
 
     def __len__(self):
         return self.number_of_batches
@@ -1462,7 +1465,11 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             output_types=(tf.float64, tf.int64),
             output_shapes=(
                 tf.TensorShape([None, None, None]),
-                tf.TensorShape([None, None]),
+                tf.TensorShape(
+                    [
+                        None,
+                    ]
+                ),
             ),
         )
 
