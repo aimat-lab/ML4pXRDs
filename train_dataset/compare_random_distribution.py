@@ -46,7 +46,8 @@ if __name__ == "__main__":
 
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/23-05-2022_19-11-33"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
         # tag = "magpie_10-03-2022_14-34-51"
@@ -58,10 +59,10 @@ if __name__ == "__main__":
         # tag = "volumes_densenesses_2-spg_test/15"
 
         # tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
-        tag = "2-spgs-lattice_paras_kde"
+        tag = "test"
 
         # spgs_to_analyze = [14, 104, 176, 129]
-        spgs_to_analyze = [2, 15]
+        spgs_to_analyze = [66]
         # spgs_to_analyze = [15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
@@ -95,8 +96,6 @@ if __name__ == "__main__":
     xrds_icsd_falsely_average = None
     xrds_random_rightly_average = None
     xrds_random_falsely_average = None
-
-    make_random_and_icsd_same_length = True
 
     out_base = "comparison_plots/" + tag + "/"
     os.system("mkdir -p " + out_base)
@@ -138,16 +137,6 @@ if __name__ == "__main__":
 
     with open(in_base + "rightly_falsely_random.pickle", "rb") as file:
         rightly_indices_random, falsely_indices_random = pickle.load(file)
-
-    if make_random_and_icsd_same_length:
-        length = min(len(random_crystals), len(icsd_crystals))
-        random_crystals = random_crystals[0:length]
-        random_labels = random_labels[0:length]
-        random_variations = random_variations[0:length]
-        icsd_crystals = icsd_crystals[0:length]
-        icsd_labels = icsd_labels[0:length]
-        icsd_variations = icsd_variations[0:length]
-        icsd_metas = icsd_metas[0:length]
 
     # limit the range:
     if False:
