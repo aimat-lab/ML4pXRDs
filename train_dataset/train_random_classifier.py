@@ -134,6 +134,8 @@ verbosity_generator = 2
 
 use_distributed_strategy = False
 
+uniformly_distributed = False
+
 local = False
 if local:
     NO_workers = 8
@@ -265,6 +267,20 @@ batch_size = NO_corn_sizes * structures_per_spg * len(spgs)
 
 print("len(spgs): ", len(spgs))
 print("batch_size: ", batch_size)
+
+if not uniformly_distributed:
+    probability_per_spg = {}
+    for i, label in enumerate(statistics_match_labels):
+        if label[0] in spgs:
+            if label[0] in probability_per_spg.keys():
+                probability_per_spg[label[0]] += 1
+            else:
+                probability_per_spg[label[0]] = 1
+    total = np.sum(list(probability_per_spg.values()))
+    for key in probability_per_spg.keys():
+        probability_per_spg[key] /= total
+else:
+    probability_per_spg = None
 
 ray.init(
     address="localhost:6379" if not local else None,
@@ -810,6 +826,7 @@ def batch_generator_with_additional(
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
         per_element=per_element,
         verbosity=1,  # Show everything here
+        probability_per_spg=probability_per_spg,
     )
 
     # Set the label to the right index:
@@ -880,6 +897,7 @@ def batch_generator_queue(
                 lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                 per_element=per_element,
                 verbosity=verbosity_generator,
+                probability_per_spg=probability_per_spg,
             )
 
             patterns, labels = shuffle(patterns, labels)

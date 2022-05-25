@@ -564,6 +564,7 @@ def get_random_xy_patterns(
     lattice_paras_density_per_lattice_type=None,
     per_element=False,
     verbosity=2,
+    probability_per_spg=None,
 ):
 
     result_patterns_y = []
@@ -585,35 +586,47 @@ def get_random_xy_patterns(
         else:
             group_object = None
 
-        structures = generate_structures(
-            spg,
-            structures_per_spg,
-            max_NO_elements,
-            do_distance_checks=do_distance_checks,
-            fixed_volume=fixed_volume,
-            do_merge_checks=do_merge_checks,
-            use_icsd_statistics=use_icsd_statistics,
-            probability_per_spg_per_element=probability_per_spg_per_element,
-            probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
-            max_volume=max_volume,
-            NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
-            do_symmetry_checks=do_symmetry_checks,
-            set_NO_elements_to_max=set_NO_elements_to_max,
-            force_wyckoff_indices=force_wyckoff_indices,
-            use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
-            NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
-            NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
-            denseness_factors_density_per_spg=denseness_factors_density_per_spg,
-            kde_per_spg=kde_per_spg,
-            all_data_per_spg=all_data_per_spg,
-            use_coordinates_directly=use_coordinates_directly,
-            use_lattice_paras_directly=use_lattice_paras_directly,
-            group_object=group_object,
-            denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
-            lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
-            per_element=per_element,
-            verbosity=verbosity,
-        )
+        structures = []
+        for _ in range(structures_per_spg):
+
+            if probability_per_spg is not None:
+                spg = np.random.choice(
+                    probability_per_spg.keys(),
+                    size=1,
+                    p=probability_per_spg.values(),
+                )[0]
+
+            structures.extend(
+                generate_structures(
+                    spg,
+                    1,
+                    max_NO_elements,
+                    do_distance_checks=do_distance_checks,
+                    fixed_volume=fixed_volume,
+                    do_merge_checks=do_merge_checks,
+                    use_icsd_statistics=use_icsd_statistics,
+                    probability_per_spg_per_element=probability_per_spg_per_element,
+                    probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+                    max_volume=max_volume,
+                    NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
+                    do_symmetry_checks=do_symmetry_checks,
+                    set_NO_elements_to_max=set_NO_elements_to_max,
+                    force_wyckoff_indices=force_wyckoff_indices,
+                    use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
+                    NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+                    NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+                    denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+                    kde_per_spg=kde_per_spg,
+                    all_data_per_spg=all_data_per_spg,
+                    use_coordinates_directly=use_coordinates_directly,
+                    use_lattice_paras_directly=use_lattice_paras_directly,
+                    group_object=group_object,
+                    denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+                    lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+                    per_element=per_element,
+                    verbosity=verbosity,
+                )
+            )
 
         if do_print:
             timings_generation.append(time.time() - start)
