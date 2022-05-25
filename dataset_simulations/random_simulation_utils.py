@@ -1165,6 +1165,7 @@ def prepare_training(
     nan_counter_statistics = 0
 
     statistics_match_metas = []
+    statistics_match_labels = []
 
     for i in range(len(statistics_crystals)):
         crystal = statistics_crystals[i]
@@ -1207,6 +1208,7 @@ def prepare_training(
                 continue
 
             statistics_match_metas.append(statistics_metas[i])
+            statistics_match_labels.append(statistics_labels[i])
 
             struc = pyxtal()
             struc.from_seed(crystal)
@@ -1471,7 +1473,9 @@ def prepare_training(
                 denseness_factors_per_spg,
                 per_element,
                 statistics_metas,
+                statistics_labels,
                 statistics_match_metas,
+                statistics_match_labels,
                 test_metas,
                 test_labels,
                 corrected_labels,
@@ -1519,12 +1523,14 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         denseness_factors_per_spg = data[5]
 
         statistics_metas = data[7]
-        statistics_match_metas = data[8]
-        test_metas = data[9]
-        test_labels = data[10]
-        corrected_labels = list(reversed(data[11]))
-        test_match_metas = data[12]
-        test_match_pure_metas = data[13]
+        statistics_labels = data[8]
+        statistics_match_metas = data[9]
+        statistics_match_labels = data[10]
+        test_metas = data[11]
+        test_labels = data[12]
+        corrected_labels = list(reversed(data[13]))
+        test_match_metas = data[14]
+        test_match_pure_metas = data[15]
 
     if check_for_sum_formula_overlap:
         # Check for overlap in sum formulas between
@@ -1599,6 +1605,12 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         )
         exit()
 
+    with open(
+        os.path.join(os.path.dirname(__file__), "prepared_training/all_data_per_spg"),
+        "rb",
+    ) as file:
+        all_data_per_spg = pickle.load(file)
+
     # Split array in parts to lower memory requirements:
     test_crystals_files = sorted(
         glob(
@@ -1624,12 +1636,6 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
     for file in statistics_crystals_files:
         with open(file, "rb") as file:
             statistics_crystals.extend(pickle.load(file))
-
-    with open(
-        os.path.join(os.path.dirname(__file__), "prepared_training/all_data_per_spg"),
-        "rb",
-    ) as file:
-        all_data_per_spg = pickle.load(file)
 
     print("Info about statistics (prepared) dataset:")
     total = 0
@@ -1963,8 +1969,10 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         represented_spgs,
         (
             statistics_metas,
+            statistics_labels,
             statistics_crystals,
             statistics_match_metas,
+            statistics_match_labels,
             test_metas,
             test_labels,
             test_crystals,
@@ -2047,6 +2055,91 @@ def convert_to_new_format(input_file="prepared_training_old_format"):
 
     with open("prepared_training/all_data_per_spg", "wb") as file:
         pickle.dump(all_data_per_spg, file)
+
+
+def convert_add_statistics_labels():
+
+    with open(
+        os.path.join(os.path.dirname(__file__), "prepared_training/meta"), "rb"
+    ) as file:
+        data = pickle.load(file)
+
+        per_element = data[6]
+
+        counter_per_spg_per_element = data[0]
+        if per_element:
+            counts_per_spg_per_element_per_wyckoff = data[1]
+        else:
+            counts_per_spg_per_wyckoff = data[1]
+        NO_wyckoffs_prob_per_spg = data[2]
+        NO_unique_elements_prob_per_spg = data[3]
+
+        if per_element:
+            NO_repetitions_prob_per_spg_per_element = data[4]
+        else:
+            NO_repetitions_prob_per_spg = data[4]
+        denseness_factors_per_spg = data[5]
+
+        statistics_metas = data[7]
+        statistics_match_metas = data[8]
+        test_metas = data[9]
+        test_labels = data[10]
+        corrected_labels = list(reversed(data[11]))
+        test_match_metas = data[12]
+        test_match_pure_metas = data[13]
+
+    jobid = os.getenv("SLURM_JOB_ID")
+    path_to_patterns = "./patterns/icsd_vecsei/"
+    if jobid is not None and jobid != "":
+        sim = Simulation(
+            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+            os.path.expanduser("~/Databases/ICSD/cif/"),
+        )
+        sim.output_dir = path_to_patterns
+    else:  # local
+        sim = Simulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
+        sim.output_dir = path_to_patterns
+    sim.load(load_patterns_angles_intensities=False)
+
+    statistics_labels = []
+    statistics_match_labels = []
+
+    sim_metas_flat = [item[0] for item in sim.sim_metas]
+
+    for meta in statistics_metas:
+        statistics_labels.append(sim.sim_labels[sim_metas_flat.index(meta[0])])
+    for meta in statistics_match_metas:
+        statistics_match_labels.append(sim.sim_labels[sim_metas_flat.index(meta[0])])
+
+    with open("prepared_training/meta_new", "wb") as file:
+        pickle.dump(
+            (
+                counter_per_spg_per_element,
+                counts_per_spg_per_element_per_wyckoff
+                if per_element
+                else counts_per_spg_per_wyckoff,
+                NO_wyckoffs_prob_per_spg,
+                NO_unique_elements_prob_per_spg,
+                NO_repetitions_prob_per_spg_per_element
+                if per_element
+                else NO_repetitions_prob_per_spg,
+                denseness_factors_per_spg,
+                per_element,
+                statistics_metas,
+                statistics_labels,
+                statistics_match_metas,
+                statistics_match_labels,
+                test_metas,
+                test_labels,
+                corrected_labels,
+                test_match_metas,
+                test_match_pure_metas,
+            ),
+            file,
+        )
 
 
 if __name__ == "__main__":
@@ -2170,8 +2263,11 @@ if __name__ == "__main__":
     if False:
         prepare_training(per_element=False)
 
+    if False:
+        data = load_dataset_info(check_for_sum_formula_overlap=False)
+
     if True:
-        data = load_dataset_info(check_for_sum_formula_overlap=True)
+        convert_add_statistics_labels()
 
     if False:
 
