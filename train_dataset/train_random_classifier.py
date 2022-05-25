@@ -37,7 +37,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 
-tag = "all-spgs-huge-lr-0.00001"
+tag = "all-spgs-huge-lr-0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -110,7 +110,7 @@ randomization_step = 10  # Only use every n'th sample for the randomization proc
 
 use_dropout = False
 
-learning_rate = 0.00001
+learning_rate = 0.0001
 
 # momentum = 0.7
 # optimizer = "SGD"
@@ -132,7 +132,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = True
+use_distributed_strategy = False
 
 local = False
 if local:
@@ -1163,6 +1163,7 @@ params_txt = (
     f"use_statistics_dataset_as_validation: {str(use_statistics_dataset_as_validation)} \n \n \n"
     f"sample_lattice_paras_from_kde: {str(sample_lattice_paras_from_kde)} \n \n \n"
     f"per_element: {str(per_element)} \n \n"
+    f"use_distributed_strategy: {str(use_distributed_strategy)} \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
