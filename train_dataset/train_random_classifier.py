@@ -1341,6 +1341,10 @@ class CustomCallback(keras.callbacks.Callback):
 
                 tf.summary.scalar("test time", data=time.time() - start, step=epoch)
 
+                tf.summary.scalar(
+                    "learning_rate", data=self.model.optimizer.lr, step=epoch
+                )
+
 
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches, batch_size, number_of_epochs):
