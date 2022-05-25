@@ -47,7 +47,7 @@ if __name__ == "__main__":
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/23-05-2022_19-11-33"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/23-05-2022_19-11-33/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
         # tag = "magpie_10-03-2022_14-34-51"

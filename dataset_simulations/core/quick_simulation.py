@@ -576,15 +576,8 @@ def get_random_xy_patterns(
 
     for spg in spgs:
 
-        # print(spg)
-
         if do_print:
             start = time.time()
-
-        if group_object_per_spg is not None and spg in group_object_per_spg.keys():
-            group_object = group_object_per_spg[spg]
-        else:
-            group_object = None
 
         structures = []
         for _ in range(structures_per_spg):
@@ -595,6 +588,11 @@ def get_random_xy_patterns(
                     size=1,
                     p=probability_per_spg.values(),
                 )[0]
+
+            if group_object_per_spg is not None and spg in group_object_per_spg.keys():
+                group_object = group_object_per_spg[spg]
+            else:
+                group_object = None
 
             structures.extend(
                 generate_structures(
