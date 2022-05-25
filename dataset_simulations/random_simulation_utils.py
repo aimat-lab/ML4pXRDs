@@ -2263,10 +2263,10 @@ if __name__ == "__main__":
     if False:
         prepare_training(per_element=False)
 
-    if False:
+    if True:
         data = load_dataset_info(check_for_sum_formula_overlap=False)
 
-    if True:
+    if False:
         convert_add_statistics_labels()
 
     if False:

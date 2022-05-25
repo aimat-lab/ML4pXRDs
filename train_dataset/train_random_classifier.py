@@ -195,8 +195,10 @@ print(
     represented_spgs,
     (
         statistics_metas,
+        statistics_labels,
         statistics_crystals,
         statistics_match_metas,
+        statistics_match_labels,
         test_metas,
         test_labels,
         test_crystals,
@@ -1032,6 +1034,13 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         icsd_sim_statistics.output_dir = path_to_patterns
 
     statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
+
+    # Make loading faster if only a few spgs are used for training:
+    for i in reversed(range(len(statistics_match_metas_flat))):
+        if not statistics_match_labels[i][0] in spgs:
+            del statistics_match_labels[i]
+            del statistics_match_metas[i]
+            del statistics_match_metas_flat[i]
 
     print(
         f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start loading patterns for statistics / training.",
