@@ -69,6 +69,8 @@ if __name__ == "__main__":
 
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
+    calculate_conventionals = False
+
     compute_magpie_features = False
 
     analyse_complexity_ordering = False
@@ -158,45 +160,44 @@ if __name__ == "__main__":
         icsd_variations = icsd_variations[0:to_process]
         icsd_metas = icsd_metas[0:to_process]
 
-    """
-    # TODO: Actually not really needed, because this is already done in the training script for icsd crystals.
-    print("Calculating conventional structures...")
-    for i in reversed(range(0, len(icsd_crystals))):
+    if calculate_conventionals:
+        # TODO: Actually not really needed, because this is already done in the training script for icsd crystals.
+        print("Calculating conventional structures...")
+        for i in reversed(range(0, len(icsd_crystals))):
 
-        try:
-            # percentage = i / (len(icsd_crystals) + len(random_crystals)) * 100
-            # print(f"{int(percentage)}%")
+            try:
+                # percentage = i / (len(icsd_crystals) + len(random_crystals)) * 100
+                # print(f"{int(percentage)}%")
 
-            current_struc = icsd_crystals[i]
+                current_struc = icsd_crystals[i]
 
-            analyzer = SpacegroupAnalyzer(current_struc)
-            conv = analyzer.get_conventional_standard_structure()
-            icsd_crystals[i] = conv
+                analyzer = SpacegroupAnalyzer(current_struc)
+                conv = analyzer.get_conventional_standard_structure()
+                icsd_crystals[i] = conv
 
-        except Exception as ex:
-            print("Error calculating conventional cell of ICSD:")
-            print(ex)
+            except Exception as ex:
+                print("Error calculating conventional cell of ICSD:")
+                print(ex)
 
-    # This is actually not really needed, but just in case...
-    for i in reversed(range(0, len(random_crystals))):
+        # This is actually not really needed, but just in case...
+        for i in reversed(range(0, len(random_crystals))):
 
-        try:
-            # percentage = (
-            #    (i + len(icsd_crystals)) / (len(icsd_crystals) + len(random_crystals)) * 100
-            # )
-            # print(f"{int(percentage)}%")
+            try:
+                # percentage = (
+                #    (i + len(icsd_crystals)) / (len(icsd_crystals) + len(random_crystals)) * 100
+                # )
+                # print(f"{int(percentage)}%")
 
-            current_struc = random_crystals[i]
+                current_struc = random_crystals[i]
 
-            analyzer = SpacegroupAnalyzer(current_struc)
-            conv = analyzer.get_conventional_standard_structure()
-            random_crystals[i] = conv
+                analyzer = SpacegroupAnalyzer(current_struc)
+                conv = analyzer.get_conventional_standard_structure()
+                random_crystals[i] = conv
 
-        except Exception as ex:
-            print("Error calculating conventional cell of random:")
-            print("(doesn't matter)")
-            print(ex)
-    """
+            except Exception as ex:
+                print("Error calculating conventional cell of random:")
+                print("(doesn't matter)")
+                print(ex)
 
     # Get infos from icsd crystals:
 

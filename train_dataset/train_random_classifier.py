@@ -444,12 +444,12 @@ def get_xy_pattern_wrapper(
 
 ####### Generate match (corrected spgs) validation set with randomized coordinates and reference:
 
-print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates).",
-    flush=True,
-)
-
 if generate_randomized_validation_datasets:
+
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates).",
+        flush=True,
+    )
 
     randomized_coords_crystals, reference_crystals, labels = randomize(
         icsd_crystals_match_corrected_labels[::randomization_step],
@@ -517,12 +517,12 @@ if generate_randomized_validation_datasets:
 
 ####### Generate match (corrected spgs) validation set with randomized lattice:
 
-print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized lattice).",
-    flush=True,
-)
-
 if generate_randomized_validation_datasets:
+
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized lattice).",
+        flush=True,
+    )
 
     randomized_lattice_crystals, _, labels = randomize(
         icsd_crystals_match_corrected_labels[::randomization_step],
@@ -568,12 +568,12 @@ if generate_randomized_validation_datasets:
 
 ####### Generate match (corrected spgs) validation set with randomized lattice and coords:
 
-print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates and lattice).",
-    flush=True,
-)
-
 if generate_randomized_validation_datasets:
+
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates and lattice).",
+        flush=True,
+    )
 
     randomized_both_crystals, _, labels = randomize(
         icsd_crystals_match_corrected_labels[::randomization_step],
@@ -615,10 +615,10 @@ if generate_randomized_validation_datasets:
     for i in range(0, len(labels)):
         randomized_both_labels.append(spgs.index(labels[i]))
 
-print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done generating randomized datasets.",
-    flush=True,
-)
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done generating randomized datasets.",
+        flush=True,
+    )
 
 ##############
 
