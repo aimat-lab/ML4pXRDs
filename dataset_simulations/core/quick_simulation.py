@@ -584,9 +584,9 @@ def get_random_xy_patterns(
 
             if probability_per_spg is not None:
                 spg = np.random.choice(
-                    probability_per_spg.keys(),
+                    list(probability_per_spg.keys()),
                     size=1,
-                    p=probability_per_spg.values(),
+                    p=list(probability_per_spg.values()),
                 )[0]
 
             if group_object_per_spg is not None and spg in group_object_per_spg.keys():
