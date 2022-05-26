@@ -580,6 +580,7 @@ def get_random_xy_patterns(
             start = time.time()
 
         structures = []
+        current_spgs = []
         for _ in range(structures_per_spg):
 
             if probability_per_spg is not None:
@@ -588,6 +589,8 @@ def get_random_xy_patterns(
                     size=1,
                     p=list(probability_per_spg.values()),
                 )[0]
+
+            current_spgs.append(spg)
 
             if group_object_per_spg is not None and spg in group_object_per_spg.keys():
                 group_object = group_object_per_spg[spg]
@@ -629,7 +632,9 @@ def get_random_xy_patterns(
         if do_print:
             timings_generation.append(time.time() - start)
 
-        for structure in structures:
+        for i, structure in enumerate(structures):
+
+            current_spg = current_spgs[i]
 
             # print(structure.volume)
 
@@ -658,7 +663,8 @@ def get_random_xy_patterns(
                     print(structure)
 
             else:
-                labels.extend([spg] * NO_corn_sizes)
+
+                labels.extend([current_spg] * NO_corn_sizes)
                 result_patterns_y.extend(patterns_ys)
 
                 if return_additional:
