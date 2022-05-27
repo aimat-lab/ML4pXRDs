@@ -1478,7 +1478,7 @@ def prepare_training(
                 statistics_match_labels,
                 test_metas,
                 test_labels,
-                corrected_labels,
+                list(reversed(corrected_labels)),
                 test_match_metas,
                 test_match_pure_metas,
             ),
@@ -1528,7 +1528,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         statistics_match_labels = data[10]
         test_metas = data[11]
         test_labels = data[12]
-        corrected_labels = list(reversed(data[13]))
+        corrected_labels = data[13]
         test_match_metas = data[14]
         test_match_pure_metas = data[15]
 
