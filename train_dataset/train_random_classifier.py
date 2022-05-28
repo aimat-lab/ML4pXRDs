@@ -37,7 +37,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 
-tag = "all-spgs-huge-lr-0.001-non-uniform"
+tag = "all-spgs-direct-small-lr-0.001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -55,8 +55,8 @@ run_analysis_after_run = True
 analysis_per_spg = False
 
 test_every_X_epochs = 1
-batches_per_epoch = 150
-NO_epochs = 2000
+batches_per_epoch = 150 # doesn't count for direct training
+NO_epochs = 600
 
 # For ViT:
 # structures_per_spg = 1
@@ -102,13 +102,13 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
 
 use_statistics_dataset_as_validation = False
 generate_randomized_validation_datasets = False
 randomization_step = 10  # Only use every n'th sample for the randomization process
 
-use_dropout = False
+use_dropout = True
 
 learning_rate = 0.001
 
@@ -1508,14 +1508,16 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
     # train_dist_dataset = strategy.experimental_distribute_dataset(dataset)
 
-    # model = build_model_park(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+    model = build_model_park(
+        None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    )
     # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
     # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
     # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 
-    model = build_model_park_huge_size(
-        None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    )
+    # model = build_model_park_huge_size(
+    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    # )
 
     # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
