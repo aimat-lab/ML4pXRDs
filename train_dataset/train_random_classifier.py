@@ -55,8 +55,8 @@ run_analysis_after_run = True
 analysis_per_spg = False
 
 test_every_X_epochs = 1
-batches_per_epoch = 150 # doesn't count for direct training
-NO_epochs = 600
+batches_per_epoch = 150  # doesn't count for direct training
+NO_epochs = 1000
 
 # For ViT:
 # structures_per_spg = 1
@@ -1508,7 +1508,10 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
     # train_dist_dataset = strategy.experimental_distribute_dataset(dataset)
 
-    model = build_model_park(
+    # model = build_model_park(
+    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    # )
+    model = build_model_park_medium_size(
         None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     )
     # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
