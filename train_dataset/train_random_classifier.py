@@ -136,6 +136,8 @@ use_distributed_strategy = False
 
 uniformly_distributed = False
 
+shuffle_test_match_train_match = True  # TODO: Change this back
+
 local = False
 if local:
     NO_workers = 8
@@ -210,6 +212,31 @@ print(
     ),
 ) = load_dataset_info()
 
+if shuffle_test_match_train_match:
+
+    test_match_labels = []
+    test_metas_flat = [meta[0] for meta in test_metas]
+    for meta in test_match_metas:
+        test_match_labels.append(test_labels[test_metas_flat.index(meta[0])])
+
+    all_metas_tmp = statistics_match_metas + test_match_metas
+    all_labels_tmp = statistics_match_labels + test_match_labels
+
+    indices = list(range(len(all_metas_tmp)))
+    random.shuffle(indices)
+
+    all_metas_shuffled = [all_metas_tmp[i] for i in indices]
+    all_labels_shuffled = [all_labels_tmp[i] for i in indices]
+
+    statistics_match_metas = all_metas_shuffled[0 : len(statistics_match_metas)]
+    statistics_match_labels = all_labels_shuffled[0 : len(statistics_match_metas)]
+
+    test_match_metas = all_metas_shuffled[len(statistics_match_metas) :]
+    test_match_labels = all_labels_shuffled[len(statistics_match_metas) :]
+
+    print(
+        f"Shuffled train and test datasets, sizes: {len(statistics_match_metas)}, {len(test_match_metas)}"
+    )
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading dataset info.",
@@ -323,6 +350,9 @@ metas_to_load_test = []
 for i, meta in enumerate(test_metas_flat):
     if test_labels[i][0] in spgs or corrected_labels[i] in spgs:
         metas_to_load_test.append(meta)
+
+if shuffle_test_match_train_match:
+    metas_to_load_test += test_match_metas_flat
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start loading patterns for test dataset.",
@@ -1127,6 +1157,26 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         "Size of statistics / training dataset: ", statistics_x_match.shape, flush=True
     )
 
+"""
+if shuffle_test_match_train_match:
+
+    # shuffle statistics_x_match, statistics_y_match, val_x_match, val_y_match
+
+    all_indices = list(range(0, statistics_x_match.shape[0] + val_x_match.shape[0]))
+    random.shuffle(all_indices)
+
+    indices_statistics = all_indices[0:statistics_x_match.shape[0]] 
+    indices_test = all_indices[statistics_x_match.shape[0]:] 
+
+    indices_statistics_0 = [i for i in indices_statistics if i < statistics_x_match.shape[0]]
+    indices_statistics_1 = [i for i in indices_statistics if i >= statistics_x_match.shape[0]]
+
+    indices_test_0 = [i for i in indices_statistics if i < statistics_x_match.shape[0]]
+    indices_test_1 = [i for i in indices_statistics if i >= statistics_x_match.shape[0]]
+
+    statistics_x_match_tmp = statistics_x_match[]
+"""
+
 #########################################################
 
 if not use_icsd_structures_directly:
@@ -1191,6 +1241,8 @@ params_txt = (
     f"sample_lattice_paras_from_kde: {str(sample_lattice_paras_from_kde)} \n \n \n"
     f"per_element: {str(per_element)} \n \n"
     f"use_distributed_strategy: {str(use_distributed_strategy)} \n \n"
+    f"uniformly_distributed: {str(uniformly_distributed)} \n \n"
+    f"shuffle_test_match_train_match: {str(shuffle_test_match_train_match)} \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
