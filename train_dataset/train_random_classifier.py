@@ -37,7 +37,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 
-tag = "all-spgs-direct-small-lr-0.001"
+tag = "all-spgs-direct-medium-lr-0.001"
 description = ""
 
 if len(sys.argv) > 1:
