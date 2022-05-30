@@ -47,6 +47,12 @@ else:
     date_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     out_base = "classifier_spgs/" + date_time + "_" + tag + "/"
 
+if len(sys.argv) > 2 and sys.argv[2] == "head_only":
+    head_only = True
+    print("Running in head-only mode.", flush=True)
+else:
+    head_only = False
+
 os.system("mkdir -p " + out_base)
 os.system("mkdir -p " + out_base + "tuner_tb")
 os.system("touch " + out_base + tag)
@@ -75,7 +81,11 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-NO_workers = 127 + 127 + 8  # for int-nano cluster
+if not head_only:
+    NO_workers = 127 + 127 + 8  # for int-nano cluster
+else:
+    NO_workers = 30 # for int-nano cluster
+
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 
