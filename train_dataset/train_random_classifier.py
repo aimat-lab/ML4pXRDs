@@ -1124,61 +1124,6 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     n_patterns_per_crystal_statistics = len(icsd_sim_statistics.sim_patterns[0])
 
-    if shuffle_test_match_train_match:
-
-        # shuffle statistics_x_match, statistics_y_match, val_x_match, val_y_match
-
-        all_indices = list(range(0, statistics_x_match.shape[0] + val_x_match.shape[0]))
-        random.shuffle(all_indices)
-
-        indices_statistics = all_indices[0 : statistics_x_match.shape[0]]
-        indices_test = all_indices[statistics_x_match.shape[0] :]
-
-        indices_statistics_0 = [
-            i for i in indices_statistics if i < statistics_x_match.shape[0]
-        ]
-        indices_statistics_1 = [
-            i for i in indices_statistics if i >= statistics_x_match.shape[0]
-        ]
-
-        indices_test_0 = [i for i in indices_test if i < statistics_x_match.shape[0]]
-        indices_test_1 = [i for i in indices_test if i >= statistics_x_match.shape[0]]
-
-        statistics_x_match_tmp = np.concatenate(
-            (
-                statistics_x_match[indices_statistics_0, ...],
-                val_x_match[indices_statistics_1, ...],
-            ),
-            axis=0,
-        )
-        test_x_match_tmp = np.concatenate(
-            (statistics_x_match[indices_test_0, ...], val_x_match[indices_test_1, ...]),
-            axis=0,
-        )
-        statistics_x_match = statistics_x_match_tmp
-        test_x_match = test_x_match_tmp
-
-        statistics_y_match_tmp = np.concatenate(
-            (
-                statistics_y_match[indices_statistics_0],
-                val_y_match[indices_statistics_1],
-            ),
-            axis=0,
-        )
-        test_y_match_tmp = np.concatenate(
-            (statistics_y_match[indices_test_0], val_y_match[indices_test_1]),
-            axis=0,
-        )
-        statistics_y_match = statistics_y_match_tmp
-        test_y_match = test_y_match_tmp
-
-        print(
-            "Size of suffled test, train dataset: ",
-            val_x_match.shape,
-            statistics_x_match.shape,
-            flush=True,
-        )
-
     ##########
 
     if not shuffle_test_match_train_match:
