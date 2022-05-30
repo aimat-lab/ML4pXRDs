@@ -690,15 +690,7 @@ for pattern in icsd_patterns_all:
     for sub_pattern in pattern:
         val_x_all.append(sub_pattern)
 
-val_y_match = []
-for i, label in enumerate(icsd_labels_match):
-    val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
-val_y_match = np.array(val_y_match)
-
-val_x_match = []
-for pattern in icsd_patterns_match:
-    for sub_pattern in pattern:
-        val_x_match.append(sub_pattern)
+# Moved creation of val_x_match and val_y_match down for shuffling option
 
 val_y_match_correct_spgs = []
 for i, label in enumerate(icsd_labels_match_corrected_labels):
@@ -770,20 +762,14 @@ print(
     flush=True,
 )
 
-print("Numbers in validation set (that matches sim parameters):")
-for i in range(0, len(spgs)):
-    print(f"Spg {spgs[i]} : {np.sum(val_y_match==i)}")
 
 assert not np.any(np.isnan(val_x_all))
 assert not np.any(np.isnan(val_y_all))
-assert not np.any(np.isnan(val_x_match))
-assert not np.any(np.isnan(val_y_match))
 assert not np.any(np.isnan(val_x_match_correct_spgs))
 assert not np.any(np.isnan(val_y_match_correct_spgs))
 assert not np.any(np.isnan(val_x_match_correct_spgs_pure))
 assert not np.any(np.isnan(val_y_match_correct_spgs_pure))
 assert len(val_x_all) == len(val_y_all)
-assert len(val_x_match) == len(val_y_match)
 assert len(val_x_match_correct_spgs) == len(val_y_match_correct_spgs)
 assert len(val_x_match_correct_spgs_pure) == len(val_y_match_correct_spgs_pure)
 
@@ -1031,7 +1017,6 @@ if scale_patterns:
         pickle.dump(sc, file)
 
     val_x_all = sc.transform(val_x_all)
-    val_x_match = sc.transform(val_x_match)
     val_x_match_correct_spgs = sc.transform(val_x_match_correct_spgs)
     val_x_match_correct_spgs_pure = sc.transform(val_x_match_correct_spgs_pure)
 
@@ -1042,7 +1027,6 @@ if scale_patterns:
         val_x_randomized_both = sc.transform(val_x_randomized_both)
 
 val_x_all = np.expand_dims(val_x_all, axis=2)
-val_x_match = np.expand_dims(val_x_match, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 val_x_random = np.expand_dims(val_x_random, axis=2)
@@ -1140,16 +1124,148 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     n_patterns_per_crystal_statistics = len(icsd_sim_statistics.sim_patterns[0])
 
-    statistics_y_match = []
-    for i, label in enumerate(statistics_icsd_labels_match):
-        statistics_y_match.extend(
-            [spgs.index(label[0])] * n_patterns_per_crystal_statistics
+    if shuffle_test_match_train_match:
+
+        # shuffle statistics_x_match, statistics_y_match, val_x_match, val_y_match
+
+        all_indices = list(range(0, statistics_x_match.shape[0] + val_x_match.shape[0]))
+        random.shuffle(all_indices)
+
+        indices_statistics = all_indices[0 : statistics_x_match.shape[0]]
+        indices_test = all_indices[statistics_x_match.shape[0] :]
+
+        indices_statistics_0 = [
+            i for i in indices_statistics if i < statistics_x_match.shape[0]
+        ]
+        indices_statistics_1 = [
+            i for i in indices_statistics if i >= statistics_x_match.shape[0]
+        ]
+
+        indices_test_0 = [i for i in indices_test if i < statistics_x_match.shape[0]]
+        indices_test_1 = [i for i in indices_test if i >= statistics_x_match.shape[0]]
+
+        statistics_x_match_tmp = np.concatenate(
+            (
+                statistics_x_match[indices_statistics_0, ...],
+                val_x_match[indices_statistics_1, ...],
+            ),
+            axis=0,
+        )
+        test_x_match_tmp = np.concatenate(
+            (statistics_x_match[indices_test_0, ...], val_x_match[indices_test_1, ...]),
+            axis=0,
+        )
+        statistics_x_match = statistics_x_match_tmp
+        test_x_match = test_x_match_tmp
+
+        statistics_y_match_tmp = np.concatenate(
+            (
+                statistics_y_match[indices_statistics_0],
+                val_y_match[indices_statistics_1],
+            ),
+            axis=0,
+        )
+        test_y_match_tmp = np.concatenate(
+            (statistics_y_match[indices_test_0], val_y_match[indices_test_1]),
+            axis=0,
+        )
+        statistics_y_match = statistics_y_match_tmp
+        test_y_match = test_y_match_tmp
+
+        print(
+            "Size of suffled test, train dataset: ",
+            val_x_match.shape,
+            statistics_x_match.shape,
+            flush=True,
         )
 
-    statistics_x_match = []
-    for pattern in statistics_icsd_patterns_match:
-        for sub_pattern in pattern:
-            statistics_x_match.append(sub_pattern)
+    ##########
+
+    if not shuffle_test_match_train_match:
+
+        val_y_match = []
+        for i, label in enumerate(icsd_labels_match):
+            val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
+
+        val_x_match = []
+        for pattern in icsd_patterns_match:
+            for sub_pattern in pattern:
+                val_x_match.append(sub_pattern)
+
+        statistics_y_match = []
+        for i, label in enumerate(statistics_icsd_labels_match):
+            statistics_y_match.extend(
+                [spgs.index(label[0])] * n_patterns_per_crystal_statistics
+            )
+
+        statistics_x_match = []
+        for pattern in statistics_icsd_patterns_match:
+            for sub_pattern in pattern:
+                statistics_x_match.append(sub_pattern)
+
+    else:
+
+        val_y_match = []
+        val_x_match = []
+        statistics_y_match = []
+        statistics_x_match = []
+
+        total = (
+            len(icsd_labels_match) * n_patterns_per_crystal_test
+            + len(statistics_icsd_labels_match) * n_patterns_per_crystal_statistics
+        )
+        probability_test = len(icsd_labels_match) * n_patterns_per_crystal_test / total
+
+        for i in range(len(icsd_labels_match)):
+            label = icsd_labels_match[i]
+            pattern = icsd_patterns_match[i]
+
+            if random.random() < probability_test:
+                for sub_pattern in pattern:
+                    val_x_match.append(sub_pattern)
+                val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
+            else:
+                for sub_pattern in pattern:
+                    statistics_x_match.append(sub_pattern)
+                statistics_y_match.extend(
+                    [spgs.index(label[0])] * n_patterns_per_crystal_test
+                )
+
+        for i in range(len(statistics_icsd_labels_match)):
+            label = statistics_icsd_labels_match[i]
+            pattern = statistics_icsd_patterns_match[i]
+
+            if random.random() < probability_test:
+                for sub_pattern in pattern:
+                    val_x_match.append(sub_pattern)
+                val_y_match.extend(
+                    [spgs.index(label[0])] * n_patterns_per_crystal_statistics
+                )
+            else:
+                for sub_pattern in pattern:
+                    statistics_x_match.append(sub_pattern)
+                statistics_y_match.extend(
+                    [spgs.index(label[0])] * n_patterns_per_crystal_statistics
+                )
+
+    ##########
+
+    val_y_match = np.array(val_y_match)
+    print("Numbers in validation set (that matches sim parameters):")
+    for i in range(0, len(spgs)):
+        print(f"Spg {spgs[i]} : {np.sum(val_y_match==i)}")
+
+    assert not np.any(np.isnan(val_x_match))
+    assert not np.any(np.isnan(val_y_match))
+    assert len(val_x_match) == len(val_y_match)
+
+    if scale_patterns:
+        val_x_all = sc.transform(val_x_all)
+        val_x_match = sc.transform(val_x_match)
+
+    val_x_match = np.expand_dims(val_x_match, axis=2)
+
+    ##########
 
     statistics_x_match, statistics_y_match = shuffle(
         statistics_x_match, statistics_y_match
@@ -1158,64 +1274,12 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     statistics_y_match = np.array(statistics_y_match)
     statistics_x_match = np.expand_dims(statistics_x_match, axis=2)
 
+    ##########
+
     print(
         "Size of statistics / training dataset: ", statistics_x_match.shape, flush=True
     )
-
-if shuffle_test_match_train_match:
-
-    # shuffle statistics_x_match, statistics_y_match, val_x_match, val_y_match
-
-    all_indices = list(range(0, statistics_x_match.shape[0] + val_x_match.shape[0]))
-    random.shuffle(all_indices)
-
-    indices_statistics = all_indices[0 : statistics_x_match.shape[0]]
-    indices_test = all_indices[statistics_x_match.shape[0] :]
-
-    indices_statistics_0 = [
-        i for i in indices_statistics if i < statistics_x_match.shape[0]
-    ]
-    indices_statistics_1 = [
-        i for i in indices_statistics if i >= statistics_x_match.shape[0]
-    ]
-
-    indices_test_0 = [i for i in indices_test if i < statistics_x_match.shape[0]]
-    indices_test_1 = [i for i in indices_test if i >= statistics_x_match.shape[0]]
-
-    statistics_x_match_tmp = np.concatenate(
-        (
-            statistics_x_match[indices_statistics_0, ...],
-            val_x_match[indices_statistics_1, ...],
-        ),
-        axis=0,
-    )
-    test_x_match_tmp = np.concatenate(
-        (statistics_x_match[indices_test_0, ...], val_x_match[indices_test_1, ...]),
-        axis=0,
-    )
-    statistics_x_match = statistics_x_match_tmp
-    test_x_match = test_x_match_tmp
-
-    statistics_y_match_tmp = np.concatenate(
-        (
-            statistics_y_match[indices_statistics_0],
-            val_y_match[indices_statistics_1],
-        ),
-        axis=0,
-    )
-    test_y_match_tmp = np.concatenate(
-        (statistics_y_match[indices_test_0], val_y_match[indices_test_1]),
-        axis=0,
-    )
-    statistics_y_match = statistics_y_match_tmp
-    test_y_match = test_y_match_tmp
-
-    print(
-        "Size of suffled test, train dataset: ",
-        val_x_match.shape,
-        statistics_x_match.shape,
-        flush=True,
-    )
+    print("Size of test dataset: ", val_x_match.shape, flush=True)
 
 #########################################################
 
