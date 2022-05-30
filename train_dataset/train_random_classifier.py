@@ -408,7 +408,8 @@ for i in range(len(icsd_sim_test.sim_crystals)):
             )  # use the converted structure (conventional cell)
             icsd_metas_all.append(icsd_sim_test.sim_metas[i])
     else:
-        raise Exception("There is a mismatch somewhere.")
+        if not shuffle_test_match_train_match:  # otherwise this is OK
+            raise Exception("There is a mismatch somewhere.")
 
     if icsd_sim_test.sim_metas[i][0] in test_match_metas_flat:
 
