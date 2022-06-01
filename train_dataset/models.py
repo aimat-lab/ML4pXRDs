@@ -426,6 +426,8 @@ def build_model_park_gigantic_size(
 
     model.summary()
 
+    return model
+
 
 def build_model_park_original_spg(
     hp=None,
