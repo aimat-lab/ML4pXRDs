@@ -38,7 +38,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 
-tag = "all-spgs-direct-2-layer-CNN"
+tag = "all-spgs-random-original-lr-0.001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -113,13 +113,13 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
 
 use_statistics_dataset_as_validation = False
 generate_randomized_validation_datasets = False
 randomization_step = 10  # Only use every n'th sample for the randomization process
 
-use_dropout = True
+use_dropout = False
 
 learning_rate = 0.001
 
@@ -1616,10 +1616,10 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_park_2_layer_CNN"
-    model = build_model_park_2_layer_CNN(
-        None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    )
+    model_name = "model_park_original"
+    # model = build_model_park_2_layer_CNN(
+    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    # )
 
     # model = build_model_park(
     #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
@@ -1646,9 +1646,9 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
     #    steps_per_epoch=batches_per_epoch,
     # )
 
-    # model = build_model_park_original_spg(
-    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    # )
+    model = build_model_park_original_spg(
+        None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    )
 
     params_txt += "\n" + f"model_name: {model_name}"
     with file_writer.as_default():
