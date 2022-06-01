@@ -1305,8 +1305,6 @@ params_txt = (
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
-with file_writer.as_default():
-    tf.summary.text("Parameters", data=params_txt, step=0)
 
 log_wait_timings = []
 
@@ -1617,8 +1615,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    # train_dist_dataset = strategy.experimental_distribute_dataset(dataset)
-
+    model_name = "model_park_medium_size"
     # model = build_model_park(
     #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     # )
@@ -1647,6 +1644,10 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
     # model = build_model_park_original_spg(
     #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     # )
+
+    params_txt += "\n" + f"model_name: {model_name}"
+    with file_writer.as_default():
+        tf.summary.text("Parameters", data=params_txt, step=0)
 
     if not use_icsd_structures_directly:
         model.fit(
