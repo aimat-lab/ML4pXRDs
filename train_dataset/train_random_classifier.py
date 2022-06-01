@@ -84,7 +84,7 @@ use_icsd_statistics = True
 if not head_only:
     NO_workers = 127 + 127 + 8  # for int-nano cluster
 else:
-    NO_workers = 30 # for int-nano cluster
+    NO_workers = 30  # for int-nano cluster
 
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
@@ -146,7 +146,7 @@ use_distributed_strategy = False
 
 uniformly_distributed = False
 
-shuffle_test_match_train_match = True  # TODO: Change this back
+shuffle_test_match_train_match = False
 
 local = False
 if local:

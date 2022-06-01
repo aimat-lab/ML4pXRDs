@@ -2189,6 +2189,9 @@ def show_dataset_statistics():
         else:
             samples_per_spg_statistics[label[0]] = 1
 
+    print(f"Size of statistics match dataset: {len(statistics_match_labels)}")
+    print(f"Size of test match dataset: {len(test_match_labels)}")
+
     for label in test_match_labels:
         if label[0] in samples_per_spg_test.keys():
             samples_per_spg_test[label[0]] += 1
@@ -2208,8 +2211,8 @@ def show_dataset_statistics():
             if spg in samples_per_spg_statistics.keys()
             else 0
         )
-        if N_test > N_statistics:
-            print(f"spg {spg}: test: {N_test} statistics: {N_statistics}")
+        # if N_test > N_statistics:
+        print(f"spg {spg}: statistics: {N_statistics} test: {N_test}")
 
 
 if __name__ == "__main__":

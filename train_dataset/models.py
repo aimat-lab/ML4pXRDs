@@ -94,6 +94,74 @@ def build_model_park(
     return model
 
 
+def build_model_park_2_layer_CNN(
+    hp=None,
+    number_of_input_values=9018,
+    number_of_output_labels=2,
+    use_dropout=False,
+    lr=0.001,
+):
+
+    # From Park:
+    # They actually train for 5000 epochs and batch size 1000 in the original paper
+
+    model = keras.models.Sequential()
+    model.add(
+        keras.layers.Convolution1D(
+            30,
+            100,
+            strides=5,
+            padding="same",
+            input_shape=(number_of_input_values, 1),
+        )
+    )  # add convolution layer
+    model.add(keras.layers.Activation("relu"))  # activation
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=3, strides=2))  # pooling layer
+
+    model.add(keras.layers.Convolution1D(30, 50, strides=5, padding="same"))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=7, strides=7))
+
+    model.add(keras.layers.Flatten())
+
+    model.add(keras.layers.Dense(700))  # This is the smaller Park version!
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
+    model.add(keras.layers.Dense(70))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
+    model.add(keras.layers.Dense(number_of_output_labels))
+
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
+
+    model.compile(
+        optimizer=optimizer,
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+        ],  # here from_logits is not needed, since argmax will be the same
+    )
+
+    model.summary()
+
+    return model
+
+
 def build_model_park_medium_size(
     hp=None,
     number_of_input_values=9018,
@@ -265,6 +333,98 @@ def build_model_park_huge_size(
     model.summary()
 
     return model
+
+
+def build_model_park_gigantic_size(
+    hp=None,
+    number_of_input_values=9018,
+    number_of_output_labels=2,
+    use_dropout=False,
+    lr=0.001,
+):
+    # From Park:
+    # They actually train for 5000 epochs and batch size 1000 in the original paper
+
+    model = keras.models.Sequential()
+    model.add(
+        keras.layers.Convolution1D(
+            120,
+            100,
+            strides=2,
+            padding="same",
+            input_shape=(number_of_input_values, 1),
+        )
+    )  # add convolution layer
+    model.add(keras.layers.Activation("relu"))  # activation
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=2, strides=2))  # pooling layer
+
+    model.add(keras.layers.Convolution1D(120, 75, strides=2, padding="same"))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=2, strides=None))
+
+    model.add(keras.layers.Convolution1D(120, 50, strides=2, padding="same"))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=2, strides=None))
+
+    model.add(keras.layers.Convolution1D(120, 25, strides=2, padding="same"))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=2, strides=None))
+    model.add(keras.layers.Flatten())
+
+    model.add(keras.layers.Dense(2300))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
+    model.add(keras.layers.Dense(1150))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
+    model.add(
+        # keras.layers.Dense(
+        #    1 if (number_of_output_labels == 2) else number_of_output_labels
+        # )
+        keras.layers.Dense(number_of_output_labels)
+    )
+
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
+
+    # if number_of_output_labels == 2:
+    #    model.compile(
+    #        optimizer=optimizer,
+    #        loss=keras.losses.BinaryCrossentropy(from_logits=True),
+    #        metrics=[BinaryAccuracy(from_logits=True)],
+    #    )
+    # else:
+    model.compile(
+        optimizer=optimizer,
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+        ],  # here from_logits is not needed, since argmax will be the same
+    )
+
+    model.summary()
 
 
 def build_model_park_original_spg(
@@ -477,19 +637,41 @@ def build_model_resnet_10(
 
 if __name__ == "__main__":
 
+    print("Tiny size")
     model = build_model_park_tiny_size(
         None, 8501, 145, False, 0.0001
     )  # only one conv layer but with more filters (120 instead of 80)
+
+    print("7-label version")
     model = build_model_park(None, 8501, 145, False, 0.0001)  # 7-label version
+
+    print("7-label version with 2 CNN layers")
+    model = build_model_park_2_layer_CNN(
+        None, 8501, 145, False, 0.0001
+    )  # 7-label version with only 2 CNN layers and some less filters
+
+    print("Medium size")
     model = build_model_park_medium_size(
         None, 8501, 145, False, 0.0001
     )  # 101-label version
+
+    print("Original 230-label")
     model = build_model_park_original_spg(
         None, 8501, 145, False, 0.0001
     )  # 230-label version
+
+    print("Huge size")
     model = build_model_park_huge_size(
         None, 8501, 145, False, 0.0001
     )  # my version: original 230-label + more filters
 
+    print("Gigantic size")
+    model = build_model_park_gigantic_size(
+        None, 8501, 145, False, 0.0001
+    )  # huge + one CNN layer + different strides
+
+    print("Resnet 10")
     model = build_model_resnet_10(None, 8501, 145, 0.0001, 0, "Adam")
+
+    print("ViT")
     model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
