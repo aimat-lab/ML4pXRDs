@@ -4,6 +4,7 @@ from dataset_simulations.random_simulation_utils import load_dataset_info
 import numpy as np
 from models import (
     build_model_park,
+    build_model_park_2_layer_CNN,
     build_model_park_medium_size,
     build_model_park_huge_size,
     build_model_park_original_spg,
@@ -37,7 +38,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 
-tag = "all-spgs-direct-medium-lr-0.001"
+tag = "all-spgs-direct-2-layer-CNN"
 description = ""
 
 if len(sys.argv) > 1:
@@ -1615,13 +1616,17 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_park_medium_size"
+    model_name = "model_park_2_layer_CNN"
+    model = build_model_park_2_layer_CNN(
+        None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    )
+
     # model = build_model_park(
     #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     # )
-    model = build_model_park_medium_size(
-        None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    )
+    # model = build_model_park_medium_size(
+    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    # )
     # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
     # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
     # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
