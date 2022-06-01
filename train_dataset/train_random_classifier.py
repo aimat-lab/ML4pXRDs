@@ -5,6 +5,7 @@ import numpy as np
 from models import (
     build_model_park,
     build_model_park_2_layer_CNN,
+    build_model_park_gigantic_size,
     build_model_park_medium_size,
     build_model_park_huge_size,
     build_model_park_original_spg,
@@ -38,7 +39,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 
-tag = "all-spgs-random-original-lr-0.001"
+tag = "all-spgs-random-gigantic-lr-0.001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -143,7 +144,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False
+use_distributed_strategy = True  # TODO: Possibly change back
 
 uniformly_distributed = False
 
@@ -1616,7 +1617,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_park_original"
+    model_name = "model_park_gigantic"
     # model = build_model_park_2_layer_CNN(
     #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     # )
@@ -1646,7 +1647,11 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
     #    steps_per_epoch=batches_per_epoch,
     # )
 
-    model = build_model_park_original_spg(
+    # model = build_model_park_original_spg(
+    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    # )
+
+    model = build_model_park_gigantic_size(
         None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     )
 
