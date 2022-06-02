@@ -1207,36 +1207,50 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     ##########
 
-    val_y_match = np.array(val_y_match)
-    print("Numbers in validation set (that matches sim parameters):")
-    for i in range(0, len(spgs)):
-        print(f"Spg {spgs[i]} : {np.sum(val_y_match==i)}")
-
-    assert not np.any(np.isnan(val_x_match))
-    assert not np.any(np.isnan(val_y_match))
-    assert len(val_x_match) == len(val_y_match)
-
-    if scale_patterns:
-        val_x_all = sc.transform(val_x_all)
-        val_x_match = sc.transform(val_x_match)
-
-    val_x_match = np.expand_dims(val_x_match, axis=2)
-
-    ##########
-
     statistics_x_match, statistics_y_match = shuffle(
         statistics_x_match, statistics_y_match
     )
 
     statistics_y_match = np.array(statistics_y_match)
-    statistics_x_match = np.expand_dims(statistics_x_match, axis=2)
 
-    ##########
+    if scale_patterns:
+        statistics_x_match = sc.transform(statistics_x_match)
+
+    statistics_x_match = np.expand_dims(statistics_x_match, axis=2)
 
     print(
         "Size of statistics / training dataset: ", statistics_x_match.shape, flush=True
     )
-    print("Size of test dataset: ", val_x_match.shape, flush=True)
+
+else:
+
+    val_y_match = []
+    for i, label in enumerate(icsd_labels_match):
+        val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
+
+    val_x_match = []
+    for pattern in icsd_patterns_match:
+        for sub_pattern in pattern:
+            val_x_match.append(sub_pattern)
+
+##########
+
+val_y_match = np.array(val_y_match)
+print("Numbers in validation set (that matches sim parameters):")
+for i in range(0, len(spgs)):
+    print(f"Spg {spgs[i]} : {np.sum(val_y_match==i)}")
+
+assert not np.any(np.isnan(val_x_match))
+assert not np.any(np.isnan(val_y_match))
+assert len(val_x_match) == len(val_y_match)
+
+if scale_patterns:
+    val_x_all = sc.transform(val_x_all)
+    val_x_match = sc.transform(val_x_match)
+
+val_x_match = np.expand_dims(val_x_match, axis=2)
+
+print("Size of test dataset: ", val_x_match.shape, flush=True)
 
 #########################################################
 
