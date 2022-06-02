@@ -144,7 +144,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = True  # TODO: Possibly change back
+use_distributed_strategy = False  # TODO: Possibly change back
 
 uniformly_distributed = False
 
@@ -1631,7 +1631,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_park_gigantic"
+    model_name = "model_park_original"
     # model = build_model_park_2_layer_CNN(
     #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     # )
@@ -1661,13 +1661,13 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
     #    steps_per_epoch=batches_per_epoch,
     # )
 
-    # model = build_model_park_original_spg(
-    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    # )
-
-    model = build_model_park_gigantic_size(
+    model = build_model_park_original_spg(
         None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     )
+
+    # model = build_model_park_gigantic_size(
+    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+    # )
 
     params_txt += "\n" + f"model_name: {model_name}"
     with file_writer.as_default():
