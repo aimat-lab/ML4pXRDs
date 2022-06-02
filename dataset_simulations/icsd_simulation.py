@@ -48,13 +48,14 @@ class ICSDSimulation(Simulation):
 
     def plot_histogram_of_spgs(self, do_show=True, logscale=True):
 
-        spgs = [
-            self.get_space_group_number(id) for id in self.icsd_ids
-        ]  # TODO: Change back
+        spgs = []
+        for i, id in enumerate(self.icsd_ids):
+            if (i % 100) == 0:
+                print(f"{i/len(self.icsd_ids)*100}%")
 
-        for i in reversed(range(0, len(spgs))):
-            if spgs[i] is None:
-                del spgs[i]
+            spg = self.get_space_group_number(id)
+            if spg is not None:
+                spgs.append(spg)
 
         print(f"Number of ICSD entries with available spg number: {len(spgs)}")
 
@@ -65,6 +66,7 @@ class ICSDSimulation(Simulation):
             plt.yscale("log")
 
         plt.xlabel("International space group number")
+        plt.ylabel("count")
         plt.savefig(f"distribution_spgs{'_logscale' if logscale else ''}.png")
 
         if do_show:
@@ -88,7 +90,7 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    if True:
+    if False:
 
         id = 259366
 
@@ -111,10 +113,8 @@ if __name__ == "__main__":
 
         pass
 
-    if False:
-
-        simulation.plot_histogram_of_spgs(logscale=True)
-        simulation.plot_histogram_of_spgs(logscale=False)
+    if True:
+        simulation.plot_histogram_of_spgs(logscale=True, do_show=False)
 
     if False:
 
