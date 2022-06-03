@@ -11,7 +11,7 @@ import generate_background_noise_utils
 from datetime import datetime
 from glob import glob
 
-to_test = "12-05-2022_11-38-21_UNetPP"
+to_test = "18-05-2022_09-45-42_UNetPP"
 
 pattern_x = np.arange(0, 90.24, 0.02)
 start_x = pattern_x[0]
@@ -111,5 +111,5 @@ for i, raw_file in enumerate(raw_files):
     )
 
     plt.legend()
-    # plt.show()
+    plt.show()
     plt.figure()

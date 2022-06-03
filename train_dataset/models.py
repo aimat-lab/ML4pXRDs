@@ -4,6 +4,7 @@ import tensorflow as tf
 from train_dataset.utils.resnet_v2_1D import ResNetv2
 from train_dataset.utils.resnet_keras_1D import ResNet
 from train_dataset.utils.transformer_vit import build_model_transformer_vit
+from train_dataset.utils.AdamWarmup import AdamWarmup
 
 
 class BinaryAccuracy(tfm.BinaryAccuracy):
@@ -639,41 +640,61 @@ def build_model_resnet_10(
 
 if __name__ == "__main__":
 
-    print("Tiny size")
-    model = build_model_park_tiny_size(
-        None, 8501, 145, False, 0.0001
-    )  # only one conv layer but with more filters (120 instead of 80)
+    if False:
+        
+        print("Tiny size")
+        model = build_model_park_tiny_size(
+            None, 8501, 145, False, 0.0001
+        )  # only one conv layer but with more filters (120 instead of 80)
+        model.save("test")
+        model = keras.models.load_model("test")
 
-    print("7-label version")
-    model = build_model_park(None, 8501, 145, False, 0.0001)  # 7-label version
+        print("7-label version")
+        model = build_model_park(None, 8501, 145, False, 0.0001)  # 7-label version
+        model.save("test")
+        model = keras.models.load_model("test")
 
-    print("7-label version with 2 CNN layers")
-    model = build_model_park_2_layer_CNN(
-        None, 8501, 145, False, 0.0001
-    )  # 7-label version with only 2 CNN layers and some less filters
+        print("7-label version with 2 CNN layers")
+        model = build_model_park_2_layer_CNN(
+            None, 8501, 145, False, 0.0001
+        )  # 7-label version with only 2 CNN layers and some less filters
+        model.save("test")
+        model = keras.models.load_model("test")
 
-    print("Medium size")
-    model = build_model_park_medium_size(
-        None, 8501, 145, False, 0.0001
-    )  # 101-label version
+        print("Medium size")
+        model = build_model_park_medium_size(
+            None, 8501, 145, False, 0.0001
+        )  # 101-label version
+        model.save("test")
+        model = keras.models.load_model("test")
 
-    print("Original 230-label")
-    model = build_model_park_original_spg(
-        None, 8501, 145, False, 0.0001
-    )  # 230-label version
+        print("Original 230-label")
+        model = build_model_park_original_spg(
+            None, 8501, 145, False, 0.0001
+        )  # 230-label version
+        model.save("test")
+        model = keras.models.load_model("test")
 
-    print("Huge size")
-    model = build_model_park_huge_size(
-        None, 8501, 145, False, 0.0001
-    )  # my version: original 230-label + more filters
+        print("Huge size")
+        model = build_model_park_huge_size(
+            None, 8501, 145, False, 0.0001
+        )  # my version: original 230-label + more filters
+        model.save("test")
+        model = keras.models.load_model("test")
 
-    print("Gigantic size")
-    model = build_model_park_gigantic_size(
-        None, 8501, 145, False, 0.0001
-    )  # huge + one CNN layer + different strides
+        print("Gigantic size")
+        model = build_model_park_gigantic_size(
+            None, 8501, 145, False, 0.0001
+        )  # huge + one CNN layer + different strides
+        model.save("test")
+        model = keras.models.load_model("test")
 
-    print("Resnet 10")
-    model = build_model_resnet_10(None, 8501, 145, 0.0001, 0, "Adam")
+        print("Resnet 10")
+        model = build_model_resnet_10(None, 8501, 145, 0.0001, 0, "Adam")
+        model.save("test")
+        model = keras.models.load_model("test")
 
     print("ViT")
     model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
+    model.save("test")
+    model = keras.models.load_model("test", custom_objects={"AdamWarmup": AdamWarmup})
