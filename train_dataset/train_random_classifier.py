@@ -629,6 +629,16 @@ if generate_randomized_validation_datasets:
     for i in range(0, len(labels)):
         randomized_lattice_labels.append(spgs.index(labels[i]))
 
+    with open(out_base + "randomized_lattice_data.pickle", "wb") as file:
+        pickle.dump(
+            (
+                randomized_lattice_crystals,
+                randomized_lattice_labels,
+                randomized_lattice_corn_sizes,
+            ),
+            file,
+        )
+
 ##############
 
 ####### Generate match (corrected spgs) validation set with randomized lattice and coords:
@@ -679,6 +689,16 @@ if generate_randomized_validation_datasets:
     randomized_both_labels = []
     for i in range(0, len(labels)):
         randomized_both_labels.append(spgs.index(labels[i]))
+
+    with open(out_base + "randomized_both_data.pickle", "wb") as file:
+        pickle.dump(
+            (
+                randomized_both_crystals,
+                randomized_both_labels,
+                randomized_both_corn_sizes,
+            ),
+            file,
+        )
 
     print(
         f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done generating randomized datasets.",
