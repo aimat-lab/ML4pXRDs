@@ -1,6 +1,7 @@
 from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 import os
+from dataset_simulations.simulation import Simulation
 
 os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
@@ -10,6 +11,8 @@ import sys
 sys.path.append("../")
 import generate_background_noise_utils
 from datetime import datetime
+from dataset_simulations.random_simulation_utils import load_dataset_info
+import pickle
 
 tag = "UNetPP"
 training_mode = "train"  # possible: train and test
@@ -29,6 +32,8 @@ number_of_batches = 500
 number_of_epochs = 600
 NO_workers = 30
 
+use_ICSD_patterns = True
+
 print(
     f"Training with {batch_size * number_of_batches * number_of_epochs} samples in total"
 )
@@ -39,6 +44,62 @@ out_base = "unet/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + 
 #    scaler = pickle.load(file)
 
 if training_mode == "train":
+
+    if use_ICSD_patterns:
+
+        with open(
+            os.path.join(os.path.dirname(__file__), "prepared_training/meta"), "rb"
+        ) as file:
+            data = pickle.load(file)
+
+            per_element = data[6]
+
+            counter_per_spg_per_element = data[0]
+            if per_element:
+                counts_per_spg_per_element_per_wyckoff = data[1]
+            else:
+                counts_per_spg_per_wyckoff = data[1]
+            NO_wyckoffs_prob_per_spg = data[2]
+            NO_unique_elements_prob_per_spg = data[3]
+
+            if per_element:
+                NO_repetitions_prob_per_spg_per_element = data[4]
+            else:
+                NO_repetitions_prob_per_spg = data[4]
+            denseness_factors_per_spg = data[5]
+
+            statistics_metas = data[7]
+            statistics_labels = data[8]
+            statistics_match_metas = data[9]
+            statistics_match_labels = data[10]
+            test_metas = data[11]
+            test_labels = data[12]
+            corrected_labels = data[13]
+            test_match_metas = data[14]
+            test_match_pure_metas = data[15]
+
+        path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
+        jobid = os.getenv("SLURM_JOB_ID")
+        if jobid is not None and jobid != "":
+            icsd_sim_statistics = Simulation(
+                os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+                os.path.expanduser("~/Databases/ICSD/cif/"),
+            )
+            icsd_sim_statistics.output_dir = path_to_patterns
+        else:  # local
+            icsd_sim_statistics = Simulation(
+                "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+                "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+            )
+            icsd_sim_statistics.output_dir = path_to_patterns
+
+        statistics_metas_flat = [item[0] for item in statistics_metas]
+
+        icsd_sim_statistics.load(
+            load_only_N_patterns_each=1,
+            metas_to_load=statistics_metas_flat,
+        )
+        statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
 
     class CustomSequence(keras.utils.Sequence):
         def __init__(self, batch_size, number_of_batches):
@@ -51,8 +112,14 @@ if training_mode == "train":
         def __getitem__(self, idx):
 
             data = generate_background_noise_utils.generate_samples_gp(
-                self.batch_size, (start_x, end_x), n_angles_output=N
+                self.batch_size,
+                (start_x, end_x),
+                n_angles_output=N,
+                icsd_patterns=statistics_patterns,
             )
+
+            # TODO: Make this without multithreading first
+            # TODO: Plot some examples of this.
 
             return (
                 data[0],

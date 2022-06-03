@@ -127,6 +127,7 @@ def generate_samples_gp(
     n_angles_output=4016,
     scaling=scaling,
     random_seed=None,
+    icsd_patterns=None,
 ):
 
     # x_test = np.linspace(10, 50, 1000)
@@ -159,6 +160,9 @@ def generate_samples_gp(
         pattern_xs,
         min_x,
         max_x,
+        icsd_pattern=np.random.choice(icsd_patterns, size=n_samples)
+        if icsd_patterns is not None
+        else None,
     )
     # stop = time.time()
     # print(f"Took {(stop-start)} for add_peaks")
@@ -176,7 +180,16 @@ def samples_truncnorm(loc, scale, bounds):
 
 
 @numba.njit
-def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x):
+def add_peaks(
+    n_samples,
+    n_angles_output,
+    xs_gp,
+    ys_gp,
+    pattern_xs,
+    min_x,
+    max_x,
+    icsd_pattern=None,
+):
 
     # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
     # ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples,)
@@ -249,7 +262,10 @@ def add_peaks(n_samples, n_angles_output, xs_gp, ys_gp, pattern_xs, min_x, max_x
 
             peak_sizes.append(peak_size)
 
-        ys_altered_all[i, :] += ys_unaltered_all[i, :]
+        # print(np.max(ys_unaltered_all[i, :]))
+        ys_altered_all[i, :] += (
+            ys_unaltered_all[i, :] / np.max(ys_unaltered_all[i, :]) * 4
+        )
 
         base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)
         # base_noise_level = base_noise_level_max
