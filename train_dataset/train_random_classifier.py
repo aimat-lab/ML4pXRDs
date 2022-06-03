@@ -1701,6 +1701,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         model = keras.models.load_model(
             pretrained_model_path, custom_objects={"AdamWarmup": AdamWarmup}
         )
+        model.optimizer.learning_rate.assign(learning_rate)
 
     params_txt += "\n" + f"model_name: {model_name}"
     with file_writer.as_default():
