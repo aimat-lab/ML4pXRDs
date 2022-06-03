@@ -2113,6 +2113,7 @@ if __name__ == "__main__":
         weights_icsd=None,
         weights_random=None,
         N_bins_continuous=60,
+        force_int_bins=False,
     ):
         # determine range on x axis:
         min = 10**9
@@ -2168,7 +2169,7 @@ if __name__ == "__main__":
                     min,
                     max + 2,
                     1
-                    if (max - min) < N_bins_continuous
+                    if force_int_bins or ((max - min) < N_bins_continuous)
                     else int((max - min) / N_bins_continuous),
                 )
                 - 0.5
@@ -2464,6 +2465,7 @@ if __name__ == "__main__":
             is_int=True,
             only_proportions=flag,
             min_is_zero=True,
+            force_int_bins=True,
         )
 
     for flag in [True, False]:
