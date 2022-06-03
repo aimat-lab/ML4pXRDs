@@ -7,6 +7,8 @@ os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import tensorflow as tf
+import contextlib
 
 sys.path.append("../")
 import generate_background_noise_utils
@@ -31,6 +33,7 @@ batch_size = 300
 number_of_batches = 500
 number_of_epochs = 600
 
+use_distributed_strategy = True
 use_ICSD_patterns = True
 local = False
 
@@ -106,9 +109,19 @@ if training_mode == "train":
         statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
 
     class CustomSequence(keras.utils.Sequence):
-        def __init__(self, batch_size, number_of_batches):
+        def __init__(self, batch_size, number_of_batches, number_of_epochs):
             self.batch_size = batch_size
             self.number_of_batches = number_of_batches
+            self._number_of_epochs = number_of_epochs
+
+        def __call__(self):
+            """Return next batch using an infinite generator model."""
+
+            for i in range(self.__len__() * self._number_of_epochs):
+                yield self.__getitem__(i)
+
+                if (i + 1) % self.__len__() == 0:
+                    self.on_epoch_end()
 
         def __len__(self):
             return self.number_of_batches
@@ -127,58 +140,74 @@ if training_mode == "train":
                 data[1],
             )
 
-    my_unet = UNet(
-        length=N,
-        model_depth=5,  # height
-        num_channel=1,  # input
-        model_width=5,  # first conv number of channels, danach immer verdoppeln
-        kernel_size=64,
-        output_nums=1,
-        problem_type="Regression",
-    )
-    # model = my_unet.UNet()
-    model = my_unet.UNetPP()
+    if use_distributed_strategy:
+        strategy = tf.distribute.MirroredStrategy()
 
-    # length: Input Signal Length
-    # model_depth: Depth of the Model
-    # model_width: Width of the Input Layer of the Model
-    # num_channel: Number of Channels allowed by the Model
-    # kernel_size: Kernel or Filter Size of the Convolutional Layers
-    # problem_type: Classification (Binary or Multiclass) or Regression
-    # output_nums: Output Classes (Classification Mode) or Features (Regression Mode)
-    # ds: Checks where Deep Supervision is active or not, either 0 or 1 [Default value set as 0]
-    # ae: Enables or diables the AutoEncoder Mode, either 0 or 1 [Default value set as 0]
-    # alpha: This Parameter is only for MultiResUNet, default value is 1
-    # feature_number: Number of Features or Embeddings to be extracted from the AutoEncoder in the A_E Mode
-    # is_transconv: (TRUE - Transposed Convolution, FALSE - UpSampling) in the Encoder Layer
+    with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()):
 
-    # keras.utils.plot_model(model, show_shapes=True)
+        my_unet = UNet(
+            length=N,
+            model_depth=5,  # height
+            num_channel=1,  # input
+            model_width=5,  # first conv number of channels, danach immer verdoppeln
+            kernel_size=64,
+            output_nums=1,
+            problem_type="Regression",
+        )
+        # model = my_unet.UNet()
+        model = my_unet.UNetPP()
 
-    model.summary()
+        # length: Input Signal Length
+        # model_depth: Depth of the Model
+        # model_width: Width of the Input Layer of the Model
+        # num_channel: Number of Channels allowed by the Model
+        # kernel_size: Kernel or Filter Size of the Convolutional Layers
+        # problem_type: Classification (Binary or Multiclass) or Regression
+        # output_nums: Output Classes (Classification Mode) or Features (Regression Mode)
+        # ds: Checks where Deep Supervision is active or not, either 0 or 1 [Default value set as 0]
+        # ae: Enables or diables the AutoEncoder Mode, either 0 or 1 [Default value set as 0]
+        # alpha: This Parameter is only for MultiResUNet, default value is 1
+        # feature_number: Number of Features or Embeddings to be extracted from the AutoEncoder in the A_E Mode
+        # is_transconv: (TRUE - Transposed Convolution, FALSE - UpSampling) in the Encoder Layer
 
-    model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError())
+        # keras.utils.plot_model(model, show_shapes=True)
 
-    # cp_callback = keras.callbacks.ModelCheckpoint(
-    #    filepath=out_base + "cps" + "/weights{epoch}",
-    #    save_weights_only=True,
-    #    verbose=1,
-    # )
+        model.summary()
 
-    model.fit(
-        x=CustomSequence(batch_size, number_of_batches),
-        epochs=number_of_epochs,
-        verbose=2,
-        max_queue_size=500,
-        workers=NO_workers,
-        use_multiprocessing=True,
-        # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
-        callbacks=[
-            keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
-        ],
-        steps_per_epoch=number_of_batches,
-    )
+        model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError())
 
-    model.save(out_base + "final")
+        # cp_callback = keras.callbacks.ModelCheckpoint(
+        #    filepath=out_base + "cps" + "/weights{epoch}",
+        #    save_weights_only=True,
+        #    verbose=1,
+        # )
+
+        if use_distributed_strategy:
+            sequence = CustomSequence(batch_size, number_of_batches, number_of_epochs)
+            dataset = tf.data.Dataset.from_generator(
+                sequence,
+                output_types=(tf.float64, tf.float64),
+                output_shapes=(
+                    tf.TensorShape([None, None, None]),
+                    tf.TensorShape([None, None, None]),
+                ),
+            )
+
+        model.fit(
+            x=sequence if not use_distributed_strategy else dataset,
+            epochs=number_of_epochs,
+            verbose=2,
+            max_queue_size=500,
+            workers=NO_workers,
+            use_multiprocessing=True,
+            # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+            callbacks=[
+                keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
+            ],
+            steps_per_epoch=number_of_batches,
+        )
+
+        model.save(out_base + "final")
 
 else:
 
