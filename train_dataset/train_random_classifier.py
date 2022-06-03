@@ -38,6 +38,7 @@ from dataset_simulations.core.structure_generation import randomize
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
+from train_dataset.utils.AdamWarmup import AdamWarmup
 
 tag = "all-spgs-random-gigantic-lr-0.0001"
 description = ""
@@ -149,6 +150,9 @@ use_distributed_strategy = True  # TODO: Possibly change back
 uniformly_distributed = False
 
 shuffle_test_match_train_match = False
+
+use_pretrained_model = False  # Make it possible to resume from a previous training run
+pretrained_model_path = "./final"
 
 local = False
 if local:
@@ -1652,42 +1656,51 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         )
 
     model_name = "model_park_gigantic"
-    # model = build_model_park_2_layer_CNN(
-    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    # )
 
-    # model = build_model_park(
-    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    # )
-    # model = build_model_park_medium_size(
-    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    # )
-    # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
-    # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
-    # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
+    if not use_pretrained_model:
 
-    # model = build_model_park_huge_size(
-    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    # )
+        # model = build_model_park_2_layer_CNN(
+        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
 
-    # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
+        # model = build_model_park(
+        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
+        # model = build_model_park_medium_size(
+        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
+        # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
+        # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+        # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 
-    # model = build_model_transformer_vit(
-    #    None,
-    #    N,
-    #    len(spgs),
-    #    lr=learning_rate,
-    #    epochs=NO_epochs,
-    #    steps_per_epoch=batches_per_epoch,
-    # )
+        # model = build_model_park_huge_size(
+        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
 
-    model = build_model_park_gigantic_size(
-        None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    )
+        # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
-    # model = build_model_park_gigantic_size(
-    #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-    # )
+        # model = build_model_transformer_vit(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    epochs=NO_epochs,
+        #    steps_per_epoch=batches_per_epoch,
+        # )
+
+        model = build_model_park_gigantic_size(
+            None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        )
+
+        # model = build_model_park_gigantic_size(
+        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
+
+    else:
+
+        model = keras.models.load_model(
+            pretrained_model_path, custom_objects={"AdamWarmup": AdamWarmup}
+        )
 
     params_txt += "\n" + f"model_name: {model_name}"
     with file_writer.as_default():
