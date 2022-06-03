@@ -39,7 +39,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 
-tag = "all-spgs-random-gigantic-lr-0.001"
+tag = "all-spgs-random-gigantic-lr-0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -122,7 +122,7 @@ randomization_step = 10  # Only use every n'th sample for the randomization proc
 
 use_dropout = False
 
-learning_rate = 0.001
+learning_rate = 0.0001
 
 # momentum = 0.7
 # optimizer = "SGD"
@@ -144,7 +144,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False  # TODO: Possibly change back
+use_distributed_strategy = True  # TODO: Possibly change back
 
 uniformly_distributed = False
 
@@ -1631,7 +1631,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_park_original"
+    model_name = "model_park_gigantic"
     # model = build_model_park_2_layer_CNN(
     #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     # )
@@ -1661,7 +1661,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
     #    steps_per_epoch=batches_per_epoch,
     # )
 
-    model = build_model_park_original_spg(
+    model = build_model_park_gigantic_size(
         None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
     )
 
