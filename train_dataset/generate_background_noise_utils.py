@@ -160,10 +160,19 @@ def generate_samples_gp(
         pattern_xs,
         min_x,
         max_x,
-        icsd_pattern=np.random.choice(icsd_patterns, size=n_samples)
+        icsd_patterns=[
+            icsd_patterns[random.randint(0, len(icsd_patterns) - 1)]
+            for i in range(n_samples)
+        ]
         if icsd_patterns is not None
         else None,
     )
+
+    if False:
+        for i in range(len(result[0])):
+            plt.plot(pattern_xs, result[0][i])
+            plt.show()
+
     # stop = time.time()
     # print(f"Took {(stop-start)} for add_peaks")
 
@@ -188,7 +197,7 @@ def add_peaks(
     pattern_xs,
     min_x,
     max_x,
-    icsd_pattern=None,
+    icsd_patterns=None,
 ):
 
     # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
@@ -219,53 +228,66 @@ def add_peaks(
         scaling = np.random.uniform(0, scaling_max)
         ys_altered_all[i, :] = ys_altered_all[i, :] / weight_background * 10 * scaling
 
-        domain_size = np.random.uniform(
-            crystallite_size_gauss_min, crystallite_size_gauss_max
-        )
-        # domain_size = crystallite_size_gauss_max
+        if icsd_patterns is None:
 
-        peak_sizes = []
+            domain_size = np.random.uniform(
+                crystallite_size_gauss_min, crystallite_size_gauss_max
+            )
+            # domain_size = crystallite_size_gauss_max
 
-        NO_peaks = np.random.randint(1.0, max_peaks_per_sample)
-        means = np.random.uniform(min_x, max_x, NO_peaks)
-        sigma_peaks = calc_std_dev(means, domain_size)
-        # peak_positions = means
+            peak_sizes = []
 
-        for j in range(0, NO_peaks):
+            NO_peaks = np.random.randint(1.0, max_peaks_per_sample)
+            means = np.random.uniform(min_x, max_x, NO_peaks)
+            sigma_peaks = calc_std_dev(means, domain_size)
+            # peak_positions = means
 
-            if j == 0:
-                peak_size = 1.0
-            # elif random.random() < 0.3:
-            #    peak_size = random.uniform(min_peak_height, 1)
-            # loc = 0.1
-            # scale = 0.3
-            # peak_size = truncnorm.rvs(
-            #    (min_peak_height - loc) / scale, (1 - loc) / scale, loc, scale
-            # )
+            for j in range(0, NO_peaks):
 
-            ## change
-            # if j == 0:
-            #    peak_size = min_peak_height
-            # elif j == 1:
-            #    peak_size = 1.0
-            else:
+                if j == 0:
+                    peak_size = 1.0
+                # elif random.random() < 0.3:
+                #    peak_size = random.uniform(min_peak_height, 1)
+                # loc = 0.1
+                # scale = 0.3
+                # peak_size = truncnorm.rvs(
+                #    (min_peak_height - loc) / scale, (1 - loc) / scale, loc, scale
+                # )
 
-                # peak_size = trunc.rvs()
-                peak_size = samples_truncnorm(0, 0.1, [min_peak_height, 1.0])
+                ## change
+                # if j == 0:
+                #    peak_size = min_peak_height
+                # elif j == 1:
+                #    peak_size = 1.0
+                else:
 
-            # TODO: Maybe!: Change this behavior: For small peaks, the diffractograms appear to have "less" noise.
-            ys_unaltered_all[i, :] += (
-                1
-                / (sigma_peaks[j] * np.sqrt(2 * np.pi))
-                * np.exp(-1 / (2 * sigma_peaks[j] ** 2) * (pattern_xs - means[j]) ** 2)
-            ) * peak_size
+                    # peak_size = trunc.rvs()
+                    peak_size = samples_truncnorm(0, 0.1, [min_peak_height, 1.0])
 
-            peak_sizes.append(peak_size)
+                # TODO: Maybe!: Change this behavior: For small peaks, the diffractograms appear to have "less" noise.
+                ys_unaltered_all[i, :] += (
+                    1
+                    / (sigma_peaks[j] * np.sqrt(2 * np.pi))
+                    * np.exp(
+                        -1 / (2 * sigma_peaks[j] ** 2) * (pattern_xs - means[j]) ** 2
+                    )
+                ) * peak_size
+
+                peak_sizes.append(peak_size)
+
+            ys_unaltered_all[i, :] = (
+                ys_unaltered_all[i, :] / np.max(ys_unaltered_all[i, :]) * 4
+            )
+
+        else:
+
+            ys_unaltered_all[i, 250:4501] = icsd_patterns[i][
+                ::2
+            ]  # this has already been normalized during the simulation
+            ys_unaltered_all[i, :] *= 4
 
         # print(np.max(ys_unaltered_all[i, :]))
-        ys_altered_all[i, :] += (
-            ys_unaltered_all[i, :] / np.max(ys_unaltered_all[i, :]) * 4
-        )
+        ys_altered_all[i, :] += ys_unaltered_all[i, :]
 
         base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)
         # base_noise_level = base_noise_level_max

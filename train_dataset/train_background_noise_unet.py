@@ -30,9 +30,14 @@ print(pattern_x)
 batch_size = 300
 number_of_batches = 500
 number_of_epochs = 600
-NO_workers = 30
 
 use_ICSD_patterns = True
+local = False
+
+if not local:
+    NO_workers = 30
+else:
+    NO_workers = 7
 
 print(
     f"Training with {batch_size * number_of_batches * number_of_epochs} samples in total"
@@ -47,9 +52,7 @@ if training_mode == "train":
 
     if use_ICSD_patterns:
 
-        with open(
-            os.path.join(os.path.dirname(__file__), "prepared_training/meta"), "rb"
-        ) as file:
+        with open("../dataset_simulations/prepared_training/meta", "rb") as file:
             data = pickle.load(file)
 
             per_element = data[6]
@@ -98,6 +101,7 @@ if training_mode == "train":
         icsd_sim_statistics.load(
             load_only_N_patterns_each=1,
             metas_to_load=statistics_metas_flat,
+            stop=1 if local else None,
         )
         statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
 
@@ -117,9 +121,6 @@ if training_mode == "train":
                 n_angles_output=N,
                 icsd_patterns=statistics_patterns,
             )
-
-            # TODO: Make this without multithreading first
-            # TODO: Plot some examples of this.
 
             return (
                 data[0],
