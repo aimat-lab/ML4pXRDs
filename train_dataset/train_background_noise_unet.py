@@ -135,6 +135,10 @@ if training_mode == "train":
                 icsd_patterns=statistics_patterns,
             )
 
+            data[0], data[1] = np.expand_dims(data[0], axis=2), np.expand_dims(
+                data[1], axis=2
+            )
+
             return (
                 data[0],
                 data[1],
