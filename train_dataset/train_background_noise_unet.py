@@ -128,20 +128,23 @@ if training_mode == "train":
 
         def __getitem__(self, idx):
 
-            data = generate_background_noise_utils.generate_samples_gp(
+            (
+                in_patterns,
+                out_patterns,
+            ) = generate_background_noise_utils.generate_samples_gp(
                 self.batch_size,
                 (start_x, end_x),
                 n_angles_output=N,
                 icsd_patterns=statistics_patterns,
             )
 
-            data[0], data[1] = np.expand_dims(data[0], axis=2), np.expand_dims(
-                data[1], axis=2
-            )
+            in_patterns, out_patterns = np.expand_dims(
+                in_patterns, axis=2
+            ), np.expand_dims(out_patterns, axis=2)
 
             return (
-                data[0],
-                data[1],
+                in_patterns,
+                out_patterns,
             )
 
     if use_distributed_strategy:
