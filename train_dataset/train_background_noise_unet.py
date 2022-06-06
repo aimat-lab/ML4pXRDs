@@ -138,9 +138,9 @@ if training_mode == "train":
                 icsd_patterns=statistics_patterns,
             )
 
-            in_patterns, out_patterns = np.expand_dims(
-                in_patterns, axis=2
-            ), np.expand_dims(out_patterns, axis=2)
+            # in_patterns, out_patterns = np.expand_dims(
+            #    in_patterns, axis=2
+            # ), np.expand_dims(out_patterns, axis=2)
 
             return (
                 in_patterns,
@@ -195,8 +195,8 @@ if training_mode == "train":
                 sequence,
                 output_types=(tf.float64, tf.float64),
                 output_shapes=(
-                    tf.TensorShape([None, None, None]),
-                    tf.TensorShape([None, None, None]),
+                    tf.TensorShape([None, None]),
+                    tf.TensorShape([None, None]),
                 ),
             )
 
