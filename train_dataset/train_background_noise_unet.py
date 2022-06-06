@@ -205,8 +205,9 @@ if training_mode == "train":
             epochs=number_of_epochs,
             verbose=2,
             max_queue_size=500,
-            workers=NO_workers,
-            use_multiprocessing=True,
+            # workers=NO_workers,
+            workers=1,  # TODO: Change back
+            use_multiprocessing=False,  # TODO: Change back
             # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
             callbacks=[
                 keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
