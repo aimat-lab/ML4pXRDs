@@ -39,8 +39,10 @@ local = False
 
 if not local:
     NO_workers = 30
+    verbosity = 2
 else:
     NO_workers = 7
+    verbosity = 1
 
 print(
     f"Training with {batch_size * number_of_batches * number_of_epochs} samples in total"
@@ -99,11 +101,11 @@ if training_mode == "train":
             )
             icsd_sim_statistics.output_dir = path_to_patterns
 
-        statistics_metas_flat = [item[0] for item in statistics_metas]
+        statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
 
         icsd_sim_statistics.load(
             load_only_N_patterns_each=1,
-            metas_to_load=statistics_metas_flat,
+            metas_to_load=statistics_match_metas_flat,
             stop=1 if local else None,
         )
         statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
@@ -128,6 +130,7 @@ if training_mode == "train":
 
         def __getitem__(self, idx):
 
+            # while True:
             (
                 in_patterns,
                 out_patterns,
@@ -137,6 +140,12 @@ if training_mode == "train":
                 n_angles_output=N,
                 icsd_patterns=statistics_patterns,
             )
+
+            # if np.any(np.isnan(in_patterns)) or np.any(np.isnan(out_patterns)):
+            #    print("Encountered NAN")
+            #    continue
+            # else:
+            #    break
 
             # in_patterns, out_patterns = np.expand_dims(
             #    in_patterns, axis=2
@@ -203,11 +212,10 @@ if training_mode == "train":
         model.fit(
             x=sequence if not use_distributed_strategy else dataset,
             epochs=number_of_epochs,
-            verbose=2,
+            verbose=verbosity,
             max_queue_size=500,
-            # workers=NO_workers,
-            workers=1,  # TODO: Change back
-            use_multiprocessing=False,  # TODO: Change back
+            workers=NO_workers,
+            use_multiprocessing=True,
             # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
             callbacks=[
                 keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
