@@ -430,6 +430,106 @@ def build_model_park_gigantic_size(
     return model
 
 
+def build_model_park_gigantic_size_more_dense(
+    hp=None,
+    number_of_input_values=9018,
+    number_of_output_labels=2,
+    use_dropout=False,
+    lr=0.001,
+):
+    # From Park:
+    # They actually train for 5000 epochs and batch size 1000 in the original paper
+
+    model = keras.models.Sequential()
+    model.add(
+        keras.layers.Convolution1D(
+            120,
+            100,
+            strides=2,
+            padding="same",
+            input_shape=(number_of_input_values, 1),
+        )
+    )  # add convolution layer
+    model.add(keras.layers.Activation("relu"))  # activation
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=2, strides=2))  # pooling layer
+
+    model.add(keras.layers.Convolution1D(120, 75, strides=2, padding="same"))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=2, strides=None))
+
+    model.add(keras.layers.Convolution1D(120, 50, strides=2, padding="same"))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=2, strides=None))
+
+    model.add(keras.layers.Convolution1D(120, 25, strides=2, padding="same"))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.3))
+
+    model.add(keras.layers.AveragePooling1D(pool_size=2, strides=None))
+    model.add(keras.layers.Flatten())
+
+    model.add(keras.layers.Dense(3000))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
+    model.add(keras.layers.Dense(2000))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
+    model.add(keras.layers.Dense(1000))
+    model.add(keras.layers.Activation("relu"))
+
+    if use_dropout:
+        model.add(keras.layers.Dropout(0.5))
+
+    model.add(
+        # keras.layers.Dense(
+        #    1 if (number_of_output_labels == 2) else number_of_output_labels
+        # )
+        keras.layers.Dense(number_of_output_labels)
+    )
+
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
+
+    # if number_of_output_labels == 2:
+    #    model.compile(
+    #        optimizer=optimizer,
+    #        loss=keras.losses.BinaryCrossentropy(from_logits=True),
+    #        metrics=[BinaryAccuracy(from_logits=True)],
+    #    )
+    # else:
+    model.compile(
+        optimizer=optimizer,
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy(),
+            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+        ],  # here from_logits is not needed, since argmax will be the same
+    )
+
+    model.summary()
+
+    return model
+
+
 def build_model_park_original_spg(
     hp=None,
     number_of_input_values=9018,
@@ -689,6 +789,13 @@ if __name__ == "__main__":
 
         print("Gigantic size")
         model = build_model_park_gigantic_size(
+            None, 8501, 145, False, 0.0001
+        )  # huge + one CNN layer + different strides
+        model.save("test")
+        model = keras.models.load_model("test")
+
+        print("Gigantic size_more_dense")
+        model = build_model_park_gigantic_size_more_dense(
             None, 8501, 145, False, 0.0001
         )  # huge + one CNN layer + different strides
         model.save("test")
