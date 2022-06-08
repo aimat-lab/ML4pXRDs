@@ -136,16 +136,23 @@ if __name__ == "__main__":
         spgs = pickle.load(file)
 
     with open(in_base + "icsd_data.pickle", "rb") as file:
-        icsd_crystals, icsd_labels, icsd_variations, icsd_metas = pickle.load(file)
+        data = pickle.load(file)
+        icsd_crystals, icsd_labels, icsd_variations, icsd_metas = (
+            data[0],
+            data[1],
+            data[2],
+            data[3],
+        )
 
     n_patterns_per_crystal = len(icsd_variations[0])
 
     with open(in_base + "random_data.pickle", "rb") as file:
-        (
-            random_crystals,
-            random_labels,
-            random_variations,
-        ) = pickle.load(file)
+        data = pickle.load(file)
+        (random_crystals, random_labels, random_variations,) = (
+            data[0],
+            data[1],
+            data[2],
+        )
     random_labels = [spgs[index] for index in random_labels]
 
     print(
