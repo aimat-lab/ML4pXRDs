@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-direct-huge-lr-0.001"
+tag = "all-spgs-random-resnet-adam-lr-0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -72,13 +72,12 @@ NO_epochs = 1000
 # structures_per_spg = 1
 # NO_corn_sizes = 1
 
-# TODO: Maybe change this back to 6-1
-structures_per_spg = 3  # for all spgs
+structures_per_spg = 6  # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
 # structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
-NO_corn_sizes = 2
+NO_corn_sizes = 1
 # structures_per_spg = 1  # 30-spg
 # NO_corn_sizes = 3 # 30-spg
 
@@ -117,7 +116,7 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
 
 use_statistics_dataset_as_validation = False
 generate_randomized_validation_datasets = False
@@ -125,7 +124,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.001
+learning_rate = 0.0001
 
 # momentum = 0.7
 # optimizer = "SGD"
@@ -147,7 +146,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False
+use_distributed_strategy = True
 
 uniformly_distributed = False
 
@@ -1657,7 +1656,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_huge"
+    model_name = "model_resnet_10"
 
     if not use_pretrained_model:
 
@@ -1671,13 +1670,17 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # model = build_model_park_medium_size(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
-        # model = build_model_resnet_10(None, N, len(spgs), lr=learning_rate, momentum=momentum, optimizer=optimizer)
+
+        model = build_model_resnet_10(
+            None, N, len(spgs), lr=learning_rate, optimizer="Adam"
+        )
+
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
 
-        model = build_model_park_huge_size(
-            None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        )
+        # model = build_model_park_huge_size(
+        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
 
         # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
@@ -1711,10 +1714,8 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
     if not use_icsd_structures_directly:
         model.fit(
-            # x=sequence,
             x=dataset if use_distributed_strategy else sequence,
             epochs=NO_epochs,
-            # TODO: Removed the batch_size parameter here, any impact?
             callbacks=[tb_callback, CustomCallback()]
             if not use_reduce_lr_on_plateau
             else [tb_callback, CustomCallback(), lr_callback],

@@ -698,7 +698,7 @@ def build_model_resnet_10(
     number_of_input_values=8501,
     number_of_output_labels=2,
     lr=0.0003,
-    momentum=0.0,
+    momentum=0.0,  # only used for SGD
     optimizer="Adam",
 ):
 
