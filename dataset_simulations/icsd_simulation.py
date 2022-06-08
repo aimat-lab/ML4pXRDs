@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pymatgen.io.cif import CifParser
 from dataset_simulations.core.quick_simulation import get_xy_patterns
+import matplotlib_defaults
 
 
 class ICSDSimulation(Simulation):
@@ -46,7 +47,7 @@ class ICSDSimulation(Simulation):
 
         print(f"Skipped {counter} structures due to errors or missing path.")
 
-    def plot_histogram_of_spgs(self, do_show=True, logscale=True):
+    def plot_histogram_of_spgs(self, do_show=True):
 
         spgs = []
         for i, id in enumerate(self.icsd_ids):
@@ -59,15 +60,21 @@ class ICSDSimulation(Simulation):
 
         print(f"Number of ICSD entries with available spg number: {len(spgs)}")
 
-        plt.figure()
+        plt.figure(
+            figsize=(
+                matplotlib_defaults.pub_width * 0.85,
+                matplotlib_defaults.pub_width * 0.6,
+            )
+        )
         plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
-
-        if logscale:
-            plt.yscale("log")
 
         plt.xlabel("International space group number")
         plt.ylabel("count")
-        plt.savefig(f"distribution_spgs{'_logscale' if logscale else ''}.png")
+
+        plt.tight_layout()
+        plt.savefig(f"distribution_spgs.pdf")
+        plt.yscale("log")
+        plt.savefig(f"distribution_spgs_logscale.pdf")
 
         if do_show:
             plt.show()
@@ -114,7 +121,7 @@ if __name__ == "__main__":
         pass
 
     if True:
-        simulation.plot_histogram_of_spgs(logscale=True, do_show=False)
+        simulation.plot_histogram_of_spgs(do_show=False)
 
     if False:
 
