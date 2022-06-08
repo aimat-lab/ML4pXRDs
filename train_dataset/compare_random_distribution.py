@@ -23,16 +23,24 @@ from utils.entropy import get_structural_complexity
 
 import matplotlib_defaults
 
+use_paper_layout = True  # TODO: Change back
+
+if use_paper_layout:
+    figure_double_width = matplotlib_defaults.pub_width
+else:
+    figure_double_width = 10
+
 if __name__ == "__main__":
 
     if False:
         plt.figure(
             figsize=(
-                matplotlib_defaults.pub_width * 0.95 * 0.5,
-                matplotlib_defaults.pub_width * 0.7 * 0.5,
+                figure_double_width * 0.95 * 0.5,
+                figure_double_width * 0.7 * 0.5,
             )
         )
-        plt.plot([1, 2, 3], [3, 2, 1])
+        plt.ticklabel_format(axis="both", style="sci", scilimits=(0, 0))
+        plt.plot([0.0001, 0.0002, 0.0003], [3, 2, 1])
         plt.xlabel("hello world")
         plt.ylabel("hello world")
         plt.tight_layout()
@@ -650,11 +658,12 @@ if __name__ == "__main__":
                 if show_individual:
                     plt.figure(
                         figsize=(
-                            matplotlib_defaults.pub_width * 0.85 * 0.5,
-                            matplotlib_defaults.pub_width * 0.6 * 0.5,
+                            figure_double_width * 0.95 * 0.5,
+                            figure_double_width * 0.7 * 0.5,
                         )
                     )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
+                    plt.tight_layout()
                     plt.savefig(
                         out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.pdf"
                     )
@@ -862,10 +871,16 @@ if __name__ == "__main__":
                 )
 
                 if show_individual:
-                    plt.figure()
+                    plt.figure(
+                        figsize=(
+                            figure_double_width * 0.95 * 0.5,
+                            figure_double_width * 0.7 * 0.5,
+                        )
+                    )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
+                    plt.tight_layout()
                     plt.savefig(
-                        out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.png"
+                        out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.pdf"
                     )
                 counter_xrds_icsd_rightly += 1
 
@@ -1061,11 +1076,17 @@ if __name__ == "__main__":
                 )
 
                 if show_individual:
-                    plt.figure()
+                    plt.figure(
+                        figsize=(
+                            figure_double_width * 0.95 * 0.5,
+                            figure_double_width * 0.7 * 0.5,
+                        )
+                    )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
+                    plt.tight_layout()
                     plt.savefig(
                         out_base
-                        + f"random_falsely_xrds/{counter_xrds_random_falsely}.png"
+                        + f"random_falsely_xrds/{counter_xrds_random_falsely}.pdf"
                     )
                 counter_xrds_random_falsely += 1
 
@@ -1258,11 +1279,17 @@ if __name__ == "__main__":
                 )
 
                 if show_individual:
-                    plt.figure()
+                    plt.figure(
+                        figsize=(
+                            figure_double_width * 0.95 * 0.5,
+                            figure_double_width * 0.7 * 0.5,
+                        )
+                    )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
+                    plt.tight_layout()
                     plt.savefig(
                         out_base
-                        + f"random_rightly_xrds/{counter_xrds_random_rightly}.png"
+                        + f"random_rightly_xrds/{counter_xrds_random_rightly}.pdf"
                     )
                 counter_xrds_random_rightly += 1
 
@@ -1450,7 +1477,12 @@ if __name__ == "__main__":
         xrds_random_rightly_average /= counter_xrds_random_rightly
         xrds_random_falsely_average /= counter_xrds_random_falsely
 
-        plt.figure()
+        plt.figure(
+            figsize=(
+                figure_double_width * 0.95 * 0.5,
+                figure_double_width * 0.7 * 0.5,
+            )
+        )
 
         plt.plot(
             np.linspace(5, 90, 8501),
@@ -1482,20 +1514,32 @@ if __name__ == "__main__":
         )
 
         plt.legend()
-        plt.savefig(out_base + f"average_xrds.png")
+        plt.tight_layout()
+        plt.savefig(out_base + f"average_xrds.pdf")
 
     ################# 2D scatter plots ################
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_denseness_factors, color="g", s=0.5)
     plt.scatter(icsd_falsely_volumes, icsd_falsely_denseness_factors, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0.5, 3.3)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_densenesses_icsd.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_volumes_densenesses_icsd.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         random_rightly_volumes, random_rightly_denseness_factors, color="g", s=0.5
     )
@@ -1504,22 +1548,34 @@ if __name__ == "__main__":
     )
     plt.xlim(0, 7000)
     plt.ylim(0.5, 3.3)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_densenesses_random.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_volumes_densenesses_random.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_unique_wyckoffs, color="g", s=0.5)
     plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_unique_wyckoffs, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 9)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_unique_wyckoffs_icsd.png",
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_icsd.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         random_rightly_volumes, random_rightly_NO_unique_wyckoffs, color="g", s=0.5
     )
@@ -1528,13 +1584,19 @@ if __name__ == "__main__":
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 9)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_unique_wyckoffs_random.png",
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_random.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         icsd_rightly_volumes,
         icsd_rightly_NO_unique_wyckoffs_summed_over_els,
@@ -1549,13 +1611,19 @@ if __name__ == "__main__":
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 17)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_icsd.png",
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_icsd.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         random_rightly_volumes,
         random_rightly_NO_unique_wyckoffs_summed_over_els,
@@ -1570,22 +1638,34 @@ if __name__ == "__main__":
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 17)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_random.png",
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_random.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_max_lattice_paras, color="g", s=0.5)
     plt.scatter(icsd_falsely_volumes, icsd_falsely_max_lattice_paras, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_max_lattice_icsd.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_volumes_max_lattice_icsd.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         random_rightly_volumes, random_rightly_max_lattice_paras, color="g", s=0.5
     )
@@ -1594,20 +1674,32 @@ if __name__ == "__main__":
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_max_lattice_random.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_volumes_max_lattice_random.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_min_lattice_paras, color="g", s=0.5)
     plt.scatter(icsd_falsely_volumes, icsd_falsely_min_lattice_paras, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_min_lattice_icsd.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_volumes_min_lattice_icsd.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         random_rightly_volumes, random_rightly_min_lattice_paras, color="g", s=0.5
     )
@@ -1616,11 +1708,17 @@ if __name__ == "__main__":
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_min_lattice_random.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_volumes_min_lattice_random.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         icsd_rightly_volumes,
         [item[0] for item in icsd_rightly_angles],
@@ -1659,9 +1757,15 @@ if __name__ == "__main__":
     )
     plt.ylim(80, 140)
     plt.xlim(0, 7000)
-    plt.savefig(f"{out_base}2D_volumes_angles_icsd.png", bbox_inches="tight", dpi=300)
+    plt.tight_layout()
+    plt.savefig(f"{out_base}2D_volumes_angles_icsd.pdf", bbox_inches="tight", dpi=300)
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         random_rightly_volumes,
         [item[0] for item in random_rightly_angles],
@@ -1700,25 +1804,43 @@ if __name__ == "__main__":
     )
     plt.ylim(80, 140)
     plt.xlim(0, 7000)
-    plt.savefig(f"{out_base}2D_volumes_angles_random.png", bbox_inches="tight", dpi=300)
+    plt.tight_layout()
+    plt.savefig(f"{out_base}2D_volumes_angles_random.pdf", bbox_inches="tight", dpi=300)
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_density, color="g", s=0.5)
     plt.scatter(icsd_falsely_volumes, icsd_falsely_density, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 17.5)
-    plt.savefig(f"{out_base}2D_volumes_density_icsd.png", bbox_inches="tight", dpi=300)
+    plt.tight_layout()
+    plt.savefig(f"{out_base}2D_volumes_density_icsd.pdf", bbox_inches="tight", dpi=300)
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(random_rightly_volumes, random_rightly_density, color="g", s=0.5)
     plt.scatter(random_falsely_volumes, random_falsely_density, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 17.5)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_density_random.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_volumes_density_random.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         icsd_rightly_sum_cov_vols, icsd_rightly_denseness_factors, color="g", s=0.5
     )
@@ -1727,11 +1849,17 @@ if __name__ == "__main__":
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 3.5)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_sum_cov_vols_denseness_icsd.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_sum_cov_vols_denseness_icsd.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         random_rightly_sum_cov_vols, random_rightly_denseness_factors, color="g", s=0.5
     )
@@ -1740,29 +1868,47 @@ if __name__ == "__main__":
     )
     plt.xlim(0, 7000)
     plt.ylim(0, 3.5)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_sum_cov_vols_denseness_random.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_sum_cov_vols_denseness_random.pdf", bbox_inches="tight", dpi=300
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_atoms, color="g", s=0.5)
     plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_atoms, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 400)
-    plt.savefig(f"{out_base}2D_volumes_NO_atoms_icsd.png", bbox_inches="tight", dpi=300)
+    plt.tight_layout()
+    plt.savefig(f"{out_base}2D_volumes_NO_atoms_icsd.pdf", bbox_inches="tight", dpi=300)
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(random_rightly_volumes, random_rightly_NO_atoms, color="g", s=0.5)
     plt.scatter(random_falsely_volumes, random_falsely_NO_atoms, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(0, 400)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_atoms_random.png", bbox_inches="tight", dpi=300
+        f"{out_base}2D_volumes_NO_atoms_random.pdf", bbox_inches="tight", dpi=300
     )
 
     # set_wyckoffs_indices over volume
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     indices = []
     volumes = []
     for i, item in enumerate(icsd_rightly_set_wyckoffs_indices):
@@ -1781,13 +1927,19 @@ if __name__ == "__main__":
     plt.scatter(volumes, indices, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(-1, 12)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_set_wyckoffs_indices_icsd.png",
+        f"{out_base}2D_volumes_set_wyckoffs_indices_icsd.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     indices = []
     volumes = []
     for i, item in enumerate(random_rightly_set_wyckoffs_indices):
@@ -1806,15 +1958,21 @@ if __name__ == "__main__":
     plt.scatter(volumes, indices, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(-1, 12)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_set_wyckoffs_indices_random.png",
+        f"{out_base}2D_volumes_set_wyckoffs_indices_random.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
     # set_wyckoffs_max_indices over volume
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     indices = []
     volumes = []
     for i, item in enumerate(icsd_rightly_set_wyckoffs_max_indices):
@@ -1831,13 +1989,19 @@ if __name__ == "__main__":
     plt.scatter(volumes, indices, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(-1, 12)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_set_wyckoffs_max_indices_icsd.png",
+        f"{out_base}2D_volumes_set_wyckoffs_max_indices_icsd.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     indices = []
     volumes = []
     for i, item in enumerate(random_rightly_set_wyckoffs_max_indices):
@@ -1854,15 +2018,21 @@ if __name__ == "__main__":
     plt.scatter(volumes, indices, color="r", s=0.5)
     plt.xlim(0, 7000)
     plt.ylim(-1, 12)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_set_wyckoffs_max_indices_random.png",
+        f"{out_base}2D_volumes_set_wyckoffs_max_indices_random.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
     # set_wyckoffs_max_indices over NO_wyckoffs
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     indices = []
     NO_wyckoffs = []
     for i, item in enumerate(icsd_rightly_set_wyckoffs_max_indices):
@@ -1879,13 +2049,19 @@ if __name__ == "__main__":
     plt.scatter(NO_wyckoffs, indices, color="r", s=0.5)
     plt.xlim(0, 100)
     plt.ylim(-1, 12)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_icsd.png",
+        f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_icsd.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     indices = []
     NO_wyckoffs = []
     for i, item in enumerate(random_rightly_set_wyckoffs_max_indices):
@@ -1902,8 +2078,9 @@ if __name__ == "__main__":
     plt.scatter(NO_wyckoffs, indices, color="r", s=0.5)
     plt.xlim(0, 100)
     plt.ylim(-1, 12)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_random.png",
+        f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_random.pdf",
         bbox_inches="tight",
         dpi=300,
     )
@@ -1912,7 +2089,12 @@ if __name__ == "__main__":
 
     if analyse_complexity_ordering:
 
-        plt.figure()
+        plt.figure(
+            figsize=(
+                figure_double_width * 0.95 * 0.5,
+                figure_double_width * 0.7 * 0.5,
+            )
+        )
         plt.scatter(
             icsd_rightly_volumes, icsd_rightly_structural_complexity, color="g", s=0.5
         )
@@ -1920,13 +2102,19 @@ if __name__ == "__main__":
             icsd_falsely_volumes, icsd_falsely_structural_complexity, color="r", s=0.5
         )
         plt.xlim(0, 7000)
+        plt.tight_layout()
         plt.savefig(
-            f"{out_base}2D_volumes_structural_complexity_icsd.png",
+            f"{out_base}2D_volumes_structural_complexity_icsd.pdf",
             bbox_inches="tight",
             dpi=300,
         )
 
-        plt.figure()
+        plt.figure(
+            figsize=(
+                figure_double_width * 0.95 * 0.5,
+                figure_double_width * 0.7 * 0.5,
+            )
+        )
         plt.scatter(
             random_rightly_volumes,
             random_rightly_structural_complexity,
@@ -1940,8 +2128,9 @@ if __name__ == "__main__":
             s=0.5,
         )
         plt.xlim(0, 7000)
+        plt.tight_layout()
         plt.savefig(
-            f"{out_base}2D_volumes_structural_complexity_random.png",
+            f"{out_base}2D_volumes_structural_complexity_random.pdf",
             bbox_inches="tight",
             dpi=300,
         )
@@ -1950,7 +2139,12 @@ if __name__ == "__main__":
 
     if analyse_complexity_ordering:
 
-        plt.figure()
+        plt.figure(
+            figsize=(
+                figure_double_width * 0.95 * 0.5,
+                figure_double_width * 0.7 * 0.5,
+            )
+        )
         plt.scatter(
             icsd_rightly_volumes, icsd_rightly_chemical_ordering, color="g", s=0.5
         )
@@ -1958,13 +2152,19 @@ if __name__ == "__main__":
             icsd_falsely_volumes, icsd_falsely_chemical_ordering, color="r", s=0.5
         )
         plt.xlim(0, 7000)
+        plt.tight_layout()
         plt.savefig(
-            f"{out_base}2D_volumes_chemical_ordering_icsd.png",
+            f"{out_base}2D_volumes_chemical_ordering_icsd.pdf",
             bbox_inches="tight",
             dpi=300,
         )
 
-        plt.figure()
+        plt.figure(
+            figsize=(
+                figure_double_width * 0.95 * 0.5,
+                figure_double_width * 0.7 * 0.5,
+            )
+        )
         plt.scatter(
             random_rightly_volumes, random_rightly_chemical_ordering, color="g", s=0.5
         )
@@ -1972,37 +2172,55 @@ if __name__ == "__main__":
             random_falsely_volumes, random_falsely_chemical_ordering, color="r", s=0.5
         )
         plt.xlim(0, 7000)
+        plt.tight_layout()
         plt.savefig(
-            f"{out_base}2D_volumes_chemical_ordering_random.png",
+            f"{out_base}2D_volumes_chemical_ordering_random.pdf",
             bbox_inches="tight",
             dpi=300,
         )
 
     # number of unique elements over the volume
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_elements, color="g", s=0.5)
     plt.scatter(icsd_falsely_volumes, icsd_falsely_NO_elements, color="r", s=0.5)
     plt.xlim(0, 7000)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_unique_elements_icsd.png",
+        f"{out_base}2D_volumes_NO_unique_elements_icsd.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(random_rightly_volumes, random_rightly_NO_elements, color="g", s=0.5)
     plt.scatter(random_falsely_volumes, random_falsely_NO_elements, color="r", s=0.5)
     plt.xlim(0, 7000)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_unique_elements_random.png",
+        f"{out_base}2D_volumes_NO_unique_elements_random.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
     # sum of intensities over the volume
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         [item[0] for item in icsd_rightly_volumes_sum_of_intensities],
         [item[1] for item in icsd_rightly_volumes_sum_of_intensities],
@@ -2016,13 +2234,19 @@ if __name__ == "__main__":
         s=0.5,
     )
     plt.xlim(0, 7000)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_sum_of_intensities_icsd.png",
+        f"{out_base}2D_volumes_sum_of_intensities_icsd.pdf",
         bbox_inches="tight",
         dpi=300,
     )
 
-    plt.figure()
+    plt.figure(
+        figsize=(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+    )
     plt.scatter(
         [item[0] for item in random_rightly_volumes_sum_of_intensities],
         [item[1] for item in random_rightly_volumes_sum_of_intensities],
@@ -2036,8 +2260,9 @@ if __name__ == "__main__":
         s=0.5,
     )
     plt.xlim(0, 7000)
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_sum_of_intensities_random.png",
+        f"{out_base}2D_volumes_sum_of_intensities_random.pdf",
         bbox_inches="tight",
         dpi=300,
     )
@@ -2073,8 +2298,9 @@ if __name__ == "__main__":
         label="ICSD falsely",
     )
     plt.legend()
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}3D_angles_scatter.png",
+        f"{out_base}3D_angles_scatter.pdf",
         bbox_inches="tight",
         dpi=300,
     )
@@ -2111,8 +2337,9 @@ if __name__ == "__main__":
         label="ICSD falsely",
     )
     plt.legend()
+    plt.tight_layout()
     plt.savefig(
-        f"{out_base}3D_lattice_paras_scatter.png",
+        f"{out_base}3D_lattice_paras_scatter.pdf",
         bbox_inches="tight",
         dpi=300,
     )
@@ -2228,7 +2455,13 @@ if __name__ == "__main__":
                 hists[-1] = hists[-1] * total_hist
 
         # Figure size
-        plt.figure()
+        plt.figure(
+            figsize=(
+                figure_double_width * 0.95 * 0.5,
+                figure_double_width * 0.7 * 0.5,
+            )
+        )
+
         ax1 = plt.gca()
 
         ax1.set_xlabel(xlabel)
@@ -2312,8 +2545,11 @@ if __name__ == "__main__":
 
         plt.legend()
         plt.tight_layout()
+
+        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+
         plt.savefig(
-            f"{out_base}{tag}{'_prop' if only_proportions else ''}.png",
+            f"{out_base}{tag}{'_prop' if only_proportions else ''}.pdf",
             bbox_inches="tight",
         )
 
