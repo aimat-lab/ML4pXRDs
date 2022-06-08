@@ -21,7 +21,23 @@ from pymatgen.core.periodic_table import Species
 from utils.entropy import get_chemical_ordering
 from utils.entropy import get_structural_complexity
 
+import matplotlib_defaults
+
 if __name__ == "__main__":
+
+    if False:
+        plt.figure(
+            figsize=(
+                matplotlib_defaults.pub_width * 0.95 * 0.5,
+                matplotlib_defaults.pub_width * 0.7 * 0.5,
+            )
+        )
+        plt.plot([1, 2, 3], [3, 2, 1])
+        plt.xlabel("hello world")
+        plt.ylabel("hello world")
+        plt.tight_layout()
+        plt.savefig("test.pdf")
+        exit()
 
     if len(sys.argv) > 2:
 
@@ -632,10 +648,15 @@ if __name__ == "__main__":
                 )
 
                 if show_individual:
-                    plt.figure()
+                    plt.figure(
+                        figsize=(
+                            matplotlib_defaults.pub_width * 0.85 * 0.5,
+                            matplotlib_defaults.pub_width * 0.6 * 0.5,
+                        )
+                    )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
                     plt.savefig(
-                        out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.png"
+                        out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.pdf"
                     )
                 counter_xrds_icsd_falsely += 1
 
