@@ -23,20 +23,16 @@ from utils.entropy import get_structural_complexity
 
 import matplotlib_defaults
 
-use_paper_layout = True  # TODO: Change back
-
-if use_paper_layout:
-    figure_double_width = matplotlib_defaults.pub_width
-else:
-    figure_double_width = 10
+figure_double_width_pub = matplotlib_defaults.pub_width
+figure_double_width = 10
 
 if __name__ == "__main__":
 
     if False:
         plt.figure(
             figsize=(
-                figure_double_width * 0.95 * 0.5,
-                figure_double_width * 0.7 * 0.5,
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
             )
         )
         plt.ticklabel_format(axis="both", style="sci", scilimits=(0, 0))
@@ -658,15 +654,26 @@ if __name__ == "__main__":
                 if show_individual:
                     plt.figure(
                         figsize=(
-                            figure_double_width * 0.95 * 0.5,
-                            figure_double_width * 0.7 * 0.5,
+                            figure_double_width_pub * 0.95 * 0.5,
+                            figure_double_width_pub * 0.7 * 0.5,
                         )
                     )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
                     plt.tight_layout()
                     plt.savefig(
-                        out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.pdf"
+                        out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}_pub.pdf",
+                        bbox_inches="tight",
                     )
+
+                    plt.gcf().set_size_inches(
+                        figure_double_width * 0.95 * 0.5,
+                        figure_double_width * 0.7 * 0.5,
+                    )
+                    plt.savefig(
+                        out_base + f"icsd_falsely_xrds/{icsd_metas[index][0]}.pdf",
+                        bbox_inches="tight",
+                    )
+
                 counter_xrds_icsd_falsely += 1
 
                 if xrds_icsd_falsely_average is None:
@@ -873,15 +880,26 @@ if __name__ == "__main__":
                 if show_individual:
                     plt.figure(
                         figsize=(
-                            figure_double_width * 0.95 * 0.5,
-                            figure_double_width * 0.7 * 0.5,
+                            figure_double_width_pub * 0.95 * 0.5,
+                            figure_double_width_pub * 0.7 * 0.5,
                         )
                     )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
                     plt.tight_layout()
                     plt.savefig(
-                        out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.pdf"
+                        out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}_pub.pdf",
+                        bbox_inches="tight",
                     )
+
+                    plt.gcf().set_size_inches(
+                        figure_double_width * 0.95 * 0.5,
+                        figure_double_width * 0.7 * 0.5,
+                    )
+                    plt.savefig(
+                        out_base + f"icsd_rightly_xrds/{icsd_metas[index][0]}.pdf",
+                        bbox_inches="tight",
+                    )
+
                 counter_xrds_icsd_rightly += 1
 
                 if xrds_icsd_rightly_average is None:
@@ -1078,16 +1096,28 @@ if __name__ == "__main__":
                 if show_individual:
                     plt.figure(
                         figsize=(
-                            figure_double_width * 0.95 * 0.5,
-                            figure_double_width * 0.7 * 0.5,
+                            figure_double_width_pub * 0.95 * 0.5,
+                            figure_double_width_pub * 0.7 * 0.5,
                         )
                     )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
                     plt.tight_layout()
                     plt.savefig(
                         out_base
-                        + f"random_falsely_xrds/{counter_xrds_random_falsely}.pdf"
+                        + f"random_falsely_xrds/{counter_xrds_random_falsely}_pub.pdf",
+                        bbox_inches="tight",
                     )
+
+                    plt.gcf().set_size_inches(
+                        figure_double_width * 0.95 * 0.5,
+                        figure_double_width * 0.7 * 0.5,
+                    )
+                    plt.savefig(
+                        out_base
+                        + f"random_falsely_xrds/{counter_xrds_random_falsely}.pdf",
+                        bbox_inches="tight",
+                    )
+
                 counter_xrds_random_falsely += 1
 
                 if xrds_random_falsely_average is None:
@@ -1281,16 +1311,28 @@ if __name__ == "__main__":
                 if show_individual:
                     plt.figure(
                         figsize=(
-                            figure_double_width * 0.95 * 0.5,
-                            figure_double_width * 0.7 * 0.5,
+                            figure_double_width_pub * 0.95 * 0.5,
+                            figure_double_width_pub * 0.7 * 0.5,
                         )
                     )
                     plt.plot(np.linspace(5, 90, 8501), pattern)
                     plt.tight_layout()
                     plt.savefig(
                         out_base
-                        + f"random_rightly_xrds/{counter_xrds_random_rightly}.pdf"
+                        + f"random_rightly_xrds/{counter_xrds_random_rightly}_pub.pdf",
+                        bbox_inches="tight",
                     )
+
+                    plt.gcf().set_size_inches(
+                        figure_double_width * 0.95 * 0.5,
+                        figure_double_width * 0.7 * 0.5,
+                    )
+                    plt.savefig(
+                        out_base
+                        + f"random_rightly_xrds/{counter_xrds_random_rightly}.pdf",
+                        bbox_inches="tight",
+                    )
+
                 counter_xrds_random_rightly += 1
 
                 if xrds_random_rightly_average is None:
@@ -1479,8 +1521,8 @@ if __name__ == "__main__":
 
         plt.figure(
             figsize=(
-                figure_double_width * 0.95 * 0.5,
-                figure_double_width * 0.7 * 0.5,
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
             )
         )
 
@@ -1515,14 +1557,20 @@ if __name__ == "__main__":
 
         plt.legend()
         plt.tight_layout()
-        plt.savefig(out_base + f"average_xrds.pdf")
+        plt.savefig(out_base + f"average_xrds_pub.pdf", bbox_inches="tight")
+
+        plt.gcf().set_size_inches(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+        plt.savefig(out_base + f"average_xrds.pdf", bbox_inches="tight")
 
     ################# 2D scatter plots ################
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_denseness_factors, color="g", s=0.5)
@@ -1530,14 +1578,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0.5, 3.3)
     plt.tight_layout()
-    plt.savefig(
-        f"{out_base}2D_volumes_densenesses_icsd.pdf", bbox_inches="tight", dpi=300
+    plt.savefig(f"{out_base}2D_volumes_densenesses_icsd_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
     )
+    plt.savefig(f"{out_base}2D_volumes_densenesses_icsd.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1549,14 +1601,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0.5, 3.3)
     plt.tight_layout()
-    plt.savefig(
-        f"{out_base}2D_volumes_densenesses_random.pdf", bbox_inches="tight", dpi=300
+    plt.savefig(f"{out_base}2D_volumes_densenesses_random_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
     )
+    plt.savefig(f"{out_base}2D_volumes_densenesses_random.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_unique_wyckoffs, color="g", s=0.5)
@@ -1565,15 +1621,21 @@ if __name__ == "__main__":
     plt.ylim(0, 9)
     plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_unique_wyckoffs_icsd.pdf",
-        bbox_inches="tight",
-        dpi=300,
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_icsd_pub.pdf", bbox_inches="tight"
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_icsd.pdf", bbox_inches="tight"
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1586,15 +1648,22 @@ if __name__ == "__main__":
     plt.ylim(0, 9)
     plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_NO_unique_wyckoffs_random.pdf",
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_random_pub.pdf",
         bbox_inches="tight",
-        dpi=300,
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_random.pdf", bbox_inches="tight"
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1613,15 +1682,23 @@ if __name__ == "__main__":
     plt.ylim(0, 17)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_icsd_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_icsd.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1640,15 +1717,23 @@ if __name__ == "__main__":
     plt.ylim(0, 17)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_random_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_volumes_NO_unique_wyckoffs_summed_over_els_random.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_max_lattice_paras, color="g", s=0.5)
@@ -1656,14 +1741,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
     plt.tight_layout()
-    plt.savefig(
-        f"{out_base}2D_volumes_max_lattice_icsd.pdf", bbox_inches="tight", dpi=300
+    plt.savefig(f"{out_base}2D_volumes_max_lattice_icsd_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
     )
+    plt.savefig(f"{out_base}2D_volumes_max_lattice_icsd.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1675,14 +1764,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
     plt.tight_layout()
-    plt.savefig(
-        f"{out_base}2D_volumes_max_lattice_random.pdf", bbox_inches="tight", dpi=300
+    plt.savefig(f"{out_base}2D_volumes_max_lattice_random_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
     )
+    plt.savefig(f"{out_base}2D_volumes_max_lattice_random.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_min_lattice_paras, color="g", s=0.5)
@@ -1690,14 +1783,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
     plt.tight_layout()
-    plt.savefig(
-        f"{out_base}2D_volumes_min_lattice_icsd.pdf", bbox_inches="tight", dpi=300
+    plt.savefig(f"{out_base}2D_volumes_min_lattice_icsd_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
     )
+    plt.savefig(f"{out_base}2D_volumes_min_lattice_icsd.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1709,14 +1806,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0, 40)
     plt.tight_layout()
-    plt.savefig(
-        f"{out_base}2D_volumes_min_lattice_random.pdf", bbox_inches="tight", dpi=300
+    plt.savefig(f"{out_base}2D_volumes_min_lattice_random_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
     )
+    plt.savefig(f"{out_base}2D_volumes_min_lattice_random.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1758,12 +1859,18 @@ if __name__ == "__main__":
     plt.ylim(80, 140)
     plt.xlim(0, 7000)
     plt.tight_layout()
-    plt.savefig(f"{out_base}2D_volumes_angles_icsd.pdf", bbox_inches="tight", dpi=300)
+    plt.savefig(f"{out_base}2D_volumes_angles_icsd_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(f"{out_base}2D_volumes_angles_icsd.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1805,12 +1912,18 @@ if __name__ == "__main__":
     plt.ylim(80, 140)
     plt.xlim(0, 7000)
     plt.tight_layout()
-    plt.savefig(f"{out_base}2D_volumes_angles_random.pdf", bbox_inches="tight", dpi=300)
+    plt.savefig(f"{out_base}2D_volumes_angles_random_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(f"{out_base}2D_volumes_angles_random.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_density, color="g", s=0.5)
@@ -1818,12 +1931,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0, 17.5)
     plt.tight_layout()
-    plt.savefig(f"{out_base}2D_volumes_density_icsd.pdf", bbox_inches="tight", dpi=300)
+    plt.savefig(f"{out_base}2D_volumes_density_icsd_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(f"{out_base}2D_volumes_density_icsd.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(random_rightly_volumes, random_rightly_density, color="g", s=0.5)
@@ -1831,14 +1950,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0, 17.5)
     plt.tight_layout()
-    plt.savefig(
-        f"{out_base}2D_volumes_density_random.pdf", bbox_inches="tight", dpi=300
+    plt.savefig(f"{out_base}2D_volumes_density_random_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
     )
+    plt.savefig(f"{out_base}2D_volumes_density_random.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1851,13 +1974,20 @@ if __name__ == "__main__":
     plt.ylim(0, 3.5)
     plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_sum_cov_vols_denseness_icsd.pdf", bbox_inches="tight", dpi=300
+        f"{out_base}2D_sum_cov_vols_denseness_icsd_pub.pdf",
+        bbox_inches="tight",
     )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(f"{out_base}2D_sum_cov_vols_denseness_icsd.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -1870,13 +2000,20 @@ if __name__ == "__main__":
     plt.ylim(0, 3.5)
     plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_sum_cov_vols_denseness_random.pdf", bbox_inches="tight", dpi=300
+        f"{out_base}2D_sum_cov_vols_denseness_random_pub.pdf",
+        bbox_inches="tight",
     )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(f"{out_base}2D_sum_cov_vols_denseness_random.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_atoms, color="g", s=0.5)
@@ -1884,12 +2021,18 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0, 400)
     plt.tight_layout()
-    plt.savefig(f"{out_base}2D_volumes_NO_atoms_icsd.pdf", bbox_inches="tight", dpi=300)
+    plt.savefig(f"{out_base}2D_volumes_NO_atoms_icsd_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(f"{out_base}2D_volumes_NO_atoms_icsd.pdf", bbox_inches="tight")
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(random_rightly_volumes, random_rightly_NO_atoms, color="g", s=0.5)
@@ -1897,16 +2040,20 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.ylim(0, 400)
     plt.tight_layout()
-    plt.savefig(
-        f"{out_base}2D_volumes_NO_atoms_random.pdf", bbox_inches="tight", dpi=300
+    plt.savefig(f"{out_base}2D_volumes_NO_atoms_random_pub.pdf", bbox_inches="tight")
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
     )
+    plt.savefig(f"{out_base}2D_volumes_NO_atoms_random.pdf", bbox_inches="tight")
 
     # set_wyckoffs_indices over volume
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     indices = []
@@ -1929,15 +2076,23 @@ if __name__ == "__main__":
     plt.ylim(-1, 12)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_volumes_set_wyckoffs_indices_icsd_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_volumes_set_wyckoffs_indices_icsd.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     indices = []
@@ -1960,17 +2115,24 @@ if __name__ == "__main__":
     plt.ylim(-1, 12)
     plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_set_wyckoffs_indices_random.pdf",
+        f"{out_base}2D_volumes_set_wyckoffs_indices_random_pub.pdf",
         bbox_inches="tight",
-        dpi=300,
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
+        f"{out_base}2D_volumes_set_wyckoffs_indices_random.pdf", bbox_inches="tight"
     )
 
     # set_wyckoffs_max_indices over volume
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     indices = []
@@ -1991,15 +2153,23 @@ if __name__ == "__main__":
     plt.ylim(-1, 12)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_volumes_set_wyckoffs_max_indices_icsd_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_volumes_set_wyckoffs_max_indices_icsd.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     indices = []
@@ -2020,17 +2190,25 @@ if __name__ == "__main__":
     plt.ylim(-1, 12)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_volumes_set_wyckoffs_max_indices_random_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_volumes_set_wyckoffs_max_indices_random.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     # set_wyckoffs_max_indices over NO_wyckoffs
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     indices = []
@@ -2051,15 +2229,23 @@ if __name__ == "__main__":
     plt.ylim(-1, 12)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_icsd_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_icsd.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     indices = []
@@ -2080,9 +2266,17 @@ if __name__ == "__main__":
     plt.ylim(-1, 12)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_random_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_random.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     # structural_complexity over volume (shannon entropy of occupations)
@@ -2091,8 +2285,8 @@ if __name__ == "__main__":
 
         plt.figure(
             figsize=(
-                figure_double_width * 0.95 * 0.5,
-                figure_double_width * 0.7 * 0.5,
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
             )
         )
         plt.scatter(
@@ -2104,15 +2298,23 @@ if __name__ == "__main__":
         plt.xlim(0, 7000)
         plt.tight_layout()
         plt.savefig(
+            f"{out_base}2D_volumes_structural_complexity_icsd_pub.pdf",
+            bbox_inches="tight",
+        )
+
+        plt.gcf().set_size_inches(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+        plt.savefig(
             f"{out_base}2D_volumes_structural_complexity_icsd.pdf",
             bbox_inches="tight",
-            dpi=300,
         )
 
         plt.figure(
             figsize=(
-                figure_double_width * 0.95 * 0.5,
-                figure_double_width * 0.7 * 0.5,
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
             )
         )
         plt.scatter(
@@ -2130,9 +2332,17 @@ if __name__ == "__main__":
         plt.xlim(0, 7000)
         plt.tight_layout()
         plt.savefig(
+            f"{out_base}2D_volumes_structural_complexity_random_pub.pdf",
+            bbox_inches="tight",
+        )
+
+        plt.gcf().set_size_inches(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+        plt.savefig(
             f"{out_base}2D_volumes_structural_complexity_random.pdf",
             bbox_inches="tight",
-            dpi=300,
         )
 
     # chemical_ordering over volume (shannon entropy of occupations)
@@ -2141,8 +2351,8 @@ if __name__ == "__main__":
 
         plt.figure(
             figsize=(
-                figure_double_width * 0.95 * 0.5,
-                figure_double_width * 0.7 * 0.5,
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
             )
         )
         plt.scatter(
@@ -2154,15 +2364,23 @@ if __name__ == "__main__":
         plt.xlim(0, 7000)
         plt.tight_layout()
         plt.savefig(
+            f"{out_base}2D_volumes_chemical_ordering_icsd_pub.pdf",
+            bbox_inches="tight",
+        )
+
+        plt.gcf().set_size_inches(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+        plt.savefig(
             f"{out_base}2D_volumes_chemical_ordering_icsd.pdf",
             bbox_inches="tight",
-            dpi=300,
         )
 
         plt.figure(
             figsize=(
-                figure_double_width * 0.95 * 0.5,
-                figure_double_width * 0.7 * 0.5,
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
             )
         )
         plt.scatter(
@@ -2174,17 +2392,25 @@ if __name__ == "__main__":
         plt.xlim(0, 7000)
         plt.tight_layout()
         plt.savefig(
+            f"{out_base}2D_volumes_chemical_ordering_random_pub.pdf",
+            bbox_inches="tight",
+        )
+
+        plt.gcf().set_size_inches(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
+        plt.savefig(
             f"{out_base}2D_volumes_chemical_ordering_random.pdf",
             bbox_inches="tight",
-            dpi=300,
         )
 
     # number of unique elements over the volume
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(icsd_rightly_volumes, icsd_rightly_NO_elements, color="g", s=0.5)
@@ -2192,15 +2418,23 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_elements_icsd_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_volumes_NO_unique_elements_icsd.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(random_rightly_volumes, random_rightly_NO_elements, color="g", s=0.5)
@@ -2208,17 +2442,25 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_volumes_NO_unique_elements_random_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_volumes_NO_unique_elements_random.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     # sum of intensities over the volume
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -2236,15 +2478,22 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.tight_layout()
     plt.savefig(
-        f"{out_base}2D_volumes_sum_of_intensities_icsd.pdf",
+        f"{out_base}2D_volumes_sum_of_intensities_icsd_pub.pdf",
         bbox_inches="tight",
-        dpi=300,
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
+        f"{out_base}2D_volumes_sum_of_intensities_icsd.pdf", bbox_inches="tight"
     )
 
     plt.figure(
         figsize=(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
     plt.scatter(
@@ -2262,9 +2511,17 @@ if __name__ == "__main__":
     plt.xlim(0, 7000)
     plt.tight_layout()
     plt.savefig(
+        f"{out_base}2D_volumes_sum_of_intensities_random_pub.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.gcf().set_size_inches(
+        figure_double_width * 0.95 * 0.5,
+        figure_double_width * 0.7 * 0.5,
+    )
+    plt.savefig(
         f"{out_base}2D_volumes_sum_of_intensities_random.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
 
     ##### Angles 3D scatter plot
@@ -2302,7 +2559,6 @@ if __name__ == "__main__":
     plt.savefig(
         f"{out_base}3D_angles_scatter.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
     # plt.show()
 
@@ -2341,7 +2597,6 @@ if __name__ == "__main__":
     plt.savefig(
         f"{out_base}3D_lattice_paras_scatter.pdf",
         bbox_inches="tight",
-        dpi=300,
     )
     # plt.show()
 
@@ -2457,8 +2712,8 @@ if __name__ == "__main__":
         # Figure size
         plt.figure(
             figsize=(
-                figure_double_width * 0.95 * 0.5,
-                figure_double_width * 0.7 * 0.5,
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
             )
         )
 
@@ -2548,6 +2803,15 @@ if __name__ == "__main__":
 
         plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
 
+        plt.savefig(
+            f"{out_base}{tag}{'_prop' if only_proportions else ''}_pub.pdf",
+            bbox_inches="tight",
+        )
+
+        plt.gcf().set_size_inches(
+            figure_double_width * 0.95 * 0.5,
+            figure_double_width * 0.7 * 0.5,
+        )
         plt.savefig(
             f"{out_base}{tag}{'_prop' if only_proportions else ''}.pdf",
             bbox_inches="tight",
