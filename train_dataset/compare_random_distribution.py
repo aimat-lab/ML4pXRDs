@@ -67,7 +67,7 @@ if __name__ == "__main__":
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/23-05-2022_19-11-33/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/05-06-2022_12-32-24/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
         # tag = "magpie_10-03-2022_14-34-51"
@@ -79,10 +79,10 @@ if __name__ == "__main__":
         # tag = "volumes_densenesses_2-spg_test/15"
 
         # tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
-        tag = "test"
+        tag = "structures"
 
         # spgs_to_analyze = [14, 104, 176, 129]
-        spgs_to_analyze = [66]
+        spgs_to_analyze = None
         # spgs_to_analyze = [15]
         # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     analyse_complexity_ordering = False
 
-    show_sample_structures = False
+    show_sample_structures = True
     samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     counter_shown_random_falsely = 0
 
     show_sample_xrds = False  # TODO: Change back
-    xrds_to_show = 2000  # TODO: Change back
+    xrds_to_show = 2000
     # xrds_to_show = 10**9  # show them all
     show_individual = False
     counter_xrds_icsd_rightly = 0
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:
+    if True:  # TODO: Change back
         to_process = 1000
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
@@ -616,11 +616,15 @@ if __name__ == "__main__":
                 and index not in falsely_icsd_already_processed
             ):
                 counter_shown_icsd_falsely += 1
-                ase_struc = AseAtomsAdaptor.get_atoms(structure)
-                write(
-                    f"{out_base}icsd_falsely_structures/{icsd_metas[index][0]}.png",
-                    ase_struc,
-                )
+                try:
+                    ase_struc = AseAtomsAdaptor.get_atoms(structure)
+                    write(
+                        f"{out_base}icsd_falsely_structures/{icsd_metas[index][0]}.png",
+                        ase_struc,
+                    )
+                except Exception as ex:
+                    print("Something went wrong creating view of one of the structures.")
+                    counter_shown_icsd_falsely -= 1
 
             if (
                 show_sample_xrds
@@ -841,11 +845,16 @@ if __name__ == "__main__":
                 and index not in rightly_icsd_already_processed
             ):
                 counter_shown_icsd_rightly += 1
-                ase_struc = AseAtomsAdaptor.get_atoms(structure)
-                write(
-                    f"{out_base}icsd_rightly_structures/{icsd_metas[index][0]}.png",
-                    ase_struc,
-                )
+
+                try:
+                    ase_struc = AseAtomsAdaptor.get_atoms(structure)
+                    write(
+                        f"{out_base}icsd_rightly_structures/{icsd_metas[index][0]}.png",
+                        ase_struc,
+                    )
+                except Exception as ex:
+                    print("Something went wrong creating view of one of the structures.")
+                    counter_shown_icsd_rightly -= 1
 
             if (
                 show_sample_xrds
@@ -1058,12 +1067,17 @@ if __name__ == "__main__":
                 show_sample_structures
                 and counter_shown_random_falsely < samples_to_show_icsd
             ):
-                counter_shown_random_falsely += 1
-                ase_struc = AseAtomsAdaptor.get_atoms(structure)
-                write(
-                    f"{out_base}random_falsely_structures/{counter_shown_random_falsely}.png",
-                    ase_struc,
-                )
+                try:
+                    counter_shown_random_falsely += 1
+                    ase_struc = AseAtomsAdaptor.get_atoms(structure)
+                    write(
+                        f"{out_base}random_falsely_structures/{counter_shown_random_falsely}.png",
+                        ase_struc,
+                    )
+                except Exception as ex:
+                    print("Something went wrong creating view of one of the structures.")
+                    counter_shown_random_falsely -= 1
+
 
             if (
                 show_sample_xrds
@@ -1273,12 +1287,16 @@ if __name__ == "__main__":
                 show_sample_structures
                 and counter_shown_random_rightly < samples_to_show_icsd
             ):
-                counter_shown_random_rightly += 1
-                ase_struc = AseAtomsAdaptor.get_atoms(structure)
-                write(
-                    f"{out_base}random_rightly_structures/{counter_shown_random_rightly}.png",
-                    ase_struc,
-                )
+                try:
+                    counter_shown_random_rightly += 1
+                    ase_struc = AseAtomsAdaptor.get_atoms(structure)
+                    write(
+                        f"{out_base}random_rightly_structures/{counter_shown_random_rightly}.png",
+                        ase_struc,
+                    )
+                except Exception as ex:
+                    print("Something went wrong creating view of one of the structures.")
+                    counter_shown_random_rightly -= 1
 
             if (
                 show_sample_xrds
