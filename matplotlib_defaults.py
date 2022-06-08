@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import os
 
 # Use computer modern font (sans-serif)
-mpl.rcParams["text.usetex"] = True
-mpl.rcParams["font.family"] = "sans-serif"
-mpl.rcParams["mathtext.fontset"] = "cm"
+
+jobid = os.getenv("SLURM_JOB_ID")
+if jobid is None or jobid == "":
+    mpl.rcParams["text.usetex"] = True
+    mpl.rcParams["font.family"] = "sans-serif"
+    mpl.rcParams["mathtext.fontset"] = "cm"
 
 plt.rc("ytick", labelsize=8)
 plt.rc("xtick", labelsize=8)

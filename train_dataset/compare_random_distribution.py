@@ -90,20 +90,20 @@ if __name__ == "__main__":
 
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
-    calculate_conventionals = False
+    calculate_conventionals = True
 
     compute_magpie_features = False
 
     analyse_complexity_ordering = False
 
-    show_sample_structures = True
+    show_sample_structures = False
     samples_to_show_icsd = 50
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
     counter_shown_random_rightly = 0
     counter_shown_random_falsely = 0
 
-    show_sample_xrds = False  # TODO: Change back
+    show_sample_xrds = False
     xrds_to_show = 2000
     # xrds_to_show = 10**9  # show them all
     show_individual = False
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if True:  # TODO: Change back
+    if False:
         to_process = 1000
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
@@ -623,7 +623,9 @@ if __name__ == "__main__":
                         ase_struc,
                     )
                 except Exception as ex:
-                    print("Something went wrong creating view of one of the structures.")
+                    print(
+                        "Something went wrong creating view of one of the structures."
+                    )
                     counter_shown_icsd_falsely -= 1
 
             if (
@@ -853,7 +855,9 @@ if __name__ == "__main__":
                         ase_struc,
                     )
                 except Exception as ex:
-                    print("Something went wrong creating view of one of the structures.")
+                    print(
+                        "Something went wrong creating view of one of the structures."
+                    )
                     counter_shown_icsd_rightly -= 1
 
             if (
@@ -1075,9 +1079,10 @@ if __name__ == "__main__":
                         ase_struc,
                     )
                 except Exception as ex:
-                    print("Something went wrong creating view of one of the structures.")
+                    print(
+                        "Something went wrong creating view of one of the structures."
+                    )
                     counter_shown_random_falsely -= 1
-
 
             if (
                 show_sample_xrds
@@ -1295,7 +1300,9 @@ if __name__ == "__main__":
                         ase_struc,
                     )
                 except Exception as ex:
-                    print("Something went wrong creating view of one of the structures.")
+                    print(
+                        "Something went wrong creating view of one of the structures."
+                    )
                     counter_shown_random_rightly -= 1
 
             if (
