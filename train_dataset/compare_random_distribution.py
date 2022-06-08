@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     for i in range(0, len(icsd_variations)):
 
-        if icsd_labels[i][0] in spgs_to_analyze or spgs_to_analyze is None:
+        if spgs_to_analyze is None or icsd_labels[i][0] in spgs_to_analyze:
 
             (
                 is_pure,
@@ -367,7 +367,7 @@ if __name__ == "__main__":
 
         print(f"Processing random: {i} of {len(random_variations)}")
 
-        if random_labels[i] in spgs_to_analyze or spgs_to_analyze is None:
+        if spgs_to_analyze is None or random_labels[i] in spgs_to_analyze:
             success = True
             try:
                 (
