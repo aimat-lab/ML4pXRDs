@@ -11,6 +11,8 @@ import numba
 from interp_utils import spline_numba
 from glob import glob
 import os
+import pickle
+from dataset_simulations.simulation import Simulation
 
 
 n_angles_gp = 60
@@ -43,10 +45,10 @@ if not use_fluct_noise:
 else:
 
     base_noise_level_min = 0.0
-    base_noise_level_max = 0.08
+    base_noise_level_max = 0.09
 
     fluct_noise_level_min = 0.0
-    fluct_noise_level_max = 0.11
+    fluct_noise_level_max = 0.04
 
 # sigma_min = 0.1
 # sigma_max = 0.5
@@ -56,6 +58,8 @@ crystallite_size_gauss_min = 15
 crystallite_size_gauss_max = (
     50  # TODO: maybe use this altered range for the classification / simulation, too!
 )
+# NOTE: When using the ICSD patterns directly from the simulation, then this
+# range for crystallite sizes doesn't apply!
 
 
 def convert_to_discrete(
@@ -264,7 +268,6 @@ def add_peaks(
                     # peak_size = trunc.rvs()
                     peak_size = samples_truncnorm(0, 0.1, [min_peak_height, 1.0])
 
-                # TODO: Maybe!: Change this behavior: For small peaks, the diffractograms appear to have "less" noise.
                 ys_unaltered_all[i, :] += (
                     1
                     / (sigma_peaks[j] * np.sqrt(2 * np.pi))
@@ -320,11 +323,62 @@ if __name__ == "__main__":
     end_x = pattern_x[-1]
     N = len(pattern_x)  # UNet works without error for N ~ 2^model_depth
 
-    xs_generated, ys_generated = generate_samples_gp(
-        100, (start_x, end_x), n_angles_output=N
-    )
-
     raw_files = glob("./RRUFF_data/XY_RAW/*.txt")
+
+    with open("../dataset_simulations/prepared_training/meta", "rb") as file:
+        data = pickle.load(file)
+
+        per_element = data[6]
+
+        counter_per_spg_per_element = data[0]
+        if per_element:
+            counts_per_spg_per_element_per_wyckoff = data[1]
+        else:
+            counts_per_spg_per_wyckoff = data[1]
+        NO_wyckoffs_prob_per_spg = data[2]
+        NO_unique_elements_prob_per_spg = data[3]
+
+        if per_element:
+            NO_repetitions_prob_per_spg_per_element = data[4]
+        else:
+            NO_repetitions_prob_per_spg = data[4]
+        denseness_factors_per_spg = data[5]
+
+        statistics_metas = data[7]
+        statistics_labels = data[8]
+        statistics_match_metas = data[9]
+        statistics_match_labels = data[10]
+        test_metas = data[11]
+        test_labels = data[12]
+        corrected_labels = data[13]
+        test_match_metas = data[14]
+        test_match_pure_metas = data[15]
+
+    path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
+    jobid = os.getenv("SLURM_JOB_ID")
+    if jobid is not None and jobid != "":
+        icsd_sim_statistics = Simulation(
+            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+            os.path.expanduser("~/Databases/ICSD/cif/"),
+        )
+        icsd_sim_statistics.output_dir = path_to_patterns
+    else:  # local
+        icsd_sim_statistics = Simulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
+        icsd_sim_statistics.output_dir = path_to_patterns
+
+    statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
+
+    icsd_sim_statistics.load(
+        load_only_N_patterns_each=1, metas_to_load=statistics_match_metas_flat, stop=4
+    )
+    statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
+
+    xs_generated, ys_generated = generate_samples_gp(
+        100, (start_x, end_x), n_angles_output=N, icsd_patterns=statistics_patterns
+    )
 
     for i, raw_file in enumerate(raw_files):
 
