@@ -67,6 +67,8 @@ if __name__ == "__main__":
         # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
+
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/05-06-2022_12-32-24/randomized_coords/"
         in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/05-06-2022_12-32-24/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
@@ -90,7 +92,7 @@ if __name__ == "__main__":
 
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
-    calculate_conventionals = True
+    calculate_conventionals = False  # TODO: Maybe change back
 
     compute_magpie_features = False
 
@@ -1074,6 +1076,8 @@ if __name__ == "__main__":
                 try:
                     counter_shown_random_falsely += 1
                     ase_struc = AseAtomsAdaptor.get_atoms(structure)
+                    # view(ase_struc)
+                    # input("")
                     write(
                         f"{out_base}random_falsely_structures/{counter_shown_random_falsely}.png",
                         ase_struc,
@@ -1295,6 +1299,8 @@ if __name__ == "__main__":
                 try:
                     counter_shown_random_rightly += 1
                     ase_struc = AseAtomsAdaptor.get_atoms(structure)
+                    # view(ase_struc)
+                    # input("")
                     write(
                         f"{out_base}random_rightly_structures/{counter_shown_random_rightly}.png",
                         ase_struc,
