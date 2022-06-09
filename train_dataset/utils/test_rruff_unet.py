@@ -11,7 +11,8 @@ import generate_background_noise_utils
 from datetime import datetime
 from glob import glob
 
-to_test = "18-05-2022_09-45-42_UNetPP"
+# to_test = "18-05-2022_09-45-42_UNetPP"
+to_test = "06-06-2022_22-15-44_UNetPP"
 
 pattern_x = np.arange(0, 90.24, 0.02)
 start_x = pattern_x[0]

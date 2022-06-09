@@ -17,10 +17,10 @@ from dataset_simulations.random_simulation_utils import load_dataset_info
 import pickle
 
 tag = "UNetPP"
-training_mode = "train"  # possible: train and test
+training_mode = "test"  # possible: train and test
 
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
-to_test = "09-05-2022_12-24-34_UNetPP"
+to_test = "06-06-2022_22-15-44_UNetPP"
 
 pattern_x = np.arange(0, 90.24, 0.02)
 start_x = pattern_x[0]
@@ -33,7 +33,7 @@ batch_size = 300
 number_of_batches = 500
 number_of_epochs = 600
 
-use_distributed_strategy = True
+use_distributed_strategy = False  # TODO: Change back
 use_ICSD_patterns = True
 local = False
 

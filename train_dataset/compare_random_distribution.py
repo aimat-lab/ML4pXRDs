@@ -169,7 +169,6 @@ if __name__ == "__main__":
 
     # limit the range:
     if False:
-        to_process = 1000
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
         random_variations = random_variations[0:to_process]

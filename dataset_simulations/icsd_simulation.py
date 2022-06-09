@@ -62,8 +62,8 @@ class ICSDSimulation(Simulation):
 
         plt.figure(
             figsize=(
-                matplotlib_defaults.pub_width * 0.85,
-                matplotlib_defaults.pub_width * 0.6,
+                matplotlib_defaults.pub_width * 0.65,
+                matplotlib_defaults.pub_width * 0.40,
             )
         )
         plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
