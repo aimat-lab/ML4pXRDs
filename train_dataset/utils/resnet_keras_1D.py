@@ -87,6 +87,12 @@ RESNET_SPECS = {
         ("bottleneck", 256, 87),
         ("bottleneck", 512, 4),
     ],
+    "custom_10": [
+        ("residual", 16, 1),
+        ("residual", 32, 1),
+        ("residual", 64, 1),
+        ("residual", 128, 1),
+    ],
 }
 
 
@@ -114,6 +120,7 @@ def make_divisible(
         new_value += divisor
     return int(new_value)
 
+
 class ResidualBlock(tf.keras.layers.Layer):
     """A residual block."""
 
@@ -132,6 +139,7 @@ class ResidualBlock(tf.keras.layers.Layer):
         norm_momentum=0.99,
         norm_epsilon=0.001,
         bn_trainable=True,
+        square_kernel_size_and_stride=False,
         **kwargs,
     ):
         """Initializes a residual block with BN after convolutions.
@@ -177,6 +185,7 @@ class ResidualBlock(tf.keras.layers.Layer):
         self._norm_epsilon = norm_epsilon
         self._kernel_regularizer = kernel_regularizer
         self._bias_regularizer = bias_regularizer
+        self._square_kernel_size_and_stride = square_kernel_size_and_stride
 
         if use_sync_bn:
             self._norm = tf.keras.layers.experimental.SyncBatchNormalization
@@ -215,7 +224,7 @@ class ResidualBlock(tf.keras.layers.Layer):
 
         self._conv1 = tf.keras.layers.Conv1D(
             filters=self._filters,
-            kernel_size=3,
+            kernel_size=3 if not self._square_kernel_size_and_stride else 3**2,
             strides=self._strides,
             padding=conv1_padding,
             use_bias=False,
@@ -232,7 +241,7 @@ class ResidualBlock(tf.keras.layers.Layer):
 
         self._conv2 = tf.keras.layers.Conv1D(
             filters=self._filters,
-            kernel_size=3,
+            kernel_size=3 if not self._square_kernel_size_and_stride else 3**2,
             strides=1,
             padding="same",
             use_bias=False,
@@ -264,6 +273,7 @@ class ResidualBlock(tf.keras.layers.Layer):
             "norm_momentum": self._norm_momentum,
             "norm_epsilon": self._norm_epsilon,
             "bn_trainable": self._bn_trainable,
+            "square_kernel_size_and_stride": self._square_kernel_size_and_stride,
         }
         base_config = super(ResidualBlock, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -304,6 +314,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
         norm_momentum=0.99,
         norm_epsilon=0.001,
         bn_trainable=True,
+        square_kernel_size_and_stride=False,
         **kwargs,
     ):
         """Initializes a standard bottleneck block with BN after convolutions.
@@ -347,6 +358,8 @@ class BottleneckBlock(tf.keras.layers.Layer):
         self._norm_epsilon = norm_epsilon
         self._kernel_regularizer = kernel_regularizer
         self._bias_regularizer = bias_regularizer
+        self._square_kernel_size_and_stride = square_kernel_size_and_stride
+
         if use_sync_bn:
             self._norm = tf.keras.layers.experimental.SyncBatchNormalization
         else:
@@ -409,7 +422,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
 
         self._conv2 = tf.keras.layers.Conv1D(
             filters=self._filters,
-            kernel_size=3,
+            kernel_size=3 if not self._square_kernel_size_and_stride else 3**2,
             strides=self._strides,
             dilation_rate=self._dilation_rate,
             padding="same",
@@ -462,6 +475,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
             "norm_momentum": self._norm_momentum,
             "norm_epsilon": self._norm_epsilon,
             "bn_trainable": self._bn_trainable,
+            "square_kernel_size_and_stride": self._square_kernel_size_and_stride,
         }
         base_config = super(BottleneckBlock, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -522,6 +536,7 @@ class ResNet(tf.keras.Model):
         kernel_regularizer: Optional[tf.keras.regularizers.Regularizer] = None,
         bias_regularizer: Optional[tf.keras.regularizers.Regularizer] = None,
         bn_trainable: bool = True,
+        square_kernel_size_and_stride=False,
         **kwargs,
     ):
         """Initializes a ResNet model.
@@ -570,6 +585,7 @@ class ResNet(tf.keras.Model):
         self._kernel_regularizer = kernel_regularizer
         self._bias_regularizer = bias_regularizer
         self._bn_trainable = bn_trainable
+        self._square_kernel_size_and_stride = square_kernel_size_and_stride
 
         if tf.keras.backend.image_data_format() == "channels_last":
             bn_axis = -1
@@ -685,7 +701,11 @@ class ResNet(tf.keras.Model):
             x = self._block_group(
                 inputs=x,
                 filters=int(spec[1] * self._depth_multiplier),
-                strides=(1 if i == 0 else 2),
+                strides=(
+                    1
+                    if i == 0
+                    else (2 if not square_kernel_size_and_stride else 2**2)
+                ),
                 block_fn=block_fn,
                 block_repeats=spec[2],
                 name="block_group_l{}".format(i + 2),
@@ -732,6 +752,7 @@ class ResNet(tf.keras.Model):
             norm_momentum=self._norm_momentum,
             norm_epsilon=self._norm_epsilon,
             bn_trainable=self._bn_trainable,
+            square_kernel_size_and_stride=self._square_kernel_size_and_stride,
         )(inputs)
 
         for _ in range(1, block_repeats):
@@ -748,6 +769,7 @@ class ResNet(tf.keras.Model):
                 norm_momentum=self._norm_momentum,
                 norm_epsilon=self._norm_epsilon,
                 bn_trainable=self._bn_trainable,
+                square_kernel_size_and_stride=self._square_kernel_size_and_stride,
             )(x)
 
         return tf.keras.layers.Activation("linear", name=name)(x)
@@ -768,6 +790,7 @@ class ResNet(tf.keras.Model):
             "kernel_regularizer": self._kernel_regularizer,
             "bias_regularizer": self._bias_regularizer,
             "bn_trainable": self._bn_trainable,
+            "square_kernel_size_and_stride": self._square_kernel_size_and_stride,
         }
         return config_dict
 
@@ -780,9 +803,10 @@ class ResNet(tf.keras.Model):
         """A dict of {level: TensorShape} pairs for the model output."""
         return self._output_specs
 
+
 if __name__ == "__main__":
 
-    resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None,8501,1)))
+    resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None, 8501, 1)))
 
     predictions = keras.layers.Flatten()(resnet_model.layers[-1].output)
     predictions = keras.layers.Dense(100)(predictions)

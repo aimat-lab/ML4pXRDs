@@ -702,9 +702,21 @@ def build_model_resnet_10(
     optimizer="Adam",
 ):
 
+    # resnet_model = ResNet(
+    #    10, keras.layers.InputSpec(shape=(None, number_of_input_values, 1))
+    # )
+
     resnet_model = ResNet(
-        10, keras.layers.InputSpec(shape=(None, number_of_input_values, 1))
+        10,
+        keras.layers.InputSpec(shape=[None, number_of_input_values, 1]),
+        square_kernel_size_and_stride=True,
     )
+
+    # predictions = keras.layers.AveragePooling1D(pool_size=5, strides=5)(
+    #    resnet_model.layers[-1].output
+    # )
+    # predictions = keras.layers.Flatten()(predictions)
+
     predictions = keras.layers.Flatten()(resnet_model.layers[-1].output)
     predictions = keras.layers.Dense(number_of_output_labels)(predictions)
 
@@ -740,73 +752,74 @@ def build_model_resnet_10(
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
 
         print("Tiny size")
         model = build_model_park_tiny_size(
             None, 8501, 145, False, 0.0001
         )  # only one conv layer but with more filters (120 instead of 80)
-        model.save("test")
-        model = keras.models.load_model(
-            "test",
-            custom_objects={
-                "AdamWarmup": AdamWarmup
-            },  # this works, even though it doesn't use it
-        )
+        # model.save("test")
+        # model = keras.models.load_model(
+        #    "test",
+        #    custom_objects={
+        #        "AdamWarmup": AdamWarmup
+        #    },  # this works, even though it doesn't use it
+        # )
 
         print("7-label version")
         model = build_model_park(None, 8501, 145, False, 0.0001)  # 7-label version
-        model.save("test")
-        model = keras.models.load_model("test")
+        # model.save("test")
+        # model = keras.models.load_model("test")
 
         print("7-label version with 2 CNN layers")
         model = build_model_park_2_layer_CNN(
             None, 8501, 145, False, 0.0001
         )  # 7-label version with only 2 CNN layers and some less filters
-        model.save("test")
-        model = keras.models.load_model("test")
+        # model.save("test")
+        # model = keras.models.load_model("test")
 
         print("Medium size")
         model = build_model_park_medium_size(
             None, 8501, 145, False, 0.0001
         )  # 101-label version
-        model.save("test")
-        model = keras.models.load_model("test")
+        # model.save("test")
+        # model = keras.models.load_model("test")
 
         print("Original 230-label")
         model = build_model_park_original_spg(
             None, 8501, 145, False, 0.0001
         )  # 230-label version
-        model.save("test")
-        model = keras.models.load_model("test")
+        # model.save("test")
+        # model = keras.models.load_model("test")
 
         print("Huge size")
         model = build_model_park_huge_size(
             None, 8501, 145, False, 0.0001
         )  # my version: original 230-label + more filters
-        model.save("test")
-        model = keras.models.load_model("test")
+        # model.save("test")
+        # model = keras.models.load_model("test")
 
         print("Gigantic size")
         model = build_model_park_gigantic_size(
             None, 8501, 145, False, 0.0001
         )  # huge + one CNN layer + different strides
-        model.save("test")
-        model = keras.models.load_model("test")
+        # model.save("test")
+        # model = keras.models.load_model("test")
 
         print("Gigantic size_more_dense")
         model = build_model_park_gigantic_size_more_dense(
             None, 8501, 145, False, 0.0001
         )  # huge + one CNN layer + different strides
-        model.save("test")
-        model = keras.models.load_model("test")
+        # model.save("test")
+        # model = keras.models.load_model("test")
 
-        print("Resnet 10")
-        model = build_model_resnet_10(None, 8501, 145, 0.0001, 0, "Adam")
-        model.save("test")
-        model = keras.models.load_model("test")
+    print("Resnet 10")
+    model = build_model_resnet_10(None, 8501, 145, 0.0001, 0, "Adam")
+    # model.save("test")
+    # model = keras.models.load_model("test")
 
-    print("ViT")
-    model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
-    model.save("test")
-    model = keras.models.load_model("test", custom_objects={"AdamWarmup": AdamWarmup})
+    if False:
+        print("ViT")
+        model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
+        # model.save("test")
+        # model = keras.models.load_model("test", custom_objects={"AdamWarmup": AdamWarmup})
