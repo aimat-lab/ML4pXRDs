@@ -178,14 +178,14 @@ class UNet:
             pool = Feature_Extraction_Block(
                 pool,
                 self.model_width,
-                int(self.length / (2 ** self.model_depth)),
+                int(self.length / (2**self.model_depth)),
                 self.feature_number,
             )
         conv = Conv_Block(
-            pool, self.model_width, self.kernel_size, 2 ** self.model_depth
+            pool, self.model_width, self.kernel_size, 2**self.model_depth
         )
         conv = Conv_Block(
-            conv, self.model_width, self.kernel_size, 2 ** self.model_depth
+            conv, self.model_width, self.kernel_size, 2**self.model_depth
         )
 
         # Decoding
@@ -272,15 +272,15 @@ class UNet:
             pool = Feature_Extraction_Block(
                 pool,
                 self.model_width,
-                int(self.length / (2 ** self.model_depth)),
+                int(self.length / (2**self.model_depth)),
                 self.feature_number,
             )
 
         conv = Conv_Block(
-            pool, self.model_width, self.kernel_size, 2 ** self.model_depth
+            pool, self.model_width, self.kernel_size, 2**self.model_depth
         )
         conv = Conv_Block(
-            conv, self.model_width, self.kernel_size, 2 ** self.model_depth
+            conv, self.model_width, self.kernel_size, 2**self.model_depth
         )
 
         convs_list = list(convs.values())
@@ -299,32 +299,32 @@ class UNet:
                 if (i == 1) and (j == (self.model_depth - 1)):
                     if self.is_transconv:
                         deconv = Concat_Block(
-                            convs_list[j], trans_conv1D(conv, self.model_width, 2 ** j)
+                            convs_list[j], trans_conv1D(conv, self.model_width, 2**j)
                         )
                     elif not self.is_transconv:
                         deconv = Concat_Block(convs_list[j], upConv_Block(conv))
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 elif (i == 1) and (j < (self.model_depth - 1)):
                     if self.is_transconv:
                         deconv = Concat_Block(
                             convs_list[j],
-                            trans_conv1D(convs_list[j + 1], self.model_width, 2 ** j),
+                            trans_conv1D(convs_list[j + 1], self.model_width, 2**j),
                         )
                     elif not self.is_transconv:
                         deconv = Concat_Block(
                             convs_list[j], upConv_Block(convs_list[j + 1])
                         )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 elif i > 1:
@@ -334,7 +334,7 @@ class UNet:
                             trans_conv1D(
                                 deconvs["deconv%s%s" % ((j + 1), (i - 1))],
                                 self.model_width,
-                                2 ** j,
+                                2**j,
                             ),
                         )
                     elif not self.is_transconv:
@@ -343,10 +343,10 @@ class UNet:
                             upConv_Block(deconvs["deconv%s%s" % ((j + 1), (i - 1))]),
                         )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 if (self.D_S == 1) and (j == 0) and (i < self.model_depth):
@@ -406,14 +406,14 @@ class UNet:
             pool = Feature_Extraction_Block(
                 pool,
                 self.model_width,
-                int(self.length / (2 ** self.model_depth)),
+                int(self.length / (2**self.model_depth)),
                 self.feature_number,
             )
         conv = Conv_Block(
-            pool, self.model_width, self.kernel_size, 2 ** self.model_depth
+            pool, self.model_width, self.kernel_size, 2**self.model_depth
         )
         conv = Conv_Block(
-            conv, self.model_width, self.kernel_size, 2 ** self.model_depth
+            conv, self.model_width, self.kernel_size, 2**self.model_depth
         )
 
         convs_list = list(convs.values())
@@ -432,32 +432,32 @@ class UNet:
                 if (i == 1) and (j == (self.model_depth - 1)):
                     if self.is_transconv:
                         deconv = Concat_Block(
-                            convs_list[j], trans_conv1D(conv, self.model_width, 2 ** j)
+                            convs_list[j], trans_conv1D(conv, self.model_width, 2**j)
                         )
                     elif not self.is_transconv:
                         deconv = Concat_Block(convs_list[j], upConv_Block(conv))
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 elif (i == 1) and (j < (self.model_depth - 1)):
                     if self.is_transconv:
                         deconv = Concat_Block(
                             convs_list[j],
-                            trans_conv1D(convs_list[j + 1], self.model_width, 2 ** j),
+                            trans_conv1D(convs_list[j + 1], self.model_width, 2**j),
                         )
                     elif not self.is_transconv:
                         deconv = Concat_Block(
                             convs_list[j], upConv_Block(convs_list[j + 1])
                         )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 elif i > 1:
@@ -467,7 +467,7 @@ class UNet:
                             trans_conv1D(
                                 deconvs["deconv%s%s" % ((j + 1), (i - 1))],
                                 self.model_width,
-                                2 ** j,
+                                2**j,
                             ),
                         )
                     elif not self.is_transconv:
@@ -476,10 +476,10 @@ class UNet:
                             upConv_Block(deconvs["deconv%s%s" % ((j + 1), (i - 1))]),
                         )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 if (self.D_S == 1) and (j == 0) and (i < self.model_depth):
@@ -539,14 +539,14 @@ class UNet:
             pool = Feature_Extraction_Block(
                 pool,
                 self.model_width,
-                int(self.length / (2 ** self.model_depth)),
+                int(self.length / (2**self.model_depth)),
                 self.feature_number,
             )
         conv = Conv_Block(
-            pool, self.model_width, self.kernel_size, 2 ** self.model_depth
+            pool, self.model_width, self.kernel_size, 2**self.model_depth
         )
         conv = Conv_Block(
-            conv, self.model_width, self.kernel_size, 2 ** self.model_depth
+            conv, self.model_width, self.kernel_size, 2**self.model_depth
         )
 
         # Decoding
@@ -565,32 +565,32 @@ class UNet:
                 if (i == 1) and (j == (self.model_depth - 1)):
                     if self.is_transconv:
                         deconv = Concat_Block(
-                            convs_list[j], trans_conv1D(conv, self.model_width, 2 ** j)
+                            convs_list[j], trans_conv1D(conv, self.model_width, 2**j)
                         )
                     elif not self.is_transconv:
                         deconv = Concat_Block(convs_list[j], upConv_Block(conv))
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 elif (i == 1) and (j < (self.model_depth - 1)):
                     if self.is_transconv:
                         deconv = Concat_Block(
                             convs_list[j],
-                            trans_conv1D(convs_list[j + 1], self.model_width, 2 ** j),
+                            trans_conv1D(convs_list[j + 1], self.model_width, 2**j),
                         )
                     elif not self.is_transconv:
                         deconv = Concat_Block(
                             convs_list[j], upConv_Block(convs_list[j + 1])
                         )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 elif i > 1:
@@ -605,7 +605,7 @@ class UNet:
                             trans_conv1D(
                                 deconvs["deconv%s%s" % ((j + 1), (i - 1))],
                                 self.model_width,
-                                2 ** j,
+                                2**j,
                             ),
                         )
                     elif not self.is_transconv:
@@ -615,10 +615,10 @@ class UNet:
                             upConv_Block(deconvs["deconv%s%s" % ((j + 1), (i - 1))]),
                         )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconv = Conv_Block(
-                        deconv, self.model_width, self.kernel_size, 2 ** j
+                        deconv, self.model_width, self.kernel_size, 2**j
                     )
                     deconvs["deconv%s%s" % (j, i)] = deconv
                 if (self.D_S == 1) and (j == 0) and (i < self.model_depth):
@@ -685,12 +685,12 @@ class UNet:
             pool = Feature_Extraction_Block(
                 pool,
                 self.model_width,
-                int(self.length / (2 ** self.model_depth)),
+                int(self.length / (2**self.model_depth)),
                 self.feature_number,
             )
 
         mresblock = MultiResBlock(
-            pool, self.model_width, self.kernel_size, 2 ** self.model_depth, self.alpha
+            pool, self.model_width, self.kernel_size, 2**self.model_depth, self.alpha
         )
 
         # Decoding
@@ -741,3 +741,35 @@ class UNet:
             model = tf.keras.Model(inputs=[inputs], outputs=levels)
 
         return model
+
+
+if __name__ == "__main__":
+
+    my_unet = UNet(
+        length=4512,
+        model_depth=5,  # height
+        num_channel=1,  # input
+        model_width=5,  # first conv number of channels, danach immer verdoppeln
+        kernel_size=64,
+        output_nums=1,
+        problem_type="Regression",
+    )
+    # model = my_unet.UNet()
+    model = my_unet.UNetPP()
+
+    # length: Input Signal Length
+    # model_depth: Depth of the Model
+    # model_width: Width of the Input Layer of the Model
+    # num_channel: Number of Channels allowed by the Model
+    # kernel_size: Kernel or Filter Size of the Convolutional Layers
+    # problem_type: Classification (Binary or Multiclass) or Regression
+    # output_nums: Output Classes (Classification Mode) or Features (Regression Mode)
+    # ds: Checks where Deep Supervision is active or not, either 0 or 1 [Default value set as 0]
+    # ae: Enables or diables the AutoEncoder Mode, either 0 or 1 [Default value set as 0]
+    # alpha: This Parameter is only for MultiResUNet, default value is 1
+    # feature_number: Number of Features or Embeddings to be extracted from the AutoEncoder in the A_E Mode
+    # is_transconv: (TRUE - Transposed Convolution, FALSE - UpSampling) in the Encoder Layer
+
+    # keras.utils.plot_model(model, show_shapes=True)
+
+    model.summary()
