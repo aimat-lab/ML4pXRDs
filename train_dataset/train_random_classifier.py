@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet-adam-lr-0.0001"
+tag = "all-spgs-random-resnet-10-modified-adam-lr-0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -1675,7 +1675,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_resnet_10"
+    model_name = "model_resnet_10_modified"
 
     if not use_pretrained_model:
 
