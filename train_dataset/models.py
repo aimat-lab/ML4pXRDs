@@ -710,6 +710,7 @@ def build_model_resnet_10(
         10,
         keras.layers.InputSpec(shape=[None, number_of_input_values, 1]),
         square_kernel_size_and_stride=True,
+        disable_batchnorm=True,  # TODO: Change back
     )
 
     # predictions = keras.layers.AveragePooling1D(pool_size=5, strides=5)(
