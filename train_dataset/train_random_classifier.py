@@ -1367,40 +1367,59 @@ class CustomCallback(keras.callbacks.Callback):
                 # print("########## Metric names:")
                 # print(metric_names)
 
-                scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
+                scores_all = self.model.evaluate(
+                    x=val_x_all, y=val_y_all, verbose=0, batch_size=batch_size
+                )
                 scores_match = self.model.evaluate(
-                    x=val_x_match, y=val_y_match, verbose=0
+                    x=val_x_match, y=val_y_match, verbose=0, batch_size=batch_size
                 )
                 scores_match_correct_spgs = self.model.evaluate(
-                    x=val_x_match_correct_spgs, y=val_y_match_correct_spgs, verbose=0
+                    x=val_x_match_correct_spgs,
+                    y=val_y_match_correct_spgs,
+                    verbose=0,
+                    batch_size=batch_size,
                 )
                 scores_match_correct_spgs_pure = self.model.evaluate(
                     x=val_x_match_correct_spgs_pure,
                     y=val_y_match_correct_spgs_pure,
                     verbose=0,
+                    batch_size=batch_size,
                 )
                 scores_random = self.model.evaluate(
-                    x=val_x_random, y=val_y_random, verbose=0
+                    x=val_x_random, y=val_y_random, verbose=0, batch_size=batch_size
                 )
 
                 if generate_randomized_validation_datasets:
                     scores_randomized_coords = self.model.evaluate(
-                        x=val_x_randomized_coords, y=val_y_randomized_coords, verbose=0
+                        x=val_x_randomized_coords,
+                        y=val_y_randomized_coords,
+                        verbose=0,
+                        batch_size=batch_size,
                     )
                     scores_randomized_ref = self.model.evaluate(
-                        x=val_x_randomized_ref, y=val_y_randomized_ref, verbose=0
+                        x=val_x_randomized_ref,
+                        y=val_y_randomized_ref,
+                        verbose=0,
+                        batch_size=batch_size,
                     )
                     scores_randomized_lattice = self.model.evaluate(
                         x=val_x_randomized_lattice,
                         y=val_y_randomized_lattice,
                         verbose=0,
+                        batch_size=batch_size,
                     )
                     scores_randomized_both = self.model.evaluate(
-                        x=val_x_randomized_both, y=val_y_randomized_both, verbose=0
+                        x=val_x_randomized_both,
+                        y=val_y_randomized_both,
+                        verbose=0,
+                        batch_size=batch_size,
                     )
                 if use_statistics_dataset_as_validation:
                     scores_statistics = self.model.evaluate(
-                        x=statistics_x_match, y=statistics_y_match, verbose=0
+                        x=statistics_x_match,
+                        y=statistics_y_match,
+                        verbose=0,
+                        batch_size=batch_size,
                     )
 
                 assert metric_names[0] == "loss"
@@ -1748,7 +1767,7 @@ print(
 model.save(out_base + "final")
 
 # Get predictions for val_x_match and write rightly_indices / falsely_indices:
-prediction_match = model.predict(val_x_match)
+prediction_match = model.predict(val_x_match, batch_size=batch_size)
 prediction_match = np.argmax(prediction_match, axis=1)
 
 rightly_indices_match = np.argwhere(prediction_match == val_y_match)[:, 0]
@@ -1759,7 +1778,7 @@ with open(out_base + "rightly_falsely_icsd.pickle", "wb") as file:
 
 
 # Get predictions for val_x_random and write rightly_indices / falsely_indices:
-prediction_random = model.predict(val_x_random)
+prediction_random = model.predict(val_x_random, batch_size=batch_size)
 prediction_random = np.argmax(prediction_random, axis=1)
 
 rightly_indices_random = np.argwhere(prediction_random == val_y_random)[:, 0]
@@ -1770,7 +1789,9 @@ with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
 
 # Get predictions for val_x_randomized and write rightly_indices / falsely_indices:
 if generate_randomized_validation_datasets:
-    prediction_randomized_coords = model.predict(val_x_randomized_coords)
+    prediction_randomized_coords = model.predict(
+        val_x_randomized_coords, batch_size=batch_size
+    )
     prediction_randomized_coords = np.argmax(prediction_randomized_coords, axis=1)
 
     rightly_indices_randomized_coords = np.argwhere(
@@ -1786,7 +1807,9 @@ if generate_randomized_validation_datasets:
         )
 
     # Get predictions for val_x_randomized_ref and write rightly_indices / falsely_indices:
-    prediction_randomized_ref = model.predict(val_x_randomized_ref)
+    prediction_randomized_ref = model.predict(
+        val_x_randomized_ref, batch_size=batch_size
+    )
     prediction_randomized_ref = np.argmax(prediction_randomized_ref, axis=1)
 
     rightly_indices_randomized_ref = np.argwhere(
