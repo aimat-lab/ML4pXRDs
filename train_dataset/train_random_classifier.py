@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet-10-modified-adam-lr-0.0001"
+tag = "all-spgs-random-gigantic_more_dense-lr-0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -126,9 +126,9 @@ use_dropout = False
 
 learning_rate = 0.0001
 
-# momentum = 0.7
-# optimizer = "SGD"
-use_reduce_lr_on_plateau = False
+momentum = 0.7  # TODO: Change back
+optimizer = "SGD"
+use_reduce_lr_on_plateau = True
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -1653,7 +1653,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
     if use_reduce_lr_on_plateau:
         lr_callback = keras.callbacks.ReduceLROnPlateau(
-            monitor="loss", verbose=1, factor=0.5
+            monitor="loss", verbose=1, factor=0.2
         )
 
     sequence = CustomSequence(batches_per_epoch, batch_size, NO_epochs)
@@ -1675,7 +1675,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_resnet_10_modified"
+    model_name = "model_gigantic_additional_dense"
 
     if not use_pretrained_model:
 
@@ -1690,9 +1690,9 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        model = build_model_resnet_10(
-            None, N, len(spgs), lr=learning_rate, optimizer="Adam"
-        )
+        # model = build_model_resnet_10(
+        #    None, N, len(spgs), lr=learning_rate, optimizer="Adam"
+        # )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
@@ -1716,9 +1716,15 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_park_gigantic_size_more_dense(
-        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        # )
+        model = build_model_park_gigantic_size_more_dense(
+            None,
+            N,
+            len(spgs),
+            use_dropout=use_dropout,
+            lr=learning_rate,
+            momentum=momentum,
+            optimizer=optimizer,
+        )
 
     else:
 

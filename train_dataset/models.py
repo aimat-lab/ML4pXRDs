@@ -436,6 +436,8 @@ def build_model_park_gigantic_size_more_dense(
     number_of_output_labels=2,
     use_dropout=False,
     lr=0.001,
+    momentum=0.0,
+    optimizer="Adam",
 ):
     # From Park:
     # They actually train for 5000 epochs and batch size 1000 in the original paper
@@ -507,23 +509,26 @@ def build_model_park_gigantic_size_more_dense(
         keras.layers.Dense(number_of_output_labels)
     )
 
-    optimizer = keras.optimizers.Adam(learning_rate=lr)
-
-    # if number_of_output_labels == 2:
-    #    model.compile(
-    #        optimizer=optimizer,
-    #        loss=keras.losses.BinaryCrossentropy(from_logits=True),
-    #        metrics=[BinaryAccuracy(from_logits=True)],
-    #    )
-    # else:
-    model.compile(
-        optimizer=optimizer,
-        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=[
-            keras.metrics.SparseCategoricalAccuracy(),
-            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
-        ],  # here from_logits is not needed, since argmax will be the same
-    )
+    if optimizer == "Adam":
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
+            loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=[
+                keras.metrics.SparseCategoricalAccuracy(),
+                keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+            ],
+        )
+    elif optimizer == "SGD":
+        model.compile(
+            optimizer=keras.optimizers.SGD(lr, momentum=momentum),
+            loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            metrics=[
+                keras.metrics.SparseCategoricalAccuracy(),
+                keras.metrics.SparseTopKCategoricalAccuracy(k=5),
+            ],
+        )
+    else:
+        raise Exception("Optimizer not supported.")
 
     model.summary()
 
