@@ -26,6 +26,8 @@ import matplotlib_defaults
 figure_double_width_pub = matplotlib_defaults.pub_width
 figure_double_width = 10
 
+fix_important_ranges = True
+
 if __name__ == "__main__":
 
     if False:
@@ -69,7 +71,7 @@ if __name__ == "__main__":
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/05-06-2022_12-32-24/randomized_coords/"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/05-06-2022_12-32-24/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
         # tag = "magpie_10-03-2022_14-34-51"
@@ -81,7 +83,7 @@ if __name__ == "__main__":
         # tag = "volumes_densenesses_2-spg_test/15"
 
         # tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
-        tag = "structures"
+        tag = "07-06-2022_09-43-41"
 
         # spgs_to_analyze = [14, 104, 176, 129]
         spgs_to_analyze = None
@@ -2856,6 +2858,25 @@ if __name__ == "__main__":
 
     # actual plotting:
 
+    if False:
+        volumes_too_high_icsd = [
+            volume for volume in icsd_rightly_volumes if volume > 7000
+        ]
+        volumes_too_high_icsd.extend(
+            [volume for volume in icsd_falsely_volumes if volume > 7000]
+        )
+        volumes_too_high_random = [
+            volume for volume in random_rightly_volumes if volume > 7000
+        ]
+        volumes_too_high_random.extend(
+            [volume for volume in random_falsely_volumes if volume > 7000]
+        )
+
+        print("Volumes too high icsd:")
+        print(volumes_too_high_icsd)
+        print("Volumes too high random:")
+        print(volumes_too_high_random)
+
     for flag in [True, False]:
         create_histogram(
             "volumes",
@@ -2871,6 +2892,8 @@ if __name__ == "__main__":
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
+            fixed_x_min=0 if fix_important_ranges else None,
+            fixed_y_max=7000 if fix_important_ranges else None,
         )
 
     for flag in [True, False]:
@@ -2986,6 +3009,8 @@ if __name__ == "__main__":
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
+            fixed_x_min=0.0 if fix_important_ranges else None,
+            fixed_y_max=5.0 if fix_important_ranges else None,
         )
 
     for flag in [True, False]:
@@ -3024,6 +3049,8 @@ if __name__ == "__main__":
             only_proportions=flag,
             min_is_zero=True,
             force_int_bins=True,
+            fixed_x_min=0 if fix_important_ranges else None,
+            fixed_y_max=40 if fix_important_ranges else None,
         )
 
     for flag in [True, False]:
@@ -3064,6 +3091,8 @@ if __name__ == "__main__":
             is_int=False,
             only_proportions=flag,
             min_is_zero=True,
+            fixed_x_min=0 if fix_important_ranges else None,
+            fixed_y_max=55 if fix_important_ranges else None,
         )
 
     for flag in [True, False]:
