@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_more_dense-lr-0.0001"
+tag = "all-spgs-random-gigantic_more_dense-lr-0.001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -124,7 +124,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.0001
+learning_rate = 0.001
 
 momentum = 0.7  # TODO: Change back
 optimizer = "SGD"
