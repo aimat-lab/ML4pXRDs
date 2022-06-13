@@ -154,6 +154,8 @@ uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
+add_background_and_noise = False
+
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "./final"
 
@@ -510,6 +512,7 @@ def get_xy_pattern_wrapper(
         return_corn_sizes=True,
         return_angles_intensities=False,
         return_max_unscaled_intensity_angle=False,
+        add_background_and_noise=add_background_and_noise,
     )
     return patterns[0], corn_sizes[0]
 
@@ -887,6 +890,7 @@ def batch_generator_with_additional(
         per_element=per_element,
         verbosity=1,  # Show everything here
         probability_per_spg=probability_per_spg,
+        add_background_and_noise=add_background_and_noise,
     )
 
     # Set the label to the right index:
@@ -958,6 +962,7 @@ def batch_generator_queue(
                 per_element=per_element,
                 verbosity=verbosity_generator,
                 probability_per_spg=probability_per_spg,
+                add_background_and_noise=add_background_and_noise,
             )
 
             patterns, labels = shuffle(patterns, labels)

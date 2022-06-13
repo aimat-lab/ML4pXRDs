@@ -132,6 +132,7 @@ def generate_samples_gp(
     scaling=scaling,
     random_seed=None,
     icsd_patterns=None,
+    original_range=False,
 ):
 
     # x_test = np.linspace(10, 50, 1000)
@@ -170,6 +171,7 @@ def generate_samples_gp(
         ]
         if icsd_patterns is not None
         else None,
+        original_range=original_range,
     )
 
     if False:
@@ -202,6 +204,7 @@ def add_peaks(
     min_x,
     max_x,
     icsd_patterns=None,
+    original_range=False,
 ):
 
     # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
@@ -284,12 +287,16 @@ def add_peaks(
 
         else:
 
-            ys_unaltered_all[i, 250:4501] = icsd_patterns[i][
-                ::2
-            ]  # this has already been normalized during the simulation
+            if not original_range:
+                ys_unaltered_all[i, 250:4501] = icsd_patterns[i][
+                    ::2
+                ]  # this has already been normalized during the simulation
+            else:
+                ys_unaltered_all[i, :] = icsd_patterns[i][:]
+
             ys_unaltered_all[i, :] *= 4
 
-        # print(np.max(ys_unaltered_all[i, :]))
+            # print(np.max(ys_unaltered_all[i, :]))
         ys_altered_all[i, :] += ys_unaltered_all[i, :]
 
         base_noise_level = np.random.uniform(base_noise_level_min, base_noise_level_max)

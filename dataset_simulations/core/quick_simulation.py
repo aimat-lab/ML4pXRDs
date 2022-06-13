@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 import traceback
 from multiprocessing import Pool
+import train_dataset.generate_background_noise_utils
 
 if "NUMBA_DISABLE_JIT" in os.environ:
     is_debugging = os.environ["NUMBA_DISABLE_JIT"] == "1"
@@ -460,6 +461,7 @@ def get_xy_patterns(
     return_corn_sizes=False,
     return_angles_intensities=False,
     return_max_unscaled_intensity_angle=False,
+    add_background_and_noise=False,
 ):
 
     if return_corn_sizes:
@@ -492,6 +494,16 @@ def get_xy_patterns(
             pymatgen_crystallite_size_gauss_max,
         )
         smeared = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
+
+        if add_background_and_noise:
+            smeared = train_dataset.generate_background_noise_utils.generate_samples_gp(
+                NO_corn_sizes,
+                two_theta_range,
+                n_angles_output=8501,
+                icsd_patterns=[smeared],
+                original_range=True,
+            )[0][0]
+
         results.append(smeared)
 
         if return_corn_sizes:
@@ -565,6 +577,7 @@ def get_random_xy_patterns(
     per_element=False,
     verbosity=2,
     probability_per_spg=None,
+    add_background_and_noise=False,
 ):
 
     result_patterns_y = []
@@ -648,6 +661,7 @@ def get_random_xy_patterns(
                     two_theta_range,
                     do_print=do_print,
                     return_corn_sizes=return_additional,
+                    add_background_and_noise=add_background_and_noise,
                 )
 
                 if return_additional:
