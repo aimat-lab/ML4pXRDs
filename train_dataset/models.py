@@ -705,6 +705,7 @@ def build_model_resnet_10(
     lr=0.0003,
     momentum=0.0,  # only used for SGD
     optimizer="Adam",
+    batchnorm_momentum=0.99,
 ):
 
     # resnet_model = ResNet(
@@ -716,6 +717,7 @@ def build_model_resnet_10(
         keras.layers.InputSpec(shape=[None, number_of_input_values, 1]),
         square_kernel_size_and_stride=True,
         disable_batchnorm=True,  # TODO: Change back
+        norm_momentum=batchnorm_momentum,
     )
 
     # predictions = keras.layers.AveragePooling1D(pool_size=5, strides=5)(
