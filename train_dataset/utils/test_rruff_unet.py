@@ -130,7 +130,7 @@ for i, raw_file in enumerate(raw_files):
 
         plt.pause(0.1)
 
-        result = input("Keep? (y/n)")
+        result = input(f"{i+1}/{len(raw_files)} Keep? (y/n)")
 
         if result == "y" or result == "Y":
             raw_files_keep.append(raw_file)

@@ -45,9 +45,11 @@ if not use_fluct_noise:
 else:
 
     base_noise_level_min = 0.0
+    # base_noise_level_min = 0.09
     base_noise_level_max = 0.09
 
     fluct_noise_level_min = 0.0
+    # fluct_noise_level_min = 0.04
     fluct_noise_level_max = 0.04
 
 # sigma_min = 0.1
