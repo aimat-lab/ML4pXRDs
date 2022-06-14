@@ -497,7 +497,7 @@ def get_xy_patterns(
 
         if add_background_and_noise:
             smeared = train_dataset.generate_background_noise_utils.generate_samples_gp(
-                NO_corn_sizes,
+                1,
                 two_theta_range,
                 n_angles_output=8501,
                 icsd_patterns=[smeared],
