@@ -12,7 +12,8 @@ from datetime import datetime
 from glob import glob
 import pickle
 
-select_which_to_use_for_testing = True
+select_which_to_use_for_testing = False
+use_only_selected = True
 
 # to_test = "18-05-2022_09-45-42_UNetPP"
 to_test = "06-06-2022_22-15-44_UNetPP"
@@ -26,9 +27,14 @@ print(pattern_x)
 
 model = keras.models.load_model("../unet/" + to_test + "/final")
 
-raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
+if not use_only_selected:
+    raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
+else:
+    with open("to_test_on.pickle", "rb") as file:
+        raw_files = pickle.load(file)
 
-raw_files_keep = []
+if select_which_to_use_for_testing:
+    raw_files_keep = []
 
 for i, raw_file in enumerate(raw_files):
     # for i in range(1606, len(raw_files)):
@@ -139,5 +145,6 @@ for i, raw_file in enumerate(raw_files):
 
         plt.show()
 
-with open("to_test_on.pickle", "wb") as file:
-    pickle.dump(raw_files_keep, file)
+if select_which_to_use_for_testing:
+    with open("to_test_on.pickle", "wb") as file:
+        pickle.dump(raw_files_keep, file)
