@@ -10,6 +10,9 @@ sys.path.append("../")
 import generate_background_noise_utils
 from datetime import datetime
 from glob import glob
+import pickle
+
+select_which_to_use_for_testing = True
 
 # to_test = "18-05-2022_09-45-42_UNetPP"
 to_test = "06-06-2022_22-15-44_UNetPP"
@@ -25,9 +28,16 @@ model = keras.models.load_model("../unet/" + to_test + "/final")
 
 raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
 
+raw_files_keep = []
+
 for i, raw_file in enumerate(raw_files):
     # for i in range(1606, len(raw_files)):
     #    raw_file = raw_files[i]
+
+    if not select_which_to_use_for_testing:
+        plt.figure()
+    else:
+        plt.clf()
 
     raw_filename = os.path.basename(raw_file)
     raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
@@ -88,15 +98,17 @@ for i, raw_file in enumerate(raw_files):
     # print(x_test[-300:])
 
     if len(x_test) != 4512:
-        print("Skipping pattern due to wrong dimensions os xs.")
+        print("Skipping pattern due to wrong dimensions of xs.")
         continue
 
-    predictions = model.predict(np.expand_dims(np.expand_dims(y_test, 0), -1))
+    if not select_which_to_use_for_testing:
+        predictions = model.predict(np.expand_dims(np.expand_dims(y_test, 0), -1))
 
     plt.xlabel(r"$2 \theta$")
     plt.ylabel("Intensity")
 
-    plt.plot(pattern_x, predictions[0, :, 0], label="Prediction")
+    if not select_which_to_use_for_testing:
+        plt.plot(pattern_x, predictions[0, :, 0], label="Prediction")
 
     plt.plot(
         pattern_x,
@@ -104,13 +116,28 @@ for i, raw_file in enumerate(raw_files):
         label="Input pattern",
     )
 
-    plt.plot(
-        pattern_x,
-        y_test - predictions[0, :, 0],
-        label="Prediced background and noise",
-        linestyle="dotted",
-    )
+    if not select_which_to_use_for_testing:
+        plt.plot(
+            pattern_x,
+            y_test - predictions[0, :, 0],
+            label="Prediced background and noise",
+            linestyle="dotted",
+        )
 
     plt.legend()
-    plt.show()
-    plt.figure()
+
+    if select_which_to_use_for_testing:
+
+        plt.pause(0.1)
+
+        result = input("Keep? (y/n)")
+
+        if result == "y" or result == "Y":
+            raw_files_keep.append(raw_file)
+
+    else:
+
+        plt.show()
+
+with open("to_test_on.pickle", "wb") as file:
+    pickle.dump(raw_files_keep, file)
