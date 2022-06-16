@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_10-lr-0.001-bnmomentum-0.9"
+tag = "all-spgs-random-gigantic_additional_dense-lr-0.01-SGD-momentum-0.9"
 description = ""
 
 if len(sys.argv) > 1:
@@ -124,12 +124,12 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.001
+learning_rate = 0.01
 
 # TODO: Change back
-momentum = 0.7  # not used with Adam
-optimizer = "Adam"
-use_reduce_lr_on_plateau = False
+momentum = 0.9  # not used with Adam
+optimizer = "SGD"
+use_reduce_lr_on_plateau = True
 batchnorm_momentum = 0.9
 
 use_denseness_factors_density = True
@@ -1661,7 +1661,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
     if use_reduce_lr_on_plateau:
         lr_callback = keras.callbacks.ReduceLROnPlateau(
-            monitor="loss", verbose=1, factor=0.2
+            monitor="loss", verbose=1, factor=0.2, patience=20, cooldown=20
         )
 
     sequence = CustomSequence(batches_per_epoch, batch_size, NO_epochs)
@@ -1683,7 +1683,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_resnet_10"
+    model_name = "model_gigantic_additional_dense"
 
     if not use_pretrained_model:
 
@@ -1698,14 +1698,14 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        model = build_model_resnet_10(
-            None,
-            N,
-            len(spgs),
-            lr=learning_rate,
-            optimizer="Adam",
-            batchnorm_momentum=batchnorm_momentum,
-        )
+        # model = build_model_resnet_10(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    optimizer="Adam",
+        #    batchnorm_momentum=batchnorm_momentum,
+        # )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
@@ -1729,15 +1729,15 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_park_gigantic_size_more_dense(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    use_dropout=use_dropout,
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
-        # )
+        model = build_model_park_gigantic_size_more_dense(
+            None,
+            N,
+            len(spgs),
+            use_dropout=use_dropout,
+            lr=learning_rate,
+            momentum=momentum,
+            optimizer=optimizer,
+        )
 
     else:
 
