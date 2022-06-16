@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_10-lr-0.0001-bnmomentum-0.9"
+tag = "all-spgs-random-resnet_10-lr-0.001-bnmomentum-0.9"
 description = ""
 
 if len(sys.argv) > 1:
@@ -124,7 +124,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.0001
+learning_rate = 0.001
 
 # TODO: Change back
 momentum = 0.7  # not used with Adam
@@ -1350,6 +1350,7 @@ params_txt = (
     f"use_distributed_strategy: {str(use_distributed_strategy)} \n \n"
     f"uniformly_distributed: {str(uniformly_distributed)} \n \n"
     f"shuffle_test_match_train_match: {str(shuffle_test_match_train_match)} \n \n"
+    f"add_background_and_noise: {str(add_background_and_noise)} \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 

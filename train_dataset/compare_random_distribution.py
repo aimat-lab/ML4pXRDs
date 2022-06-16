@@ -26,7 +26,7 @@ import matplotlib_defaults
 figure_double_width_pub = matplotlib_defaults.pub_width
 figure_double_width = 10
 
-fix_important_ranges = True
+fix_important_ranges = False  # TODO: Maybe change back
 
 if __name__ == "__main__":
 
