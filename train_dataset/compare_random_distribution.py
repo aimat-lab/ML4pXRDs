@@ -180,7 +180,6 @@ if __name__ == "__main__":
         icsd_metas = icsd_metas[0:to_process]
 
     if calculate_conventionals:
-        # TODO: Actually not really needed, because this is already done in the training script for icsd crystals.
         print("Calculating conventional structures...")
         for i in reversed(range(0, len(icsd_crystals))):
 

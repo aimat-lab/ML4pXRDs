@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-lr-0.01-SGD-momentum-0.9"
+tag = "all-spgs-random-gigantic_additional_dense-lr-0.0001-07-06-2022_09-43-41-continue"
 description = ""
 
 if len(sys.argv) > 1:
@@ -66,7 +66,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150  # doesn't count for direct training
-NO_epochs = 1000
+NO_epochs = 2000
 
 # For ViT:
 # structures_per_spg = 1
@@ -124,12 +124,12 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.01
+learning_rate = 0.0001
 
 # TODO: Change back
 momentum = 0.9  # not used with Adam
-optimizer = "SGD"
-use_reduce_lr_on_plateau = True
+optimizer = "Adam"
+use_reduce_lr_on_plateau = False
 batchnorm_momentum = 0.9
 
 use_denseness_factors_density = True
@@ -156,8 +156,8 @@ shuffle_test_match_train_match = False
 
 add_background_and_noise = False
 
-use_pretrained_model = False  # Make it possible to resume from a previous training run
-pretrained_model_path = "./final"
+use_pretrained_model = True  # Make it possible to resume from a previous training run
+pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
 
 local = False
 if local:
