@@ -12,8 +12,12 @@ from datetime import datetime
 from glob import glob
 import pickle
 
+from pyxtal.symmetry import Group
+
 select_which_to_use_for_testing = False
 use_only_selected = True
+
+do_plot = False
 
 # to_test = "18-05-2022_09-45-42_UNetPP"
 to_test = "10-06-2022_13-12-26_UNetPP"
@@ -27,6 +31,65 @@ print(pattern_x)
 
 model = keras.models.load_model("../unet/" + to_test + "/final")
 
+
+def dif_parser(path):
+
+    try:
+
+        with open(path, "r") as file:
+            content = file.readlines()
+
+        relevant_content = []
+        is_reading = False
+        wavelength = None
+
+        for line in content:
+
+            if "X-RAY WAVELENGTH" in line:
+                wavelength = float(line.replace("X-RAY WAVELENGTH:", "").strip())
+
+            if "SPACE GROUP" in line:
+                spg_specifier = (
+                    line.replace("SPACE GROUP:", "").replace("ALTERNATE SETTING FOR","").strip().replace("_", "")
+                )
+
+                if spg_specifier == ""
+
+                spg_object = Group(spg_specifier)
+                spg_number = spg_object.number
+
+            if (
+                "==========" in line
+                or "XPOW Copyright" in line
+                or "For reference, see Downs" in line
+            ) and is_reading:
+                break
+
+            if is_reading:
+                relevant_content.append(line)
+
+            if "2-THETA" in line and "INTENSITY" in line and "D-SPACING" in line:
+                is_reading = True
+            elif "2-THETA" in line and "D-SPACING" in line and not "INTENSITY" in line:
+                print(f"Error processing file {path}:")
+                print("No intensity data found.")
+                return None, None, None
+
+        data = np.genfromtxt(relevant_content)[:, 0:2]
+
+        if wavelength is None:
+            print(f"Error for file {path}:")
+            print("No wavelength information found.")
+            return None, None, None
+
+        return data, wavelength, spg_number
+
+    except Exception as ex:
+        print(f"Error processing file {path}:")
+        print(ex)
+        return None, None, None
+
+
 if not use_only_selected:
     raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
 else:
@@ -36,9 +99,11 @@ else:
 if select_which_to_use_for_testing:
     raw_files_keep = []
 
+patterns_counter = 0
+
 for i, raw_file in enumerate(raw_files):
-    # for i in range(1606, len(raw_files)):
-    #    raw_file = raw_files[i]
+
+    print(f"{i} of {len(raw_files)}")
 
     if not select_which_to_use_for_testing:
         plt.figure()
@@ -47,6 +112,17 @@ for i, raw_file in enumerate(raw_files):
 
     raw_filename = os.path.basename(raw_file)
     raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
+
+    dif_file = os.path.join(
+        "../RRUFF_data/DIF/",
+        "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
+    )
+    dif_file = glob(dif_file)
+
+    if len(dif_file) == 0:
+        continue
+
+    dif_file = dif_file[0]
 
     if len(raw_xy) == 0:
         print("Skipped empty pattern.")
@@ -130,7 +206,22 @@ for i, raw_file in enumerate(raw_files):
             linestyle="dotted",
         )
 
+    # Get the correct spg from one of the files; DONE
+    # Get the wavelength from one of the files; DONE
+
+    # Scale pattern up using splines
+    # Run pattern through the spg classification network
+    # Add classification result and real label to label
+    # In the end, spit out overall accuracy
+
     plt.legend()
+
+    data, wavelength, spg_number = dif_parser(dif_file)
+
+    if data is None or wavelength is None:
+        continue
+
+    patterns_counter += 1
 
     if select_which_to_use_for_testing:
 
@@ -143,8 +234,11 @@ for i, raw_file in enumerate(raw_files):
 
     else:
 
-        plt.show()
+        if do_plot:
+            plt.show()
 
 if select_which_to_use_for_testing:
     with open("to_test_on.pickle", "wb") as file:
         pickle.dump(raw_files_keep, file)
+
+print(f"Total number of patterns tested on: {patterns_counter}")
