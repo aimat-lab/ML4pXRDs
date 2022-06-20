@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-lr-0.0001-07-06-2022_09-43-41-continue"
+tag = "all-spgs-random-gigantic_additional_dense-lr-0.006-SGD-momentum-0.9"
 description = ""
 
 if len(sys.argv) > 1:
@@ -66,7 +66,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150  # doesn't count for direct training
-NO_epochs = 2000
+NO_epochs = 1000
 
 # For ViT:
 # structures_per_spg = 1
@@ -124,17 +124,15 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.0001
+learning_rate = 0.006
 
-# TODO: Change back
 momentum = 0.9  # not used with Adam
-optimizer = "Adam"
-use_reduce_lr_on_plateau = False
-batchnorm_momentum = 0.9
+optimizer = "SGD"
+use_reduce_lr_on_plateau = True
+batchnorm_momentum = 0.9  # only used by ResNet currently
 
 use_denseness_factors_density = True
 use_conditional_density = True
-
 sample_lattice_paras_from_kde = True
 
 load_only_N_patterns_each_test = 1  # None possible
@@ -156,7 +154,7 @@ shuffle_test_match_train_match = False
 
 add_background_and_noise = False
 
-use_pretrained_model = True  # Make it possible to resume from a previous training run
+use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
 
 local = False
@@ -1661,7 +1659,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
     if use_reduce_lr_on_plateau:
         lr_callback = keras.callbacks.ReduceLROnPlateau(
-            monitor="loss", verbose=1, factor=0.2, patience=20, cooldown=20
+            monitor="loss", verbose=1, factor=0.2, patience=25, cooldown=20
         )
 
     sequence = CustomSequence(batches_per_epoch, batch_size, NO_epochs)
