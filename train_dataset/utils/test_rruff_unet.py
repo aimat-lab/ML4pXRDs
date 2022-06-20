@@ -50,13 +50,126 @@ def dif_parser(path):
 
             if "SPACE GROUP" in line:
                 spg_specifier = (
-                    line.replace("SPACE GROUP:", "").replace("ALTERNATE SETTING FOR","").strip().replace("_", "")
+                    line.replace("SPACE GROUP:", "")
+                    .replace("ALTERNATE SETTING FOR", "")
+                    .strip()
+                    .replace("_", "")
                 )
 
-                if spg_specifier == ""
+                spg_number = None
 
-                spg_object = Group(spg_specifier)
-                spg_number = spg_object.number
+                if spg_specifier == "Fm3m":
+                    spg_specifier = "Fm-3m"
+                elif spg_specifier == "Pncm":
+                    spg_number = 53
+                elif spg_specifier == "C-1":
+                    spg_number = 1
+                elif (
+                    spg_specifier == "P21/n"
+                    or spg_specifier == "P21/a"
+                    or spg_specifier == "P21/b"
+                ):
+                    spg_number = 14
+                elif (
+                    spg_specifier == "Pbnm"
+                    or spg_specifier == "Pcmn"
+                    or spg_specifier == "Pnam"
+                ):
+                    spg_number = 62
+                elif spg_specifier == "Amma":
+                    spg_number = 63
+                elif spg_specifier == "Fd2d":
+                    spg_number = 43
+                elif spg_specifier == "Fd3m":
+                    spg_specifier = "Fd-3m"
+                elif (
+                    spg_specifier == "A2/a"
+                    or spg_specifier == "I2/a"
+                    or spg_specifier == "I2/c"
+                ):
+                    spg_number = 15
+                elif spg_specifier == "P4/n":
+                    spg_number = 85
+                elif spg_specifier == "I41/acd":
+                    spg_number = 142
+                elif spg_specifier == "I41/amd":
+                    spg_number = 141
+                elif spg_specifier == "Pmcn":
+                    spg_number = 62
+                elif spg_specifier == "I41/a":
+                    spg_number = 88
+                elif spg_specifier == "Pbn21" or spg_specifier == "P21nb":
+                    spg_number = 33
+                elif spg_specifier == "P2cm":
+                    spg_number = 28
+                elif spg_specifier == "P4/nnc":
+                    spg_number = 126
+                elif spg_specifier == "Pn21m":
+                    spg_number = 31
+                elif spg_specifier == "B2/b":
+                    spg_number = 15
+                elif spg_specifier == "Cmca":
+                    spg_number = 64
+                elif spg_specifier == "I2/m" or spg_specifier == "A2/m":
+                    spg_number = 12
+                elif spg_specifier == "Pcan":
+                    spg_number = 60
+                elif spg_specifier == "Ia3d":
+                    spg_specifier = "Ia-3d"
+                elif spg_specifier == "P4/nmm":
+                    spg_number = 129
+                elif spg_specifier == "Pa3":
+                    spg_specifier = "Pa-3"
+                elif spg_specifier == "P4/ncc":
+                    spg_number = 130
+                elif spg_specifier == "Imam":
+                    spg_number = 74
+                elif spg_specifier == "Pmmn":
+                    spg_number = 59
+                elif spg_specifier == "Pncn" or spg_specifier == "Pbnn":
+                    spg_number = 52
+                elif spg_specifier == "Bba2":
+                    spg_number = 41
+                elif spg_specifier == "C1":
+                    spg_number = 1
+                elif spg_specifier == "Pn3":
+                    spg_specifier = "Pn-3"
+                elif spg_specifier == "Fddd":
+                    spg_number = 70
+                elif spg_specifier == "Pcab":
+                    spg_number = 61
+                elif spg_specifier == "P2/a":
+                    spg_number = 13
+                elif spg_specifier == "Pmnb":
+                    spg_number = 62
+                elif spg_specifier == "I-1":
+                    spg_number = 2
+                elif spg_specifier == "Pmnb":
+                    spg_number = 154
+                elif spg_specifier == "B2mb":
+                    spg_number = 40
+                elif spg_specifier == "Im3":
+                    spg_specifier = "Im-3"
+                elif spg_specifier == "Pn21a":
+                    spg_number = 33
+                elif spg_specifier == "Pm2m":
+                    spg_number = 25
+                elif spg_specifier == "Fd3":
+                    spg_specifier = "Fd-3"
+                elif spg_specifier == "Im3m":
+                    spg_specifier = "Im-3m"
+                elif spg_specifier == "Cmma":
+                    spg_number = 67
+                elif spg_specifier == "Pn3m":
+                    spg_specifier = "Pn-3m"
+                elif spg_specifier == "F2/m":
+                    spg_number = 12
+                elif spg_specifier == "Pnm21":
+                    spg_number = 31
+
+                if spg_number is None:
+                    spg_object = Group(spg_specifier)
+                    spg_number = spg_object.number
 
             if (
                 "==========" in line
