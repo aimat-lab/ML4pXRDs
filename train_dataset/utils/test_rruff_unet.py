@@ -1,3 +1,4 @@
+from regex import W
 import tensorflow.keras as keras
 import os
 
@@ -11,8 +12,10 @@ import generate_background_noise_utils
 from datetime import datetime
 from glob import glob
 import pickle
+from scipy.interpolate import CubicSpline
 
 from pyxtal.symmetry import Group
+import pickle
 
 select_which_to_use_for_testing = False
 use_only_selected = True
@@ -20,7 +23,9 @@ use_only_selected = True
 do_plot = False
 
 # to_test = "18-05-2022_09-45-42_UNetPP"
-to_test = "10-06-2022_13-12-26_UNetPP"
+unet_model_path = "10-06-2022_13-12-26_UNetPP"
+classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41/"
+classification_model_path = classification_model_base + "final"
 
 pattern_x = np.arange(0, 90.24, 0.02)
 start_x = pattern_x[0]
@@ -29,7 +34,11 @@ N = len(pattern_x)  # UNet works without error for N ~ 2^model_depth
 
 print(pattern_x)
 
-model = keras.models.load_model("../unet/" + to_test + "/final")
+model_unet = keras.models.load_model("../unet/" + unet_model_path + "/final")
+model_classification = keras.models.load_model(classification_model_path)
+
+with open(classification_model_base + "spgs.pickle", "rb") as file:
+    spgs = pickle.load(file)
 
 
 def dif_parser(path):
@@ -213,6 +222,7 @@ if select_which_to_use_for_testing:
     raw_files_keep = []
 
 patterns_counter = 0
+correct_counter = 0
 
 for i, raw_file in enumerate(raw_files):
 
@@ -280,6 +290,10 @@ for i, raw_file in enumerate(raw_files):
     y_test -= min(y_test)
     y_test = y_test / np.max(y_test)
 
+    # For now don't use those:
+    if x_test[0] > 5.0 or x_test[-1] < 90.0:
+        continue
+
     if x_test[0] > 0.0:
         to_add = np.arange(0.0, x_test[0], 0.02)
         x_test = np.concatenate((to_add, x_test), axis=0)
@@ -297,7 +311,7 @@ for i, raw_file in enumerate(raw_files):
         continue
 
     if not select_which_to_use_for_testing:
-        predictions = model.predict(np.expand_dims(np.expand_dims(y_test, 0), -1))
+        predictions = model_unet.predict(np.expand_dims(np.expand_dims(y_test, 0), -1))
 
     plt.xlabel(r"$2 \theta$")
     plt.ylabel("Intensity")
@@ -319,22 +333,37 @@ for i, raw_file in enumerate(raw_files):
             linestyle="dotted",
         )
 
-    # Get the correct spg from one of the files; DONE
-    # Get the wavelength from one of the files; DONE
-
-    # Scale pattern up using splines
-    # Run pattern through the spg classification network
-    # Add classification result and real label to label
-    # In the end, spit out overall accuracy
-
-    plt.legend()
-
     data, wavelength, spg_number = dif_parser(dif_file)
 
-    if data is None or wavelength is None:
+    if data is None or wavelength is None or spg_number is None:
         continue
 
+    corrected_pattern = predictions[0, :, 0]
+    # Dimensions of this: np.arange(0, 90.24, 0.02) (pattern_x)
+
+    # Needed for classification:
+    classification_pattern_x = np.linspace(5, 90, 8501)
+
+    f = CubicSpline(pattern_x, corrected_pattern)
+
+    y_scaled_up = f(classification_pattern_x)
+
+    y_scaled_up = y_scaled_up / np.max(y_scaled_up)
+
+    if False:
+        plt.plot(classification_pattern_x, y_scaled_up, label="Scaled up")
+
+    prediction = model_classification.predict(np.expand_dims([y_scaled_up], axis=2))
+    prediction = np.argmax(prediction, axis=1)[0]
+
+    predicted_spg = spgs[prediction]
+
+    plt.legend(title=f"Predicted: {predicted_spg}, true: {spg_number}")
+
     patterns_counter += 1
+
+    if predicted_spg == spg_number:
+        correct_counter += 1
 
     if select_which_to_use_for_testing:
 
@@ -355,3 +384,4 @@ if select_which_to_use_for_testing:
         pickle.dump(raw_files_keep, file)
 
 print(f"Total number of patterns tested on: {patterns_counter}")
+print(f"Correct: {correct_counter} ({correct_counter / patterns_counter * 100} %)")
