@@ -17,10 +17,12 @@ from scipy.interpolate import CubicSpline
 from pyxtal.symmetry import Group
 import pickle
 
+from scipy.signal import savgol_filter
+
 select_which_to_use_for_testing = False
 use_only_selected = True
 
-do_plot = False
+do_plot = True
 
 # to_test = "18-05-2022_09-45-42_UNetPP"
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
@@ -348,21 +350,27 @@ for i, raw_file in enumerate(raw_files):
 
     y_scaled_up = f(classification_pattern_x)
 
+    y_scaled_up = savgol_filter(y_scaled_up, 19, 3)
     y_scaled_up = y_scaled_up / np.max(y_scaled_up)
 
-    if False:
+    if True:
         plt.plot(classification_pattern_x, y_scaled_up, label="Scaled up")
 
-    prediction = model_classification.predict(np.expand_dims([y_scaled_up], axis=2))
-    prediction = np.argmax(prediction, axis=1)[0]
+    plt.plot(pattern_x, [0] * len(pattern_x))
 
-    predicted_spg = spgs[prediction]
+    predictions = model_classification.predict(np.expand_dims([y_scaled_up], axis=2))[
+        0, :
+    ]
 
-    plt.legend(title=f"Predicted: {predicted_spg}, true: {spg_number}")
+    top_5_predictions_indices = np.flip(np.argsort(predictions)[-5:])
+
+    predicted_spgs = [spgs[i] for i in top_5_predictions_indices]
+
+    plt.legend(title=f"Predicted: {predicted_spgs}, true: {spg_number}")
 
     patterns_counter += 1
 
-    if predicted_spg == spg_number:
+    if predicted_spgs[0] == spg_number:
         correct_counter += 1
 
     if select_which_to_use_for_testing:
