@@ -760,7 +760,7 @@ def build_model_resnet_10(
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
 
         print("Tiny size")
         model = build_model_park_tiny_size(
@@ -826,7 +826,7 @@ if __name__ == "__main__":
     # model.save("test")
     # model = keras.models.load_model("test")
 
-    if False:
+    if True:
         print("ViT")
         model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
         # model.save("test")

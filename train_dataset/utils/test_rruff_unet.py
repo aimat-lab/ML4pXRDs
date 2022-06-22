@@ -19,12 +19,13 @@ import pickle
 
 from scipy.signal import savgol_filter
 
+from train_dataset.utils.rruff_helpers import *
+
 select_which_to_use_for_testing = False
 use_only_selected = True
 
-do_plot = True
+do_plot = False
 
-# to_test = "18-05-2022_09-45-42_UNetPP"
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41/"
 classification_model_path = classification_model_base + "final"
@@ -41,177 +42,6 @@ model_classification = keras.models.load_model(classification_model_path)
 
 with open(classification_model_base + "spgs.pickle", "rb") as file:
     spgs = pickle.load(file)
-
-
-def dif_parser(path):
-
-    try:
-
-        with open(path, "r") as file:
-            content = file.readlines()
-
-        relevant_content = []
-        is_reading = False
-        wavelength = None
-
-        for line in content:
-
-            if "X-RAY WAVELENGTH" in line:
-                wavelength = float(line.replace("X-RAY WAVELENGTH:", "").strip())
-
-            if "SPACE GROUP" in line:
-                spg_specifier = (
-                    line.replace("SPACE GROUP:", "")
-                    .replace("ALTERNATE SETTING FOR", "")
-                    .strip()
-                    .replace("_", "")
-                )
-
-                spg_number = None
-
-                if spg_specifier == "Fm3m":
-                    spg_specifier = "Fm-3m"
-                elif spg_specifier == "Pncm":
-                    spg_number = 53
-                elif spg_specifier == "C-1":
-                    spg_number = 1
-                elif (
-                    spg_specifier == "P21/n"
-                    or spg_specifier == "P21/a"
-                    or spg_specifier == "P21/b"
-                ):
-                    spg_number = 14
-                elif (
-                    spg_specifier == "Pbnm"
-                    or spg_specifier == "Pcmn"
-                    or spg_specifier == "Pnam"
-                ):
-                    spg_number = 62
-                elif spg_specifier == "Amma":
-                    spg_number = 63
-                elif spg_specifier == "Fd2d":
-                    spg_number = 43
-                elif spg_specifier == "Fd3m":
-                    spg_specifier = "Fd-3m"
-                elif (
-                    spg_specifier == "A2/a"
-                    or spg_specifier == "I2/a"
-                    or spg_specifier == "I2/c"
-                ):
-                    spg_number = 15
-                elif spg_specifier == "P4/n":
-                    spg_number = 85
-                elif spg_specifier == "I41/acd":
-                    spg_number = 142
-                elif spg_specifier == "I41/amd":
-                    spg_number = 141
-                elif spg_specifier == "Pmcn":
-                    spg_number = 62
-                elif spg_specifier == "I41/a":
-                    spg_number = 88
-                elif spg_specifier == "Pbn21" or spg_specifier == "P21nb":
-                    spg_number = 33
-                elif spg_specifier == "P2cm":
-                    spg_number = 28
-                elif spg_specifier == "P4/nnc":
-                    spg_number = 126
-                elif spg_specifier == "Pn21m":
-                    spg_number = 31
-                elif spg_specifier == "B2/b":
-                    spg_number = 15
-                elif spg_specifier == "Cmca":
-                    spg_number = 64
-                elif spg_specifier == "I2/m" or spg_specifier == "A2/m":
-                    spg_number = 12
-                elif spg_specifier == "Pcan":
-                    spg_number = 60
-                elif spg_specifier == "Ia3d":
-                    spg_specifier = "Ia-3d"
-                elif spg_specifier == "P4/nmm":
-                    spg_number = 129
-                elif spg_specifier == "Pa3":
-                    spg_specifier = "Pa-3"
-                elif spg_specifier == "P4/ncc":
-                    spg_number = 130
-                elif spg_specifier == "Imam":
-                    spg_number = 74
-                elif spg_specifier == "Pmmn":
-                    spg_number = 59
-                elif spg_specifier == "Pncn" or spg_specifier == "Pbnn":
-                    spg_number = 52
-                elif spg_specifier == "Bba2":
-                    spg_number = 41
-                elif spg_specifier == "C1":
-                    spg_number = 1
-                elif spg_specifier == "Pn3":
-                    spg_specifier = "Pn-3"
-                elif spg_specifier == "Fddd":
-                    spg_number = 70
-                elif spg_specifier == "Pcab":
-                    spg_number = 61
-                elif spg_specifier == "P2/a":
-                    spg_number = 13
-                elif spg_specifier == "Pmnb":
-                    spg_number = 62
-                elif spg_specifier == "I-1":
-                    spg_number = 2
-                elif spg_specifier == "Pmnb":
-                    spg_number = 154
-                elif spg_specifier == "B2mb":
-                    spg_number = 40
-                elif spg_specifier == "Im3":
-                    spg_specifier = "Im-3"
-                elif spg_specifier == "Pn21a":
-                    spg_number = 33
-                elif spg_specifier == "Pm2m":
-                    spg_number = 25
-                elif spg_specifier == "Fd3":
-                    spg_specifier = "Fd-3"
-                elif spg_specifier == "Im3m":
-                    spg_specifier = "Im-3m"
-                elif spg_specifier == "Cmma":
-                    spg_number = 67
-                elif spg_specifier == "Pn3m":
-                    spg_specifier = "Pn-3m"
-                elif spg_specifier == "F2/m":
-                    spg_number = 12
-                elif spg_specifier == "Pnm21":
-                    spg_number = 31
-
-                if spg_number is None:
-                    spg_object = Group(spg_specifier)
-                    spg_number = spg_object.number
-
-            if (
-                "==========" in line
-                or "XPOW Copyright" in line
-                or "For reference, see Downs" in line
-            ) and is_reading:
-                break
-
-            if is_reading:
-                relevant_content.append(line)
-
-            if "2-THETA" in line and "INTENSITY" in line and "D-SPACING" in line:
-                is_reading = True
-            elif "2-THETA" in line and "D-SPACING" in line and not "INTENSITY" in line:
-                print(f"Error processing file {path}:")
-                print("No intensity data found.")
-                return None, None, None
-
-        data = np.genfromtxt(relevant_content)[:, 0:2]
-
-        if wavelength is None:
-            print(f"Error for file {path}:")
-            print("No wavelength information found.")
-            return None, None, None
-
-        return data, wavelength, spg_number
-
-    except Exception as ex:
-        print(f"Error processing file {path}:")
-        print(ex)
-        return None, None, None
 
 
 if not use_only_selected:
@@ -340,6 +170,10 @@ for i, raw_file in enumerate(raw_files):
     if data is None or wavelength is None or spg_number is None:
         continue
 
+    # if wavelength != 1.541838:
+    #    print(wavelength)
+    #    exit()
+
     corrected_pattern = predictions[0, :, 0]
     # Dimensions of this: np.arange(0, 90.24, 0.02) (pattern_x)
 
@@ -350,7 +184,8 @@ for i, raw_file in enumerate(raw_files):
 
     y_scaled_up = f(classification_pattern_x)
 
-    y_scaled_up = savgol_filter(y_scaled_up, 19, 3)
+    # y_scaled_up = savgol_filter(y_scaled_up, 19, 3)
+    y_scaled_up -= np.min(y_scaled_up)
     y_scaled_up = y_scaled_up / np.max(y_scaled_up)
 
     if True:
