@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 from lmfit import Model
 from pyxtal.symmetry import Group
+from lmfit import Parameters
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement :
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -124,49 +125,102 @@ def fit_diffractogram(x, y, angles, intensities):
         x, fit_function(x, angles=angles, intensities=intensities), label="Initial"
     )
 
-    params, covs = curve_fit(
-        partial(fit_function, angles=angles, intensities=intensities),
-        x,
-        y,
-        maxfev=100000,
-        bounds=(
-            [-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0, -1, 0, 0, 0, 0],
-            [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, 3, 0, 4, 3, 3, np.inf],
-        ),
-    )
+    if False:
+        params, covs = curve_fit(
+            partial(fit_function, angles=angles, intensities=intensities),
+            x,
+            y,
+            maxfev=100000,
+            bounds=(
+                [
+                    -np.inf,
+                    -np.inf,
+                    -np.inf,
+                    -np.inf,
+                    -np.inf,
+                    -np.inf,
+                    0,
+                    -1,
+                    0,
+                    0,
+                    0,
+                    0,
+                ],
+                [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, 3, 0, 4, 3, 3, np.inf],
+            ),
+        )
 
-    """
-    def fit_function_wrapped(xs,
-        a0,
-        a1,
-        a2,
-        a3,
-        # a4,
-        # a5,
-        U,
-        V,
-        W,
-        X,
-        Y,
-        eta_0,
-        eta_1,
-        eta_2,
-        intensity_scaling,):
+    else:
 
-        output = fit_function(xs, a0, a1, a2, a3, U, V, W, X, Y, eta_0, eta_1, eta_2, intensity_scaling, angles, intensities)
+        def fit_function_wrapped(
+            xs,
+            a0,
+            a1,
+            a2,
+            a3,
+            a4,
+            a5,
+            U,
+            V,
+            W,
+            X,
+            Y,
+            intensity_scaling,
+        ):
+            output = fit_function(
+                xs,
+                a0,
+                a1,
+                a2,
+                a3,
+                a4,
+                a5,
+                U,
+                V,
+                W,
+                X,
+                Y,
+                intensity_scaling,
+                angles,
+                intensities,
+            )
+            return output
 
-        #if np.any(np.isnan(output)):
-        #    print(repr([a0,a1,a2,a3,U,V,W,X,Y,eta_0, eta_1, eta_2, intensity_scaling]))
+        model = Model(fit_function_wrapped)
 
-        print(output.shape)
-        return output
+        params = Parameters()
+        params.add("a0", 0.0)
+        params.add("a1", 0.0)
+        params.add("a2", 0.0)
+        params.add("a3", 0.0)
+        params.add("a4", 0.0)
+        params.add("a5", 0.0)
+        params.add("U", 0.001, min=0, max=3)
+        params.add("V", 0.0, min=-1, max=0, vary=False)
+        params.add("W", 0.001, min=0, max=4)
+        params.add("X", 1.001, min=0, max=3)
+        params.add("Y", 0.001, min=0, max=3)
+        params.add("intensity_scaling", 3.0)
 
-    #fit_function_wrapped(np.linspace(5,90,1000), 1.7026161561556243, -0.1690326633239259, 0.0025585116643204145, -1.0123896779971408e-05, 0.8131574470688545, -1.7071279898103882, 0.7472324773831862, 0.2226751470996659, 0.772880962746507, 2193.5532476458857, -156.5848565793276, -265.9168201692516, 11.05304099502265)
-
-    #model = Model(fit_function_wrapped, nan_policy="omit")
-    # TODO: Fix x range
-    #model.fit(y, xs=x, a0=1.0, a1=1.0, a2=1.0, a3=1.0, U=1.0, V=1.0, W=1.0, X=1.0, Y=1.0, eta_0 = 1.0, eta_1 = 1.0, eta_2 = 1.0, intensity_scaling=1.0)
-    #exit()
+        model.fit(
+            y,
+            xs=x,
+            a0=0.0,
+            a1=0.0,
+            a2=0.0,
+            a3=0.0,
+            a4=0.0,
+            a5=0.0,
+            U=0.001,
+            V=-0.001,
+            W=0.001,
+            X=1.001,
+            Y=0.001,
+            intensity_scaling=3.0,
+            params=params,
+            # method="basinhopping",
+        )
+        exit()
 
     """
 
@@ -196,6 +250,8 @@ def fit_diffractogram(x, y, angles, intensities):
     plt.show()
 
     return params
+
+    """
 
 
 def dif_parser(path):
