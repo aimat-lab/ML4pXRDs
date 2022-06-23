@@ -93,16 +93,16 @@ def fit_function(
     a4=0.0,
     a5=0.0,
     U=0.001,
-    # V=0.001,
+    V=-0.001,
     W=0.001,
     X=1.001,
     Y=0.001,
-    intensity_scaling=0.01,
+    intensity_scaling=0.03,
     angles=None,
     intensities=None,
 ):
 
-    V = 0
+    # V = 0
 
     polynomial = (
         a0 + a1 * xs + a2 * xs**2 + a3 * xs**3 + a4 * xs**4 + a5 * xs**5
@@ -130,8 +130,8 @@ def fit_diffractogram(x, y, angles, intensities):
         y,
         maxfev=100000,
         bounds=(
-            [-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0, 0, 1, 0, 0],
-            [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, 3, 4, 3, 3, np.inf],
+            [-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0, -1, 0, 0, 0, 0],
+            [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, 3, 0, 4, 3, 3, np.inf],
         ),
     )
 

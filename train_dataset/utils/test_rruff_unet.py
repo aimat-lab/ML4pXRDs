@@ -24,10 +24,11 @@ from train_dataset.utils.rruff_helpers import *
 select_which_to_use_for_testing = False
 use_only_selected = True
 
-do_plot = False
+do_plot = True
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41/"
+# classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/30-05-2022_13-43-21/" # no save file :(
 classification_model_path = classification_model_base + "final"
 
 pattern_x = np.arange(0, 90.24, 0.02)
@@ -42,7 +43,6 @@ model_classification = keras.models.load_model(classification_model_path)
 
 with open(classification_model_base + "spgs.pickle", "rb") as file:
     spgs = pickle.load(file)
-
 
 if not use_only_selected:
     raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
@@ -187,6 +187,10 @@ for i, raw_file in enumerate(raw_files):
     # y_scaled_up = savgol_filter(y_scaled_up, 19, 3)
     y_scaled_up -= np.min(y_scaled_up)
     y_scaled_up = y_scaled_up / np.max(y_scaled_up)
+
+    # y_scaled_up[y_scaled_up < 0.002] = 0
+    #
+    # y_scaled_up = savgol_filter(y_scaled_up, 13, 3)
 
     if True:
         plt.plot(classification_pattern_x, y_scaled_up, label="Scaled up")
