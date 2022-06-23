@@ -44,6 +44,7 @@ if __name__ == "__main__":
         precisions = []
         recalls = []
         f1_scores = []
+        supports = []
 
         for spg in report.keys():
             if not str.isnumeric(spg):
@@ -52,20 +53,30 @@ if __name__ == "__main__":
             precision = report[spg]["precision"]
             recall = report[spg]["recall"]
             f1_score = report[spg]["f1-score"]
+            support = report[spg]["support"]
 
             spgs.append(int(spg))
             precisions.append(precision)
             recalls.append(recall)
             f1_scores.append(f1_score)
+            supports.append(support)
 
-        return spgs, precisions, recalls, f1_scores
+        return spgs, precisions, recalls, f1_scores, supports
 
-    spgs_match, precisions_match, recalls_match, f1_scores_match = process_report(
-        report_match
-    )
-    spgs_random, precisions_random, recalls_random, f1_scores_random = process_report(
-        report_random
-    )
+    (
+        spgs_match,
+        precisions_match,
+        recalls_match,
+        f1_scores_match,
+        supports_match,
+    ) = process_report(report_match)
+    (
+        spgs_random,
+        precisions_random,
+        recalls_random,
+        f1_scores_random,
+        supports_random,
+    ) = process_report(report_random)
 
     assert spgs_match == spgs_random
 
@@ -179,8 +190,10 @@ if __name__ == "__main__":
         else:
             crystal_system = "cubic"
 
-        total_per_crystal_system[crystal_system] += 1
-        metrics_per_crystal_system[crystal_system] += metrics_match[i]
+        total_per_crystal_system[crystal_system] += supports_match[i]
+        metrics_per_crystal_system[crystal_system] += (
+            metrics_match[i] * supports_match[i]
+        )
 
     for key in metrics_per_crystal_system.keys():
         metrics_per_crystal_system[key] /= total_per_crystal_system[key]
