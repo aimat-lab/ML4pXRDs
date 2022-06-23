@@ -202,7 +202,7 @@ def fit_diffractogram(x, y, angles, intensities):
         params.add("Y", 0.001, min=0, max=3)
         params.add("intensity_scaling", 3.0)
 
-        model.fit(
+        result = model.fit(
             y,
             xs=x,
             a0=0.0,
@@ -220,11 +220,12 @@ def fit_diffractogram(x, y, angles, intensities):
             params=params,
             # method="basinhopping",
         )
-        exit()
 
-    """
+        print()
 
-    fitted_curve = fit_function(x, *params, angles, intensities)
+        params = result.best_values
+
+    fitted_curve = fit_function(x, **params, angles=angles, intensities=intensities)
 
     score = r2_score(y, fitted_curve)
     print(f"R2 score: {score}")
@@ -237,12 +238,12 @@ def fit_diffractogram(x, y, angles, intensities):
 
     plt.plot(
         x,
-        params[0]
-        + params[1] * x
-        + params[2] * x**2
-        + params[3] * x**3
-        + params[4] * x**4
-        + params[5] * x**5,
+        params["a0"]
+        + params["a1"] * x
+        + params["a2"] * x**2
+        + params["a3"] * x**3
+        + params["a4"] * x**4
+        + params["a5"] * x**5,
         label="BG",
     )
 
@@ -250,8 +251,6 @@ def fit_diffractogram(x, y, angles, intensities):
     plt.show()
 
     return params
-
-    """
 
 
 def dif_parser(path):
