@@ -164,6 +164,7 @@ if local:
     verbosity_generator = 1
     NO_random_samples_per_spg = 5
     randomization_step = 20
+    use_distributed_strategy = False
 
 git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()

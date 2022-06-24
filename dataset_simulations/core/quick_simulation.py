@@ -1059,29 +1059,46 @@ if __name__ == "__main__":
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
             NO_wyckoffs_prob_per_spg,
-            corrected_labels,
-            statistics_metas,
-            test_metas,
-            represented_spgs,  # spgs represented in the statistics dataset (70%)
             NO_unique_elements_prob_per_spg,
             NO_repetitions_prob_per_spg_per_element,
             denseness_factors_density_per_spg,
             kde_per_spg,
-            all_data_per_spg,
+            all_data_per_spg_tmp,
             denseness_factors_conditional_sampler_seeds_per_spg,
             lattice_paras_density_per_lattice_type,
+            per_element,
+            represented_spgs,
+            (
+                statistics_metas,
+                statistics_labels,
+                statistics_crystals,
+                statistics_match_metas,
+                statistics_match_labels,
+                test_metas,
+                test_labels,
+                test_crystals,
+                corrected_labels,
+                test_match_metas,
+                test_match_pure_metas,
+            ),
         ) = load_dataset_info()
 
-        if True:
-            spgs = list(range(1, 231))
-            for i in reversed(range(len(spgs))):
-                if denseness_factors_density_per_spg[spgs[i]] is None:
-                    del spgs[i]
-            n_per_spg = 2
-        else:
-            spgs = [2, 15]
-            n_per_spg = 100
-        print(spgs)
+        spgs = list(range(1, 231))
+        for i in reversed(range(len(spgs))):
+            if denseness_factors_density_per_spg[spgs[i]] is None:
+                del spgs[i]
+        n_per_spg = 2
+
+        probability_per_spg = {}
+        for i, label in enumerate(statistics_match_labels):
+            if label[0] in spgs:
+                if label[0] in probability_per_spg.keys():
+                    probability_per_spg[label[0]] += 1
+                else:
+                    probability_per_spg[label[0]] = 1
+        total = np.sum(list(probability_per_spg.values()))
+        for key in probability_per_spg.keys():
+            probability_per_spg[key] /= total
 
         timings = []
         for i in range(0, 2):
@@ -1120,7 +1137,13 @@ if __name__ == "__main__":
                     use_lattice_paras_directly=False,
                     denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                     lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+                    probability_per_spg=probability_per_spg,
+                    add_background_and_noise=True,
                 )
+
+                if True:
+                    plt.plot(patterns[0])
+                    plt.show()
 
             timings.append(time.time() - start)
 

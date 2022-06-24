@@ -8,7 +8,7 @@ import pandas as pd
 from scipy.stats import truncnorm
 import time
 import numba
-from interp_utils import spline_numba
+from train_dataset.interp_utils import spline_numba
 from glob import glob
 import os
 import pickle
