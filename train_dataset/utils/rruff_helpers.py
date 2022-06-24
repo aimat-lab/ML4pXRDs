@@ -67,20 +67,57 @@ def peak_function(theta, mean, U, V, W, X, Y):
     ) * C_L ** (1 / 2) / (np.sqrt(np.pi) * H_dash) * (1 + C_L * x**2) ** (-1)
 
 
-def smeared_peaks(xs, pattern_angles, pattern_intensities, U, V, W, X, Y):
+# Copper:
+lambda_K_alpha_1 = 1.54056  # angstrom
+lambda_K_alpha_2 = 1.54439  # angstrom
+
+
+def smeared_peaks(
+    xs,
+    pattern_angles,
+    pattern_intensities,
+    U,
+    V,
+    W,
+    X,
+    Y,
+    K_alpha_splitting=False,
+    wavelength=None,  # needed if K_alpha_splitting=True; wavelength from the DIF file.
+):
+
+    # Splitting Kalpha_1, Kalpha_2: https://physics.stackexchange.com/questions/398724/why-is-k-alpha-3-2-always-more-intense-than-k-alpha-1-2-in-copper
+    # => ratio 2:1
+    # Only the lorentz polarization correction depends on theta, can most likely be ignored
+    # n * lambda = 2*d*sin(theta)
+    # => lambda_1 / lambda_2 =sin(theta_1) / sin(theta_2)
+    # => sin(theta_2) = sin(theta_1) * lambda_2 / lambda_1
 
     ys = np.zeros(len(xs))
 
     for twotheta, intensity in zip(pattern_angles, pattern_intensities):
 
-        peak = intensity * peak_function(xs / 2, twotheta / 2, U, V, W, X, Y)
+        if not K_alpha_splitting:
 
-        # For more accurate normalization
-        # delta_x = xs[1] - xs[0]
-        # volume = delta_x * np.sum(ys)
-        # ys = y * ys / volume
+            peak = intensity * peak_function(xs / 2, twotheta / 2, U, V, W, X, Y)
 
-        ys += peak
+            # For more accurate normalization
+            # delta_x = xs[1] - xs[0]
+            # volume = delta_x * np.sum(ys)
+            # ys = y * ys / volume
+
+            ys += peak
+
+        else:
+
+            theta_1 = np.arcsin(np.sin(twotheta / 2) * lambda_K_alpha_1 / wavelength)
+            theta_2 = np.arcsin(np.sin(twotheta / 2) * lambda_K_alpha_2 / wavelength)
+
+            peak_1 = intensity * peak_function(xs / 2, theta_1, U, V, W, X, Y) * 2 / 3
+            peak_2 = intensity * peak_function(xs / 2, theta_2, U, V, W, X, Y) * 1 / 3
+
+            ys += peak_1 + peak_2
+
+            pass
 
     return ys
 

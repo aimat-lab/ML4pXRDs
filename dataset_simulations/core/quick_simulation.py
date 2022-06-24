@@ -422,21 +422,19 @@ def calc_std_dev(two_theta, tau, wavelength):
 
 
 @numba.njit(cache=True)
-def smeared_peaks(xs, pattern_angles, pattern_intensities, domain_size, wavelength):
-
-    # TODO: Splitting Kalpha_1, Kalpha_2: https://physics.stackexchange.com/questions/398724/why-is-k-alpha-3-2-always-more-intense-than-k-alpha-1-2-in-copper
-    # => ratio 2:1
-    # Only the lorentz polarization correction depends on theta, can most likely be ignored
-    # n * lambda = 2*d*sin(theta)
-    # => lambda_1 / lambda_2 =sin(theta_1) / sin(theta_2)
-    # => sin(theta_2) = sin(theta_1) * lambda_2 / lambda_1
+def smeared_peaks(
+    xs,
+    pattern_angles,
+    pattern_intensities,
+    domain_size,
+    wavelength,
+):
 
     ys = np.zeros(len(xs))
 
     for twotheta, intensity in zip(pattern_angles, pattern_intensities):
 
         sigma = calc_std_dev(twotheta, domain_size, wavelength)
-
         peak = (
             intensity
             / (sigma * np.sqrt(2 * np.pi))
