@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-lr-0.006-SGD-momentum-0.9"
+tag = "all-spgs-random-gigantic_additional_dense-lr-0.0001-bg+noise"
 description = ""
 
 if len(sys.argv) > 1:
@@ -124,11 +124,11 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.006
+learning_rate = 0.0001
 
-momentum = 0.9  # not used with Adam
-optimizer = "SGD"
-use_reduce_lr_on_plateau = True
+momentum = 0.9  # only used with SGD
+optimizer = "Adam"
+use_reduce_lr_on_plateau = False
 batchnorm_momentum = 0.9  # only used by ResNet currently
 
 use_denseness_factors_density = True
@@ -152,7 +152,7 @@ uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = False
+add_background_and_noise = True
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
