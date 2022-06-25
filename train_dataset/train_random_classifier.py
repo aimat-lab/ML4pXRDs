@@ -11,7 +11,7 @@ from models import (
     build_model_park_huge_size,
     build_model_park_original_spg,
     build_model_park_tiny_size,
-    build_model_resnet_10,
+    build_model_resnet_i,
     build_model_resnet_50_old,
 )
 
@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-lr-0.0001-bg+noise"
+tag = "all-spgs-random-resnet_50-lr-0.001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -124,7 +124,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.0001
+learning_rate = 0.001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"
@@ -152,7 +152,7 @@ uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = True
+add_background_and_noise = False
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -1697,14 +1697,16 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_resnet_10(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    lr=learning_rate,
-        #    optimizer="Adam",
-        #    batchnorm_momentum=batchnorm_momentum,
-        # )
+        model = build_model_resnet_i(
+            None,
+            N,
+            len(spgs),
+            lr=learning_rate,
+            optimizer="Adam",
+            batchnorm_momentum=batchnorm_momentum,
+            i=50,
+            disable_batchnorm=False,
+        )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
@@ -1728,15 +1730,15 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        model = build_model_park_gigantic_size_more_dense(
-            None,
-            N,
-            len(spgs),
-            use_dropout=use_dropout,
-            lr=learning_rate,
-            momentum=momentum,
-            optimizer=optimizer,
-        )
+        # model = build_model_park_gigantic_size_more_dense(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    use_dropout=use_dropout,
+        #    lr=learning_rate,
+        #    momentum=momentum,
+        #    optimizer=optimizer,
+        # )
 
     else:
 

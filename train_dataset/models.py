@@ -698,7 +698,7 @@ def build_model_resnet_50_old(
     return Model
 
 
-def build_model_resnet_10(
+def build_model_resnet_i(
     hp=None,
     number_of_input_values=8501,
     number_of_output_labels=2,
@@ -706,6 +706,8 @@ def build_model_resnet_10(
     momentum=0.0,  # only used for SGD
     optimizer="Adam",
     batchnorm_momentum=0.99,
+    i=10,
+    disable_batchnorm=False,
 ):
 
     # resnet_model = ResNet(
@@ -713,10 +715,10 @@ def build_model_resnet_10(
     # )
 
     resnet_model = ResNet(
-        10,
+        i,
         keras.layers.InputSpec(shape=[None, number_of_input_values, 1]),
         square_kernel_size_and_stride=True,
-        disable_batchnorm=True,  # TODO: Change back
+        disable_batchnorm=disable_batchnorm,
         norm_momentum=batchnorm_momentum,
     )
 
@@ -822,11 +824,14 @@ if __name__ == "__main__":
         # model = keras.models.load_model("test")
 
     print("Resnet 10")
-    model = build_model_resnet_10(None, 8501, 145, 0.0001, 0, "Adam")
+    model = build_model_resnet_i(None, 8501, 145, 0.0001, 0, "Adam", i=10)
+
+    print("Resnet 50")
+    model = build_model_resnet_i(None, 8501, 145, 0.0001, 0, "Adam", i=50)
     # model.save("test")
     # model = keras.models.load_model("test")
 
-    if True:
+    if False:
         print("ViT")
         model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
         # model.save("test")
