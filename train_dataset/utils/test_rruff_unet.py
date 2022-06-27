@@ -24,7 +24,7 @@ from train_dataset.utils.rruff_helpers import *
 select_which_to_use_for_testing = False
 use_only_selected = True
 
-do_plot = True
+do_plot = False
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/24-06-2022_10-54-18/"
@@ -61,7 +61,7 @@ for i, raw_file in enumerate(raw_files):
 
     print(f"{i} of {len(raw_files)}")
 
-    if not select_which_to_use_for_testing:
+    if not select_which_to_use_for_testing and do_plot:
         plt.figure()
     else:
         plt.clf()
@@ -95,9 +95,20 @@ for i, raw_file in enumerate(raw_files):
 
     # Remove nans:
     not_nan_indices = np.where(~np.isnan(x_test))[0]
+
+    # nan_indices = np.where(np.isnan(x_test))[0] # This only happens for the first three indices for some of the patterns; so this is fine
+    # if len(nan_indices > 0):
+    #    print()
+
     x_test = x_test[not_nan_indices]
     y_test = y_test[not_nan_indices]
+
     not_nan_indices = np.where(~np.isnan(y_test))[0]
+
+    # nan_indices = np.where(np.isnan(y_test))[0] # This actually doesn't happen at all
+    # if len(nan_indices > 0):
+    #    print()
+
     x_test = x_test[not_nan_indices]
     y_test = y_test[not_nan_indices]
 
@@ -146,8 +157,9 @@ for i, raw_file in enumerate(raw_files):
     if not select_which_to_use_for_testing and do_unet_preprocessing:
         predictions = model_unet.predict(np.expand_dims(np.expand_dims(y_test, 0), -1))
 
-    plt.xlabel(r"$2 \theta$")
-    plt.ylabel("Intensity")
+    if do_plot:
+        plt.xlabel(r"$2 \theta$")
+        plt.ylabel("Intensity")
 
     if not select_which_to_use_for_testing and do_unet_preprocessing and do_plot:
         plt.plot(pattern_x, predictions[0, :, 0], label="Prediction")
@@ -211,7 +223,8 @@ for i, raw_file in enumerate(raw_files):
 
     predicted_spgs = [spgs[i] for i in top_5_predictions_indices]
 
-    plt.legend(title=f"Predicted: {predicted_spgs}, true: {spg_number}")
+    if do_plot:
+        plt.legend(title=f"Predicted: {predicted_spgs}, true: {spg_number}")
 
     patterns_counter += 1
 
