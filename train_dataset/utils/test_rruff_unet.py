@@ -149,16 +149,17 @@ for i, raw_file in enumerate(raw_files):
     plt.xlabel(r"$2 \theta$")
     plt.ylabel("Intensity")
 
-    if not select_which_to_use_for_testing and do_unet_preprocessing:
+    if not select_which_to_use_for_testing and do_unet_preprocessing and do_plot:
         plt.plot(pattern_x, predictions[0, :, 0], label="Prediction")
 
-    plt.plot(
-        pattern_x,
-        y_test,
-        label="Input pattern",
-    )
+    if do_plot:
+        plt.plot(
+            pattern_x,
+            y_test,
+            label="Input pattern",
+        )
 
-    if not select_which_to_use_for_testing and do_unet_preprocessing:
+    if not select_which_to_use_for_testing and do_unet_preprocessing and do_plot:
         plt.plot(
             pattern_x,
             y_test - predictions[0, :, 0],
@@ -196,10 +197,11 @@ for i, raw_file in enumerate(raw_files):
     #
     # y_scaled_up = savgol_filter(y_scaled_up, 13, 3)
 
-    if True:
+    if True and do_plot:
         plt.plot(classification_pattern_x, y_scaled_up, label="Scaled up")
 
-    plt.plot(pattern_x, [0] * len(pattern_x))
+    if do_plot:
+        plt.plot(pattern_x, [0] * len(pattern_x))
 
     predictions = model_classification.predict(np.expand_dims([y_scaled_up], axis=2))[
         0, :
