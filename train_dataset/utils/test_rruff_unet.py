@@ -27,9 +27,10 @@ use_only_selected = True
 do_plot = True
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
-classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41/"
+classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/24-06-2022_10-54-18/"
 # classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/30-05-2022_13-43-21/" # no save file :(
 classification_model_path = classification_model_base + "final"
+do_unet_preprocessing = False
 
 pattern_x = np.arange(0, 90.24, 0.02)
 start_x = pattern_x[0]
@@ -142,13 +143,13 @@ for i, raw_file in enumerate(raw_files):
         print("Skipping pattern due to wrong dimensions of xs.")
         continue
 
-    if not select_which_to_use_for_testing:
+    if not select_which_to_use_for_testing and do_unet_preprocessing:
         predictions = model_unet.predict(np.expand_dims(np.expand_dims(y_test, 0), -1))
 
     plt.xlabel(r"$2 \theta$")
     plt.ylabel("Intensity")
 
-    if not select_which_to_use_for_testing:
+    if not select_which_to_use_for_testing and do_unet_preprocessing:
         plt.plot(pattern_x, predictions[0, :, 0], label="Prediction")
 
     plt.plot(
@@ -157,7 +158,7 @@ for i, raw_file in enumerate(raw_files):
         label="Input pattern",
     )
 
-    if not select_which_to_use_for_testing:
+    if not select_which_to_use_for_testing and do_unet_preprocessing:
         plt.plot(
             pattern_x,
             y_test - predictions[0, :, 0],
@@ -174,7 +175,10 @@ for i, raw_file in enumerate(raw_files):
     #    print(wavelength)
     #    exit()
 
-    corrected_pattern = predictions[0, :, 0]
+    if do_unet_preprocessing:
+        corrected_pattern = predictions[0, :, 0]
+    else:
+        corrected_pattern = y_test
     # Dimensions of this: np.arange(0, 90.24, 0.02) (pattern_x)
 
     # Needed for classification:
