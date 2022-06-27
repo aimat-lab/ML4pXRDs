@@ -24,7 +24,7 @@ from train_dataset.utils.rruff_helpers import *
 select_which_to_use_for_testing = False
 use_only_selected = True
 
-do_plot = False
+do_plot = True
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/24-06-2022_10-54-18/"
@@ -169,7 +169,7 @@ for i, raw_file in enumerate(raw_files):
         plt.plot(
             pattern_x,
             y_test,
-            label="Input pattern",
+            label="UNet Input pattern",
         )
 
     if not select_which_to_use_for_testing and do_unet_preprocessing and do_plot:

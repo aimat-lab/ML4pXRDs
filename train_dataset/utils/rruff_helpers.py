@@ -82,7 +82,7 @@ def smeared_peaks(
     X,
     Y,
     K_alpha_splitting=False,
-    wavelength=None,  # needed if K_alpha_splitting=True; wavelength from the DIF file.
+    wavelength=1.541838,  # needed if K_alpha_splitting=True; wavelength from the DIF file.
 ):
 
     # Splitting Kalpha_1, Kalpha_2: https://physics.stackexchange.com/questions/398724/why-is-k-alpha-3-2-always-more-intense-than-k-alpha-1-2-in-copper
@@ -109,8 +109,24 @@ def smeared_peaks(
 
         else:
 
-            theta_1 = np.arcsin(np.sin(twotheta / 2) * lambda_K_alpha_1 / wavelength)
-            theta_2 = np.arcsin(np.sin(twotheta / 2) * lambda_K_alpha_2 / wavelength)
+            theta_1 = (
+                360
+                / (2 * np.pi)
+                * np.arcsin(
+                    np.sin(twotheta / 2 * 2 * np.pi / 360)
+                    * lambda_K_alpha_1
+                    / wavelength
+                )
+            )
+            theta_2 = (
+                360
+                / (2 * np.pi)
+                * np.arcsin(
+                    np.sin(twotheta / 2 * 2 * np.pi / 360)
+                    * lambda_K_alpha_2
+                    / wavelength
+                )
+            )
 
             peak_1 = intensity * peak_function(xs / 2, theta_1, U, V, W, X, Y) * 2 / 3
             peak_2 = intensity * peak_function(xs / 2, theta_2, U, V, W, X, Y) * 1 / 3
@@ -138,6 +154,7 @@ def fit_function(
     intensity_scaling=0.03,
     angles=None,
     intensities=None,
+    K_alpha_splitting=True,
 ):
 
     # V = 0
@@ -147,7 +164,9 @@ def fit_function(
     )  # + a4 * xs ** 4 + a5 * xs ** 5
 
     # add the code from the simulation
-    peaks = intensity_scaling * smeared_peaks(xs, angles, intensities, U, V, W, X, Y)
+    peaks = intensity_scaling * smeared_peaks(
+        xs, angles, intensities, U, V, W, X, Y, K_alpha_splitting=K_alpha_splitting
+    )
 
     return peaks + polynomial
 
