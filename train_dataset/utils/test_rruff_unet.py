@@ -56,6 +56,7 @@ if select_which_to_use_for_testing:
 
 patterns_counter = 0
 correct_counter = 0
+correct_top5_counter = 0
 
 for i, raw_file in enumerate(raw_files):
 
@@ -231,6 +232,9 @@ for i, raw_file in enumerate(raw_files):
     if predicted_spgs[0] == spg_number:
         correct_counter += 1
 
+    if spg_number in predicted_spgs:
+        correct_top5_counter += 1
+
     if select_which_to_use_for_testing:
 
         plt.pause(0.1)
@@ -251,3 +255,6 @@ if select_which_to_use_for_testing:
 
 print(f"Total number of patterns tested on: {patterns_counter}")
 print(f"Correct: {correct_counter} ({correct_counter / patterns_counter * 100} %)")
+print(
+    f"Top-5: {correct_top5_counter} ({correct_top5_counter / patterns_counter * 100} %)"
+)
