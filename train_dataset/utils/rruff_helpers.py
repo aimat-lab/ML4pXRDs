@@ -83,6 +83,7 @@ def smeared_peaks(
     Y,
     K_alpha_splitting=False,
     wavelength=1.541838,  # needed if K_alpha_splitting=True; wavelength from the DIF file.
+    print_thetas=False,
 ):
 
     # Splitting Kalpha_1, Kalpha_2: https://physics.stackexchange.com/questions/398724/why-is-k-alpha-3-2-always-more-intense-than-k-alpha-1-2-in-copper
@@ -128,6 +129,9 @@ def smeared_peaks(
                 )
             )
 
+            if print_thetas:
+                print(f"{2*theta_1} {2*theta_2}")
+
             peak_1 = intensity * peak_function(xs / 2, theta_1, U, V, W, X, Y) * 2 / 3
             peak_2 = intensity * peak_function(xs / 2, theta_2, U, V, W, X, Y) * 1 / 3
 
@@ -155,6 +159,7 @@ def fit_function(
     angles=None,
     intensities=None,
     K_alpha_splitting=True,
+    print_thetas=False,
 ):
 
     # V = 0
@@ -165,7 +170,16 @@ def fit_function(
 
     # add the code from the simulation
     peaks = intensity_scaling * smeared_peaks(
-        xs, angles, intensities, U, V, W, X, Y, K_alpha_splitting=K_alpha_splitting
+        xs,
+        angles,
+        intensities,
+        U,
+        V,
+        W,
+        X,
+        Y,
+        K_alpha_splitting=K_alpha_splitting,
+        print_thetas=print_thetas,
     )
 
     return peaks + polynomial
@@ -281,7 +295,9 @@ def fit_diffractogram(x, y, angles, intensities):
 
         params = result.best_values
 
-    fitted_curve = fit_function(x, **params, angles=angles, intensities=intensities)
+    fitted_curve = fit_function(
+        x, **params, angles=angles, intensities=intensities, print_thetas=True
+    )
 
     score = r2_score(y, fitted_curve)
     print(f"R2 score: {score}")
