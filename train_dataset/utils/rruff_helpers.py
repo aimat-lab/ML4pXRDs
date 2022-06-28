@@ -195,34 +195,22 @@ def fit_diffractogram(x, y, angles, intensities):
         x, fit_function(x, angles=angles, intensities=intensities), label="Initial"
     )
 
-    if False:
-        params, covs = curve_fit(
-            partial(fit_function, angles=angles, intensities=intensities),
-            x,
-            y,
-            maxfev=100000,
-            bounds=(
-                [
-                    -np.inf,
-                    -np.inf,
-                    -np.inf,
-                    -np.inf,
-                    -np.inf,
-                    -np.inf,
-                    0,
-                    -1,
-                    0,
-                    0,
-                    0,
-                    0,
-                ],
-                [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, 3, 0, 4, 3, 3, np.inf],
-            ),
-        )
-
-    else:
-
-        def fit_function_wrapped(
+    def fit_function_wrapped(
+        xs,
+        a0,
+        a1,
+        a2,
+        a3,
+        a4,
+        a5,
+        U,
+        V,
+        W,
+        X,
+        Y,
+        intensity_scaling,
+    ):
+        output = fit_function(
             xs,
             a0,
             a1,
@@ -236,27 +224,21 @@ def fit_diffractogram(x, y, angles, intensities):
             X,
             Y,
             intensity_scaling,
-        ):
-            output = fit_function(
-                xs,
-                a0,
-                a1,
-                a2,
-                a3,
-                a4,
-                a5,
-                U,
-                V,
-                W,
-                X,
-                Y,
-                intensity_scaling,
-                angles,
-                intensities,
-            )
-            return output
+            angles,
+            intensities,
+        )
+        return output
 
-        model = Model(fit_function_wrapped)
+    model = Model(fit_function_wrapped)
+
+    strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
+
+    for item in strategy:
+        # prepare the parameters to refine
+
+        # TODO: Use the last best-fit value of the parameters
+        # TODO: For the peak positions: Only +- 2°
+        # TODO: For the peak intensities: +- 40%
 
         params = Parameters()
         params.add("a0", 0.0)
@@ -272,28 +254,32 @@ def fit_diffractogram(x, y, angles, intensities):
         params.add("Y", 0.001, min=0, max=3)
         params.add("intensity_scaling", 3.0)
 
-        result = model.fit(
-            y,
-            xs=x,
-            a0=0.0,
-            a1=0.0,
-            a2=0.0,
-            a3=0.0,
-            a4=0.0,
-            a5=0.0,
-            U=0.001,
-            V=-0.001,
-            W=0.001,
-            X=1.001,
-            Y=0.001,
-            intensity_scaling=3.0,
-            params=params,
-            # method="basinhopping",
-        )
+        # handle peak positions and intensities:
+        params.add(f"peak_pos_{XXX}", 3.0)
+        params.add(f"peak_int_{XXX}", 3.0)
 
-        print()
+    result = model.fit(
+        y,
+        xs=x,
+        a0=0.0,
+        a1=0.0,
+        a2=0.0,
+        a3=0.0,
+        a4=0.0,
+        a5=0.0,
+        U=0.001,
+        V=-0.001,
+        W=0.001,
+        X=1.001,
+        Y=0.001,
+        intensity_scaling=3.0,
+        params=params,
+        # method="basinhopping",
+    )
 
-        params = result.best_values
+    print()
+
+    params = result.best_values
 
     fitted_curve = fit_function(
         x, **params, angles=angles, intensities=intensities, print_thetas=True
