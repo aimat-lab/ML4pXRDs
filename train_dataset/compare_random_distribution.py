@@ -26,7 +26,7 @@ import matplotlib_defaults
 figure_double_width_pub = matplotlib_defaults.pub_width
 figure_double_width = 10
 
-fix_important_ranges = False  # TODO: Maybe change back
+fix_important_ranges = True  # TODO: Maybe change back
 
 if __name__ == "__main__":
 
@@ -71,7 +71,8 @@ if __name__ == "__main__":
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/05-06-2022_12-32-24/randomized_coords/"
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41/"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41/"
+        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/19-06-2022_10-15-26/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
         # tag = "magpie_10-03-2022_14-34-51"
@@ -83,7 +84,8 @@ if __name__ == "__main__":
         # tag = "volumes_densenesses_2-spg_test/15"
 
         # tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
-        tag = "07-06-2022_09-43-41"
+        # tag = "07-06-2022_09-43-41"
+        tag = "19-06-2022_10-15-26"
 
         # spgs_to_analyze = [14, 104, 176, 129]
         spgs_to_analyze = None
@@ -2760,7 +2762,7 @@ if __name__ == "__main__":
         ax1.set_xlabel(xlabel)
 
         if not only_proportions:
-            ax1.set_ylabel("probability density")
+            ax1.set_ylabel("Probability density")
         else:
             ax1.set_ylabel("proportion for each bin")
 
@@ -2881,7 +2883,7 @@ if __name__ == "__main__":
             "volumes",
             [icsd_rightly_volumes, icsd_falsely_volumes],
             [random_rightly_volumes, random_falsely_volumes],
-            r"volume / $Å^3$",
+            r"Volume / $Å^3$",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -2998,7 +3000,7 @@ if __name__ == "__main__":
                 [item for item in random_rightly_denseness_factors if item is not None],
                 [item for item in random_falsely_denseness_factors if item is not None],
             ],
-            "denseness factor",
+            "Denseness factor",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3009,7 +3011,7 @@ if __name__ == "__main__":
             only_proportions=flag,
             min_is_zero=True,
             fixed_x_min=0.0 if fix_important_ranges else None,
-            fixed_y_max=5.0 if fix_important_ranges else None,
+            fixed_y_max=4.0 if fix_important_ranges else None,
         )
 
     for flag in [True, False]:
@@ -3020,7 +3022,7 @@ if __name__ == "__main__":
                 [j for i in icsd_falsely_corn_sizes if i is not None for j in i],
             ],
             [random_rightly_corn_sizes, random_falsely_corn_sizes],
-            "corn size",
+            r"Corn size / nm",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3037,7 +3039,7 @@ if __name__ == "__main__":
             "NO_wyckoffs",
             [icsd_rightly_NO_wyckoffs, icsd_falsely_NO_wyckoffs],
             [random_rightly_NO_wyckoffs, random_falsely_NO_wyckoffs],
-            "Number of set wyckoff sites",
+            "Number atoms in asym. unit",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3049,7 +3051,7 @@ if __name__ == "__main__":
             min_is_zero=True,
             force_int_bins=True,
             fixed_x_min=0 if fix_important_ranges else None,
-            fixed_y_max=40 if fix_important_ranges else None,
+            fixed_y_max=30 if fix_important_ranges else None,
         )
 
     for flag in [True, False]:
