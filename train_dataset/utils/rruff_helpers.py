@@ -272,104 +272,121 @@ def fit_diffractogram(x, y, angles, intensities):
 
     for strategy_item in strategy:
 
-        params = Parameters()
-
-        vary_background = True
-        if strategy_item == "all" or strategy_item == "all_minus_peak_pos_intensity":
-            vary_instr_parameters = True
+        if strategy_item == "peak_by_peak_plus_bg":
+            sub_steps = range(len(angles))
         else:
-            vary_instr_parameters = False
+            sub_steps = [0]
 
-        if strategy_item == "all_minus_peak_pos_intensity" or strategy_item == "all":
-            vary_all_peaks = True
+        for sub_step in sub_steps:
 
-        params.add("a0", current_bestfits[0], vary=vary_background)
-        params.add("a1", current_bestfits[1], vary=vary_background)
-        params.add("a2", current_bestfits[2], vary=vary_background)
-        params.add("a3", current_bestfits[3], vary=vary_background)
-        params.add("a4", current_bestfits[4], vary=vary_background)
-        params.add("a5", current_bestfits[5], vary=vary_background)
-        params.add("U", current_bestfits[6], min=0, max=3, vary=vary_instr_parameters)
-        params.add(
-            "V",
-            current_bestfits[7],
-            min=-1,
-            max=0,
-            vary=vary_instr_parameters,
-        )
-        params.add("W", current_bestfits[8], min=0, max=4, vary=vary_instr_parameters)
-        params.add("X", current_bestfits[9], min=0, max=3, vary=vary_instr_parameters)
-        params.add("Y", current_bestfits[10], min=0, max=3, vary=vary_instr_parameters)
-        params.add("intensity_scaling", current_bestfits[11])
+            params = Parameters()
 
-        i = 0
-        for angle, intensity in zip(angles, intensities):
+            vary_background = True
+            if (
+                strategy_item == "all"
+                or strategy_item == "all_minus_peak_pos_intensity"
+            ):
+                vary_instr_parameters = True
+            else:
+                vary_instr_parameters = False
+
+            if (
+                strategy_item == "all_minus_peak_pos_intensity"
+                or strategy_item == "all"
+            ):
+                vary_all_peaks = True
+            else:
+                vary_all_peaks = False
+
+            params.add("a0", current_bestfits[0], vary=vary_background)
+            params.add("a1", current_bestfits[1], vary=vary_background)
+            params.add("a2", current_bestfits[2], vary=vary_background)
+            params.add("a3", current_bestfits[3], vary=vary_background)
+            params.add("a4", current_bestfits[4], vary=vary_background)
+            params.add("a5", current_bestfits[5], vary=vary_background)
             params.add(
-                f"peak_pos_{i}",
-                angle,
-                min=angle - 2,
-                max=angle + 2,
-                vary=vary_all_peaks,
-            )  # +- 2°
+                "U", current_bestfits[6], min=0, max=3, vary=vary_instr_parameters
+            )
             params.add(
-                f"peak_int_{i}",
-                intensity,
-                min=intensity - intensity * 0.4,
-                max=intensity + intensity * 0.4,
-                vary=vary_all_peaks,
-            )  # +- 40%
+                "V",
+                current_bestfits[7],
+                min=-1,
+                max=0,
+                vary=vary_instr_parameters,
+            )
+            params.add(
+                "W", current_bestfits[8], min=0, max=4, vary=vary_instr_parameters
+            )
+            params.add(
+                "X", current_bestfits[9], min=0, max=3, vary=vary_instr_parameters
+            )
+            params.add(
+                "Y", current_bestfits[10], min=0, max=3, vary=vary_instr_parameters
+            )
+            params.add("intensity_scaling", current_bestfits[11], min=0, max=np.inf)
 
-            i += 1
+            i = 0
+            # TODO: Do not use angles and intensities here, but current_bestfits!
+            for angle, intensity in zip(angles, intensities):
+                params.add(
+                    f"peak_pos_{i}",
+                    angle,
+                    min=angle - 2,
+                    max=angle + 2,
+                    vary=vary_all_peaks or (i == sub_step),
+                )  # +- 2°
+                params.add(
+                    f"peak_int_{i}",
+                    intensity,
+                    min=intensity - intensity * 0.4,
+                    max=intensity + intensity * 0.4,
+                    vary=vary_all_peaks or (i == sub_step),
+                )  # +- 40%
 
-    result = model.fit(
-        y,
-        xs=x,
-        a0=0.0,
-        a1=0.0,
-        a2=0.0,
-        a3=0.0,
-        a4=0.0,
-        a5=0.0,
-        U=0.001,
-        V=-0.001,
-        W=0.001,
-        X=1.001,
-        Y=0.001,
-        intensity_scaling=3.0,
-        params=params,
-        # method="basinhopping",
-    )
+                i += 1
 
-    print()
+            result = model.fit(
+                y,
+                xs=x,
+                params=params,
+                # method="basinhopping",
+            )
 
-    params = result.best_values
+            params = list(result.best_values.values)
 
-    fitted_curve = fit_function(
-        x, **params, angles=angles, intensities=intensities, print_thetas=True
-    )
+            result_ys = fit_function_wrapped(
+                x,
+                *current_bestfits[:12],
+                **dict(
+                    zip(
+                        [str(item) for item in range(len(current_bestfits[12:]))],
+                        current_bestfits[12:],
+                    )
+                ),
+            )
 
-    score = r2_score(y, fitted_curve)
-    print(f"R2 score: {score}")
+            score = r2_score(y, result_ys)
+            print(f"R2 score: {score}")
 
-    # if score < 0.6:
-    #    print("Bad R2 score.")
-    #    return None
+            # if score < 0.6:
+            #    print("Bad R2 score.")
+            #    return None
 
-    plt.plot(x, fitted_curve, label="Fitted")
+            plt.plot(x, result_ys, label="Fitted")
 
-    plt.plot(
-        x,
-        params["a0"]
-        + params["a1"] * x
-        + params["a2"] * x**2
-        + params["a3"] * x**3
-        + params["a4"] * x**4
-        + params["a5"] * x**5,
-        label="BG",
-    )
+            plt.plot(
+                x,
+                current_bestfits[0]
+                + current_bestfits[1] * x
+                + current_bestfits[2] * x**2
+                + current_bestfits[3] * x**3
+                + current_bestfits[4] * x**4
+                + current_bestfits[5] * x**5,
+                label="BG",
+            )
 
-    plt.legend()
-    plt.show()
+            plt.legend()
+            plt.show()
 
     return params
 
