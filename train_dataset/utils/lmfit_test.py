@@ -2,16 +2,15 @@ import numpy as np
 from lmfit import Parameters
 from lmfit import Model
 
-xs = np.linspace(0, 5, 10)
-ys = np.cos(xs) + np.random.rand(10)
+xs = np.linspace(0, 5, 100)
+ys = np.cos(xs) + np.random.rand(100) * 0.1
 
 
 def fit_fn(x, **args):
 
-    dict_keys = list(args.keys())
-    print(dict_keys)
+    values = list(args.values())
 
-    return args[dict_keys[0]] * np.cos(x) + args[dict_keys[1]]
+    return values[0] * np.cos(x) + values[1]
 
 
 params = Parameters()

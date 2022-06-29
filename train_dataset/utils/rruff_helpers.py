@@ -211,6 +211,7 @@ def fit_diffractogram(x, y, angles, intensities):
         intensity_scaling,
         **angles_intensities,
     ):
+        values = list(angles_intensities.values())
         output = fit_function(
             xs,
             a0,
@@ -225,8 +226,8 @@ def fit_diffractogram(x, y, angles, intensities):
             X,
             Y,
             intensity_scaling,
-            angles_intensities.values()[::2],
-            angles_intensities.values()[1::2],
+            values[::2],
+            values[1::2],
         )
         return output
 
@@ -234,34 +235,71 @@ def fit_diffractogram(x, y, angles, intensities):
 
     strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
 
-    for item in strategy:
-        # prepare the parameters to refine
+    current_bestfits = [
+        0.0, # a0
+        0.0, # a1
+        0.0, # a2
+        0.0, # a3 
+        0.0, # a4 
+        0.0, # a5
+        0.001, # U
+        0.0, # V
+        0.001, # W
+        1.001, # X
+        0.001, # Y
+        3.0 # intensity_scaling
+    ] # default values
 
-        # TODO: Use the last best-fit value of the parameters
-        # TODO: For the peak positions: Only +- 2°
-        # TODO: For the peak intensities: +- 40%
+    for angle, intensity in zip(angles, intensities):
+        current_bestfits.append(angle)
+        current_bestfits.append(intensity)
+
+    for strategy_item in strategy:
+        
+        # TODO: Fix the default value of the intensity scaling in the beginning
 
         params = Parameters()
-        params.add("a0", 0.0)
-        params.add("a1", 0.0)
-        params.add("a2", 0.0)
-        params.add("a3", 0.0)
-        params.add("a4", 0.0)
-        params.add("a5", 0.0)
-        params.add("U", 0.001, min=0, max=3)
-        params.add("V", 0.0, min=-1, max=0, vary=False)
-        params.add("W", 0.001, min=0, max=4)
-        params.add("X", 1.001, min=0, max=3)
-        params.add("Y", 0.001, min=0, max=3)
-        params.add("intensity_scaling", 3.0)
 
-        i = 0
-        for angle, intensity in zip(angles, intensities):
-            # handle peak positions and intensities:
-            params.add(f"peak_pos_{i}", 3.0)
-            params.add(f"peak_int_{i}", 3.0)
+        vary_background = True
+        if strategy_item == "all" or strategy_item == "all_minus_peak_pos_intensity":
+            vary_instr_parameters = True
+        else:
+            vary_instr_parameters = False
 
-            i += 1
+        params.add("a0", current_bestfits[0], vary=vary_background)
+        params.add("a1", current_bestfits[1], vary=vary_background)
+        params.add("a2", current_bestfits[2], vary=vary_background)
+        params.add("a3", current_bestfits[3], vary=vary_background)
+        params.add("a4", current_bestfits[4], vary=vary_background)
+        params.add("a5", current_bestfits[5], vary=vary_background)
+        params.add("U", current_bestfits[6], min=0, max=3, vary=vary_instr_parameters)
+        params.add("V", current_bestfits[7], min=-1, max=0, vary=vary_instr_parameters, vary=vary_instr_parameters)
+        params.add("W", current_bestfits[8], min=0, max=4, vary=vary_instr_parameters)
+        params.add("X", current_bestfits[9], min=0, max=3, vary=vary_instr_parameters)
+        params.add("Y", current_bestfits[10], min=0, max=3, vary=vary_instr_parameters)
+        params.add("intensity_scaling", current_bestfits[11])
+
+        if strategy_item == "all" or strategy_item == "all_minus_peak_pos_intensity":
+            # TODO: Check the parameter ranges here, again! (With the paper)
+            pass
+
+        if strategy_item == "all":
+            i = 0
+            for angle, intensity in zip(angles, intensities):
+                params.add(
+                    f"peak_pos_{i}", angle, min=angle - 2, max=angle + 2
+                )  # +- 2°
+                params.add(
+                    f"peak_int_{i}",
+                    intensity,
+                    min=intensity - intensity * 0.4,
+                    max=intensity + intensity * 0.4,
+                )  # +- 40%
+
+                i += 1
+
+        if strategy_item == "peak_by_peak_plus_bg":
+
 
     result = model.fit(
         y,
