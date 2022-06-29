@@ -247,18 +247,25 @@ def fit_diffractogram(x, y, angles, intensities):
     plt.plot(x, y, label="Original")
     for angle in angles:
         plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
+
+    initial_ys = fit_function_wrapped(
+        x,
+        *current_bestfits[:12],
+        **dict(
+            zip(
+                [str(item) for item in range(len(current_bestfits[12:]))],
+                current_bestfits[12:],
+            )
+        ),
+    )
+    scaler = np.max(initial_ys)
+    initial_ys /= scaler
+
+    current_bestfits[11] /= scaler
+
     plt.plot(
         x,
-        fit_function_wrapped(
-            x,
-            *current_bestfits[:12],
-            **dict(
-                zip(
-                    [str(item) for item in range(len(current_bestfits[12:]))],
-                    current_bestfits[12:],
-                )
-            ),
-        ),
+        initial_ys,
         label="Initial",
     )
     plt.show()
