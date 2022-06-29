@@ -3000,7 +3000,7 @@ if __name__ == "__main__":
                 [item for item in random_rightly_denseness_factors if item is not None],
                 [item for item in random_falsely_denseness_factors if item is not None],
             ],
-            "Denseness factor",
+            "Density factor",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3082,7 +3082,7 @@ if __name__ == "__main__":
                 [j for i in random_rightly_lattice_paras if i is not None for j in i],
                 [j for i in random_falsely_lattice_paras if i is not None for j in i],
             ],
-            r"lattice parameters all / $Å$",
+            r"Lattice parameters all / $Å$",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3107,7 +3107,7 @@ if __name__ == "__main__":
                 [item[0] / item[1] for item in random_rightly_lattice_paras],
                 [item[0] / item[1] for item in random_falsely_lattice_paras],
             ],
-            "lattice parameters 0 over 1",
+            "Lattice parameters 0 over 1",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3130,7 +3130,7 @@ if __name__ == "__main__":
                 [item[0] / item[2] for item in random_rightly_lattice_paras],
                 [item[0] / item[2] for item in random_falsely_lattice_paras],
             ],
-            "lattice parameters 0 over 2",
+            "Lattice parameters 0 over 2",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3153,7 +3153,7 @@ if __name__ == "__main__":
                 [item[1] / item[2] for item in random_rightly_lattice_paras],
                 [item[1] / item[2] for item in random_falsely_lattice_paras],
             ],
-            "lattice parameters 1 over 2",
+            "Lattice parameters 1 over 2",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3176,7 +3176,7 @@ if __name__ == "__main__":
                 [item[0] for item in random_rightly_lattice_paras],
                 [item[0] for item in random_falsely_lattice_paras],
             ],
-            r"lattice parameter 0 / $Å$",
+            r"Lattice parameter 0 / $Å$",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3199,7 +3199,7 @@ if __name__ == "__main__":
                 [item[1] for item in random_rightly_lattice_paras],
                 [item[1] for item in random_falsely_lattice_paras],
             ],
-            r"lattice parameter 1 / $Å$",
+            r"Lattice parameter 1 / $Å$",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
@@ -3222,7 +3222,7 @@ if __name__ == "__main__":
                 [item[2] for item in random_rightly_lattice_paras],
                 [item[2] for item in random_falsely_lattice_paras],
             ],
-            r"lattice parameter 2 / $Å$",
+            r"Lattice parameter 2 / $Å$",
             [
                 "ICSD correctly",
                 "ICSD incorrectly",
