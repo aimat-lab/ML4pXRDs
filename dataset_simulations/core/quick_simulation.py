@@ -1088,6 +1088,12 @@ if __name__ == "__main__":
             ),
         ) = load_dataset_info()
 
+        all_counter = len(test_metas) + len(statistics_metas)
+        match_counter = len(test_match_metas) + len(statistics_match_labels)
+        print(f"All counter: {all_counter}")
+        print(f"Match counter: {match_counter}")
+        print(f"Match is {match_counter/all_counter*100}% of all")
+
         spgs = list(range(1, 231))
         for i in reversed(range(len(spgs))):
             if denseness_factors_density_per_spg[spgs[i]] is None:
