@@ -209,6 +209,7 @@ def fit_diffractogram(x, y, angles, intensities):
         X,
         Y,
         intensity_scaling,
+        **angles_intensities,
     ):
         output = fit_function(
             xs,
@@ -224,8 +225,8 @@ def fit_diffractogram(x, y, angles, intensities):
             X,
             Y,
             intensity_scaling,
-            angles,
-            intensities,
+            angles_intensities.values()[::2],
+            angles_intensities.values()[1::2],
         )
         return output
 
@@ -254,9 +255,13 @@ def fit_diffractogram(x, y, angles, intensities):
         params.add("Y", 0.001, min=0, max=3)
         params.add("intensity_scaling", 3.0)
 
-        # handle peak positions and intensities:
-        params.add(f"peak_pos_{XXX}", 3.0)
-        params.add(f"peak_int_{XXX}", 3.0)
+        i = 0
+        for angle, intensity in zip(angles, intensities):
+            # handle peak positions and intensities:
+            params.add(f"peak_pos_{i}", 3.0)
+            params.add(f"peak_int_{i}", 3.0)
+
+            i += 1
 
     result = model.fit(
         y,
