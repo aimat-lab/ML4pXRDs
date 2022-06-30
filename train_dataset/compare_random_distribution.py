@@ -2667,6 +2667,7 @@ if __name__ == "__main__":
         x2=None,
         y1=None,
         y2=None,
+        zoom_value=None,
     ):
         # determine range on x axis:
         min = 10**9
@@ -2777,7 +2778,7 @@ if __name__ == "__main__":
             ax1.set_ylabel("proportion for each bin")
 
         if zoom:
-            axins = zoomed_inset_axes(ax1, 3, loc="upper right")
+            axins = zoomed_inset_axes(ax1, zoom_value, loc="upper right")
 
         counter = 0
         for i, data in enumerate([data_icsd, data_random]):
@@ -2871,7 +2872,7 @@ if __name__ == "__main__":
         plt.legend()
         plt.tight_layout()
 
-        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+        ax1.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
 
         if zoom:
             plt.draw()
@@ -2932,7 +2933,8 @@ if __name__ == "__main__":
             x1=1500,
             x2=3000,
             y1=0,
-            y2=0.5 * 1e-3,
+            y2=0.2 * 1e-3,
+            zoom_value=3.0,
         )
 
     for flag in [True, False]:
@@ -3090,6 +3092,12 @@ if __name__ == "__main__":
             force_int_bins=True,
             fixed_x_min=0 if fix_important_ranges else None,
             fixed_y_max=30 if fix_important_ranges else None,
+            zoom=True,
+            x1=10,
+            x2=20,
+            y1=0,
+            y2=0.5 * 1e-1,
+            zoom_value=2.2,
         )
 
     for flag in [True, False]:

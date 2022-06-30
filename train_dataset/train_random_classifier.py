@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "spgs-75+-random-gigantic_more_dense-lr-0.0001"
+tag = "all-spgs-random-resnet_10-lr-0.001-check-test-acc.-after-training"
 description = ""
 
 if len(sys.argv) > 1:
@@ -66,7 +66,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150  # doesn't count for direct training
-NO_epochs = 1000
+NO_epochs = 30  # TODO: Change back
 
 # For ViT:
 # structures_per_spg = 1
@@ -124,7 +124,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.0001
+learning_rate = 0.001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"
@@ -186,7 +186,7 @@ git_revision_hash = (
 # spgs = list(range(150, 231))
 # spgs = list(range(100, 231))
 
-spgs = list(range(75, 231))  # TODO: Change back!!!
+spgs = list(range(1, 231))
 
 if len(spgs) == 2:
     NO_random_samples_per_spg = 500
@@ -1697,16 +1697,17 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_resnet_i(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    lr=learning_rate,
-        #    optimizer="Adam",
-        #    batchnorm_momentum=batchnorm_momentum,
-        #    i=50,
-        #    disable_batchnorm=False,
-        # )
+        # Resnet-10
+        model = build_model_resnet_i(
+            None,
+            N,
+            len(spgs),
+            lr=learning_rate,
+            optimizer="Adam",
+            batchnorm_momentum=batchnorm_momentum,
+            i=10,
+            disable_batchnorm=False,
+        )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
@@ -1730,15 +1731,15 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        model = build_model_park_gigantic_size_more_dense(
-            None,
-            N,
-            len(spgs),
-            use_dropout=use_dropout,
-            lr=learning_rate,
-            momentum=momentum,
-            optimizer=optimizer,
-        )
+        # model = build_model_park_gigantic_size_more_dense(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    use_dropout=use_dropout,
+        #    lr=learning_rate,
+        #    momentum=momentum,
+        #    optimizer=optimizer,
+        # )
 
     else:
 
