@@ -14,6 +14,9 @@ from train_dataset.utils.analyse_magpie import get_magpie_features
 from train_dataset.utils.denseness_factor import get_denseness_factor
 from pyxtal.symmetry import Group
 
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+
 from dataset_simulations.core.quick_simulation import get_xy_patterns
 
 from pymatgen.core.periodic_table import Species
@@ -27,6 +30,7 @@ figure_double_width_pub = matplotlib_defaults.pub_width
 figure_double_width = 10
 
 fix_important_ranges = True  # TODO: Maybe change back
+zoom = False  # TODO: Change back
 
 if __name__ == "__main__":
 
@@ -172,7 +176,8 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:
+    if False:  # TODO: Change back
+        to_process = 300
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
         random_variations = random_variations[0:to_process]
@@ -2657,6 +2662,11 @@ if __name__ == "__main__":
         weights_random=None,
         N_bins_continuous=60,
         force_int_bins=False,
+        zoom=False,
+        x1=None,
+        x2=None,
+        y1=None,
+        y2=None,
     ):
         # determine range on x axis:
         min = 10**9
@@ -2766,65 +2776,72 @@ if __name__ == "__main__":
         else:
             ax1.set_ylabel("proportion for each bin")
 
+        if zoom:
+            axins = zoomed_inset_axes(ax1, 3, loc="upper right")
+
         counter = 0
         for i, data in enumerate([data_icsd, data_random]):
 
             if data is None:
                 continue
 
-            if i == 0:
+            for ax in [ax1, axins] if zoom else [ax1]:
 
-                # falsely
-                h1 = ax1.bar(
-                    bins[:-1],
-                    hists[counter * 2 + 1],  # height; 1,3
-                    bottom=0,  # bottom
-                    color="r",
-                    label=labels[counter * 2 + 1],  # 1,3
-                    width=bin_width,
-                    align="edge",
-                )
+                if i == 0:
 
-                # rightly
-                h2 = ax1.bar(
-                    bins[:-1],
-                    hists[counter * 2],  # height; 0,2
-                    bottom=hists[counter * 2 + 1],  # bottom; 1,3
-                    color="g",
-                    label=labels[counter * 2],  # 0,2
-                    width=bin_width,
-                    align="edge",
-                )
+                    # falsely
+                    h1 = ax.bar(
+                        bins[:-1],
+                        hists[counter * 2 + 1],  # height; 1,3
+                        bottom=0,  # bottom
+                        color="r",
+                        label=labels[counter * 2 + 1],  # 1,3
+                        width=bin_width,
+                        align="edge",
+                    )
 
-            elif i == 1:
+                    # rightly
+                    h2 = ax.bar(
+                        bins[:-1],
+                        hists[counter * 2],  # height; 0,2
+                        bottom=hists[counter * 2 + 1],  # bottom; 1,3
+                        color="g",
+                        label=labels[counter * 2],  # 0,2
+                        width=bin_width,
+                        align="edge",
+                    )
 
-                # middle (falsely):
-                ax1.step(
-                    # bins[:-1],
-                    bins[:],
-                    # hists[counter * 2 + 1],
-                    np.append(
-                        hists[counter * 2 + 1], hists[counter * 2 + 1][-1]
-                    ),  # 1,3
-                    color="blueviolet",
-                    label=labels[counter * 2 + 1],
-                    where="post",
-                )
+                elif i == 1:
 
-                # top (rightly):
-                ax1.step(
-                    # bins[:-1],
-                    bins[:],
-                    # hists[counter * 2]
-                    # + hists[counter * 2 + 1],  # top coordinate, not height
-                    np.append(
-                        (hists[counter * 2] + hists[counter * 2 + 1]),  # 0,2 + 1,3
-                        (hists[counter * 2] + hists[counter * 2 + 1])[-1],  # 0,2 + 1,3
-                    ),  # top coordinate, not height
-                    color="b",
-                    label=labels[counter * 2],
-                    where="post",
-                )
+                    # middle (falsely):
+                    ax.step(
+                        # bins[:-1],
+                        bins[:],
+                        # hists[counter * 2 + 1],
+                        np.append(
+                            hists[counter * 2 + 1], hists[counter * 2 + 1][-1]
+                        ),  # 1,3
+                        color="blueviolet",
+                        label=labels[counter * 2 + 1],
+                        where="post",
+                    )
+
+                    # top (rightly):
+                    ax.step(
+                        # bins[:-1],
+                        bins[:],
+                        # hists[counter * 2]
+                        # + hists[counter * 2 + 1],  # top coordinate, not height
+                        np.append(
+                            (hists[counter * 2] + hists[counter * 2 + 1]),  # 0,2 + 1,3
+                            (hists[counter * 2] + hists[counter * 2 + 1])[
+                                -1
+                            ],  # 0,2 + 1,3
+                        ),  # top coordinate, not height
+                        color="b",
+                        label=labels[counter * 2],
+                        where="post",
+                    )
 
             counter += 1
 
@@ -2838,10 +2855,26 @@ if __name__ == "__main__":
         else:
             ax1.set_ylim(bottom=-0.1, top=1.1)
 
+        if zoom:
+
+            # sub region of the original plot
+            axins.set_xlim(x1, x2)
+            axins.set_ylim(y1, y2)
+
+            plt.xticks(visible=False)
+            plt.yticks(visible=False)
+
+            # draw a bbox of the region of the inset axes in the parent axes and
+            # connecting lines between the bbox and the inset axes area
+            mark_inset(ax1, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+
         plt.legend()
         plt.tight_layout()
 
         plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+
+        if zoom:
+            plt.draw()
 
         plt.savefig(
             f"{out_base}{tag}{'_prop' if only_proportions else ''}_pub.pdf",
@@ -2895,6 +2928,11 @@ if __name__ == "__main__":
             min_is_zero=True,
             fixed_x_min=0 if fix_important_ranges else None,
             fixed_y_max=7000 if fix_important_ranges else None,
+            zoom=zoom if not flag else False,
+            x1=1500,
+            x2=3000,
+            y1=0,
+            y2=0.5 * 1e-3,
         )
 
     for flag in [True, False]:
