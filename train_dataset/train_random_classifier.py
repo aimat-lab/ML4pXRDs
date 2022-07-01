@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_10-lr-0.001-try-fix-bn"
+tag = "all-spgs-random-gigantic_more_dense-lr-0.0001-sqrt-scaling"
 description = ""
 
 if len(sys.argv) > 1:
@@ -66,18 +66,19 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150  # doesn't count for direct training
-NO_epochs = 300
+NO_epochs = 1000
 
 # For ViT:
 # structures_per_spg = 1
 # NO_corn_sizes = 1
 
-structures_per_spg = 6  # for all spgs
+# TODO: Change this back, this is just for making the comparison possible
+structures_per_spg = 3  # for all spgs
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
 # structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
-NO_corn_sizes = 1
+NO_corn_sizes = 2
 # structures_per_spg = 1  # 30-spg
 # NO_corn_sizes = 3 # 30-spg
 
@@ -124,7 +125,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.001
+learning_rate = 0.0001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"
@@ -139,6 +140,7 @@ load_only_N_patterns_each_test = 1  # None possible
 load_only_N_patterns_each_train = 2  # None possible
 
 scale_patterns = False
+scale_patterns_sqrt = True  # TODO: Change back!
 
 use_retention_of_patterns = False
 retention_rate = 0.7
@@ -146,7 +148,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False
+use_distributed_strategy = True
 
 uniformly_distributed = False
 
@@ -972,6 +974,9 @@ def batch_generator_queue(
 
             patterns = np.array(patterns)
 
+            if scale_patterns_sqrt:
+                patterns = np.sqrt(patterns)
+
             if sc is not None:
                 patterns = sc.transform(patterns)
 
@@ -1051,6 +1056,17 @@ for result in results:
     val_y_random.extend(labels)
 
 val_y_random = np.array(val_y_random)
+
+if scale_patterns_sqrt:
+    val_x_random = np.sqrt(val_x_random)
+    val_x_all = np.sqrt(val_x_all)
+    val_x_match_correct_spgs = np.sqrt(val_x_match_correct_spgs)
+    val_x_match_correct_spgs_pure = np.sqrt(val_x_match_correct_spgs_pure)
+    if generate_randomized_validation_datasets:
+        val_x_randomized_coords = np.sqrt(val_x_randomized_coords)
+        val_x_randomized_ref = np.sqrt(val_x_randomized_ref)
+        val_x_randomized_lattice = np.sqrt(val_x_randomized_lattice)
+        val_x_randomized_both = np.sqrt(val_x_randomized_both)
 
 if scale_patterns:
     sc = StandardScaler(with_mean=False)
@@ -1244,6 +1260,9 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     statistics_y_match = np.array(statistics_y_match)
 
+    if scale_patterns_sqrt:
+        statistics_x_match = np.sqrt(statistics_x_match)
+
     if scale_patterns:
         statistics_x_match = sc.transform(statistics_x_match)
 
@@ -1275,8 +1294,10 @@ assert not np.any(np.isnan(val_x_match))
 assert not np.any(np.isnan(val_y_match))
 assert len(val_x_match) == len(val_y_match)
 
+if scale_patterns_sqrt:
+    val_x_match = np.sqrt(val_x_match)
+
 if scale_patterns:
-    val_x_all = sc.transform(val_x_all)
     val_x_match = sc.transform(val_x_match)
 
 val_x_match = np.expand_dims(val_x_match, axis=2)
@@ -1698,16 +1719,16 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # Resnet-10
-        model = build_model_resnet_i(
-            None,
-            N,
-            len(spgs),
-            lr=learning_rate,
-            optimizer="Adam",
-            batchnorm_momentum=batchnorm_momentum,
-            i=10,
-            disable_batchnorm=False,
-        )
+        # model = build_model_resnet_i(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    optimizer="Adam",
+        #    batchnorm_momentum=batchnorm_momentum,
+        #    i=10,
+        #    disable_batchnorm=False,
+        # )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
@@ -1731,15 +1752,15 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_park_gigantic_size_more_dense(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    use_dropout=use_dropout,
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
-        # )
+        model = build_model_park_gigantic_size_more_dense(
+            None,
+            N,
+            len(spgs),
+            use_dropout=use_dropout,
+            lr=learning_rate,
+            momentum=momentum,
+            optimizer=optimizer,
+        )
 
     else:
 
