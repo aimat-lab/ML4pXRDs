@@ -24,7 +24,7 @@ from train_dataset.utils.rruff_helpers import *
 select_which_to_use_for_testing = False
 use_only_selected = True
 
-do_plot = True
+do_plot = False
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/24-06-2022_10-54-18/"
@@ -126,6 +126,7 @@ for i, raw_file in enumerate(raw_files):
         x_test = x_test[::2]
         y_test = y_test[::2]
     elif abs(dx - 0.02) < 0.0000001:
+        print("")
         pass
     else:
         print(f"Skipping pattern with dx={dx}.")

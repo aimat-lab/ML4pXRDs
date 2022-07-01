@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_10-lr-0.001-check-test-acc.-after-training"
+tag = "all-spgs-random-resnet_10-lr-0.001-try-fix-bn"
 description = ""
 
 if len(sys.argv) > 1:
@@ -66,7 +66,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150  # doesn't count for direct training
-NO_epochs = 30  # TODO: Change back
+NO_epochs = 300
 
 # For ViT:
 # structures_per_spg = 1
@@ -129,7 +129,7 @@ learning_rate = 0.001
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"
 use_reduce_lr_on_plateau = False
-batchnorm_momentum = 0.9  # only used by ResNet currently
+batchnorm_momentum = 0.999  # only used by ResNet currently
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -146,7 +146,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = True
+use_distributed_strategy = False
 
 uniformly_distributed = False
 
