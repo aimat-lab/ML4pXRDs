@@ -27,4 +27,4 @@ echo "Starting worker"
 { sleep 20; echo "ready" > "./worker_$1_ready"; } & # signal that worker is connected
 
 #srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --redis-password='5241590000000000' --temp-dir "../$1/ray_log" --num-cpus "${SLURM_CPUS_PER_TASK}" --num-gpus "0" --block
-srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --redis-password='5241590000000000' --num-cpus "40" --num-gpus "0" --block
+srun --nodes=1 --ntasks=1 ray start --address "$ip_head" --redis-password='5241590000000000' --num-cpus "40" --num-gpus "0" --temp-dir "/home/kit/iti/la2559/ray_tmp/" --block
