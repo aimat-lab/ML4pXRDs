@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export TMPDIR=/home/kit/iti/la2559/ray_tmp/
+
 source ~/mambaforge/etc/profile.d/conda.sh
 conda activate tf
 

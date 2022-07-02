@@ -8,6 +8,8 @@
 #SBATCH --time=48:00:00
 #SBATCH --gres=gpu:1
 
+export TMPDIR=/home/kit/iti/la2559/ray_tmp/
+
 source ~/mambaforge/etc/profile.d/conda.sh
 conda activate tf
 
