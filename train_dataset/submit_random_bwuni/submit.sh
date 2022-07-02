@@ -12,9 +12,9 @@ out_dir="classifier_spgs/${date_time}"
 mkdir -p "../$out_dir"
 #mkdir -p "../$out_dir/ray_log"
 
-sbatch -o "../$out_dir/slurm_head.out" submit_head.sh "$date_time" {0..4}
+sbatch -o "../$out_dir/slurm_head.out" submit_head.sh "$date_time" {0..3}
 
-for i in {0..4}
+for i in {0..3}
 do
     sbatch -o "../$out_dir/slurm_worker_$i.out" submit_worker.sh "$i"
 done
