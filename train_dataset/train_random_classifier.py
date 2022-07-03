@@ -91,6 +91,9 @@ if not head_only:
 else:
     NO_workers = 30  # for int-nano cluster
 
+# TODO: Change this back, just for testing on bwuni
+NO_workers = 40
+
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
 
@@ -130,7 +133,7 @@ learning_rate = 0.001
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"
 use_reduce_lr_on_plateau = False
-batchnorm_momentum = 0.999  # only used by ResNet currently
+batchnorm_momentum = 0.85  # only used by ResNet currently
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -140,7 +143,7 @@ load_only_N_patterns_each_test = 1  # None possible
 load_only_N_patterns_each_train = 2  # None possible
 
 scale_patterns = False
-scale_patterns_sqrt = True  # TODO: Change back!
+scale_patterns_sqrt = False
 
 use_retention_of_patterns = False
 retention_rate = 0.7
