@@ -3,7 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=128000mb
 #SBATCH --tasks-per-node=1
-#SBATCH --partition=gpu_4
+#SBATCH --partition=gpu_8
 #SBATCH --job-name=random_head
 #SBATCH --time=48:00:00
 #SBATCH --gres=gpu:1
