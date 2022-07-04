@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_10-bn_momentum-0.65"
+tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.65-non-distributed"
 description = ""
 
 if len(sys.argv) > 1:
@@ -149,7 +149,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = True
+use_distributed_strategy = False
 
 uniformly_distributed = False
 
@@ -1722,17 +1722,17 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # Resnet-10
-        model = build_model_resnet_i(
-            None,
-            N,
-            len(spgs),
-            lr=learning_rate,
-            momentum=momentum,
-            optimizer=optimizer,
-            batchnorm_momentum=batchnorm_momentum,
-            i=10,
-            disable_batchnorm=False,
-        )
+        # model = build_model_resnet_i(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    momentum=momentum,
+        #    optimizer=optimizer,
+        #    batchnorm_momentum=batchnorm_momentum,
+        #    i=10,
+        #    disable_batchnorm=False,
+        # )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
@@ -1766,16 +1766,16 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #   optimizer=optimizer,
         # )
 
-        # model = build_model_park_gigantic_size_more_dense_bn(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    use_dropout=use_dropout,
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
-        #    bn_momentum=batchnorm_momentum,
-        # )
+        model = build_model_park_gigantic_size_more_dense_bn(
+            None,
+            N,
+            len(spgs),
+            use_dropout=use_dropout,
+            lr=learning_rate,
+            momentum=momentum,
+            optimizer=optimizer,
+            bn_momentum=batchnorm_momentum,
+        )
 
     else:
 
