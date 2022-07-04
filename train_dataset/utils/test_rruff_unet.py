@@ -127,6 +127,7 @@ for i, raw_file in enumerate(raw_files):
             x_test = x_test[::2]
             y_test = y_test[::2]
     elif abs(dx - 0.02) < 0.0000001:
+        print("")
         pass
     else:
         print(f"Skipping pattern with dx={dx}.")
