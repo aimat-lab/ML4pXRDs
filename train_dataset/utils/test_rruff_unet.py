@@ -123,14 +123,23 @@ for i, raw_file in enumerate(raw_files):
 
     dx = x_test[1] - x_test[0]
     if abs(dx - 0.01) < 0.0000001:  # allow some tollerance
-        x_test = x_test[::2]
-        y_test = y_test[::2]
+        if do_unet_preprocessing:
+            x_test = x_test[::2]
+            y_test = y_test[::2]
     elif abs(dx - 0.02) < 0.0000001:
-        print("")
         pass
     else:
         print(f"Skipping pattern with dx={dx}.")
         continue
+
+    if not do_unet_preprocessing:
+        dx = 0.01
+        start_angle = 5
+        end_angle = 90
+    else:
+        dx = 0.02
+        start_angle = 0
+        end_angle = 90.24
 
     y_test = np.array(y_test)
     y_test -= min(y_test)
@@ -140,19 +149,21 @@ for i, raw_file in enumerate(raw_files):
     if x_test[0] > 5.0 or x_test[-1] < 90.0:
         continue
 
-    if x_test[0] > 0.0:
-        to_add = np.arange(0.0, x_test[0], 0.02)
+    if x_test[0] > start_angle:
+        to_add = np.arange(0.0, x_test[0], dx)
         x_test = np.concatenate((to_add, x_test), axis=0)
         y_test = np.concatenate((np.repeat([y_test[0]], len(to_add)), y_test), axis=0)
 
-    if x_test[-1] < 90.24:
-        to_add = np.arange(x_test[-1] + 0.02, 90.24, 0.02)
+    if x_test[-1] < end_angle:
+        to_add = np.arange(x_test[-1] + dx, end_angle, dx)
         x_test = np.concatenate((x_test, to_add), axis=0)
         y_test = np.concatenate((y_test, np.repeat([y_test[-1]], len(to_add))), axis=0)
 
     # print(x_test[-300:])
 
-    if len(x_test) != 4512:
+    if (do_unet_preprocessing and len(x_test) != 4512) or (
+        (not do_unet_preprocessing) and len(x_test) != 8501
+    ):
         print("Skipping pattern due to wrong dimensions of xs.")
         continue
 
@@ -166,7 +177,7 @@ for i, raw_file in enumerate(raw_files):
     if not select_which_to_use_for_testing and do_unet_preprocessing and do_plot:
         plt.plot(pattern_x, predictions[0, :, 0], label="Prediction")
 
-    if do_plot:
+    if do_plot and do_unet_preprocessing:
         plt.plot(
             pattern_x,
             y_test,
@@ -192,16 +203,19 @@ for i, raw_file in enumerate(raw_files):
 
     if do_unet_preprocessing:
         corrected_pattern = predictions[0, :, 0]
-    else:
-        corrected_pattern = y_test
     # Dimensions of this: np.arange(0, 90.24, 0.02) (pattern_x)
 
-    # Needed for classification:
     classification_pattern_x = np.linspace(5, 90, 8501)
+    if do_unet_preprocessing:
+        # Needed for classification:
 
-    f = CubicSpline(pattern_x, corrected_pattern)
+        f = CubicSpline(pattern_x, corrected_pattern)
 
-    y_scaled_up = f(classification_pattern_x)
+        y_scaled_up = f(classification_pattern_x)
+
+    else:
+
+        y_scaled_up = y_test
 
     # y_scaled_up = savgol_filter(y_scaled_up, 19, 3)
     y_scaled_up -= np.min(y_scaled_up)
