@@ -73,7 +73,7 @@ NO_epochs = 1000
 # structures_per_spg = 1
 # NO_corn_sizes = 1
 
-structures_per_spg = 6  # for all spgs
+structures_per_spg = 4  # for all spgs
 
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
