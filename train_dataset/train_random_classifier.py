@@ -5,8 +5,10 @@ import numpy as np
 from models import (
     build_model_park,
     build_model_park_2_layer_CNN,
+    build_model_park_bn_test,
     build_model_park_gigantic_size,
     build_model_park_gigantic_size_more_dense,
+    build_model_park_gigantic_size_more_dense_bn,
     build_model_park_medium_size,
     build_model_park_huge_size,
     build_model_park_original_spg,
@@ -41,7 +43,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_10-lr-0.001-try-fix-bn"
+tag = "all-spgs-random-gigantic_more_dense-bn_momentum-0.65"
 description = ""
 
 if len(sys.argv) > 1:
@@ -72,13 +74,14 @@ NO_epochs = 1000
 # structures_per_spg = 1
 # NO_corn_sizes = 1
 
-# TODO: Change this back, this is just for memory consumption of Resnet
-structures_per_spg = 1  # for all spgs
+# TODO: Change back, just for comparison
+structures_per_spg = 3  # for all spgs
+
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
 # structures_per_spg = 10  # for (2,15) tuple
 # NO_corn_sizes = 5
-NO_corn_sizes = 1
+NO_corn_sizes = 2
 # structures_per_spg = 1  # 30-spg
 # NO_corn_sizes = 3 # 30-spg
 
@@ -90,9 +93,6 @@ if not head_only:
     NO_workers = 127 + 127 + 8  # for int-nano cluster
 else:
     NO_workers = 30  # for int-nano cluster
-
-# TODO: Change this back, just for testing on bwuni
-NO_workers = 40
 
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
@@ -128,12 +128,12 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.001
+learning_rate = 0.0001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"
 use_reduce_lr_on_plateau = False
-batchnorm_momentum = 0.85  # only used by ResNet currently
+batchnorm_momentum = 0.65  # only used by ResNet and gigantic_more_dense_bn currently
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -151,7 +151,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False
+use_distributed_strategy = True
 
 uniformly_distributed = False
 
@@ -192,6 +192,7 @@ git_revision_hash = (
 # spgs = list(range(100, 231))
 
 spgs = list(range(1, 231))
+# spgs = [2, 15]
 
 if len(spgs) == 2:
     NO_random_samples_per_spg = 500
@@ -1715,23 +1716,25 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # model = build_model_park(
-        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        #   None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
+
         # model = build_model_park_medium_size(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
         # Resnet-10
-        model = build_model_resnet_i(
-            None,
-            N,
-            len(spgs),
-            lr=learning_rate,
-            optimizer="Adam",
-            batchnorm_momentum=batchnorm_momentum,
-            i=10,
-            disable_batchnorm=False,
-        )
+        # model = build_model_resnet_i(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    momentum=momentum,
+        #    optimizer=optimizer,
+        #    batchnorm_momentum=batchnorm_momentum,
+        #    i=10,
+        #    disable_batchnorm=False,
+        # )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
@@ -1756,14 +1759,25 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # model = build_model_park_gigantic_size_more_dense(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    use_dropout=use_dropout,
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
+        #   None,
+        #   N,
+        #   len(spgs),
+        #   use_dropout=use_dropout,
+        #   lr=learning_rate,
+        #   momentum=momentum,
+        #   optimizer=optimizer,
         # )
+
+        model = build_model_park_gigantic_size_more_dense_bn(
+            None,
+            N,
+            len(spgs),
+            use_dropout=use_dropout,
+            lr=learning_rate,
+            momentum=momentum,
+            optimizer=optimizer,
+            bn_momentum=batchnorm_momentum,
+        )
 
     else:
 
