@@ -5,7 +5,6 @@ import numpy as np
 from models import (
     build_model_park,
     build_model_park_2_layer_CNN,
-    build_model_park_bn_test,
     build_model_park_gigantic_size,
     build_model_park_gigantic_size_more_dense,
     build_model_park_gigantic_size_more_dense_bn,
