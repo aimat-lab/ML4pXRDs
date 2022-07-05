@@ -99,19 +99,19 @@ def build_model_transformer_vit(
     steps_per_epoch=1500,
 ):
 
-    patch_size = 32
+    patch_size = 128
     num_patches = number_of_input_values // patch_size
 
-    projection_dim = 4 * 32
-    num_heads = 8
+    projection_dim = 128
+    num_heads = 12
     transformer_units = [
         projection_dim * 2,
         projection_dim,
     ]  # Size of the transformer layers
-    transformer_layers = 4  # 8
+    transformer_layers = 12  # 8
     mlp_head_units = [
-        64,
-        64,
+        1024,
+        512,
     ]  # Size of the dense layers of the final classifier # [2048, 1024]
 
     ##########

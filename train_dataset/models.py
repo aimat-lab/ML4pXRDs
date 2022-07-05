@@ -945,7 +945,7 @@ if __name__ == "__main__":
     # model.save("test")
     # model = keras.models.load_model("test")
 
-    if False:
+    if True:
         print("ViT")
         model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
         # model.save("test")
