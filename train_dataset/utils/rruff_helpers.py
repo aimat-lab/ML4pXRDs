@@ -6,7 +6,11 @@ from sklearn.metrics import r2_score
 from lmfit import Model
 from pyxtal.symmetry import Group
 from lmfit import Parameters
+
 from jax import grad
+from jax import jacrev
+import jax.numpy as jnp
+from jax import jit
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement :
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -19,17 +23,17 @@ def fn_x(theta, mean, H):
 def fn_H(theta, U, V, W):
 
     H_squared = (
-        U * np.tan(theta / 360 * 2 * np.pi) ** 2
-        + V * np.tan(theta / 360 * 2 * np.pi)
+        U * jnp.tan(theta / 360 * 2 * jnp.pi) ** 2
+        + V * jnp.tan(theta / 360 * 2 * jnp.pi)
         + W
     )
 
     # return np.nan_to_num(np.sqrt(H_squared)) + 0.0001 # TODO: Changed
-    return np.sqrt(H_squared)
+    return jnp.sqrt(H_squared)
 
 
 def fn_H_dash(theta, X, Y):
-    return X / np.cos(theta / 360 * 2 * np.pi) + Y * np.tan(theta / 360 * 2 * np.pi)
+    return X / jnp.cos(theta / 360 * 2 * jnp.pi) + Y * jnp.tan(theta / 360 * 2 * jnp.pi)
 
 
 def fn_eta(theta, eta_0, eta_1, eta_2):
@@ -38,7 +42,7 @@ def fn_eta(theta, eta_0, eta_1, eta_2):
 
 def peak_function(theta, mean, U, V, W, X, Y):
 
-    C_G = 4 * np.log(2)
+    C_G = 4 * jnp.log(2)
     C_L = 4
 
     H = fn_H(theta, U, V, W)
@@ -63,9 +67,13 @@ def peak_function(theta, mean, U, V, W, X, Y):
 
     x = fn_x(theta, mean, H)
 
-    return eta * C_G ** (1 / 2) / (np.sqrt(np.pi) * H) * np.exp(-1 * C_G * x**2) + (
-        1 - eta
-    ) * C_L ** (1 / 2) / (np.sqrt(np.pi) * H_dash) * (1 + C_L * x**2) ** (-1)
+    return eta * C_G ** (1 / 2) / (jnp.sqrt(jnp.pi) * H) * jnp.exp(
+        -1 * C_G * x**2
+    ) + (1 - eta) * C_L ** (1 / 2) / (jnp.sqrt(jnp.pi) * H_dash) * (
+        1 + C_L * x**2
+    ) ** (
+        -1
+    )
 
 
 # Copper:
@@ -94,7 +102,7 @@ def smeared_peaks(
     # => lambda_1 / lambda_2 =sin(theta_1) / sin(theta_2)
     # => sin(theta_2) = sin(theta_1) * lambda_2 / lambda_1
 
-    ys = np.zeros(len(xs))
+    ys = jnp.zeros(len(xs))
 
     for twotheta, intensity in zip(pattern_angles, pattern_intensities):
 
@@ -113,18 +121,18 @@ def smeared_peaks(
 
             theta_1 = (
                 360
-                / (2 * np.pi)
-                * np.arcsin(
-                    np.sin(twotheta / 2 * 2 * np.pi / 360)
+                / (2 * jnp.pi)
+                * jnp.arcsin(
+                    jnp.sin(twotheta / 2 * 2 * jnp.pi / 360)
                     * lambda_K_alpha_1
                     / wavelength
                 )
             )
             theta_2 = (
                 360
-                / (2 * np.pi)
-                * np.arcsin(
-                    np.sin(twotheta / 2 * 2 * np.pi / 360)
+                / (2 * jnp.pi)
+                * jnp.arcsin(
+                    jnp.sin(twotheta / 2 * 2 * jnp.pi / 360)
                     * lambda_K_alpha_2
                     / wavelength
                 )
@@ -223,6 +231,8 @@ def fit_diffractogram(x, y, angles, intensities):
         )
         return output
 
+    # fit_function_wrapped_jit = jit(fit_function_wrapped)
+    # model = Model(fit_function_wrapped_jit)
     model = Model(fit_function_wrapped)
 
     strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
@@ -263,19 +273,28 @@ def fit_diffractogram(x, y, angles, intensities):
     scaler = np.max(initial_ys)
     initial_ys /= scaler
 
-    if True:
-        gradient = grad(fit_function_wrapped, argnums=range(1, 13))
+    if False:
 
-        test_grad = gradient(
-            x,
-            *current_bestfits[:12],
-            **dict(
-                zip(
-                    [str(item) for item in range(len(current_bestfits[12:]))],
-                    current_bestfits[12:],
-                )
-            ),
-        )
+        # TODO: rather try to use jit for this
+        # TODO: rather try to do this on the GPU
+        # TODO: Maybe numba is the way to go here (make speed comparison first)
+
+        # test = jit(fit_function_wrapped)
+
+        gradient = jacrev(fit_function_wrapped, argnums=range(1, 13))
+        # gradient = jacrev(test, argnums=range(1, 13))
+
+        for i in range(0, 10):
+            test_grad = gradient(
+                x,
+                *current_bestfits[:12],
+                **dict(
+                    zip(
+                        [str(item) for item in range(len(current_bestfits[12:]))],
+                        current_bestfits[12:],
+                    )
+                ),
+            )
 
         print(test_grad)
 
@@ -357,7 +376,7 @@ def fit_diffractogram(x, y, angles, intensities):
                 if strategy_item == "all_minus_peak_pos_intensity":
                     vary = False
                 else:
-                    vary = (vary_all_peaks or (i == sub_step),)
+                    vary = vary_all_peaks or (i == sub_step)
 
                 params.add(
                     f"peak_pos_{i}",
@@ -383,7 +402,7 @@ def fit_diffractogram(x, y, angles, intensities):
                 # method="basinhopping",
             )
 
-            params = list(result.best_values.values())
+            current_bestfits = list(result.best_values.values())
 
             result_ys = fit_function_wrapped(
                 x,
@@ -399,26 +418,28 @@ def fit_diffractogram(x, y, angles, intensities):
             score = r2_score(y, result_ys)
             print(f"R2 score: {score}")
 
-            # if score < 0.6:
-            #    print("Bad R2 score.")
-            #    return None
+        # if score < 0.6:
+        #    print("Bad R2 score.")
+        #    return None
 
-            plt.plot(x, y, label="Original")
-            plt.plot(x, result_ys, label="Fitted")
+        # Only plot after all peaks were fitted separately
 
-            plt.plot(
-                x,
-                current_bestfits[0]
-                + current_bestfits[1] * x
-                + current_bestfits[2] * x**2
-                + current_bestfits[3] * x**3
-                + current_bestfits[4] * x**4
-                + current_bestfits[5] * x**5,
-                label="BG",
-            )
+        plt.plot(x, y, label="Original")
+        plt.plot(x, result_ys, label="Fitted")
 
-            plt.legend()
-            plt.show()
+        plt.plot(
+            x,
+            current_bestfits[0]
+            + current_bestfits[1] * x
+            + current_bestfits[2] * x**2
+            + current_bestfits[3] * x**3
+            + current_bestfits[4] * x**4
+            + current_bestfits[5] * x**5,
+            label="BG",
+        )
+
+        plt.legend()
+        plt.show()
 
     return params
 

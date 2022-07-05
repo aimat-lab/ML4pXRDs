@@ -21,7 +21,6 @@ raw_xys = []
 angles = []
 intensities = []
 
-
 counter_processed = 0
 counter_dif = 0
 
