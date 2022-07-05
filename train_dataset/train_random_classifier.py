@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.65-non-distributed"
+tag = "spgs-2-15-random-gigantic_additional_dense-bn_momentum-0.9-non-distributed-lr-0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -73,7 +73,7 @@ NO_epochs = 1000
 # structures_per_spg = 1
 # NO_corn_sizes = 1
 
-structures_per_spg = 4  # for all spgs
+structures_per_spg = 290  # for all spgs
 
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
@@ -126,7 +126,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.001
+learning_rate = 0.0001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"
@@ -189,8 +189,8 @@ git_revision_hash = (
 # spgs = list(range(150, 231))
 # spgs = list(range(100, 231))
 
-spgs = list(range(1, 231))
-# spgs = [2, 15]
+# spgs = list(range(1, 231))
+spgs = [2, 15]  # TODO: Change this back
 
 if len(spgs) == 2:
     NO_random_samples_per_spg = 500
