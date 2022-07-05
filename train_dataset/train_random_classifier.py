@@ -131,7 +131,7 @@ learning_rate = 0.001
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"
 use_reduce_lr_on_plateau = False
-batchnorm_momentum = 0.65  # only used by ResNet and gigantic_more_dense_bn currently
+batchnorm_momentum = 0.9  # only used by ResNet and gigantic_more_dense_bn currently
 
 use_denseness_factors_density = True
 use_conditional_density = True
