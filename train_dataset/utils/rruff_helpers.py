@@ -6,6 +6,7 @@ from sklearn.metrics import r2_score
 from lmfit import Model
 from pyxtal.symmetry import Group
 from lmfit import Parameters
+from jax import grad
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement :
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -225,6 +226,7 @@ def fit_diffractogram(x, y, angles, intensities):
     model = Model(fit_function_wrapped)
 
     strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
+    use_extended_synchrotron_range = False
 
     current_bestfits = [
         0.0,  # a0
@@ -260,6 +262,22 @@ def fit_diffractogram(x, y, angles, intensities):
     )
     scaler = np.max(initial_ys)
     initial_ys /= scaler
+
+    if True:
+        gradient = grad(fit_function_wrapped, argnums=range(1, 13))
+
+        test_grad = gradient(
+            x,
+            *current_bestfits[:12],
+            **dict(
+                zip(
+                    [str(item) for item in range(len(current_bestfits[12:]))],
+                    current_bestfits[12:],
+                )
+            ),
+        )
+
+        print(test_grad)
 
     current_bestfits[11] /= scaler
 
@@ -309,13 +327,22 @@ def fit_diffractogram(x, y, angles, intensities):
                 current_bestfits[7],
                 min=-1,
                 max=0,
+                # vary=vary_instr_parameters,
+                vary=use_extended_synchrotron_range,
+            )
+            params.add(
+                "W",
+                current_bestfits[8],
+                min=0,
+                max=4,
                 vary=vary_instr_parameters,
             )
             params.add(
-                "W", current_bestfits[8], min=0, max=4, vary=vary_instr_parameters
-            )
-            params.add(
-                "X", current_bestfits[9], min=0, max=3, vary=vary_instr_parameters
+                "X",
+                current_bestfits[9],
+                min=1 if not use_extended_synchrotron_range else 0,
+                max=3,
+                vary=vary_instr_parameters,
             )
             params.add(
                 "Y", current_bestfits[10], min=0, max=3, vary=vary_instr_parameters
@@ -356,7 +383,7 @@ def fit_diffractogram(x, y, angles, intensities):
                 # method="basinhopping",
             )
 
-            params = list(result.best_values.values)
+            params = list(result.best_values.values())
 
             result_ys = fit_function_wrapped(
                 x,
@@ -376,6 +403,7 @@ def fit_diffractogram(x, y, angles, intensities):
             #    print("Bad R2 score.")
             #    return None
 
+            plt.plot(x, y, label="Original")
             plt.plot(x, result_ys, label="Fitted")
 
             plt.plot(
