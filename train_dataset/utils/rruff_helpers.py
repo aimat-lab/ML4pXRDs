@@ -290,10 +290,7 @@ def fit_diffractogram(x, y, angles, intensities):
             else:
                 vary_instr_parameters = False
 
-            if (
-                strategy_item == "all_minus_peak_pos_intensity"
-                or strategy_item == "all"
-            ):
+            if strategy_item == "all":
                 vary_all_peaks = True
             else:
                 vary_all_peaks = False
@@ -326,22 +323,29 @@ def fit_diffractogram(x, y, angles, intensities):
             params.add("intensity_scaling", current_bestfits[11], min=0, max=np.inf)
 
             i = 0
-            # TODO: Do not use angles and intensities here, but current_bestfits!
-            for angle, intensity in zip(angles, intensities):
+            for angle, intensity in zip(
+                current_bestfits[12:][::2], current_bestfits[13:][::2]
+            ):
+
+                if strategy_item == "all_minus_peak_pos_intensity":
+                    vary = False
+                else:
+                    vary = (vary_all_peaks or (i == sub_step),)
+
                 params.add(
                     f"peak_pos_{i}",
                     angle,
                     min=angle - 2,
                     max=angle + 2,
-                    vary=vary_all_peaks or (i == sub_step),
+                    vary=vary,
                 )  # +- 2°
                 params.add(
                     f"peak_int_{i}",
                     intensity,
-                    min=intensity - intensity * 0.4,
-                    max=intensity + intensity * 0.4,
-                    vary=vary_all_peaks or (i == sub_step),
-                )  # +- 40%
+                    min=intensity - intensity * 0.3,
+                    max=intensity + intensity * 0.3,
+                    vary=vary,
+                )  # +- 30%
 
                 i += 1
 
