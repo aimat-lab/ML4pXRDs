@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-ViT-much-more-parameters-lr-0.0003"
+tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.9-non-distributed-lr-0.0001-lr-the-problem?"
 description = ""
 
 if len(sys.argv) > 1:
@@ -73,7 +73,7 @@ NO_epochs = 1000
 # structures_per_spg = 1
 # NO_corn_sizes = 1
 
-structures_per_spg = 1  # for all spgs
+structures_per_spg = 4  # for all spgs
 
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
@@ -126,7 +126,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.0003
+learning_rate = 0.0001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
@@ -149,7 +149,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = True
+use_distributed_strategy = False
 
 uniformly_distributed = False
 
@@ -1743,14 +1743,14 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
         # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
 
-        model = build_model_transformer_vit(
-            None,
-            N,
-            len(spgs),
-            lr=learning_rate,
-            epochs=NO_epochs,
-            steps_per_epoch=batches_per_epoch,
-        )
+        # model = build_model_transformer_vit(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    epochs=NO_epochs,
+        #    steps_per_epoch=batches_per_epoch,
+        # )
 
         # model = build_model_park_gigantic_size(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
@@ -1766,16 +1766,16 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #   optimizer=optimizer,
         # )
 
-        # model = build_model_park_gigantic_size_more_dense_bn(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    use_dropout=use_dropout,
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
-        #    bn_momentum=batchnorm_momentum,
-        # )
+        model = build_model_park_gigantic_size_more_dense_bn(
+            None,
+            N,
+            len(spgs),
+            use_dropout=use_dropout,
+            lr=learning_rate,
+            momentum=momentum,
+            optimizer=optimizer,
+            bn_momentum=batchnorm_momentum,
+        )
 
     else:
 
