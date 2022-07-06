@@ -42,7 +42,7 @@ def fn_eta(theta, eta_0, eta_1, eta_2):
     return eta_0 + eta_1 * 2 * theta + eta_2 * theta**2
 
 
-def peak_function(theta, mean, U, V, W, X, Y):
+def peak_function(theta, mean, U, V, W, X, Y, eta_0, eta_1, eta_2):
 
     C_G = 4 * jnp.log(2)
     C_L = 4
@@ -50,22 +50,22 @@ def peak_function(theta, mean, U, V, W, X, Y):
     H = fn_H(theta, U, V, W)
     H_dash = fn_H_dash(theta, X, Y)
 
-    # eta = fn_eta(theta, eta_0, eta_1, eta_2)
+    eta = fn_eta(theta, eta_0, eta_1, eta_2)
 
-    Lambda = (
-        H**5
-        + 2.69269 * H**4 * H_dash
-        + 2.42843 * H**3 * H_dash**2
-        + 4.47163 * H**2 * H_dash**3
-        + 0.07842 * H * H_dash**4
-        + H_dash**5
-    ) ** (1 / 5)
+    # Lambda = (
+    #    H**5
+    #    + 2.69269 * H**4 * H_dash
+    #    + 2.42843 * H**3 * H_dash**2
+    #    + 4.47163 * H**2 * H_dash**3
+    #    + 0.07842 * H * H_dash**4
+    #    + H_dash**5
+    # ) ** (1 / 5)
 
-    eta = (
-        1.36603 * (H_dash / Lambda)
-        - 0.47719 * (H_dash / Lambda) ** 2
-        + 0.11116 * (H_dash / Lambda) ** 3
-    )
+    # eta = (
+    #    1.36603 * (H_dash / Lambda)
+    #    - 0.47719 * (H_dash / Lambda) ** 2
+    #    + 0.11116 * (H_dash / Lambda) ** 3
+    # )
 
     x = fn_x(theta, mean, H)
 
@@ -92,6 +92,9 @@ def smeared_peaks(
     W,
     X,
     Y,
+    eta_0,
+    eta_1,
+    eta_2,
     K_alpha_splitting=False,
     wavelength=1.541838,  # needed if K_alpha_splitting=True; wavelength from the DIF file.
     print_thetas=False,
@@ -110,7 +113,9 @@ def smeared_peaks(
 
         if not K_alpha_splitting:
 
-            peak = intensity * peak_function(xs / 2, twotheta / 2, U, V, W, X, Y)
+            peak = intensity * peak_function(
+                xs / 2, twotheta / 2, U, V, W, X, Y, eta_0, eta_1, eta_2
+            )
 
             # For more accurate normalization
             # delta_x = xs[1] - xs[0]
@@ -143,8 +148,18 @@ def smeared_peaks(
             # if print_thetas:
             #    print(f"{2*theta_1} {2*theta_2}")
 
-            peak_1 = intensity * peak_function(xs / 2, theta_1, U, V, W, X, Y) * 2 / 3
-            peak_2 = intensity * peak_function(xs / 2, theta_2, U, V, W, X, Y) * 1 / 3
+            peak_1 = (
+                intensity
+                * peak_function(xs / 2, theta_1, U, V, W, X, Y, eta_0, eta_1, eta_2)
+                * 2
+                / 3
+            )
+            peak_2 = (
+                intensity
+                * peak_function(xs / 2, theta_2, U, V, W, X, Y, eta_0, eta_1, eta_2)
+                * 1
+                / 3
+            )
 
             ys += peak_1 + peak_2
 
@@ -166,6 +181,9 @@ def fit_function(
     W=0.001,
     X=1.001,
     Y=0.001,
+    eta_0=1.0,
+    eta_1=0.0,
+    eta_2=0.0,
     intensity_scaling=0.03,
     angles=None,
     intensities=None,
@@ -189,6 +207,9 @@ def fit_function(
         W,
         X,
         Y,
+        eta_0,
+        eta_1,
+        eta_2,
         K_alpha_splitting=K_alpha_splitting,
         print_thetas=print_thetas,
     )
@@ -213,6 +234,9 @@ def fit_diffractogram(x, y, angles, intensities):
         W,
         X,
         Y,
+        eta_0,
+        eta_1,
+        eta_2,
         intensity_scaling,
         **angles_intensities,
     ):
@@ -230,6 +254,9 @@ def fit_diffractogram(x, y, angles, intensities):
             W,
             X,
             Y,
+            eta_0,
+            eta_1,
+            eta_2,
             intensity_scaling,
             values[::2],
             values[1::2],
@@ -241,6 +268,7 @@ def fit_diffractogram(x, y, angles, intensities):
     strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
     use_extended_synchrotron_range = False
 
+    # TODO: Add eta here, too!
     current_bestfits = [
         0.0,  # a0
         0.0,  # a1
@@ -253,6 +281,9 @@ def fit_diffractogram(x, y, angles, intensities):
         0.001,  # W
         1.001,  # X
         0.001,  # Y
+        1.0,  # eta_0
+        0.0,  # eta_1
+        0.0,  # eta_2
         3.0 / 10.0,  # intensity_scaling
     ]  # default values
     for angle, intensity in zip(angles, intensities):
@@ -265,11 +296,11 @@ def fit_diffractogram(x, y, angles, intensities):
 
     initial_ys = fit_function_wrapped(
         x,
-        *current_bestfits[:12],
+        *current_bestfits[:15],
         **dict(
             zip(
-                [str(item) for item in range(len(current_bestfits[12:]))],
-                current_bestfits[12:],
+                [str(item) for item in range(len(current_bestfits[15:]))],
+                current_bestfits[15:],
             )
         ),
     )
@@ -289,11 +320,11 @@ def fit_diffractogram(x, y, angles, intensities):
         for i in range(0, 10):
             test_grad = gradient(
                 x,
-                *current_bestfits[:12],
+                *current_bestfits[:15],
                 **dict(
                     zip(
-                        [str(item) for item in range(len(current_bestfits[12:]))],
-                        current_bestfits[12:],
+                        [str(item) for item in range(len(current_bestfits[15:]))],
+                        current_bestfits[15:],
                     )
                 ),
             )
@@ -368,11 +399,14 @@ def fit_diffractogram(x, y, angles, intensities):
             params.add(
                 "Y", current_bestfits[10], min=0, max=3, vary=vary_instr_parameters
             )
-            params.add("intensity_scaling", current_bestfits[11], min=0, max=np.inf)
+            params.add("eta_0", current_bestfits[11], vary=vary_instr_parameters)
+            params.add("eta_1", current_bestfits[12], vary=vary_instr_parameters)
+            params.add("eta_2", current_bestfits[13], vary=vary_instr_parameters)
+            params.add("intensity_scaling", current_bestfits[14], min=0, max=np.inf)
 
             i = 0
             for angle, intensity in zip(
-                current_bestfits[12:][::2], current_bestfits[13:][::2]
+                current_bestfits[15:][::2], current_bestfits[16:][::2]
             ):
 
                 if strategy_item == "all_minus_peak_pos_intensity":
@@ -408,11 +442,11 @@ def fit_diffractogram(x, y, angles, intensities):
 
             result_ys = fit_function_wrapped(
                 x,
-                *current_bestfits[:12],
+                *current_bestfits[:15],
                 **dict(
                     zip(
-                        [str(item) for item in range(len(current_bestfits[12:]))],
-                        current_bestfits[12:],
+                        [str(item) for item in range(len(current_bestfits[15:]))],
+                        current_bestfits[15:],
                     )
                 ),
             )
