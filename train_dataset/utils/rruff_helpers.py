@@ -9,6 +9,7 @@ from lmfit import Parameters
 
 from jax import grad
 from jax import jacrev
+
 import jax.numpy as jnp
 from jax import jit
 
@@ -139,8 +140,8 @@ def smeared_peaks(
                 )
             )
 
-            if print_thetas:
-                print(f"{2*theta_1} {2*theta_2}")
+            # if print_thetas:
+            #    print(f"{2*theta_1} {2*theta_2}")
 
             peak_1 = intensity * peak_function(xs / 2, theta_1, U, V, W, X, Y) * 2 / 3
             peak_2 = intensity * peak_function(xs / 2, theta_2, U, V, W, X, Y) * 1 / 3
@@ -195,6 +196,9 @@ def fit_function(
     return peaks + polynomial
 
 
+fit_function_jit = jit(fit_function)
+
+
 def fit_diffractogram(x, y, angles, intensities):
     def fit_function_wrapped(
         xs,
@@ -213,7 +217,7 @@ def fit_diffractogram(x, y, angles, intensities):
         **angles_intensities,
     ):
         values = list(angles_intensities.values())
-        output = fit_function(
+        output = fit_function_jit(
             xs,
             a0,
             a1,
@@ -232,8 +236,6 @@ def fit_diffractogram(x, y, angles, intensities):
         )
         return output
 
-    # fit_function_wrapped_jit = jit(fit_function_wrapped)
-    # model = Model(fit_function_wrapped_jit)
     model = Model(fit_function_wrapped)
 
     strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
@@ -278,7 +280,6 @@ def fit_diffractogram(x, y, angles, intensities):
 
         # TODO: rather try to use jit for this
         # TODO: rather try to do this on the GPU
-        # TODO: Maybe numba is the way to go here (make speed comparison first)
 
         # test = jit(fit_function_wrapped)
 
