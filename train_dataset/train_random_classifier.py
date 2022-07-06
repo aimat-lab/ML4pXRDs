@@ -1381,6 +1381,8 @@ params_txt = (
 
 log_wait_timings = []
 
+first = True  # TODO: Change back
+
 
 class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -1456,6 +1458,8 @@ class CustomCallback(keras.callbacks.Callback):
 
                 assert metric_names[0] == "loss"
 
+                global first
+
                 if (
                     calculate_random_accuracy_using_training_true
                 ):  # for debugging of batchnormalization
@@ -1472,11 +1476,27 @@ class CustomCallback(keras.callbacks.Callback):
                             training=True,
                         )  # run this in training mode
 
+                        if first:
+                            print(f"Shape prediction_random: {prediction_random.shape}")
+
                         prediction_random = np.argmax(prediction_random, axis=1)
 
+                        if first:
+                            print(
+                                f"Shape prediction_random after argmax: {prediction_random.shape}"
+                            )
+
                         rightly_indices = np.argwhere(
-                            prediction_random == val_y_random
+                            prediction_random
+                            == val_y_random[i * batch_size : (i + 1) * batch_size]
                         )[:, 0]
+
+                        if first:
+                            print(
+                                f"Shape rightly_indices after argwhere: {rightly_indices.shape}"
+                            )
+
+                        first = False
 
                         total_correct += len(rightly_indices)
 
