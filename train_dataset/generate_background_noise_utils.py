@@ -93,18 +93,6 @@ def convert_to_discrete(
     return peak_info_disc, peak_size_disc
 
 
-def theta_rel(theta, min_x, max_x):
-    return (theta - min_x) / (max_x - min_x)
-
-
-def f_bump(theta, h, n, min_x, max_x):
-    return (
-        h
-        * (n * theta_rel(theta, min_x, max_x)) ** 2
-        * np.exp(-1 * n * theta_rel(theta, min_x, max_x))
-    )
-
-
 @numba.njit
 def calc_std_dev(two_theta, tau, wavelength=1.207930):
     """

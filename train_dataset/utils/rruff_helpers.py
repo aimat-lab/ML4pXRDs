@@ -12,7 +12,8 @@ from jax import jacrev
 import jax.numpy as jnp
 from jax import jit
 
-########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement :
+
+########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
 
 

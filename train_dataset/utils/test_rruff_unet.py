@@ -27,7 +27,8 @@ use_only_selected = True
 do_plot = False
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
-classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/24-06-2022_10-54-18/"
+# classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/24-06-2022_10-54-18/"
+classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/19-06-2022_10-15-26/"
 # classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/30-05-2022_13-43-21/" # no save file :(
 classification_model_path = classification_model_base + "final"
 do_unet_preprocessing = False
