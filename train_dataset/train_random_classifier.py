@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.9-non-distributed-lr-0.0001-lr-the-problem?"
+tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.9-non-distributed-lr-0.0001-alternative-random-accuracy-calculation"
 description = ""
 
 if len(sys.argv) > 1:
@@ -159,6 +159,8 @@ add_background_and_noise = False
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
+
+calculate_random_accuracy_using_training_true = True
 
 local = False
 if local:
@@ -1454,6 +1456,34 @@ class CustomCallback(keras.callbacks.Callback):
 
                 assert metric_names[0] == "loss"
 
+                if (
+                    calculate_random_accuracy_using_training_true
+                ):  # for debugging of batchnormalization
+
+                    total_correct = 0
+
+                    n_batches = int(val_x_random.shape[0] / batch_size)
+                    for i in range(
+                        0, n_batches
+                    ):  # only use actually full batches here for testing
+
+                        prediction_random = model(
+                            val_x_random[i * batch_size : (i + 1) * batch_size, :, :],
+                            training=True,
+                        )  # run this in training mode
+
+                        prediction_random = np.argmax(prediction_random, axis=1)
+
+                        rightly_indices = np.argwhere(
+                            prediction_random == val_y_random
+                        )[:, 0]
+
+                        total_correct += len(rightly_indices)
+
+                    accuracy_random_training_true = total_correct / (
+                        n_batches * batch_size
+                    )
+
                 tf.summary.scalar("loss all", data=scores_all[0], step=epoch)
                 tf.summary.scalar("loss match", data=scores_match[0], step=epoch)
                 tf.summary.scalar(
@@ -1492,7 +1522,11 @@ class CustomCallback(keras.callbacks.Callback):
                     )
 
                 tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
-                tf.summary.scalar("accuracy match", data=scores_match[1], step=epoch)
+                tf.summary.scalar(
+                    "accuracy match",
+                    data=scores_match[1],
+                    step=epoch,
+                )
                 tf.summary.scalar(
                     "accuracy match_correct_spgs",
                     data=scores_match_correct_spgs[1],
@@ -1503,7 +1537,14 @@ class CustomCallback(keras.callbacks.Callback):
                     data=scores_match_correct_spgs_pure[1],
                     step=epoch,
                 )
-                tf.summary.scalar("accuracy random", data=scores_random[1], step=epoch)
+                tf.summary.scalar(
+                    "accuracy random",
+                    data=scores_random[1]
+                    if not calculate_random_accuracy_using_training_true
+                    else accuracy_random_training_true,
+                    step=epoch,
+                )
+
                 if generate_randomized_validation_datasets:
                     tf.summary.scalar(
                         "accuracy randomized coords",
