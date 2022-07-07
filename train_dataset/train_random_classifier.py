@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.9-non-distributed-lr-0.0001-alternative-random-accuracy-calculation"
+tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.9-non-distributed-lr-0.0001-alternative-random-match-accuracy-calculation-debugging-scalars"
 description = ""
 
 if len(sys.argv) > 1:
