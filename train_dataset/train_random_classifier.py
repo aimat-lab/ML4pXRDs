@@ -1592,6 +1592,22 @@ class CustomCallback(keras.callbacks.Callback):
                     "learning_rate", data=self.model.optimizer.lr, step=epoch
                 )
 
+                # TODO: Maybe remove this again
+                mean = np.average(self.model.layers[2].moving_mean.numpy())
+                variance = np.average(self.model.layers[2].moving_variance.numpy())
+                tf.summary.scalar("bn_0_average_means", data=mean, step=epoch)
+                tf.summary.scalar("bn_0_average_variances", data=variance, step=epoch)
+                tf.summary.scalar(
+                    "bn_0_mean_0",
+                    data=self.model.layers[2].moving_mean.numpy()[0],
+                    step=epoch,
+                )
+                tf.summary.scalar(
+                    "bn_0_variance_0",
+                    data=self.model.layers[2].moving_variance.numpy()[0],
+                    step=epoch,
+                )
+
 
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches, batch_size, number_of_epochs):
