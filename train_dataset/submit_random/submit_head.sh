@@ -31,10 +31,10 @@ do
 done
 
 # wait until worker 2 has connected
-until [ -f ./worker_2_ready ]
-do
-         sleep 5
-done
+#until [ -f ./worker_2_ready ]
+#do
+#         sleep 5
+#done
 
 cd ..
 

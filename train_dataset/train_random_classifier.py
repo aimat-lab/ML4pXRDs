@@ -88,7 +88,8 @@ do_merge_checks = False
 use_icsd_statistics = True
 
 if not head_only:
-    NO_workers = 127 + 127 + 8  # for int-nano cluster
+    # NO_workers = 127 + 127 + 8  # for int-nano cluster
+    NO_workers = 1 * 127 + 8  # for int-nano cluster
 else:
     NO_workers = 30  # for int-nano cluster
 
