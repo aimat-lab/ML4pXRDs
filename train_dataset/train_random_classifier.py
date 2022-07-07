@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.9-non-distributed-lr-0.0001-alternative-random-match-accuracy-calculation-debugging-scalars"
+tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.0-non-distributed-lr-0.0001-alternative-random-match-accuracy-calculation-debugging-scalars"
 description = ""
 
 if len(sys.argv) > 1:
@@ -131,7 +131,7 @@ learning_rate = 0.0001
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
 use_reduce_lr_on_plateau = False
-batchnorm_momentum = 0.9  # only used by ResNet and gigantic_more_dense_bn currently
+batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
 
 use_denseness_factors_density = True
 use_conditional_density = True

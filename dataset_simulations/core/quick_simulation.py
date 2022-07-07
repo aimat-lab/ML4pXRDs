@@ -16,6 +16,7 @@ from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 import traceback
 from multiprocessing import Pool
 import train_dataset.generate_background_noise_utils
+import pickle
 
 if "NUMBA_DISABLE_JIT" in os.environ:
     is_debugging = os.environ["NUMBA_DISABLE_JIT"] == "1"
@@ -1060,6 +1061,31 @@ if __name__ == "__main__":
 
     if True:
 
+        # Load some rruff patterns to compare to:
+
+        rruff_x_tests = []
+        rruff_y_tests = []
+
+        with open("../../train_dataset/utils/to_test_on.pickle", "rb") as file:
+            raw_files = pickle.load(file)
+        for i, raw_file in enumerate(raw_files):
+            raw_filename = os.path.basename(raw_file)
+            raw_xy = np.genfromtxt(
+                "../../train_dataset/utils/" + raw_file,
+                dtype=float,
+                delimiter=",",
+                comments="#",
+            )
+
+            x_test = raw_xy[:, 0]
+            y_test = np.array(raw_xy[:, 1])
+
+            y_test -= np.min(y_test)
+            y_test = y_test / np.max(y_test)
+
+            rruff_x_tests.append(x_test)
+            rruff_y_tests.append(y_test)
+
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1098,7 +1124,7 @@ if __name__ == "__main__":
         for i in reversed(range(len(spgs))):
             if denseness_factors_density_per_spg[spgs[i]] is None:
                 del spgs[i]
-        n_per_spg = 2
+        n_per_spg = 6
 
         probability_per_spg = {}
         for i, label in enumerate(statistics_match_labels):
@@ -1111,8 +1137,10 @@ if __name__ == "__main__":
         for key in probability_per_spg.keys():
             probability_per_spg[key] /= total
 
+        print(f"Batch size: {n_per_spg * len(spgs)}")
+        counter = 0
         timings = []
-        for i in range(0, 2):
+        for i in range(0, 5):  # make 5 batches
             # for spg in represented_spgs:
 
             start = time.time()
@@ -1128,7 +1156,7 @@ if __name__ == "__main__":
                     two_theta_range=(5, 90),
                     max_NO_elements=100,
                     do_print=False,
-                    return_additional=True,
+                    return_additional=True,  # False # TODO: Try also false here!
                     do_distance_checks=False,
                     do_merge_checks=False,
                     use_icsd_statistics=True,
@@ -1149,12 +1177,16 @@ if __name__ == "__main__":
                     denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                     lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                     probability_per_spg=probability_per_spg,
-                    add_background_and_noise=True,
+                    add_background_and_noise=True,  # True
                 )
 
                 if True:
-                    plt.plot(patterns[0])
-                    plt.show()
+                    for pattern in patterns:
+                        plt.plot(np.linspace(5, 90, 8501), pattern)
+                        plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])
+                        plt.show()
+
+                        counter += 1
 
             timings.append(time.time() - start)
 
