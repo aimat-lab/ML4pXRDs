@@ -160,7 +160,7 @@ add_background_and_noise = False
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
 
-calculate_random_accuracy_using_training_true = True
+calculate_random_and_match_accuracy_using_training_true = True
 
 local = False
 if local:
@@ -1378,10 +1378,31 @@ params_txt = (
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
-
 log_wait_timings = []
 
-first = True  # TODO: Change back
+
+def calculate_accuracy_training_true(model, x_data, y_data):
+
+    total_correct = 0
+
+    n_batches = int(x_data.shape[0] / batch_size)
+    for i in range(0, n_batches):  # only use actually full batches here for testing
+
+        prediction = model(
+            x_data[i * batch_size : (i + 1) * batch_size, :, :],
+            training=True,
+        )  # run this in training mode
+
+        prediction = np.argmax(prediction, axis=1)
+
+        rightly_indices = np.argwhere(
+            prediction == y_data[i * batch_size : (i + 1) * batch_size]
+        )[:, 0]
+
+        total_correct += len(rightly_indices)
+
+    accuracy = total_correct / (n_batches * batch_size)
+    return accuracy
 
 
 class CustomCallback(keras.callbacks.Callback):
@@ -1458,50 +1479,14 @@ class CustomCallback(keras.callbacks.Callback):
 
                 assert metric_names[0] == "loss"
 
-                global first
-
                 if (
-                    calculate_random_accuracy_using_training_true
+                    calculate_random_and_match_accuracy_using_training_true
                 ):  # for debugging of batchnormalization
-
-                    total_correct = 0
-
-                    n_batches = int(val_x_random.shape[0] / batch_size)
-                    for i in range(
-                        0, n_batches
-                    ):  # only use actually full batches here for testing
-
-                        prediction_random = model(
-                            val_x_random[i * batch_size : (i + 1) * batch_size, :, :],
-                            training=True,
-                        )  # run this in training mode
-
-                        if first:
-                            print(f"Shape prediction_random: {prediction_random.shape}")
-
-                        prediction_random = np.argmax(prediction_random, axis=1)
-
-                        if first:
-                            print(
-                                f"Shape prediction_random after argmax: {prediction_random.shape}"
-                            )
-
-                        rightly_indices = np.argwhere(
-                            prediction_random
-                            == val_y_random[i * batch_size : (i + 1) * batch_size]
-                        )[:, 0]
-
-                        if first:
-                            print(
-                                f"Shape rightly_indices after argwhere: {rightly_indices.shape}"
-                            )
-
-                        first = False
-
-                        total_correct += len(rightly_indices)
-
-                    accuracy_random_training_true = total_correct / (
-                        n_batches * batch_size
+                    accuracy_random_training_true = calculate_accuracy_training_true(
+                        self.model, val_x_random, val_y_random
+                    )
+                    accuracy_match_training_true = calculate_accuracy_training_true(
+                        self.model, val_x_match, val_y_match
                     )
 
                 tf.summary.scalar("loss all", data=scores_all[0], step=epoch)
@@ -1544,7 +1529,9 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
                 tf.summary.scalar(
                     "accuracy match",
-                    data=scores_match[1],
+                    data=scores_match[1]
+                    if not calculate_random_and_match_accuracy_using_training_true
+                    else accuracy_match_training_true,
                     step=epoch,
                 )
                 tf.summary.scalar(
@@ -1560,7 +1547,7 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar(
                     "accuracy random",
                     data=scores_random[1]
-                    if not calculate_random_accuracy_using_training_true
+                    if not calculate_random_and_match_accuracy_using_training_true
                     else accuracy_random_training_true,
                     step=epoch,
                 )
