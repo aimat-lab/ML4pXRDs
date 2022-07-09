@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.0-non-distributed-lr-0.0001-alternative-random-match-accuracy-calculation-debugging-scalars"
+tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.4"
 description = ""
 
 if len(sys.argv) > 1:
@@ -132,7 +132,7 @@ learning_rate = 0.0001
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
 use_reduce_lr_on_plateau = False
-batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
+batchnorm_momentum = 0.3  # only used by ResNet and gigantic_more_dense_bn currently
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -161,7 +161,8 @@ add_background_and_noise = False
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
 
-calculate_random_and_match_accuracy_using_training_true = True
+calculate_match_accuracy_using_training_true = True
+calculate_random_accuracy_using_training_true = True
 
 local = False
 if local:
@@ -1481,13 +1482,27 @@ class CustomCallback(keras.callbacks.Callback):
                 assert metric_names[0] == "loss"
 
                 if (
-                    calculate_random_and_match_accuracy_using_training_true
+                    calculate_random_accuracy_using_training_true
                 ):  # for debugging of batchnormalization
                     accuracy_random_training_true = calculate_accuracy_training_true(
                         self.model, val_x_random, val_y_random
                     )
+                    tf.summary.scalar(
+                        "accuracy random training=True",
+                        data=accuracy_random_training_true,
+                        step=epoch,
+                    )
+
+                if (
+                    calculate_match_accuracy_using_training_true
+                ):  # for debugging of batchnormalization
                     accuracy_match_training_true = calculate_accuracy_training_true(
                         self.model, val_x_match, val_y_match
+                    )
+                    tf.summary.scalar(
+                        "accuracy match training=True",
+                        data=accuracy_match_training_true,
+                        step=epoch,
                     )
 
                 tf.summary.scalar("loss all", data=scores_all[0], step=epoch)
@@ -1530,9 +1545,7 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar("accuracy all", data=scores_all[1], step=epoch)
                 tf.summary.scalar(
                     "accuracy match",
-                    data=scores_match[1]
-                    if not calculate_random_and_match_accuracy_using_training_true
-                    else accuracy_match_training_true,
+                    data=scores_match[1],
                     step=epoch,
                 )
                 tf.summary.scalar(
@@ -1547,9 +1560,7 @@ class CustomCallback(keras.callbacks.Callback):
                 )
                 tf.summary.scalar(
                     "accuracy random",
-                    data=scores_random[1]
-                    if not calculate_random_and_match_accuracy_using_training_true
-                    else accuracy_random_training_true,
+                    data=scores_random[1],
                     step=epoch,
                 )
 
