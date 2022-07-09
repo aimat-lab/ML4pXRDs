@@ -15,4 +15,4 @@ mkdir -p "../$out_dir"
 
 sbatch -o "../$out_dir/slurm_head.out" submit_head.sh "$date_time"
 sbatch -o "../$out_dir/slurm_worker_1.out" submit_worker_1.sh
-#sbatch -o "../$out_dir/slurm_worker_2.out" submit_worker_2.sh
+sbatch -o "../$out_dir/slurm_worker_2.out" submit_worker_2.sh
