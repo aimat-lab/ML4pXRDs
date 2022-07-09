@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.4"
+tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.3"
 description = ""
 
 if len(sys.argv) > 1:
