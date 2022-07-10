@@ -877,9 +877,26 @@ def build_model_resnet_i(
 
 if __name__ == "__main__":
 
-    # model = build_model_park_gigantic_size_more_dense_bn(
-    #    None, 8501, 145, False, 0.0001, momentum=0.9, optimizer="Adam", bn_momentum=0.99
-    # )
+    model = build_model_park_gigantic_size_more_dense_bn(
+        None, 8501, 145, False, 0.0001, momentum=0.9, optimizer="Adam", bn_momentum=0.99
+    )
+
+    mean = np.average(model.layers[2].moving_mean.numpy())
+    variance = np.average(model.layers[2].moving_variance.numpy())
+    print(mean)
+    print(variance)
+
+    print()
+
+    test_input = np.random.rand(100, 8501, 1)
+    model(test_input, training=True)
+
+    mean = np.average(model.layers[2].moving_mean.numpy())
+    variance = np.average(model.layers[2].moving_variance.numpy())
+    print(mean)
+    print(variance)
+
+    exit()
 
     if True:
 
