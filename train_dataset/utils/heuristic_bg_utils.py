@@ -1,80 +1,36 @@
 import numpy as np
-from numpy.core.numeric import roll
-import pandas as pd
 import matplotlib.pyplot as plt
-from scipy import interpolate as ip
-from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 import numpy as np
-import pandas as pd
 from scipy.sparse import linalg
 from numpy.linalg import norm
 from scipy import sparse
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-from scipy import interpolate as ip
-from scipy.signal import find_peaks, filtfilt
-from skimage import data, restoration, util
-from matplotlib.patches import Ellipse
+from scipy.signal import filtfilt
+from skimage import restoration
 from functools import partial
 import pybaselines
 
-mode = "removal"  # possible: info and removal (currently only removal)
-to_test = "removal_03-12-2021_16-48-30_UNetPP"  # pretty damn good (variance 4)
-# to_test = "removal_06-12-2021_10-06-13_UNetPP" # also quite good (variance 7), maybe a little less artifacts, but more errors on the right side
-
-show_comparison = False
-
-
-def load_experimental_data(loading_mode="classification"):
-
-    if loading_mode == "classification":
-
-        path = "exp_data/XRDdata_classification.csv"
-        data = pd.read_csv(path, delimiter=",", skiprows=1)
-        xs = np.array(data.iloc[:, list(range(0, len(data.columns.values), 2))])
-        ys = np.array(data.iloc[:, list(range(1, len(data.columns.values), 2))])
-
-        return (xs, ys)
-
-    elif loading_mode == "texture":  # TODO: watch out: these have a different range
-
-        data_file_path = "exp_data/XRD_6_component_systems_repeat.csv"
-        df = pd.read_csv(data_file_path, sep=";")
-
-        x = np.array(df.iloc[:, 0])
-        xs = np.repeat(x[:, np.newaxis], len(df.columns.values) - 1, axis=1)
-        ys = np.array(df.iloc[:, list(range(1, len(df.columns.values)))])
-
-        return (xs, ys)
-
-    else:
-
-        raise Exception("Mode for loading experimental data not supported.")
-
-
+# Define default background subtraction parameters:
 # baseline_arPLS parameters:
-current_ratio_exponent = -2.37287
-current_lambda_exponent = 7.311915
-arPLS_ratio = 10 ** current_ratio_exponent
-arPLS_lam = 10 ** current_lambda_exponent
+default_ratio_exponent = -2.37287
+default_lambda_exponent = 7.311915
+default_arPLS_ratio = 10**default_ratio_exponent
+default_arPLS_lam = 10**default_lambda_exponent
 arPLS_niter = 100
 
 # rolling ball parameters:
-rolling_ball_sphere_x = 6.619
-rolling_ball_sphere_y = 0.3
+default_rolling_ball_sphere_x = 6.619
+default_rolling_ball_sphere_y = 0.3
 
 # wavelet parameters
 # num_std=0..5, min_length=2..100
-wavelet_num_std = 1.0
-wavelet_min_length = 2.0
+default_wavelet_num_std = 1.0
+default_wavelet_min_length = 2.0
 
 # the following function is taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
-def baseline_arPLS(y, ratio=None, lam=None, niter=None, full_output=False):
-
-    ratio = arPLS_ratio if not ratio else ratio
-    lam = arPLS_lam if not lam else lam
-    niter = arPLS_niter if not niter else niter
+def baseline_arPLS(y, ratio, lam, niter=100, full_output=False):
 
     print(f"Ratio {ratio:.5E} lam {lam:.5E}")
 
@@ -178,18 +134,10 @@ def update_wave(
     fig,
     do_remove,
 ):
-
-    global current_lambda_exponent
-    global current_ratio_exponent
-    global rolling_ball_sphere_x
-    global rolling_ball_sphere_y
-    global wavelet_num_std
-    global wavelet_min_length
-
     current_ratio_exponent = slider_1_arPLS.val
     current_lambda_exponent = slider_2_arPLS.val
-    rolling_ball_sphere_x = slider_1_rb.val
-    rolling_ball_sphere_y = slider_2_rb.val
+    current_rolling_ball_sphere_x = slider_1_rb.val
+    current_rolling_ball_sphere_y = slider_2_rb.val
     current_wavelet_num_std = slider_1_wavelet.val
     current_wavelet_min_length = slider_2_wavelet.val
 
@@ -198,10 +146,10 @@ def update_wave(
         ax.lines[-1].remove()
         ax.lines[-1].remove()
 
-    value1 = 10 ** slider_1_arPLS.val
-    slider_1_arPLS.valtext.set_text(f"{value1:.3E} {slider_1_arPLS.val:.3f}")
-    value2 = 10 ** slider_2_arPLS.val
-    slider_2_arPLS.valtext.set_text(f"{value2:.3E} {slider_2_arPLS.val:.3f}")
+    value1 = 10**current_ratio_exponent
+    slider_1_arPLS.valtext.set_text(f"{value1:.3E} {current_ratio_exponent:.3f}")
+    value2 = 10**current_lambda_exponent
+    slider_2_arPLS.valtext.set_text(f"{value2:.3E} {current_lambda_exponent:.3f}")
 
     baseline = baseline_arPLS(ys, value1, value2)
     ax.plot(xs, baseline, label="arPLS", c="b")
@@ -209,8 +157,8 @@ def update_wave(
     background = rolling_ball(
         xs,
         ys,
-        sphere_x=slider_1_rb.val,
-        sphere_y=slider_2_rb.val,
+        sphere_x=current_rolling_ball_sphere_x,
+        sphere_y=current_rolling_ball_sphere_y,
         ax=ax,
     )
     ax.plot(xs, background, label="Rolling ball", c="k")
@@ -241,12 +189,12 @@ def plot_heuristic_fit(xs, ys):
             bottom_1 = 0.30
             min_1 = 0
             max_1 = 100
-            valinit_1 = rolling_ball_sphere_x
+            valinit_1 = default_rolling_ball_sphere_x
 
             bottom_2 = 0.24
             min_2 = 0
             max_2 = 3
-            valinit_2 = rolling_ball_sphere_y
+            valinit_2 = default_rolling_ball_sphere_y
 
             valfmt = "%1.3f"
 
@@ -254,12 +202,12 @@ def plot_heuristic_fit(xs, ys):
             bottom_1 = 0.18
             min_1 = -3
             max_1 = -1
-            valinit_1 = current_ratio_exponent
+            valinit_1 = default_ratio_exponent
 
             bottom_2 = 0.12
             min_2 = 2
             max_2 = 9
-            valinit_2 = current_lambda_exponent
+            valinit_2 = default_lambda_exponent
 
             valfmt = "%E"
 
@@ -269,16 +217,17 @@ def plot_heuristic_fit(xs, ys):
             bottom_1 = 0.06
             min_1 = 0
             max_1 = 5
-            valinit_1 = wavelet_num_std
+            valinit_1 = default_wavelet_num_std
 
             bottom_2 = 0.00
             min_2 = 2
             max_2 = 100
-            valinit_2 = wavelet_min_length
+            valinit_2 = default_wavelet_min_length
 
             valfmt = "%1.3f"
 
         else:
+
             raise Exception("Baseline detection method not recognized.")
 
         axwave1 = plt.axes([0.17, bottom_1, 0.65, 0.03])  # slider dimensions
@@ -306,6 +255,7 @@ def plot_heuristic_fit(xs, ys):
         sliders.append(slider_1)
         sliders.append(slider_2)
 
+    # Draw everything once
     update_wave(
         None,
         sliders[0],
@@ -335,93 +285,17 @@ def plot_heuristic_fit(xs, ys):
                 ys=ys,
                 ax=ax,
                 fig=fig,
-                do_remove=True,
+                do_remove=True,  # here, remove before redrawing
             )
         )
 
     plt.show()
 
-
-if __name__ == "__main__":
-
-    xs_exp, ys_exp = load_experimental_data(loading_mode="classification")
-
-    model_pre = keras.models.load_model("unet/" + to_test + "/final")
-
-    if mode == "removal":
-        model = model_pre
-    else:
-        model = keras.Sequential([model_pre, keras.layers.Activation("sigmoid")])
-
-    """
-    with open("unet/removal_cps/scaler", "rb") as file:
-        sc = pickle.load(file)
-    """
-
-    for i in range(0, xs_exp.shape[1]):
-
-        current_xs = xs_exp[:, i][0:2672]
-        current_ys = ys_exp[:, i][0:2672]
-
-        # plt.plot(current_xs, current_ys)
-        # plt.plot(current_xs[0:2672], current_ys[0:2672])
-        # plt.show()
-        # continue
-
-        # plt.plot(current_xs, current_ys)
-        # plt.show()
-
-        # f = ip.CubicSpline(current_xs, current_ys, bc_type="natural")
-
-        ys = current_ys
-        ys -= np.min(ys)
-        ys = ys / np.max(ys)
-
-        plt.figure(f"Sample {i}")
-
-        plt.plot(current_xs, np.zeros(len(current_xs)))
-
-        plt.plot(current_xs, ys, label="Experimental rescaled", zorder=2)
-
-        # with open("unet/scaler", "rb") as file:
-        #    scaler = pickle.load(file)
-        # ys = scaler.transform(ys)
-
-        # ys = np.expand_dims(sc.transform([ys]), axis=2)
-        ys = np.expand_dims([ys], axis=2)
-
-        if mode == "removal":
-
-            corrected = model.predict(ys)
-
-            plt.plot(
-                current_xs,
-                ys[0, :, 0] - corrected[0, :, 0],
-                label="Background and noise",
-                zorder=1,
-                linestyle="dotted",
-            )
-            plt.plot(
-                current_xs, corrected[0, :, 0], label="Corrected via U-Net", zorder=3
-            )
-
-        else:
-
-            corrected = model.predict(ys)
-
-            plt.scatter(
-                current_xs,
-                corrected[0, :, 0],
-                label="Peak detection",
-                s=3,
-            )
-
-        plt.xlabel(r"$2 \theta$")
-        plt.ylabel("Intensity")
-
-        plt.savefig(f"predictions/Exp_{i}.png")
-
-        if show_comparison:
-            plot_heuristic_fit(current_xs, ys[0, :, 0])
-        else:
-            plt.show()
+    return (
+        sliders[0].val,
+        sliders[1].val,
+        sliders[2].val,
+        sliders[3].val,
+        sliders[4].val,
+        sliders[5].val,
+    )

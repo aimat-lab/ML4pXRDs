@@ -1,4 +1,5 @@
 from regex import W
+from soupsieve import select
 import tensorflow.keras as keras
 import os
 
@@ -20,8 +21,11 @@ import pickle
 from scipy.signal import savgol_filter
 
 from train_dataset.utils.rruff_helpers import *
+from train_dataset.utils.heuristic_bg_utils import *
+
 
 select_which_to_use_for_testing = False
+select_heuristic_parameters = True
 use_only_selected = True
 
 do_plot = False
@@ -170,6 +174,13 @@ for i, raw_file in enumerate(raw_files):
         (not do_unet_preprocessing) and len(x_test) != 8501
     ):
         print("Skipping pattern due to wrong dimensions of xs.")
+        continue
+
+    if select_heuristic_parameters:
+
+        plt.plot(x_test, y_test)
+        new_parameters = plot_heuristic_fit(x_test, y_test)
+
         continue
 
     if not select_which_to_use_for_testing and do_unet_preprocessing:
