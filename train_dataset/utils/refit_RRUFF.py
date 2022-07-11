@@ -26,6 +26,8 @@ counter_dif = 0
 
 # random.shuffle(raw_files)
 
+parameter_results = []
+
 for i, raw_file in enumerate(raw_files):
 
     print(f"{(i+1)/len(raw_files)*100:.2f}% processed")
@@ -85,7 +87,7 @@ for i, raw_file in enumerate(raw_files):
         # plt.legend()
         # plt.show()
 
-        result = fit_diffractogram(
+        fit_parameters = fit_diffractogram(
             raw_xys[-1][:, 0],
             raw_xys[-1][:, 1] / np.max(raw_xys[-1][:, 1]),
             # processed_xy[:,0],
@@ -93,6 +95,8 @@ for i, raw_file in enumerate(raw_files):
             angles[-1],
             intensities[-1] / np.max(intensities[-1]),
         )
+
+        parameter_results.append((raw_file, fit_parameters))
 
     else:
 
@@ -119,3 +123,6 @@ for i, dif_file in enumerate(dif_files):
         counter_both += 1
 
 print(f"{counter_both} files with dif and processed file found.")
+
+with open("rruff_refits.pickle", "wb") as file:
+    pickle.dump(parameter_results, file)
