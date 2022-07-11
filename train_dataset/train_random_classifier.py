@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.0-pre-estimate+cross-testing-bn"
+tag = "all-spgs-random-gigantic_additional_dense-bn_momentum-0.0-random-pre-estimate"
 description = ""
 
 if len(sys.argv) > 1:
@@ -133,8 +133,7 @@ momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
 use_reduce_lr_on_plateau = False
 batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
-pre_estimate_bn_averages = True
-cross_test_bn_random_match = True
+estimate_bn_averages_using_random = True  # instead of the moving averages
 calculate_random_accuracy_using_training_true = True
 calculate_match_accuracy_using_training_true = True
 
@@ -316,9 +315,9 @@ else:
     for spg in spgs:
         all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
 
-if pre_estimate_bn_averages and batchnorm_momentum != 0.0:
+if estimate_bn_averages_using_random and batchnorm_momentum != 0.0:
     raise Exception(
-        "Pre-estimating the bn averages is only supported if batchnorm_momentum = 0.0"
+        "Estimating the bn averages using the random distribution is only supported if batchnorm_momentum = 0.0."
     )
 
 for i in reversed(range(0, len(spgs))):
@@ -1429,79 +1428,30 @@ class CustomCallback(keras.callbacks.Callback):
                 # gather metric names form model
                 metric_names = [metric.name for metric in self.model.metrics]
 
-                if pre_estimate_bn_averages:
-                    if True:
-                        mean_0 = np.average(self.model.layers[2].moving_mean.numpy())
-                        variance_0 = np.average(
-                            self.model.layers[2].moving_variance.numpy()
-                        )
-                    calculate_accuracy_training_true(
-                        self.model,
-                        val_x_all,
-                        val_y_all,  # pre-estimate the bn averages before evaluation
-                        n_batches=1,
-                    )
-                    if True:
-                        mean_1 = np.average(self.model.layers[2].moving_mean.numpy())
-                        variance_1 = np.average(
-                            self.model.layers[2].moving_variance.numpy()
-                        )
-                        tf.summary.scalar(
-                            "diff after call mean", data=mean_1 - mean_0, step=epoch
-                        )
-                        tf.summary.scalar(
-                            "diff after call variance",
-                            data=variance_1 - variance_0,
-                            step=epoch,
-                        )
-                scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
-
-                if pre_estimate_bn_averages:
-                    calculate_accuracy_training_true(
-                        self.model,
-                        val_x_match,
-                        val_y_match,  # pre-estimate the bn averages before evaluation
-                        n_batches=1,
-                    )
-                scores_match = self.model.evaluate(
-                    x=val_x_match,
-                    y=val_y_match,
-                    verbose=0,
-                )
-
-                if pre_estimate_bn_averages:
-                    calculate_accuracy_training_true(
-                        self.model,
-                        val_x_match_correct_spgs,
-                        val_y_match_correct_spgs,  # pre-estimate the bn averages before evaluation
-                        n_batches=1,
-                    )
-                scores_match_correct_spgs = self.model.evaluate(
-                    x=val_x_match_correct_spgs,
-                    y=val_y_match_correct_spgs,
-                    verbose=0,
-                )
-
-                if pre_estimate_bn_averages:
-                    calculate_accuracy_training_true(
-                        self.model,
-                        val_x_match_correct_spgs_pure,
-                        val_y_match_correct_spgs_pure,  # pre-estimate the bn averages before evaluation
-                        n_batches=1,
-                    )
-                scores_match_correct_spgs_pure = self.model.evaluate(
-                    x=val_x_match_correct_spgs_pure,
-                    y=val_y_match_correct_spgs_pure,
-                    verbose=0,
-                )
-
-                if pre_estimate_bn_averages:
+                if estimate_bn_averages_using_random:
                     calculate_accuracy_training_true(
                         self.model,
                         val_x_random,
                         val_y_random,  # pre-estimate the bn averages before evaluation
                         n_batches=1,
                     )
+
+                scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
+                scores_match = self.model.evaluate(
+                    x=val_x_match,
+                    y=val_y_match,
+                    verbose=0,
+                )
+                scores_match_correct_spgs = self.model.evaluate(
+                    x=val_x_match_correct_spgs,
+                    y=val_y_match_correct_spgs,
+                    verbose=0,
+                )
+                scores_match_correct_spgs_pure = self.model.evaluate(
+                    x=val_x_match_correct_spgs_pure,
+                    y=val_y_match_correct_spgs_pure,
+                    verbose=0,
+                )
                 scores_random = self.model.evaluate(
                     x=val_x_random,
                     y=val_y_random,
@@ -1509,55 +1459,24 @@ class CustomCallback(keras.callbacks.Callback):
                 )
 
                 if generate_randomized_validation_datasets:
-                    if pre_estimate_bn_averages:
-                        calculate_accuracy_training_true(
-                            self.model,
-                            val_x_randomized_coords,
-                            val_y_randomized_coords,  # pre-estimate the bn averages before evaluation
-                            n_batches=1,
-                        )
                     scores_randomized_coords = self.model.evaluate(
                         x=val_x_randomized_coords,
                         y=val_y_randomized_coords,
                         verbose=0,
                         batch_size=batch_size,
                     )
-
-                    if pre_estimate_bn_averages:
-                        calculate_accuracy_training_true(
-                            self.model,
-                            val_x_randomized_ref,
-                            val_y_randomized_ref,  # pre-estimate the bn averages before evaluation
-                            n_batches=1,
-                        )
                     scores_randomized_ref = self.model.evaluate(
                         x=val_x_randomized_ref,
                         y=val_y_randomized_ref,
                         verbose=0,
                         batch_size=batch_size,
                     )
-
-                    if pre_estimate_bn_averages:
-                        calculate_accuracy_training_true(
-                            self.model,
-                            val_x_randomized_lattice,
-                            val_y_randomized_lattice,  # pre-estimate the bn averages before evaluation
-                            n_batches=1,
-                        )
                     scores_randomized_lattice = self.model.evaluate(
                         x=val_x_randomized_lattice,
                         y=val_y_randomized_lattice,
                         verbose=0,
                         batch_size=batch_size,
                     )
-
-                    if pre_estimate_bn_averages:
-                        calculate_accuracy_training_true(
-                            self.model,
-                            val_x_randomized_both,
-                            val_y_randomized_both,  # pre-estimate the bn averages before evaluation
-                            n_batches=1,
-                        )
                     scores_randomized_both = self.model.evaluate(
                         x=val_x_randomized_both,
                         y=val_y_randomized_both,
@@ -1566,13 +1485,6 @@ class CustomCallback(keras.callbacks.Callback):
                     )
 
                 if use_statistics_dataset_as_validation:
-                    if pre_estimate_bn_averages:
-                        calculate_accuracy_training_true(
-                            self.model,
-                            statistics_x_match,
-                            statistics_y_match,  # pre-estimate the bn averages before evaluation
-                            n_batches=1,
-                        )
                     scores_statistics = self.model.evaluate(
                         x=statistics_x_match,
                         y=statistics_y_match,
@@ -1603,27 +1515,6 @@ class CustomCallback(keras.callbacks.Callback):
                     tf.summary.scalar(
                         "accuracy match training=True",
                         data=accuracy_match_training_true,
-                        step=epoch,
-                    )
-
-                if cross_test_bn_random_match:
-                    calculate_accuracy_training_true(
-                        self.model,
-                        val_x_random,
-                        val_y_random,  # pre-estimate the bn averages before evaluation
-                        n_batches=1,
-                    )
-                    scores_match_cross = self.model.evaluate(
-                        x=val_x_match,
-                        y=val_y_match,
-                        verbose=0,
-                    )
-                    tf.summary.scalar(
-                        "loss match_cross", data=scores_match_cross[0], step=epoch
-                    )
-                    tf.summary.scalar(
-                        "accuracy match_cross",
-                        data=scores_match_cross[1],
                         step=epoch,
                     )
 
@@ -1726,7 +1617,6 @@ class CustomCallback(keras.callbacks.Callback):
                     "learning_rate", data=self.model.optimizer.lr, step=epoch
                 )
 
-                # TODO: Maybe remove this again
                 mean = np.average(self.model.layers[2].moving_mean.numpy())
                 variance = np.average(self.model.layers[2].moving_variance.numpy())
                 tf.summary.scalar("bn_0_average_means", data=mean, step=epoch)
