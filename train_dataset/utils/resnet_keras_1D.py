@@ -200,6 +200,8 @@ class ResidualBlock(tf.keras.layers.Layer):
         self._activation_fn = keras.layers.Activation(activation)
         self._bn_trainable = bn_trainable
 
+        self.sub_layers = []
+
     def build(self, input_shape):
         if self._use_projection:
             self._shortcut = tf.keras.layers.Conv1D(
@@ -211,17 +213,20 @@ class ResidualBlock(tf.keras.layers.Layer):
                 kernel_regularizer=self._kernel_regularizer,
                 bias_regularizer=self._bias_regularizer,
             )
+            self.sub_layers.append(self._shortcut)
             self._norm0 = self._norm(
                 axis=self._bn_axis,
                 momentum=self._norm_momentum,
                 epsilon=self._norm_epsilon,
                 trainable=self._bn_trainable,
             )
+            self.sub_layers.append(self._norm0)
 
         conv1_padding = "same"
         # explicit padding here is added for centernet
         if self._use_explicit_padding:
             self._pad = keras.layers.ZeroPadding1D(padding=(1,))
+            self.sub_layers.append(self._norm0)
             conv1_padding = "valid"
 
         self._conv1 = tf.keras.layers.Conv1D(
@@ -234,12 +239,14 @@ class ResidualBlock(tf.keras.layers.Layer):
             kernel_regularizer=self._kernel_regularizer,
             bias_regularizer=self._bias_regularizer,
         )
+        self.sub_layers.append(self._conv1)
         self._norm1 = self._norm(
             axis=self._bn_axis,
             momentum=self._norm_momentum,
             epsilon=self._norm_epsilon,
             trainable=self._bn_trainable,
         )
+        self.sub_layers.append(self._norm1)
 
         self._conv2 = tf.keras.layers.Conv1D(
             filters=self._filters,
@@ -251,12 +258,14 @@ class ResidualBlock(tf.keras.layers.Layer):
             kernel_regularizer=self._kernel_regularizer,
             bias_regularizer=self._bias_regularizer,
         )
+        self.sub_layers.append(self._conv2)
         self._norm2 = self._norm(
             axis=self._bn_axis,
             momentum=self._norm_momentum,
             epsilon=self._norm_epsilon,
             trainable=self._bn_trainable,
         )
+        self.sub_layers.append(self._norm2)
 
         super(ResidualBlock, self).build(input_shape)
 
@@ -378,12 +387,15 @@ class BottleneckBlock(tf.keras.layers.Layer):
             self._bn_axis = 1
         self._bn_trainable = bn_trainable
 
+        self.sub_layers = []
+
     def build(self, input_shape):
         if self._use_projection:
             if self._resnetd_shortcut:
                 self._shortcut0 = tf.keras.layers.AveragePooling1D(
                     pool_size=2, strides=self._strides, padding="same"
                 )
+                self.sub_layers.append(self._shortcut0)
                 self._shortcut1 = tf.keras.layers.Conv1D(
                     filters=self._filters * 4,
                     kernel_size=1,
@@ -393,6 +405,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
                     kernel_regularizer=self._kernel_regularizer,
                     bias_regularizer=self._bias_regularizer,
                 )
+                self.sub_layers.append(self._shortcut1)
             else:
                 self._shortcut = tf.keras.layers.Conv1D(
                     filters=self._filters * 4,
@@ -403,6 +416,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
                     kernel_regularizer=self._kernel_regularizer,
                     bias_regularizer=self._bias_regularizer,
                 )
+                self.sub_layers.append(self._shortcut)
 
             self._norm0 = self._norm(
                 axis=self._bn_axis,
@@ -410,6 +424,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
                 epsilon=self._norm_epsilon,
                 trainable=self._bn_trainable,
             )
+            self.sub_layers.append(self._norm0)
 
         self._conv1 = tf.keras.layers.Conv1D(
             filters=self._filters,
@@ -420,13 +435,16 @@ class BottleneckBlock(tf.keras.layers.Layer):
             kernel_regularizer=self._kernel_regularizer,
             bias_regularizer=self._bias_regularizer,
         )
+        self.sub_layers.append(self._conv1)
         self._norm1 = self._norm(
             axis=self._bn_axis,
             momentum=self._norm_momentum,
             epsilon=self._norm_epsilon,
             trainable=self._bn_trainable,
         )
+        self.sub_layers.append(self._norm1)
         self._activation1 = keras.layers.Activation(self._activation)
+        self.sub_layers.append(self._activation1)
 
         self._conv2 = tf.keras.layers.Conv1D(
             filters=self._filters,
@@ -439,13 +457,16 @@ class BottleneckBlock(tf.keras.layers.Layer):
             kernel_regularizer=self._kernel_regularizer,
             bias_regularizer=self._bias_regularizer,
         )
+        self.sub_layers.append(self._conv2)
         self._norm2 = self._norm(
             axis=self._bn_axis,
             momentum=self._norm_momentum,
             epsilon=self._norm_epsilon,
             trainable=self._bn_trainable,
         )
+        self.sub_layers.append(self._norm2)
         self._activation2 = keras.layers.Activation(self._activation)
+        self.sub_layers.append(self._activation2)
 
         self._conv3 = tf.keras.layers.Conv1D(
             filters=self._filters * 4,
@@ -456,15 +477,19 @@ class BottleneckBlock(tf.keras.layers.Layer):
             kernel_regularizer=self._kernel_regularizer,
             bias_regularizer=self._bias_regularizer,
         )
+        self.sub_layers.append(self._conv3)
         self._norm3 = self._norm(
             axis=self._bn_axis,
             momentum=self._norm_momentum,
             epsilon=self._norm_epsilon,
             trainable=self._bn_trainable,
         )
+        self.sub_layers.append(self._norm3)
         self._activation3 = keras.layers.Activation(self._activation)
+        self.sub_layers.append(self._activation3)
 
         self._add = tf.keras.layers.Add()
+        self.sub_layers.append(self._add)
 
         super(BottleneckBlock, self).build(input_shape)
 

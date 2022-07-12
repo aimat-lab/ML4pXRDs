@@ -1390,19 +1390,58 @@ params_txt = (
 log_wait_timings = []
 
 
-def calculate_accuracy_training_true(model, x_data, y_data, batch_size, n_batches=None):
+def change_bn_momentum(model, bn_momentum):
+    """This is quite hacky. But what needs to be done, needs to be done."""
+
+    for layer in model.layers:
+        if "batch_normalization" in layer._name:
+            layer.momentum = bn_momentum
+        if hasattr(layer, "sub_layers"):
+            for sub_layer in layer.sub_layers:
+                if "batch_normalization" in sub_layer._name:
+                    sub_layer.momentum = bn_momentum
+
+
+def calculate_accuracy_training_true(
+    model,
+    x_data,
+    y_data,
+    batch_size,
+    n_batches=None,
+    change_bn_momentum_to=0.0,
+    collect_deltas=False,
+):
+
+    if change_bn_momentum_to != 0.0:
+        change_bn_momentum(model, 0.0)  # First, set it to zero
 
     total_correct = 0
+
+    if collect_deltas:
+        deltas = []
 
     if n_batches is None:
         n_batches = int(x_data.shape[0] / batch_size)
 
     for i in range(0, n_batches):  # only use actually full batches here for testing
 
+        if (
+            i == 1 and change_bn_momentum_to != 0.0
+        ):  # after the first batch has been processed
+            change_bn_momentum(model, change_bn_momentum_to)
+
+        if collect_deltas:
+            before = model.layers[2].moving_mean.numpy()
+
         prediction = model(
             x_data[i * batch_size : (i + 1) * batch_size, :, :],
             training=True,
         )  # run this in training mode
+
+        if collect_deltas:
+            deltas.append(
+                np.average(np.abs(model.layers[2].moving_mean.numpy() - before))
+            )
 
         prediction = np.argmax(prediction, axis=1)
 
@@ -1413,7 +1452,11 @@ def calculate_accuracy_training_true(model, x_data, y_data, batch_size, n_batche
         total_correct += len(rightly_indices)
 
     accuracy = total_correct / (n_batches * batch_size)
-    return accuracy
+
+    if collect_deltas:
+        return accuracy, deltas
+    else:
+        return accuracy
 
 
 class CustomCallback(keras.callbacks.Callback):
@@ -1431,13 +1474,22 @@ class CustomCallback(keras.callbacks.Callback):
                 metric_names = [metric.name for metric in self.model.metrics]
 
                 if estimate_bn_averages_using_random:
-                    calculate_accuracy_training_true(
+
+                    # We need ~ 1000 samples for a good average
+                    n_batches = int(np.ceil(870 / batch_size))
+
+                    deltas = calculate_accuracy_training_true(
                         self.model,
                         val_x_random,
                         val_y_random,  # pre-estimate the bn averages before evaluation
-                        870,
-                        n_batches=1,
+                        batch_size=batch_size,
+                        n_batches=n_batches,
+                        change_bn_momentum_to=1 - (1 / n_batches),
+                        collect_deltas=True,  # TODO: Change this back
                     )
+
+                    for i, delta in enumerate(deltas):  # TODO: Remove this again
+                        tf.summary.scalar(f"delta {i}", data=delta, step=epoch)
 
                 scores_all = self.model.evaluate(
                     x=val_x_all[0:max_NO_samples_to_test_on],
