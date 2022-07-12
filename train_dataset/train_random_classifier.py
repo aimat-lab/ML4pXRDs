@@ -1478,7 +1478,7 @@ class CustomCallback(keras.callbacks.Callback):
                     # We need ~ 1000 samples for a good average
                     n_batches = int(np.ceil(870 / batch_size))
 
-                    deltas = calculate_accuracy_training_true(
+                    accuracy, deltas = calculate_accuracy_training_true(
                         self.model,
                         val_x_random,
                         val_y_random,  # pre-estimate the bn averages before evaluation
