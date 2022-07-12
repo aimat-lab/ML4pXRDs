@@ -136,6 +136,7 @@ batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn curre
 estimate_bn_averages_using_random = True  # instead of the moving averages
 calculate_random_accuracy_using_training_true = False
 calculate_match_accuracy_using_training_true = False
+max_NO_samples_to_test_on = 10000  # this should be plenty; this is only during the run.
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -1436,58 +1437,62 @@ class CustomCallback(keras.callbacks.Callback):
                         n_batches=1,
                     )
 
-                scores_all = self.model.evaluate(x=val_x_all, y=val_y_all, verbose=0)
+                scores_all = self.model.evaluate(
+                    x=val_x_all[0:max_NO_samples_to_test_on],
+                    y=val_y_all[0:max_NO_samples_to_test_on],
+                    verbose=0,
+                )
                 scores_match = self.model.evaluate(
-                    x=val_x_match,
-                    y=val_y_match,
+                    x=val_x_match[0:max_NO_samples_to_test_on],
+                    y=val_y_match[0:max_NO_samples_to_test_on],
                     verbose=0,
                 )
                 scores_match_correct_spgs = self.model.evaluate(
-                    x=val_x_match_correct_spgs,
-                    y=val_y_match_correct_spgs,
+                    x=val_x_match_correct_spgs[0:max_NO_samples_to_test_on],
+                    y=val_y_match_correct_spgs[0:max_NO_samples_to_test_on],
                     verbose=0,
                 )
                 scores_match_correct_spgs_pure = self.model.evaluate(
-                    x=val_x_match_correct_spgs_pure,
-                    y=val_y_match_correct_spgs_pure,
+                    x=val_x_match_correct_spgs_pure[0:max_NO_samples_to_test_on],
+                    y=val_y_match_correct_spgs_pure[0:max_NO_samples_to_test_on],
                     verbose=0,
                 )
                 scores_random = self.model.evaluate(
-                    x=val_x_random,
-                    y=val_y_random,
+                    x=val_x_random[0:max_NO_samples_to_test_on],
+                    y=val_y_random[0:max_NO_samples_to_test_on],
                     verbose=0,
                 )
 
                 if generate_randomized_validation_datasets:
                     scores_randomized_coords = self.model.evaluate(
-                        x=val_x_randomized_coords,
-                        y=val_y_randomized_coords,
+                        x=val_x_randomized_coords[0:max_NO_samples_to_test_on],
+                        y=val_y_randomized_coords[0:max_NO_samples_to_test_on],
                         verbose=0,
                         batch_size=batch_size,
                     )
                     scores_randomized_ref = self.model.evaluate(
-                        x=val_x_randomized_ref,
-                        y=val_y_randomized_ref,
+                        x=val_x_randomized_ref[0:max_NO_samples_to_test_on],
+                        y=val_y_randomized_ref[0:max_NO_samples_to_test_on],
                         verbose=0,
                         batch_size=batch_size,
                     )
                     scores_randomized_lattice = self.model.evaluate(
-                        x=val_x_randomized_lattice,
-                        y=val_y_randomized_lattice,
+                        x=val_x_randomized_lattice[0:max_NO_samples_to_test_on],
+                        y=val_y_randomized_lattice[0:max_NO_samples_to_test_on],
                         verbose=0,
                         batch_size=batch_size,
                     )
                     scores_randomized_both = self.model.evaluate(
-                        x=val_x_randomized_both,
-                        y=val_y_randomized_both,
+                        x=val_x_randomized_both[0:max_NO_samples_to_test_on],
+                        y=val_y_randomized_both[0:max_NO_samples_to_test_on],
                         verbose=0,
                         batch_size=batch_size,
                     )
 
                 if use_statistics_dataset_as_validation:
                     scores_statistics = self.model.evaluate(
-                        x=statistics_x_match,
-                        y=statistics_y_match,
+                        x=statistics_x_match[0:max_NO_samples_to_test_on],
+                        y=statistics_y_match[0:max_NO_samples_to_test_on],
                         verbose=0,
                         batch_size=batch_size,
                     )
