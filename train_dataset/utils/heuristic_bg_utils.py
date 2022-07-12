@@ -173,7 +173,24 @@ def update_wave(
     fig.canvas.draw_idle()
 
 
-def plot_heuristic_fit(xs, ys):
+def plot_heuristic_fit(xs, ys, current_parameters):
+
+    if current_parameters is not None:
+        (
+            rolling_ball_sphere_x,
+            rolling_ball_sphere_y,
+            ratio_exponent,
+            lambda_exponent,
+            wavelet_num_std,
+            wavelet_min_length,
+        ) = current_parameters
+    else:
+        rolling_ball_sphere_x = default_rolling_ball_sphere_x
+        rolling_ball_sphere_y = default_rolling_ball_sphere_y
+        ratio_exponent = default_ratio_exponent
+        lambda_exponent = default_lambda_exponent
+        wavelet_num_std = default_wavelet_num_std
+        wavelet_min_length = default_wavelet_min_length
 
     fig = plt.gcf()
     ax = plt.gca()
@@ -189,12 +206,12 @@ def plot_heuristic_fit(xs, ys):
             bottom_1 = 0.30
             min_1 = 0
             max_1 = 100
-            valinit_1 = default_rolling_ball_sphere_x
+            valinit_1 = rolling_ball_sphere_x
 
             bottom_2 = 0.24
             min_2 = 0
             max_2 = 3
-            valinit_2 = default_rolling_ball_sphere_y
+            valinit_2 = rolling_ball_sphere_y
 
             valfmt = "%1.3f"
 
@@ -202,12 +219,12 @@ def plot_heuristic_fit(xs, ys):
             bottom_1 = 0.18
             min_1 = -3
             max_1 = -1
-            valinit_1 = default_ratio_exponent
+            valinit_1 = ratio_exponent
 
             bottom_2 = 0.12
             min_2 = 2
             max_2 = 9
-            valinit_2 = default_lambda_exponent
+            valinit_2 = lambda_exponent
 
             valfmt = "%E"
 
@@ -217,12 +234,12 @@ def plot_heuristic_fit(xs, ys):
             bottom_1 = 0.06
             min_1 = 0
             max_1 = 5
-            valinit_1 = default_wavelet_num_std
+            valinit_1 = wavelet_num_std
 
             bottom_2 = 0.00
             min_2 = 2
             max_2 = 100
-            valinit_2 = default_wavelet_min_length
+            valinit_2 = wavelet_min_length
 
             valfmt = "%1.3f"
 

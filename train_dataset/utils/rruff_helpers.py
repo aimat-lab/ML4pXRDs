@@ -220,7 +220,7 @@ def fit_function(
 fit_function_jit = jit(fit_function)
 
 
-def fit_diffractogram(x, y, angles, intensities):
+def fit_diffractogram(x, y, angles, intensities, do_plot=True):
     def fit_function_wrapped(
         xs,
         a0,
@@ -290,9 +290,10 @@ def fit_diffractogram(x, y, angles, intensities):
         current_bestfits.append(angle)
         current_bestfits.append(intensity)
 
-    plt.plot(x, y, label="Original")
-    for angle in angles:
-        plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
+    if do_plot:
+        plt.plot(x, y, label="Original")
+        for angle in angles:
+            plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
 
     initial_ys = fit_function_wrapped(
         x,
@@ -333,12 +334,13 @@ def fit_diffractogram(x, y, angles, intensities):
 
     current_bestfits[11] /= scaler
 
-    plt.plot(
-        x,
-        initial_ys,
-        label="Initial",
-    )
-    plt.show()
+    if do_plot:
+        plt.plot(
+            x,
+            initial_ys,
+            label="Initial",
+        )
+        plt.show()
 
     for strategy_item in strategy:
 
@@ -460,24 +462,25 @@ def fit_diffractogram(x, y, angles, intensities):
 
         # Only plot after all peaks were fitted separately
 
-        plt.plot(x, y, label="Original")
-        plt.plot(x, result_ys, label="Fitted")
+        if do_plot:
+            plt.plot(x, y, label="Original")
+            plt.plot(x, result_ys, label="Fitted")
 
-        plt.plot(
-            x,
-            current_bestfits[0]
-            + current_bestfits[1] * x
-            + current_bestfits[2] * x**2
-            + current_bestfits[3] * x**3
-            + current_bestfits[4] * x**4
-            + current_bestfits[5] * x**5,
-            label="BG",
-        )
+            plt.plot(
+                x,
+                current_bestfits[0]
+                + current_bestfits[1] * x
+                + current_bestfits[2] * x**2
+                + current_bestfits[3] * x**3
+                + current_bestfits[4] * x**4
+                + current_bestfits[5] * x**5,
+                label="BG",
+            )
 
-        plt.legend()
-        plt.show()
+            plt.legend()
+            plt.show()
 
-    return params
+    return params, score
 
 
 def dif_parser(path):

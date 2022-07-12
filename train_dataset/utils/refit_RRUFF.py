@@ -28,6 +28,9 @@ counter_dif = 0
 
 parameter_results = []
 
+# TODO: Change back
+raw_files = raw_files[0:30]
+
 for i, raw_file in enumerate(raw_files):
 
     print(f"{(i+1)/len(raw_files)*100:.2f}% processed")
@@ -87,16 +90,18 @@ for i, raw_file in enumerate(raw_files):
         # plt.legend()
         # plt.show()
 
-        fit_parameters = fit_diffractogram(
+        fit_parameters, score = fit_diffractogram(
             raw_xys[-1][:, 0],
             raw_xys[-1][:, 1] / np.max(raw_xys[-1][:, 1]),
             # processed_xy[:,0],
             # processed_xy[:,1] / np.max(processed_xy[:,1]),
             angles[-1],
             intensities[-1] / np.max(intensities[-1]),
+            do_plot=False,
         )
 
-        parameter_results.append((raw_file, fit_parameters))
+        if score > 0.8:
+            parameter_results.append((raw_file, fit_parameters))
 
     else:
 

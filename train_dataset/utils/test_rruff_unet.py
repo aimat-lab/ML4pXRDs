@@ -1,5 +1,3 @@
-from regex import W
-from soupsieve import select
 import tensorflow.keras as keras
 import os
 
@@ -9,43 +7,34 @@ import matplotlib.pyplot as plt
 import sys
 
 sys.path.append("../")
-import generate_background_noise_utils
-from datetime import datetime
 from glob import glob
 import pickle
 from scipy.interpolate import CubicSpline
-
-from pyxtal.symmetry import Group
 import pickle
-
-from scipy.signal import savgol_filter
-
 from train_dataset.utils.rruff_helpers import *
 from train_dataset.utils.heuristic_bg_utils import *
 
 
-select_which_to_use_for_testing = False
-select_heuristic_parameters = True
+mode = "compare_UNet_heuristic"  # also possible: "select_which_to_use_for_testing" and "select_heuristic_parameters"
+
 use_only_selected = True
+
+compare_UNet_heuristic = True
+test_classification_accuracy = not compare_UNet_heuristic
+do_unet_preprocessing = True  # only relevant when testing classification accuracy
 
 do_plot = False
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
-# classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/24-06-2022_10-54-18/"
-# classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/19-06-2022_10-15-26/"
-# classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/26-05-2022_12-46-21/"
 classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/29-05-2022_22-12-56/"  # direct run
-# classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/28-05-2022_17-07-55/"  # direct run
-# classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/30-05-2022_13-43-21/" # no save file :(
 classification_model_path = classification_model_base + "final"
-do_unet_preprocessing = True
 
-pattern_x = np.arange(0, 90.24, 0.02)
-start_x = pattern_x[0]
-end_x = pattern_x[-1]
-N = len(pattern_x)  # UNet works without error for N ~ 2^model_depth
+pattern_x_unet = np.arange(0, 90.24, 0.02)
+start_x_unet = pattern_x_unet[0]
+end_x_unet = pattern_x_unet[-1]
+N_unet = len(pattern_x_unet)  # UNet works without error for N ~ 2^model_depth
 
-print(pattern_x)
+print(pattern_x_unet)
 
 model_unet = keras.models.load_model("../unet/" + unet_model_path + "/final")
 model_classification = keras.models.load_model(classification_model_path)
@@ -53,24 +42,26 @@ model_classification = keras.models.load_model(classification_model_path)
 with open(classification_model_base + "spgs.pickle", "rb") as file:
     spgs = pickle.load(file)
 
-if not use_only_selected:
+if mode == "select_which_to_use_for_testing":
     raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
+    raw_files_keep = []
 else:
     with open("to_test_on.pickle", "rb") as file:
         raw_files = pickle.load(file)
 
-if select_which_to_use_for_testing:
-    raw_files_keep = []
+# TODO: Read the current heuristic parameters from file
 
 patterns_counter = 0
 correct_counter = 0
 correct_top5_counter = 0
 
+current_parameters = None
+
 for i, raw_file in enumerate(raw_files):
 
     print(f"{i} of {len(raw_files)}")
 
-    if not select_which_to_use_for_testing and do_plot:
+    if mode != "select_which_to_use_for_testing" and do_plot:
         plt.figure()
     else:
         plt.clf()
@@ -94,10 +85,10 @@ for i, raw_file in enumerate(raw_files):
         continue
 
     # Model:
-    pattern_x = np.arange(0, 90.24, 0.02)
-    start_x = pattern_x[0]
-    end_x = pattern_x[-1]
-    N = len(pattern_x)  # UNet works without error for N ~ 2^model_depth
+    pattern_x_unet = np.arange(0, 90.24, 0.02)
+    start_x_unet = pattern_x_unet[0]
+    end_x_unet = pattern_x_unet[-1]
+    N_unet = len(pattern_x_unet)  # UNet works without error for N ~ 2^model_depth
 
     x_test = raw_xy[:, 0]
     y_test = raw_xy[:, 1]
@@ -131,7 +122,7 @@ for i, raw_file in enumerate(raw_files):
 
     dx = x_test[1] - x_test[0]
     if abs(dx - 0.01) < 0.0000001:  # allow some tollerance
-        if do_unet_preprocessing:
+        if do_unet_preprocessing or compare_UNet_heuristic:
             x_test = x_test[::2]
             y_test = y_test[::2]
     elif abs(dx - 0.02) < 0.0000001:
@@ -141,7 +132,9 @@ for i, raw_file in enumerate(raw_files):
         print(f"Skipping pattern with dx={dx}.")
         continue
 
-    if not do_unet_preprocessing:
+    if (
+        not do_unet_preprocessing and not compare_UNet_heuristic
+    ):  # both need fitting dimensions for UNet
         dx = 0.01
         start_angle = 5
         end_angle = 90
@@ -170,39 +163,56 @@ for i, raw_file in enumerate(raw_files):
 
     # print(x_test[-300:])
 
-    if (do_unet_preprocessing and len(x_test) != 4512) or (
-        (not do_unet_preprocessing) and len(x_test) != 8501
+    if ((do_unet_preprocessing or compare_UNet_heuristic) and len(x_test) != 4512) or (
+        (not do_unet_preprocessing and not compare_UNet_heuristic)
+        and len(x_test) != 8501
     ):
         print("Skipping pattern due to wrong dimensions of xs.")
         continue
 
-    if select_heuristic_parameters:
+    if mode == "select_heuristic_parameters":
+
+        # TODO: Add option to fit to first X (=10?) patterns
 
         plt.plot(x_test, y_test)
-        new_parameters = plot_heuristic_fit(x_test, y_test)
+        current_parameters = plot_heuristic_fit(x_test, y_test)
 
         continue
 
-    if not select_which_to_use_for_testing and do_unet_preprocessing:
+    # TODO: Keep this here
+    if not select_which_to_use_for_testing and (
+        do_unet_preprocessing or compare_UNet_heuristic
+    ):
         predictions = model_unet.predict(np.expand_dims(np.expand_dims(y_test, 0), -1))
+
+    ##### TODO: Move this stuff down
+    # TODO: Continue downwards from here
 
     if do_plot:
         plt.xlabel(r"$2 \theta$")
         plt.ylabel("Intensity")
 
-    if not select_which_to_use_for_testing and do_unet_preprocessing and do_plot:
-        plt.plot(pattern_x, predictions[0, :, 0], label="Prediction")
+    if (
+        not select_which_to_use_for_testing
+        and (do_unet_preprocessing or compare_UNet_heuristic)
+        and do_plot
+    ):
+        plt.plot(pattern_x_unet, predictions[0, :, 0], label="Prediction")
 
-    if do_plot and do_unet_preprocessing:
+    if do_plot and (do_unet_preprocessing or compare_UNet_heuristic):
         plt.plot(
-            pattern_x,
+            pattern_x_unet,
             y_test,
             label="UNet Input pattern",
         )
 
-    if not select_which_to_use_for_testing and do_unet_preprocessing and do_plot:
+    if (
+        not select_which_to_use_for_testing
+        and (do_unet_preprocessing or compare_UNet_heuristic)
+        and do_plot
+    ):
         plt.plot(
-            pattern_x,
+            pattern_x_unet,
             y_test - predictions[0, :, 0],
             label="Prediced background and noise",
             linestyle="dotted",
@@ -217,56 +227,68 @@ for i, raw_file in enumerate(raw_files):
     #    print(wavelength)
     #    exit()
 
-    if do_unet_preprocessing:
+    if do_unet_preprocessing or compare_UNet_heuristic:
         corrected_pattern = predictions[0, :, 0]
     # Dimensions of this: np.arange(0, 90.24, 0.02) (pattern_x)
 
-    classification_pattern_x = np.linspace(5, 90, 8501)
-    if do_unet_preprocessing:
-        # Needed for classification:
+    ##########
 
-        f = CubicSpline(pattern_x, corrected_pattern)
+    if test_classification_accuracy:
 
-        y_scaled_up = f(classification_pattern_x)
+        classification_pattern_x = np.linspace(5, 90, 8501)
+        if do_unet_preprocessing:
+            # Needed for classification:
 
-    else:
+            f = CubicSpline(pattern_x_unet, corrected_pattern)
 
-        y_scaled_up = y_test
+            y_scaled_up = f(classification_pattern_x)
 
-    # y_scaled_up = savgol_filter(y_scaled_up, 19, 3)
-    y_scaled_up -= np.min(y_scaled_up)
-    y_scaled_up = y_scaled_up / np.max(y_scaled_up)
+        else:
 
-    # y_scaled_up[y_scaled_up < 0.002] = 0
-    #
-    # y_scaled_up = savgol_filter(y_scaled_up, 13, 3)
+            y_scaled_up = y_test
 
-    if True and do_plot:
-        plt.plot(classification_pattern_x, y_scaled_up, label="Scaled up")
+        # y_scaled_up = savgol_filter(y_scaled_up, 19, 3)
+        y_scaled_up -= np.min(y_scaled_up)
+        y_scaled_up = y_scaled_up / np.max(y_scaled_up)
 
-    if do_plot:
-        plt.plot(pattern_x, [0] * len(pattern_x))
+        # y_scaled_up[y_scaled_up < 0.002] = 0
+        #
+        # y_scaled_up = savgol_filter(y_scaled_up, 13, 3)
 
-    predictions = model_classification.predict(np.expand_dims([y_scaled_up], axis=2))[
-        0, :
-    ]
+        if True and do_plot:
+            plt.plot(classification_pattern_x, y_scaled_up, label="Scaled up")
 
-    top_5_predictions_indices = np.flip(np.argsort(predictions)[-5:])
+        if do_plot:
+            plt.plot(pattern_x_unet, [0] * len(pattern_x_unet))
 
-    predicted_spgs = [spgs[i] for i in top_5_predictions_indices]
+        predictions = model_classification.predict(
+            np.expand_dims([y_scaled_up], axis=2)
+        )[0, :]
 
-    if do_plot:
-        plt.legend(title=f"Predicted: {predicted_spgs}, true: {spg_number}")
+        top_5_predictions_indices = np.flip(np.argsort(predictions)[-5:])
 
-    patterns_counter += 1
+        predicted_spgs = [spgs[i] for i in top_5_predictions_indices]
 
-    if predicted_spgs[0] == spg_number:
-        correct_counter += 1
+        if do_plot:
+            plt.legend(title=f"Predicted: {predicted_spgs}, true: {spg_number}")
 
-    if spg_number in predicted_spgs:
-        correct_top5_counter += 1
+        if predicted_spgs[0] == spg_number:
+            correct_counter += 1
+
+        if spg_number in predicted_spgs:
+            correct_top5_counter += 1
+
+    else:  # compare heuristic and UNet
+
+        pass
+
+        # TODO: Run heuristic algos on this (using the parameters)
+        # TODO: Create the real background function from the parameters (loaded from file previously)
+        # TODO: Calculate mean absolute error between UNet output and ground truth vs. heuristic output vs. UNet output
 
     if select_which_to_use_for_testing:
+
+        plt.plot(x_test, y_test)
 
         plt.pause(0.1)
 
@@ -280,9 +302,16 @@ for i, raw_file in enumerate(raw_files):
         if do_plot:
             plt.show()
 
+    patterns_counter += 1
+
 if select_which_to_use_for_testing:
     with open("to_test_on.pickle", "wb") as file:
         pickle.dump(raw_files_keep, file)
+
+if select_heuristic_parameters:
+    print("Final heuristic parameters: ", current_parameters)
+    with open("final_heuristic_parameters.pickle", "wb") as file:
+        pickle.dump(current_parameters, file)
 
 print(f"Total number of patterns tested on: {patterns_counter}")
 print(f"Correct: {correct_counter} ({correct_counter / patterns_counter * 100} %)")
