@@ -155,7 +155,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False
+use_distributed_strategy = True
 
 uniformly_distributed = False
 
