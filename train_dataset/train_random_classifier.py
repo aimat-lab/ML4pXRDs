@@ -134,8 +134,8 @@ optimizer = "Adam"  # not used for ViT
 use_reduce_lr_on_plateau = False
 batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
 estimate_bn_averages_using_random = True  # instead of the moving averages
-calculate_random_accuracy_using_training_true = True
-calculate_match_accuracy_using_training_true = True
+calculate_random_accuracy_using_training_true = False
+calculate_match_accuracy_using_training_true = False
 
 use_denseness_factors_density = True
 use_conditional_density = True
