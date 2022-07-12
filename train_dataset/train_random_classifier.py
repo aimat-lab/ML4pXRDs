@@ -1557,7 +1557,7 @@ class CustomCallback(keras.callbacks.Callback):
                     calculate_random_accuracy_using_training_true
                 ):  # for debugging of batchnormalization
                     accuracy_random_training_true = calculate_accuracy_training_true(
-                        self.model, val_x_random, val_y_random
+                        self.model, val_x_random, val_y_random, batch_size=batch_size
                     )
                     tf.summary.scalar(
                         "accuracy random training=True",
@@ -1569,7 +1569,7 @@ class CustomCallback(keras.callbacks.Callback):
                     calculate_match_accuracy_using_training_true
                 ):  # for debugging of batchnormalization
                     accuracy_match_training_true = calculate_accuracy_training_true(
-                        self.model, val_x_match, val_y_match
+                        self.model, val_x_match, val_y_match, batch_size=batch_size
                     )
                     tf.summary.scalar(
                         "accuracy match training=True",
