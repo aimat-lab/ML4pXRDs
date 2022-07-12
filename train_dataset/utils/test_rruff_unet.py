@@ -14,8 +14,7 @@ import pickle
 from train_dataset.utils.rruff_helpers import *
 from train_dataset.utils.heuristic_bg_utils import *
 
-
-mode = "compare_UNet_heuristic"  # also possible: "select_which_to_use_for_testing" and "select_heuristic_parameters"
+mode = "compare_UNet_heuristic"  # possible: "select_which_to_use_for_testing", "select_heuristic_parameters", "test_classification_accuracy", and "compare_UNet_heuristic"
 
 use_only_selected = True
 
@@ -49,7 +48,8 @@ else:
     with open("to_test_on.pickle", "rb") as file:
         raw_files = pickle.load(file)
 
-# TODO: Read the current heuristic parameters from file
+with open("rruff_refits.pickle", "rb") as file:
+    parameter_results = pickle.load(file)
 
 patterns_counter = 0
 correct_counter = 0

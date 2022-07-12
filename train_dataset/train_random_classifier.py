@@ -1390,7 +1390,7 @@ params_txt = (
 log_wait_timings = []
 
 
-def calculate_accuracy_training_true(model, x_data, y_data, n_batches=None):
+def calculate_accuracy_training_true(model, x_data, y_data, batch_size, n_batches=None):
 
     total_correct = 0
 
@@ -1435,6 +1435,7 @@ class CustomCallback(keras.callbacks.Callback):
                         self.model,
                         val_x_random,
                         val_y_random,  # pre-estimate the bn averages before evaluation
+                        870,
                         n_batches=1,
                     )
 
