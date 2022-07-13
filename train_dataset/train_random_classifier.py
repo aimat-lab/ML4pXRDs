@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_10_batch_size_870_lr_0.001_group_norm"
+tag = "all-spgs-random-resnet_50_batch_size_145_lr_0.001_group_norm"
 description = ""
 
 if len(sys.argv) > 1:
@@ -67,14 +67,14 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 # TODO: Change back
-batches_per_epoch = 150  # * 6  # doesn't count for direct training
+batches_per_epoch = 150 * 6  # doesn't count for direct training
 NO_epochs = 1000
 
 # For ViT:
 # structures_per_spg = 1
 # NO_corn_sizes = 1
 
-structures_per_spg = 6  # for all spgs
+structures_per_spg = 1  # for all spgs
 
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
@@ -136,8 +136,8 @@ use_group_norm = True  # TODO: Maybe change back
 use_reduce_lr_on_plateau = False
 batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
 estimate_bn_averages_using_random = False  # instead of the moving averages # TODO: Change back; this setting right now is for group_norm
-calculate_random_accuracy_using_training_true = True
-calculate_match_accuracy_using_training_true = True
+calculate_random_accuracy_using_training_true = False
+calculate_match_accuracy_using_training_true = False
 max_NO_samples_to_test_on = 10000  # this should be plenty; this is only during the run.
 log_bn_averages = False
 
@@ -1886,7 +1886,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    disable_batchnorm=False,
         # )
 
-        # Resnet-10
+        # Resnet-50
         model = build_model_resnet_i(
             None,
             N,
@@ -1895,7 +1895,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             momentum=momentum,
             optimizer=optimizer,
             batchnorm_momentum=batchnorm_momentum,
-            i=10,
+            i=50,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
         )
