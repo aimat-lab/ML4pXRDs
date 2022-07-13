@@ -237,7 +237,7 @@ class ResidualBlock(tf.keras.layers.Layer):
         # explicit padding here is added for centernet
         if self._use_explicit_padding:
             self._pad = keras.layers.ZeroPadding1D(padding=(1,))
-            self.sub_layers.append(self._norm0)
+            self.sub_layers.append(self._pad)
             conv1_padding = "valid"
 
         self._conv1 = tf.keras.layers.Conv1D(
@@ -307,6 +307,7 @@ class ResidualBlock(tf.keras.layers.Layer):
             "bn_trainable": self._bn_trainable,
             "square_kernel_size_and_stride": self._square_kernel_size_and_stride,
             "disable_batchnorm": self._disable_batchnorm,
+            "use_group_norm": self._use_group_norm,
         }
         base_config = super(ResidualBlock, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -555,6 +556,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
             "bn_trainable": self._bn_trainable,
             "square_kernel_size_and_stride": self._square_kernel_size_and_stride,
             "disable_batchnorm": self._disable_batchnorm,
+            "use_group_norm": self._use_group_norm,
         }
         base_config = super(BottleneckBlock, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -909,6 +911,7 @@ class ResNet(tf.keras.Model):
             "bn_trainable": self._bn_trainable,
             "square_kernel_size_and_stride": self._square_kernel_size_and_stride,
             "disable_batchnorm": self._disable_batchnorm,
+            "use_group_norm": self._use_group_norm,
         }
         return config_dict
 

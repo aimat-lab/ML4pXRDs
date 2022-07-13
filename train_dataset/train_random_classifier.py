@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_10_batch_size_870_lr_0.001"
+tag = "all-spgs-random-resnet_10_batch_size_870_lr_0.001_group_norm"
 description = ""
 
 if len(sys.argv) > 1:
@@ -132,9 +132,12 @@ learning_rate = 0.001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
+use_group_norm = True  # TODO: Maybe change back
 use_reduce_lr_on_plateau = False
 batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
-estimate_bn_averages_using_random = True  # instead of the moving averages
+estimate_bn_averages_using_random = (
+    False  # instead of the moving averages # TODO: Change back; this setting right now is for group_norm
+)
 calculate_random_accuracy_using_training_true = True
 calculate_match_accuracy_using_training_true = True
 max_NO_samples_to_test_on = 10000  # this should be plenty; this is only during the run.
@@ -1892,6 +1895,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             batchnorm_momentum=batchnorm_momentum,
             i=10,
             disable_batchnorm=False,
+            use_group_norm=use_group_norm,
         )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
