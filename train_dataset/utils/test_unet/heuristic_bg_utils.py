@@ -32,7 +32,7 @@ default_wavelet_min_length = 2.0
 # the following function is taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
 def baseline_arPLS(y, ratio=-2.37287, lam=7.311915, niter=100, full_output=False):
 
-    print(f"Ratio {ratio:.5E} lam {lam:.5E}")
+    # print(f"Ratio {ratio:.5E} lam {lam:.5E}")
 
     L = len(y)
 

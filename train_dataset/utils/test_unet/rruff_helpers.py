@@ -634,8 +634,11 @@ def get_rruff_patterns(
 ):
 
     if only_refitted_patterns:
-        with open("to_test_on.pickle", "rb") as file:
-            raw_files = pickle.load(file)
+        with open("rruff_refits.pickle", "rb") as file:
+            parameter_results = pickle.load(file)
+            raw_files = [
+                "../" + item[0] for item in parameter_results
+            ]  # TODO: Change back later
     else:
         raw_files = glob("../../RRUFF_data/XY_RAW/*.txt")
 
