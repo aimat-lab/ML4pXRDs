@@ -1,15 +1,10 @@
 import numpy as np
-from scipy.optimize import curve_fit
-from functools import partial
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 from lmfit import Model
 from pyxtal.symmetry import Group
 from lmfit import Parameters
-
-from jax import grad
 from jax import jacrev
-
 import jax.numpy as jnp
 from jax import jit
 import pickle
@@ -32,7 +27,6 @@ def fn_H(theta, U, V, W):
         + W
     )
 
-    # return np.nan_to_num(np.sqrt(H_squared)) + 0.0001 # TODO: Changed
     return jnp.sqrt(H_squared)
 
 
@@ -270,7 +264,6 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
     strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
     use_extended_synchrotron_range = False
 
-    # TODO: Add eta here, too!
     current_bestfits = [
         0.0,  # a0
         0.0,  # a1
@@ -309,30 +302,6 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
     )
     scaler = np.max(initial_ys)
     initial_ys /= scaler
-
-    if False:
-
-        # TODO: rather try to use jit for this
-        # TODO: rather try to do this on the GPU
-
-        # test = jit(fit_function_wrapped)
-
-        gradient = jacrev(fit_function_wrapped, argnums=range(1, 13))
-        # gradient = jacrev(test, argnums=range(1, 13))
-
-        for i in range(0, 10):
-            test_grad = gradient(
-                x,
-                *current_bestfits[:15],
-                **dict(
-                    zip(
-                        [str(item) for item in range(len(current_bestfits[15:]))],
-                        current_bestfits[15:],
-                    )
-                ),
-            )
-
-        print(test_grad)
 
     current_bestfits[11] /= scaler
 
@@ -657,14 +626,18 @@ def dif_parser(path):
 
 
 def get_rruff_patterns(
-    reduced_resolution=True, only_refitted_patterns=True, only_if_dif_exists=False
+    only_refitted_patterns=True,
+    only_if_dif_exists=False,
+    start_angle=0,
+    end_angle=90.24,
+    reduced_resolution=True,
 ):
 
     if only_refitted_patterns:
         with open("to_test_on.pickle", "rb") as file:
             raw_files = pickle.load(file)
     else:
-        raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
+        raw_files = glob("../../RRUFF_data/XY_RAW/*.txt")
 
     xs = []
     ys = []
@@ -675,30 +648,21 @@ def get_rruff_patterns(
         raw_filename = os.path.basename(raw_file)
         raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
 
-        dif_file = dif_file[0]
-
         if len(raw_xy) == 0:
             print("Skipped empty pattern.")
             continue
-
-        # Model:
-        pattern_x_unet = np.arange(0, 90.24, 0.02)
-        start_x_unet = pattern_x_unet[0]
-        end_x_unet = pattern_x_unet[-1]
-        N_unet = len(pattern_x_unet)  # UNet works without error for N ~ 2^model_depth
 
         x_test = raw_xy[:, 0]
         y_test = raw_xy[:, 1]
 
         # Remove nans:
         not_nan_indices = np.where(~np.isnan(x_test))[0]
+        x_test = x_test[not_nan_indices]
+        y_test = y_test[not_nan_indices]
 
         # nan_indices = np.where(np.isnan(x_test))[0] # This only happens for the first three indices for some of the patterns; so this is fine
         # if len(nan_indices > 0):
         #    print()
-
-        x_test = x_test[not_nan_indices]
-        y_test = y_test[not_nan_indices]
 
         not_nan_indices = np.where(~np.isnan(y_test))[0]
 
@@ -710,41 +674,30 @@ def get_rruff_patterns(
         y_test = y_test[not_nan_indices]
 
         if not min(abs((x_test[0] % 0.02) - 0.02), abs(x_test[0] % 0.02)) < 0.0000001:
-            print(f"Skipping pattern due to different x-steps.")
+            print(f"Skipping pattern due to different x-steps (shifted).")
             continue
 
         if not np.all(np.diff(x_test) >= 0):  # not ascending
-            print("Skipped pattern, inconsistent x axis.")
+            print("Skipped pattern, inconsistent x axis (not ascending).")
             continue
 
         dx = x_test[1] - x_test[0]
         if abs(dx - 0.01) < 0.0000001:  # allow some tollerance
-            if do_unet_preprocessing or compare_UNet_heuristic:
+            if reduced_resolution:
                 x_test = x_test[::2]
                 y_test = y_test[::2]
         elif abs(dx - 0.02) < 0.0000001:
-            print("")
-            pass
+            if not reduced_resolution:  # full resolution not available
+                continue
         else:
             print(f"Skipping pattern with dx={dx}.")
             continue
-
-        if (
-            not do_unet_preprocessing and not compare_UNet_heuristic
-        ):  # both need fitting dimensions for UNet
-            dx = 0.01
-            start_angle = 5
-            end_angle = 90
-        else:
-            dx = 0.02
-            start_angle = 0
-            end_angle = 90.24
 
         y_test = np.array(y_test)
         y_test -= min(y_test)
         y_test = y_test / np.max(y_test)
 
-        # For now don't use those:
+        # For now, don't use those:
         if x_test[0] > 5.0 or x_test[-1] < 90.0:
             continue
 
@@ -762,19 +715,11 @@ def get_rruff_patterns(
                 (y_test, np.repeat([y_test[-1]], len(to_add))), axis=0
             )
 
-        # print(x_test[-300:])
-
-        if (
-            (do_unet_preprocessing or compare_UNet_heuristic) and len(x_test) != 4512
-        ) or (
-            (not do_unet_preprocessing and not compare_UNet_heuristic)
-            and len(x_test) != 8501
-        ):
-            print("Skipping pattern due to wrong dimensions of xs.")
-            continue
+        xs.append(x_test)
+        ys.append(y_test)
 
         dif_file = os.path.join(
-            "../RRUFF_data/DIF/",
+            "../../RRUFF_data/DIF/",
             "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
         )
         dif_file = glob(dif_file)
@@ -783,4 +728,8 @@ def get_rruff_patterns(
             dif_files.append(None)
             continue
 
-    return patterns, difs
+        dif_file = dif_file[0]
+
+        dif_files.append(dif_file)
+
+    return xs, ys, dif_files
