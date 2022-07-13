@@ -19,6 +19,7 @@ from typing import Callable, Optional
 # Import libraries
 import tensorflow as tf
 import tensorflow.keras as keras
+from tensorflow_addons.layers.normalizations import GroupNormalization
 
 layers = tf.keras.layers
 
@@ -141,6 +142,7 @@ class ResidualBlock(tf.keras.layers.Layer):
         bn_trainable=True,
         square_kernel_size_and_stride=False,
         disable_batchnorm=False,
+        use_group_norm=False,
         **kwargs,
     ):
         """Initializes a residual block with BN after convolutions.
@@ -188,11 +190,15 @@ class ResidualBlock(tf.keras.layers.Layer):
         self._bias_regularizer = bias_regularizer
         self._square_kernel_size_and_stride = square_kernel_size_and_stride
         self._disable_batchnorm = disable_batchnorm
+        self._use_group_norm = use_group_norm
 
         if use_sync_bn:
             self._norm = tf.keras.layers.experimental.SyncBatchNormalization
-        else:
+        elif not use_group_norm:
             self._norm = tf.keras.layers.BatchNormalization
+        else:
+            self._norm = GroupNormalization
+
         if tf.keras.backend.image_data_format() == "channels_last":
             self._bn_axis = -1
         else:
@@ -214,12 +220,17 @@ class ResidualBlock(tf.keras.layers.Layer):
                 bias_regularizer=self._bias_regularizer,
             )
             self.sub_layers.append(self._shortcut)
-            self._norm0 = self._norm(
-                axis=self._bn_axis,
-                momentum=self._norm_momentum,
-                epsilon=self._norm_epsilon,
-                trainable=self._bn_trainable,
-            )
+
+            if not self._use_group_norm:
+                self._norm0 = self._norm(
+                    axis=self._bn_axis,
+                    momentum=self._norm_momentum,
+                    epsilon=self._norm_epsilon,
+                    trainable=self._bn_trainable,
+                )
+            else:
+                self._norm0 = self._norm()
+
             self.sub_layers.append(self._norm0)
 
         conv1_padding = "same"
@@ -240,12 +251,17 @@ class ResidualBlock(tf.keras.layers.Layer):
             bias_regularizer=self._bias_regularizer,
         )
         self.sub_layers.append(self._conv1)
-        self._norm1 = self._norm(
-            axis=self._bn_axis,
-            momentum=self._norm_momentum,
-            epsilon=self._norm_epsilon,
-            trainable=self._bn_trainable,
-        )
+
+        if not self._use_group_norm:
+            self._norm1 = self._norm(
+                axis=self._bn_axis,
+                momentum=self._norm_momentum,
+                epsilon=self._norm_epsilon,
+                trainable=self._bn_trainable,
+            )
+        else:
+            self._norm1 = self._norm()
+
         self.sub_layers.append(self._norm1)
 
         self._conv2 = tf.keras.layers.Conv1D(
@@ -259,12 +275,17 @@ class ResidualBlock(tf.keras.layers.Layer):
             bias_regularizer=self._bias_regularizer,
         )
         self.sub_layers.append(self._conv2)
-        self._norm2 = self._norm(
-            axis=self._bn_axis,
-            momentum=self._norm_momentum,
-            epsilon=self._norm_epsilon,
-            trainable=self._bn_trainable,
-        )
+
+        if not self._use_group_norm:
+            self._norm2 = self._norm(
+                axis=self._bn_axis,
+                momentum=self._norm_momentum,
+                epsilon=self._norm_epsilon,
+                trainable=self._bn_trainable,
+            )
+        else:
+            self._norm2 = self._norm()
+
         self.sub_layers.append(self._norm2)
 
         super(ResidualBlock, self).build(input_shape)
@@ -331,6 +352,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
         bn_trainable=True,
         square_kernel_size_and_stride=False,
         disable_batchnorm=False,
+        use_group_norm=False,
         **kwargs,
     ):
         """Initializes a standard bottleneck block with BN after convolutions.
@@ -376,11 +398,15 @@ class BottleneckBlock(tf.keras.layers.Layer):
         self._bias_regularizer = bias_regularizer
         self._square_kernel_size_and_stride = square_kernel_size_and_stride
         self._disable_batchnorm = disable_batchnorm
+        self._use_group_norm = use_group_norm
 
         if use_sync_bn:
             self._norm = tf.keras.layers.experimental.SyncBatchNormalization
-        else:
+        elif not use_group_norm:
             self._norm = tf.keras.layers.BatchNormalization
+        else:
+            self._norm = GroupNormalization
+
         if tf.keras.backend.image_data_format() == "channels_last":
             self._bn_axis = -1
         else:
@@ -418,12 +444,16 @@ class BottleneckBlock(tf.keras.layers.Layer):
                 )
                 self.sub_layers.append(self._shortcut)
 
-            self._norm0 = self._norm(
-                axis=self._bn_axis,
-                momentum=self._norm_momentum,
-                epsilon=self._norm_epsilon,
-                trainable=self._bn_trainable,
-            )
+            if not self._use_group_norm:
+                self._norm0 = self._norm(
+                    axis=self._bn_axis,
+                    momentum=self._norm_momentum,
+                    epsilon=self._norm_epsilon,
+                    trainable=self._bn_trainable,
+                )
+            else:
+                self._norm0 = self._norm()
+
             self.sub_layers.append(self._norm0)
 
         self._conv1 = tf.keras.layers.Conv1D(
@@ -436,12 +466,17 @@ class BottleneckBlock(tf.keras.layers.Layer):
             bias_regularizer=self._bias_regularizer,
         )
         self.sub_layers.append(self._conv1)
-        self._norm1 = self._norm(
-            axis=self._bn_axis,
-            momentum=self._norm_momentum,
-            epsilon=self._norm_epsilon,
-            trainable=self._bn_trainable,
-        )
+
+        if not self._use_group_norm:
+            self._norm1 = self._norm(
+                axis=self._bn_axis,
+                momentum=self._norm_momentum,
+                epsilon=self._norm_epsilon,
+                trainable=self._bn_trainable,
+            )
+        else:
+            self._norm1 = self._norm()
+
         self.sub_layers.append(self._norm1)
         self._activation1 = keras.layers.Activation(self._activation)
         self.sub_layers.append(self._activation1)
@@ -458,12 +493,17 @@ class BottleneckBlock(tf.keras.layers.Layer):
             bias_regularizer=self._bias_regularizer,
         )
         self.sub_layers.append(self._conv2)
-        self._norm2 = self._norm(
-            axis=self._bn_axis,
-            momentum=self._norm_momentum,
-            epsilon=self._norm_epsilon,
-            trainable=self._bn_trainable,
-        )
+
+        if not self._use_group_norm:
+            self._norm2 = self._norm(
+                axis=self._bn_axis,
+                momentum=self._norm_momentum,
+                epsilon=self._norm_epsilon,
+                trainable=self._bn_trainable,
+            )
+        else:
+            self._norm2 = self._norm()
+
         self.sub_layers.append(self._norm2)
         self._activation2 = keras.layers.Activation(self._activation)
         self.sub_layers.append(self._activation2)
@@ -478,12 +518,17 @@ class BottleneckBlock(tf.keras.layers.Layer):
             bias_regularizer=self._bias_regularizer,
         )
         self.sub_layers.append(self._conv3)
-        self._norm3 = self._norm(
-            axis=self._bn_axis,
-            momentum=self._norm_momentum,
-            epsilon=self._norm_epsilon,
-            trainable=self._bn_trainable,
-        )
+
+        if not self._use_group_norm:
+            self._norm3 = self._norm(
+                axis=self._bn_axis,
+                momentum=self._norm_momentum,
+                epsilon=self._norm_epsilon,
+                trainable=self._bn_trainable,
+            )
+        else:
+            self._norm3 = self._norm()
+
         self.sub_layers.append(self._norm3)
         self._activation3 = keras.layers.Activation(self._activation)
         self.sub_layers.append(self._activation3)
@@ -576,6 +621,7 @@ class ResNet(tf.keras.Model):
         bn_trainable: bool = True,
         square_kernel_size_and_stride=False,
         disable_batchnorm=False,
+        use_group_norm=False,
         **kwargs,
     ):
         """Initializes a ResNet model.
@@ -618,14 +664,17 @@ class ResNet(tf.keras.Model):
         self._norm_epsilon = norm_epsilon
         if use_sync_bn:
             self._norm = layers.experimental.SyncBatchNormalization
-        else:
+        elif not use_group_norm:
             self._norm = layers.BatchNormalization
+        else:
+            self._norm = GroupNormalization
         self._kernel_initializer = kernel_initializer
         self._kernel_regularizer = kernel_regularizer
         self._bias_regularizer = bias_regularizer
         self._bn_trainable = bn_trainable
         self._square_kernel_size_and_stride = square_kernel_size_and_stride
         self._disable_batchnorm = disable_batchnorm
+        self._use_group_norm = use_group_norm
 
         if tf.keras.backend.image_data_format() == "channels_last":
             bn_axis = -1
@@ -648,12 +697,15 @@ class ResNet(tf.keras.Model):
                 bias_regularizer=self._bias_regularizer,
             )(inputs)
             if not self._disable_batchnorm:
-                x = self._norm(
-                    axis=bn_axis,
-                    momentum=norm_momentum,
-                    epsilon=norm_epsilon,
-                    trainable=bn_trainable,
-                )(x)
+                if not self._use_group_norm:
+                    x = self._norm(
+                        axis=bn_axis,
+                        momentum=norm_momentum,
+                        epsilon=norm_epsilon,
+                        trainable=bn_trainable,
+                    )(x)
+                else:
+                    x = self._norm()(x)
             x = keras.layers.Activation(activation)(x)
         elif stem_type == "v1":
             x = layers.Conv1D(
@@ -667,12 +719,16 @@ class ResNet(tf.keras.Model):
                 bias_regularizer=self._bias_regularizer,
             )(inputs)
             if not self._disable_batchnorm:
-                x = self._norm(
-                    axis=bn_axis,
-                    momentum=norm_momentum,
-                    epsilon=norm_epsilon,
-                    trainable=bn_trainable,
-                )(x)
+                if not self._use_group_norm:
+                    x = self._norm(
+                        axis=bn_axis,
+                        momentum=norm_momentum,
+                        epsilon=norm_epsilon,
+                        trainable=bn_trainable,
+                    )(x)
+                else:
+                    x = self._norm()(x)
+
             x = keras.layers.Activation(activation)(x)
             x = layers.Conv1D(
                 filters=int(32 * stem_depth_multiplier),
@@ -685,12 +741,16 @@ class ResNet(tf.keras.Model):
                 bias_regularizer=self._bias_regularizer,
             )(x)
             if not self._disable_batchnorm:
-                x = self._norm(
-                    axis=bn_axis,
-                    momentum=norm_momentum,
-                    epsilon=norm_epsilon,
-                    trainable=bn_trainable,
-                )(x)
+                if not self._use_group_norm:
+                    x = self._norm(
+                        axis=bn_axis,
+                        momentum=norm_momentum,
+                        epsilon=norm_epsilon,
+                        trainable=bn_trainable,
+                    )(x)
+                else:
+                    x = self._norm()(x)
+
             x = keras.layers.Activation(activation)(x)
             x = layers.Conv1D(
                 filters=int(64 * stem_depth_multiplier),
@@ -703,12 +763,16 @@ class ResNet(tf.keras.Model):
                 bias_regularizer=self._bias_regularizer,
             )(x)
             if not self._disable_batchnorm:
-                x = self._norm(
-                    axis=bn_axis,
-                    momentum=norm_momentum,
-                    epsilon=norm_epsilon,
-                    trainable=bn_trainable,
-                )(x)
+                if not self._use_group_norm:
+                    x = self._norm(
+                        axis=bn_axis,
+                        momentum=norm_momentum,
+                        epsilon=norm_epsilon,
+                        trainable=bn_trainable,
+                    )(x)
+                else:
+                    x = self._norm()(x)
+
             x = keras.layers.Activation(activation)(x)
         else:
             raise ValueError("Stem type {} not supported.".format(stem_type))
@@ -725,12 +789,16 @@ class ResNet(tf.keras.Model):
                 bias_regularizer=self._bias_regularizer,
             )(x)
             if not self._disable_batchnorm:
-                x = self._norm(
-                    axis=bn_axis,
-                    momentum=norm_momentum,
-                    epsilon=norm_epsilon,
-                    trainable=bn_trainable,
-                )(x)
+                if not self._use_group_norm:
+                    x = self._norm(
+                        axis=bn_axis,
+                        momentum=norm_momentum,
+                        epsilon=norm_epsilon,
+                        trainable=bn_trainable,
+                    )(x)
+                else:
+                    x = self._norm()(x)
+
             x = keras.layers.Activation(activation)(x)
         else:
             x = layers.MaxPool1D(pool_size=3, strides=2, padding="same")(x)
@@ -799,6 +867,7 @@ class ResNet(tf.keras.Model):
             bn_trainable=self._bn_trainable,
             square_kernel_size_and_stride=self._square_kernel_size_and_stride,
             disable_batchnorm=self._disable_batchnorm,
+            use_group_norm=self._use_group_norm,
         )(inputs)
 
         for _ in range(1, block_repeats):
@@ -817,6 +886,7 @@ class ResNet(tf.keras.Model):
                 bn_trainable=self._bn_trainable,
                 square_kernel_size_and_stride=self._square_kernel_size_and_stride,
                 disable_batchnorm=self._disable_batchnorm,
+                use_group_norm=self._use_group_norm,
             )(x)
 
         return tf.keras.layers.Activation("linear", name=name)(x)
