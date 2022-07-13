@@ -135,9 +135,7 @@ optimizer = "Adam"  # not used for ViT
 use_group_norm = True  # TODO: Maybe change back
 use_reduce_lr_on_plateau = False
 batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
-estimate_bn_averages_using_random = (
-    False  # instead of the moving averages # TODO: Change back; this setting right now is for group_norm
-)
+estimate_bn_averages_using_random = False  # instead of the moving averages # TODO: Change back; this setting right now is for group_norm
 calculate_random_accuracy_using_training_true = True
 calculate_match_accuracy_using_training_true = True
 max_NO_samples_to_test_on = 10000  # this should be plenty; this is only during the run.

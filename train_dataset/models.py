@@ -823,6 +823,7 @@ def build_model_resnet_i(
     batchnorm_momentum=0.99,
     i=10,
     disable_batchnorm=False,
+    use_group_norm=False,
 ):
 
     # resnet_model = ResNet(
@@ -835,6 +836,7 @@ def build_model_resnet_i(
         square_kernel_size_and_stride=True,
         disable_batchnorm=disable_batchnorm,
         norm_momentum=batchnorm_momentum,
+        use_group_norm=use_group_norm,
     )
 
     # predictions = keras.layers.AveragePooling1D(pool_size=5, strides=5)(
