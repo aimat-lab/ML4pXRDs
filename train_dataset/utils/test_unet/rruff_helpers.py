@@ -637,7 +637,7 @@ def get_rruff_patterns(
         with open("rruff_refits.pickle", "rb") as file:
             parameter_results = pickle.load(file)
             raw_files = [
-                "../" + item[0] for item in parameter_results
+                ("../" + item[0]) for item in parameter_results
             ]  # TODO: Change back later
     else:
         raw_files = glob("../../RRUFF_data/XY_RAW/*.txt")
@@ -701,7 +701,10 @@ def get_rruff_patterns(
         y_test = y_test / np.max(y_test)
 
         # For now, don't use those:
-        if x_test[0] > 5.0 or x_test[-1] < 90.0:
+        if (
+            x_test[0] > 5.0 or x_test[-1] < 90.0
+        ) and False:  # TODO: Change this when refit has been rerun
+            print("Skipping pattern due to invalid range.")
             continue
 
         if x_test[0] > start_angle:

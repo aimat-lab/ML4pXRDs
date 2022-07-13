@@ -3,6 +3,10 @@ from train_dataset.utils.test_unet.heuristic_bg_utils import *
 import pickle
 import numpy as np
 import pybaselines
+from lmfit import minimize
+from lmfit import Minimizer
+from lmfit import Parameters
+from scipy.optimize import minimize
 
 use_first_N = 10
 show_results = True
@@ -25,9 +29,10 @@ with open("rruff_refits.pickle", "rb") as file:
 x_range = np.linspace(5, 90, 8501)
 
 
-def loss_function(
-    parameter_0, parameter_1, method="rb"
-):  # possible methods: "rb", "wavelet", "arPLS"
+def loss_function(inputs, method="rb"):  # possible methods: "rb", "wavelet", "arPLS"
+
+    parameter_0 = inputs[0]
+    parameter_1 = inputs[1]
 
     loss = 0
 
@@ -59,9 +64,49 @@ def loss_function(
 
 
 if __name__ == "__main__":
-    default_ratio_exponent = -2.37287
-    default_lambda_exponent = 7.311915
-    default_arPLS_ratio = 10**default_ratio_exponent
-    default_arPLS_lam = 10**default_lambda_exponent
-    print(loss_function(default_arPLS_ratio, default_arPLS_lam, method="arPLS"))
-    print(loss_function(default_arPLS_ratio, default_arPLS_lam, method="arPLS"))
+
+    for method in ["rb"]:
+
+        def wrapper(inputs):
+            return loss_function(inputs, method)
+
+        """
+        params = Parameters()
+
+        if method == "rb":
+            params.add("parameter_0", 6.619, min=0, max=np.inf)
+            params.add("parameter_1", 0.3, min=0, max=np.inf)
+        elif method == "wavelet":
+            # TODO: Fix these ranges
+            params.add("parameter_0", 6.619, min=0, max=np.inf)
+            params.add("parameter_1", 0.3, min=0, max=np.inf)
+        elif method == "arPLS":
+            pass  # TODO: Add ranges
+
+        minimizer = Minimizer(wrapper, params)
+
+        # print(minimize(wrapper, params))
+        minimizer.minimize()
+        """
+
+        result = minimize(wrapper, [6.619, 0.3], bounds=[(0, np.inf), (0, np.inf)])
+
+        print(result.x)
+
+        for i in range(len(xs)):
+
+            target_y = (
+                parameters[i][0]
+                + parameters[i][1] * xs[i]
+                + parameters[i][2] * xs[i] ** 2
+                + parameters[i][3] * xs[i] ** 3
+                + parameters[i][4] * xs[i] ** 4
+                + parameters[i][5] * xs[i] ** 5
+            )
+
+            plt.plot(xs[i], target_y)
+            plt.plot(xs[i], ys[i])
+            plt.plot(xs[i], rolling_ball(xs[i], ys[i], result.x[0], result.x[1]))
+            plt.show()
+
+            # TODO: Something is still wrong with the y-shift!
