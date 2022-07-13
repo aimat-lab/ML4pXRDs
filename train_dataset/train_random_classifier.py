@@ -139,6 +139,7 @@ estimate_bn_averages_using_random = False  # instead of the moving averages # TO
 calculate_random_accuracy_using_training_true = True
 calculate_match_accuracy_using_training_true = True
 max_NO_samples_to_test_on = 10000  # this should be plenty; this is only during the run.
+log_bn_averages = False
 
 use_denseness_factors_density = True
 use_conditional_density = True
@@ -1486,7 +1487,7 @@ class CustomCallback(keras.callbacks.Callback):
                         batch_size=batch_size,
                         n_batches=n_batches,
                         change_bn_momentum_to=1 - (1 / n_batches),
-                        collect_deltas=True,  # TODO: Change this back
+                        collect_deltas=log_bn_averages,
                     )
 
                     for i, delta in enumerate(deltas):  # TODO: Remove this again
@@ -1677,20 +1678,23 @@ class CustomCallback(keras.callbacks.Callback):
                     "learning_rate", data=self.model.optimizer.lr, step=epoch
                 )
 
-                mean = np.average(self.model.layers[2].moving_mean.numpy())
-                variance = np.average(self.model.layers[2].moving_variance.numpy())
-                tf.summary.scalar("bn_0_average_means", data=mean, step=epoch)
-                tf.summary.scalar("bn_0_average_variances", data=variance, step=epoch)
-                tf.summary.scalar(
-                    "bn_0_mean_0",
-                    data=self.model.layers[2].moving_mean.numpy()[0],
-                    step=epoch,
-                )
-                tf.summary.scalar(
-                    "bn_0_variance_0",
-                    data=self.model.layers[2].moving_variance.numpy()[0],
-                    step=epoch,
-                )
+                if log_bn_averages:
+                    mean = np.average(self.model.layers[2].moving_mean.numpy())
+                    variance = np.average(self.model.layers[2].moving_variance.numpy())
+                    tf.summary.scalar("bn_0_average_means", data=mean, step=epoch)
+                    tf.summary.scalar(
+                        "bn_0_average_variances", data=variance, step=epoch
+                    )
+                    tf.summary.scalar(
+                        "bn_0_mean_0",
+                        data=self.model.layers[2].moving_mean.numpy()[0],
+                        step=epoch,
+                    )
+                    tf.summary.scalar(
+                        "bn_0_variance_0",
+                        data=self.model.layers[2].moving_variance.numpy()[0],
+                        step=epoch,
+                    )
 
 
 class CustomSequence(keras.utils.Sequence):

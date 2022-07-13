@@ -12,7 +12,9 @@ from jax import jacrev
 
 import jax.numpy as jnp
 from jax import jit
-
+import pickle
+from glob import glob
+import os
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -652,3 +654,133 @@ def dif_parser(path):
         print(f"Error processing file {path}:")
         print(ex)
         return None, None, None
+
+
+def get_rruff_patterns(
+    reduced_resolution=True, only_refitted_patterns=True, only_if_dif_exists=False
+):
+
+    if only_refitted_patterns:
+        with open("to_test_on.pickle", "rb") as file:
+            raw_files = pickle.load(file)
+    else:
+        raw_files = glob("../RRUFF_data/XY_RAW/*.txt")
+
+    xs = []
+    ys = []
+    dif_files = []
+
+    for i, raw_file in enumerate(raw_files):
+
+        raw_filename = os.path.basename(raw_file)
+        raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
+
+        dif_file = dif_file[0]
+
+        if len(raw_xy) == 0:
+            print("Skipped empty pattern.")
+            continue
+
+        # Model:
+        pattern_x_unet = np.arange(0, 90.24, 0.02)
+        start_x_unet = pattern_x_unet[0]
+        end_x_unet = pattern_x_unet[-1]
+        N_unet = len(pattern_x_unet)  # UNet works without error for N ~ 2^model_depth
+
+        x_test = raw_xy[:, 0]
+        y_test = raw_xy[:, 1]
+
+        # Remove nans:
+        not_nan_indices = np.where(~np.isnan(x_test))[0]
+
+        # nan_indices = np.where(np.isnan(x_test))[0] # This only happens for the first three indices for some of the patterns; so this is fine
+        # if len(nan_indices > 0):
+        #    print()
+
+        x_test = x_test[not_nan_indices]
+        y_test = y_test[not_nan_indices]
+
+        not_nan_indices = np.where(~np.isnan(y_test))[0]
+
+        # nan_indices = np.where(np.isnan(y_test))[0] # This actually doesn't happen at all
+        # if len(nan_indices > 0):
+        #    print()
+
+        x_test = x_test[not_nan_indices]
+        y_test = y_test[not_nan_indices]
+
+        if not min(abs((x_test[0] % 0.02) - 0.02), abs(x_test[0] % 0.02)) < 0.0000001:
+            print(f"Skipping pattern due to different x-steps.")
+            continue
+
+        if not np.all(np.diff(x_test) >= 0):  # not ascending
+            print("Skipped pattern, inconsistent x axis.")
+            continue
+
+        dx = x_test[1] - x_test[0]
+        if abs(dx - 0.01) < 0.0000001:  # allow some tollerance
+            if do_unet_preprocessing or compare_UNet_heuristic:
+                x_test = x_test[::2]
+                y_test = y_test[::2]
+        elif abs(dx - 0.02) < 0.0000001:
+            print("")
+            pass
+        else:
+            print(f"Skipping pattern with dx={dx}.")
+            continue
+
+        if (
+            not do_unet_preprocessing and not compare_UNet_heuristic
+        ):  # both need fitting dimensions for UNet
+            dx = 0.01
+            start_angle = 5
+            end_angle = 90
+        else:
+            dx = 0.02
+            start_angle = 0
+            end_angle = 90.24
+
+        y_test = np.array(y_test)
+        y_test -= min(y_test)
+        y_test = y_test / np.max(y_test)
+
+        # For now don't use those:
+        if x_test[0] > 5.0 or x_test[-1] < 90.0:
+            continue
+
+        if x_test[0] > start_angle:
+            to_add = np.arange(0.0, x_test[0], dx)
+            x_test = np.concatenate((to_add, x_test), axis=0)
+            y_test = np.concatenate(
+                (np.repeat([y_test[0]], len(to_add)), y_test), axis=0
+            )
+
+        if x_test[-1] < end_angle:
+            to_add = np.arange(x_test[-1] + dx, end_angle, dx)
+            x_test = np.concatenate((x_test, to_add), axis=0)
+            y_test = np.concatenate(
+                (y_test, np.repeat([y_test[-1]], len(to_add))), axis=0
+            )
+
+        # print(x_test[-300:])
+
+        if (
+            (do_unet_preprocessing or compare_UNet_heuristic) and len(x_test) != 4512
+        ) or (
+            (not do_unet_preprocessing and not compare_UNet_heuristic)
+            and len(x_test) != 8501
+        ):
+            print("Skipping pattern due to wrong dimensions of xs.")
+            continue
+
+        dif_file = os.path.join(
+            "../RRUFF_data/DIF/",
+            "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
+        )
+        dif_file = glob(dif_file)
+
+        if len(dif_file) == 0 and only_if_dif_exists:
+            dif_files.append(None)
+            continue
+
+    return patterns, difs

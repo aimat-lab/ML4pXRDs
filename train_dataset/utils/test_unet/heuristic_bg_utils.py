@@ -30,7 +30,7 @@ default_wavelet_num_std = 1.0
 default_wavelet_min_length = 2.0
 
 # the following function is taken from https://stackoverflow.com/questions/29156532/python-baseline-correction-library
-def baseline_arPLS(y, ratio, lam, niter=100, full_output=False):
+def baseline_arPLS(y, ratio=-2.37287, lam=7.311915, niter=100, full_output=False):
 
     print(f"Ratio {ratio:.5E} lam {lam:.5E}")
 
@@ -75,7 +75,7 @@ def baseline_arPLS(y, ratio, lam, niter=100, full_output=False):
         return z
 
 
-def rolling_ball(xs, ys, sphere_x=15, sphere_y=0.3, ax=None):
+def rolling_ball(xs, ys, sphere_x=6.619, sphere_y=0.3, ax=None):
 
     if ax == None:
         ax = plt.gca()

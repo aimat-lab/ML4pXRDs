@@ -11,10 +11,13 @@ from glob import glob
 import pickle
 from scipy.interpolate import CubicSpline
 import pickle
-from train_dataset.utils.rruff_helpers import *
-from train_dataset.utils.heuristic_bg_utils import *
+from train_dataset.utils.test_unet.rruff_helpers import *
+from train_dataset.utils.test_unet.heuristic_bg_utils import *
 
 mode = "compare_UNet_heuristic"  # possible: "select_which_to_use_for_testing", "select_heuristic_parameters", "test_classification_accuracy", and "compare_UNet_heuristic"
+# only for select_heuristic_parameters mode:
+select_heuristic_parameters_by_best_fit = True
+NO_samples_for_fit = 10
 
 use_only_selected = True
 
@@ -56,6 +59,9 @@ correct_counter = 0
 correct_top5_counter = 0
 
 current_parameters = None
+
+if select_heuristic_parameters_by_best_fit:
+    raw_files = raw_files[0:NO_samples_for_fit]
 
 for i, raw_file in enumerate(raw_files):
 
@@ -172,10 +178,12 @@ for i, raw_file in enumerate(raw_files):
 
     if mode == "select_heuristic_parameters":
 
-        # TODO: Add option to fit to first X (=10?) patterns
+        if select_heuristic_parameters_by_best_fit:
 
-        plt.plot(x_test, y_test)
-        current_parameters = plot_heuristic_fit(x_test, y_test)
+            plt.plot(x_test, y_test)
+            current_parameters = plot_heuristic_fit(x_test, y_test)
+
+            # construct the fit function:
 
         continue
 
