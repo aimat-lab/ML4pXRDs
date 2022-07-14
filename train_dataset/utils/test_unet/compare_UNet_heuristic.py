@@ -52,6 +52,12 @@ for i in range(len(xs)):
     plt.plot(xs[i], result_rb, label="Rolling ball")
     plt.plot(xs[i], target_y, label="Target")
 
+    xs[i] = xs[i][250:]
+    ys[i] = ys[i][250:]
+    predictions = predictions[250:]
+    result_rb = result_rb[250:]
+    target_y = target_y[250:]
+
     result_unet_fit = curve_fit(background_fit, xs[i], ys[i] - predictions)[0]
     ys_unet_fit = background_fit(xs[i], *result_unet_fit)
     plt.plot(xs[i], ys_unet_fit, label="UNet Fit")
@@ -67,4 +73,5 @@ for i in range(len(xs)):
 
     plt.show()
 
-    # TODO: Output MSE for rb and UNet
+    # TODO: Do the very same thing for arPLS and wavelet method, too!
+    # TODO: Need better background fit to really make a good comparison!
