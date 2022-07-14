@@ -1,30 +1,21 @@
 from train_dataset.utils.test_unet.rruff_helpers import get_rruff_patterns
 from train_dataset.utils.test_unet.heuristic_bg_utils import *
-import pickle
 import numpy as np
 import pybaselines
 from lmfit import minimize
-from lmfit import Minimizer
-from lmfit import Parameters
 from scipy.optimize import minimize
+import pickle
 
-use_first_N = 10
-show_results = True
+use_first_N = 5
 
-xs, ys, difs = get_rruff_patterns(
+xs, ys, difs, raw_files, parameters = get_rruff_patterns(
     only_refitted_patterns=True,
     only_if_dif_exists=True,
     start_angle=5,
     end_angle=90,
     reduced_resolution=False,
+    return_refitted_parameters=True,
 )
-
-with open("rruff_refits.pickle", "rb") as file:
-    parameter_results = pickle.load(file)
-
-    parameters = [item[1] for item in parameter_results]
-    for i in range(len(parameters)):
-        parameters[i] = [item.value for item in parameters[i].values()]
 
 x_range = np.linspace(5, 90, 8501)
 
@@ -70,28 +61,14 @@ if __name__ == "__main__":
         def wrapper(inputs):
             return loss_function(inputs, method)
 
-        """
-        params = Parameters()
-
-        if method == "rb":
-            params.add("parameter_0", 6.619, min=0, max=np.inf)
-            params.add("parameter_1", 0.3, min=0, max=np.inf)
-        elif method == "wavelet":
-            # TODO: Fix these ranges
-            params.add("parameter_0", 6.619, min=0, max=np.inf)
-            params.add("parameter_1", 0.3, min=0, max=np.inf)
-        elif method == "arPLS":
-            pass  # TODO: Add ranges
-
-        minimizer = Minimizer(wrapper, params)
-
-        # print(minimize(wrapper, params))
-        minimizer.minimize()
-        """
-
         result = minimize(wrapper, [6.619, 0.3], bounds=[(0, np.inf), (0, np.inf)])
 
+        print("Best fit heuristic parameters:")
         print(result.x)
+
+        # TODO: Do this for all methods
+        with open("bestfit_heuristic.pickle", "wb") as file:
+            pickle.dump(result.x, file)
 
         for i in range(len(xs)):
 
@@ -108,5 +85,3 @@ if __name__ == "__main__":
             plt.plot(xs[i], ys[i])
             plt.plot(xs[i], rolling_ball(xs[i], ys[i], result.x[0], result.x[1]))
             plt.show()
-
-            # TODO: Something is still wrong with the y-shift!

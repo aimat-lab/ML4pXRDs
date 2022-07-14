@@ -451,7 +451,7 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
             plt.legend()
             plt.show()
 
-    return params, score
+    return current_bestfits, score
 
 
 def dif_parser(path):
@@ -627,18 +627,22 @@ def dif_parser(path):
 
 def get_rruff_patterns(
     only_refitted_patterns=True,
-    only_if_dif_exists=False,
+    only_selected_patterns=False,
     start_angle=0,
     end_angle=90.24,
     reduced_resolution=True,
+    return_refitted_parameters=False,
+    only_if_dif_exists=False,
 ):
 
     if only_refitted_patterns:
         with open("rruff_refits.pickle", "rb") as file:
             parameter_results = pickle.load(file)
-            raw_files = [
-                ("../" + item[0]) for item in parameter_results
-            ]  # TODO: Change back later
+            raw_files = [item[0] for item in parameter_results]
+            parameters = [item[1] for item in parameter_results]
+    elif only_selected_patterns:
+        with open("to_test_on.pickle", "rb") as file:
+            raw_files = pickle.load(file)
     else:
         raw_files = glob("../../RRUFF_data/XY_RAW/*.txt")
 
@@ -646,10 +650,25 @@ def get_rruff_patterns(
     ys = []
     dif_files = []
 
+    raw_files_kept = []
+
+    if return_refitted_parameters:
+        parameters_kept = []
+
     for i, raw_file in enumerate(raw_files):
 
         raw_filename = os.path.basename(raw_file)
         raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
+
+        dif_file = os.path.join(
+            "../../RRUFF_data/DIF/",
+            "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
+        )
+        dif_file = glob(dif_file)
+
+        if len(dif_file) == 0:
+            continue
+        dif_file = dif_file[0]
 
         if len(raw_xy) == 0:
             print("Skipped empty pattern.")
@@ -689,9 +708,13 @@ def get_rruff_patterns(
             if reduced_resolution:
                 x_test = x_test[::2]
                 y_test = y_test[::2]
+                dx = 0.02
+            else:
+                dx = 0.01
         elif abs(dx - 0.02) < 0.0000001:
             if not reduced_resolution:  # full resolution not available
                 continue
+            dx = 0.02
         else:
             print(f"Skipping pattern with dx={dx}.")
             continue
@@ -724,18 +747,14 @@ def get_rruff_patterns(
         xs.append(x_test)
         ys.append(y_test)
 
-        dif_file = os.path.join(
-            "../../RRUFF_data/DIF/",
-            "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
-        )
-        dif_file = glob(dif_file)
+        raw_files_kept.append(raw_file)
 
-        if len(dif_file) == 0 and only_if_dif_exists:
-            dif_files.append(None)
-            continue
-
-        dif_file = dif_file[0]
+        if return_refitted_parameters:
+            parameters_kept.append(parameters[i])
 
         dif_files.append(dif_file)
 
-    return xs, ys, dif_files
+    if not return_refitted_parameters:
+        return xs, ys, dif_files, raw_files_kept
+    else:
+        return xs, ys, dif_files, raw_files_kept, parameters_kept
