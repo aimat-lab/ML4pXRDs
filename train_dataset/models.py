@@ -879,32 +879,6 @@ def build_model_resnet_i(
 
 if __name__ == "__main__":
 
-    # print("Gigantic size_more_dense")
-    # model = build_model_park_gigantic_size_more_dense_bn(
-    #    None, 8501, 145, False, 0.0001
-    # )  # huge + one CNN layer + different strides
-    # model.save("test")
-    # model = keras.models.load_model("test")
-
-    # print("Resnet 10")
-    # model = build_model_resnet_i(None, 8501, 145, 0.0001, 0, "Adam", i=10)
-
-    print("Resnet 50")
-    model = build_model_resnet_i(None, 8501, 145, 0.0001, 0, "Adam", i=50)
-
-    for i, layer in enumerate(model.layers):
-        print(layer._name)
-        if "batch_normalization" in layer._name:
-            layer.momentum = 0.5
-
-        if hasattr(layer, "sub_layers"):
-            for sub_layer in layer.sub_layers:
-                print("                   ", sub_layer._name)
-                if "batch_normalization" in sub_layer._name:
-                    layer.momentum = 0.5
-
-    exit()
-
     if True:
 
         print("Tiny size")
@@ -973,6 +947,12 @@ if __name__ == "__main__":
     model = build_model_resnet_i(None, 8501, 145, 0.0001, 0, "Adam", i=50)
     # model.save("test")
     # model = keras.models.load_model("test")
+
+    print("Resnet 101")
+    model = build_model_resnet_i(None, 8501, 145, 0.0001, 0, "Adam", i=101)
+
+    print("Resnet 152")
+    model = build_model_resnet_i(None, 8501, 145, 0.0001, 0, "Adam", i=152)
 
     if False:
         print("ViT")

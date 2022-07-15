@@ -20,7 +20,7 @@ xs, ys, difs, raw_files, parameters = get_rruff_patterns(
 x_range = np.linspace(5, 90, 8501)
 
 
-def loss_function(inputs, method="rb"):  # possible methods: "rb", "wavelet", "arPLS"
+def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
 
     parameter_0 = inputs[0]
     parameter_1 = inputs[1]
@@ -40,12 +40,6 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "wavelet", "a
 
         if method == "rb":
             result = rolling_ball(xs[i], ys[i], parameter_0, parameter_1)
-        elif method == "wavelet":
-            result = pybaselines.classification.cwt_br(
-                ys[i],
-                num_std=parameter_0,
-                min_length=int(parameter_1),
-            )[0]
         elif method == "arPLS":
             result = baseline_arPLS(ys[i], ratio=parameter_0, lam=parameter_1)
 
@@ -56,12 +50,19 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "wavelet", "a
 
 if __name__ == "__main__":
 
-    for method in ["rb"]:
+    for method in ["arPLS"]:
 
         def wrapper(inputs):
             return loss_function(inputs, method)
 
-        result = minimize(wrapper, [6.619, 0.3], bounds=[(0, np.inf), (0, np.inf)])
+        if method == "rb":
+            result = minimize(wrapper, [6.619, 0.3], bounds=[(0, np.inf), (0, np.inf)])
+        elif method == "arPLS":
+            result = minimize(
+                wrapper,
+                [10 ** (-2.37287), 10 ** (7.311915)],
+                bounds=[(0, np.inf), (0, np.inf)],
+            )
 
         print("Best fit heuristic parameters:")
         print(result.x)
