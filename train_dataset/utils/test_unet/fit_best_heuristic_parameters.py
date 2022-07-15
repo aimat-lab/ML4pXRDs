@@ -8,6 +8,9 @@ import pickle
 
 use_first_N = 5
 
+ratio_initial = -2.37287
+lambda_initial = 7.311915
+
 xs, ys, difs, raw_files, parameters = get_rruff_patterns(
     only_refitted_patterns=True,
     only_if_dif_exists=True,
@@ -41,7 +44,9 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
         if method == "rb":
             result = rolling_ball(xs[i], ys[i], parameter_0, parameter_1)
         elif method == "arPLS":
-            result = baseline_arPLS(ys[i], ratio=parameter_0, lam=parameter_1)
+            result = baseline_arPLS(
+                ys[i], ratio=10**parameter_0, lam=10**parameter_1
+            )
 
         loss += np.sum((target_y - result) ** 2)
 
@@ -60,8 +65,8 @@ if __name__ == "__main__":
         elif method == "arPLS":
             result = minimize(
                 wrapper,
-                [10 ** (-2.37287), 10 ** (7.311915)],
-                bounds=[(0, np.inf), (0, np.inf)],
+                [ratio_initial, lambda_initial],
+                bounds=[(-np.inf, np.inf), (0, np.inf)],
             )
 
         print("Best fit heuristic parameters:")
@@ -82,7 +87,31 @@ if __name__ == "__main__":
                 + parameters[i][5] * xs[i] ** 5
             )
 
-            plt.plot(xs[i], target_y)
-            plt.plot(xs[i], ys[i])
-            plt.plot(xs[i], rolling_ball(xs[i], ys[i], result.x[0], result.x[1]))
+            plt.plot(
+                xs[i],
+                baseline_arPLS(
+                    ys[i], ratio=10**ratio_initial, lam=10**lambda_initial
+                ),
+                label="Initial",
+            )
+            plt.plot(xs[i], target_y, label="Target")
+            plt.plot(xs[i], ys[i], label="Pattern")
+
+            if method == "rb":
+                plt.plot(
+                    xs[i],
+                    rolling_ball(xs[i], ys[i], result.x[0], result.x[1]),
+                    label="RB",
+                )
+            elif method == "arPLS":
+                plt.plot(
+                    xs[i],
+                    baseline_arPLS(
+                        ys[i],
+                        ratio=10 ** result.x[0],
+                        lam=10 ** result.x[1],
+                    ),
+                    label="arPLS",
+                )
+            plt.legend()
             plt.show()
