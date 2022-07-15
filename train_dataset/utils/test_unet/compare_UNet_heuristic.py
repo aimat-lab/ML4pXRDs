@@ -64,19 +64,21 @@ for method in ["arPLS", "rb"]:
         plt.plot(xs[i], result_heuristic, label=method)
         plt.plot(xs[i], target_y, label="Target")
 
-        xs[i] = xs[i][250:]
-        ys[i] = ys[i][250:]
+        xs_to_fit = xs[i][250:]
+        ys_to_fit = ys[i][250:]
         predictions = predictions[250:]
         result_heuristic = result_heuristic[250:]
         target_y = target_y[250:]
 
-        result_unet_fit = curve_fit(background_fit, xs[i], ys[i] - predictions)[0]
-        ys_unet_fit = background_fit(xs[i], *result_unet_fit)
-        plt.plot(xs[i], ys_unet_fit, label="UNet Fit")
+        result_unet_fit = curve_fit(background_fit, xs_to_fit, ys_to_fit - predictions)[
+            0
+        ]
+        ys_unet_fit = background_fit(xs_to_fit, *result_unet_fit)
+        plt.plot(xs_to_fit, ys_unet_fit, label="UNet Fit")
 
-        result_rb_fit = curve_fit(background_fit, xs[i], result_heuristic)[0]
-        ys_rb_fit = background_fit(xs[i], *result_rb_fit)
-        plt.plot(xs[i], ys_rb_fit, label=method + " Fit")
+        result_rb_fit = curve_fit(background_fit, xs_to_fit, result_heuristic)[0]
+        ys_rb_fit = background_fit(xs_to_fit, *result_rb_fit)
+        plt.plot(xs_to_fit, ys_rb_fit, label=method + " Fit")
 
         print("Difference UNet:", np.sum(np.square(ys_unet_fit - target_y)))
         print(f"Difference {method}:", np.sum(np.square(ys_rb_fit - target_y)))
