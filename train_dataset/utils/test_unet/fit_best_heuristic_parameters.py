@@ -11,6 +11,8 @@ use_first_N = 5
 ratio_initial = -2.37287
 lambda_initial = 7.311915
 
+do_plot = False
+
 xs, ys, difs, raw_files, parameters = get_rruff_patterns(
     only_refitted_patterns=True,
     only_if_dif_exists=True,
@@ -55,7 +57,9 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
 
 if __name__ == "__main__":
 
-    for method in ["arPLS"]:
+    final_parameters = {}
+
+    for method in ["rb", "arPLS"]:
 
         def wrapper(inputs):
             return loss_function(inputs, method)
@@ -69,49 +73,51 @@ if __name__ == "__main__":
                 bounds=[(-np.inf, np.inf), (0, np.inf)],
             )
 
-        print("Best fit heuristic parameters:")
+        print(f"Best fit heuristic parameters for {method}:")
         print(result.x)
 
-        # TODO: Do this for all methods
-        with open("bestfit_heuristic.pickle", "wb") as file:
-            pickle.dump(result.x, file)
+        final_parameters[method] = result.x
 
-        for i in range(len(xs)):
+        if do_plot:
+            for i in range(len(xs)):
 
-            target_y = (
-                parameters[i][0]
-                + parameters[i][1] * xs[i]
-                + parameters[i][2] * xs[i] ** 2
-                + parameters[i][3] * xs[i] ** 3
-                + parameters[i][4] * xs[i] ** 4
-                + parameters[i][5] * xs[i] ** 5
-            )
-
-            plt.plot(
-                xs[i],
-                baseline_arPLS(
-                    ys[i], ratio=10**ratio_initial, lam=10**lambda_initial
-                ),
-                label="Initial",
-            )
-            plt.plot(xs[i], target_y, label="Target")
-            plt.plot(xs[i], ys[i], label="Pattern")
-
-            if method == "rb":
-                plt.plot(
-                    xs[i],
-                    rolling_ball(xs[i], ys[i], result.x[0], result.x[1]),
-                    label="RB",
+                target_y = (
+                    parameters[i][0]
+                    + parameters[i][1] * xs[i]
+                    + parameters[i][2] * xs[i] ** 2
+                    + parameters[i][3] * xs[i] ** 3
+                    + parameters[i][4] * xs[i] ** 4
+                    + parameters[i][5] * xs[i] ** 5
                 )
-            elif method == "arPLS":
+
                 plt.plot(
                     xs[i],
                     baseline_arPLS(
-                        ys[i],
-                        ratio=10 ** result.x[0],
-                        lam=10 ** result.x[1],
+                        ys[i], ratio=10**ratio_initial, lam=10**lambda_initial
                     ),
-                    label="arPLS",
+                    label="Initial",
                 )
-            plt.legend()
-            plt.show()
+                plt.plot(xs[i], target_y, label="Target")
+                plt.plot(xs[i], ys[i], label="Pattern")
+
+                if method == "rb":
+                    plt.plot(
+                        xs[i],
+                        rolling_ball(xs[i], ys[i], result.x[0], result.x[1]),
+                        label="RB",
+                    )
+                elif method == "arPLS":
+                    plt.plot(
+                        xs[i],
+                        baseline_arPLS(
+                            ys[i],
+                            ratio=10 ** result.x[0],
+                            lam=10 ** result.x[1],
+                        ),
+                        label="arPLS",
+                    )
+                plt.legend()
+                plt.show()
+
+    with open("bestfit_heuristic.pickle", "wb") as file:
+        pickle.dump(final_parameters, file)

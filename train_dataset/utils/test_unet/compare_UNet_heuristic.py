@@ -21,57 +21,66 @@ xs, ys, difs, raw_files, parameters = get_rruff_patterns(
 x_range = np.linspace(5, 90, 8501)
 
 with open("bestfit_heuristic.pickle", "rb") as file:
-    heuristic_parameters = pickle.load(file)
+    bestfit_parameters = pickle.load(file)
 
 
 def background_fit(xs, a0, a1, a2, a3, a4, a5):
     return a0 + a1 * xs + a2 * xs**2 + a3 * xs**3 + a4 * xs**4 + a5 * xs**5
 
 
-for i in range(len(xs)):
+for method in ["arPLS", "rb"]:
 
-    predictions = model_unet.predict(np.expand_dims(np.expand_dims(ys[i], 0), -1))[
-        0, :, 0
-    ]
+    for i in range(len(xs)):
 
-    result_rb = rolling_ball(
-        xs[i], ys[i], heuristic_parameters[0], heuristic_parameters[1]
-    )
+        predictions = model_unet.predict(np.expand_dims(np.expand_dims(ys[i], 0), -1))[
+            0, :, 0
+        ]
 
-    target_y = (
-        parameters[i][0]
-        + parameters[i][1] * xs[i]
-        + parameters[i][2] * xs[i] ** 2
-        + parameters[i][3] * xs[i] ** 3
-        + parameters[i][4] * xs[i] ** 4
-        + parameters[i][5] * xs[i] ** 5
-    )
+        if method == "rb":
+            result_heuristic = rolling_ball(
+                xs[i],
+                ys[i],
+                bestfit_parameters[method][0],
+                bestfit_parameters[method][1],
+            )
+        else:
+            result_heuristic = baseline_arPLS(
+                ys[i],
+                ratio=10 ** bestfit_parameters[method][0],
+                lam=10 ** bestfit_parameters[method][1],
+            )
 
-    plt.plot(xs[i], ys[i], label="Input")
-    plt.plot(xs[i], ys[i] - predictions, label="UNet")
-    plt.plot(xs[i], result_rb, label="Rolling ball")
-    plt.plot(xs[i], target_y, label="Target")
+        target_y = (
+            parameters[i][0]
+            + parameters[i][1] * xs[i]
+            + parameters[i][2] * xs[i] ** 2
+            + parameters[i][3] * xs[i] ** 3
+            + parameters[i][4] * xs[i] ** 4
+            + parameters[i][5] * xs[i] ** 5
+        )
 
-    xs[i] = xs[i][250:]
-    ys[i] = ys[i][250:]
-    predictions = predictions[250:]
-    result_rb = result_rb[250:]
-    target_y = target_y[250:]
+        plt.plot(xs[i], ys[i], label="Input")
+        plt.plot(xs[i], ys[i] - predictions, label="UNet")
+        plt.plot(xs[i], result_heuristic, label=method)
+        plt.plot(xs[i], target_y, label="Target")
 
-    result_unet_fit = curve_fit(background_fit, xs[i], ys[i] - predictions)[0]
-    ys_unet_fit = background_fit(xs[i], *result_unet_fit)
-    plt.plot(xs[i], ys_unet_fit, label="UNet Fit")
+        xs[i] = xs[i][250:]
+        ys[i] = ys[i][250:]
+        predictions = predictions[250:]
+        result_heuristic = result_heuristic[250:]
+        target_y = target_y[250:]
 
-    result_rb_fit = curve_fit(background_fit, xs[i], result_rb)[0]
-    ys_rb_fit = background_fit(xs[i], *result_rb_fit)
-    plt.plot(xs[i], ys_rb_fit, label="RB Fit")
+        result_unet_fit = curve_fit(background_fit, xs[i], ys[i] - predictions)[0]
+        ys_unet_fit = background_fit(xs[i], *result_unet_fit)
+        plt.plot(xs[i], ys_unet_fit, label="UNet Fit")
 
-    print("Difference UNet:", np.sum(np.square(ys_unet_fit - target_y)))
-    print("Difference RB:", np.sum(np.square(ys_rb_fit - target_y)))
+        result_rb_fit = curve_fit(background_fit, xs[i], result_heuristic)[0]
+        ys_rb_fit = background_fit(xs[i], *result_rb_fit)
+        plt.plot(xs[i], ys_rb_fit, label=method + " Fit")
 
-    plt.legend()
+        print("Difference UNet:", np.sum(np.square(ys_unet_fit - target_y)))
+        print(f"Difference {method}:", np.sum(np.square(ys_rb_fit - target_y)))
 
-    plt.show()
+        plt.legend()
 
-    # TODO: Do the very same thing for arPLS and wavelet method, too!
-    # TODO: Need better background fit to really make a good comparison!
+        plt.show()
