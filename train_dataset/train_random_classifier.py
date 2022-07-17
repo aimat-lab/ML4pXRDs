@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_50_batch_size_145_lr_0.001_group_norm"
+tag = "all-spgs-random-resnet_101_batch_size_145_lr_0.001_group_norm"
 description = ""
 
 if len(sys.argv) > 1:
@@ -1886,7 +1886,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    disable_batchnorm=False,
         # )
 
-        # Resnet-50
+        # Resnet-101
         model = build_model_resnet_i(
             None,
             N,
@@ -1895,7 +1895,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             momentum=momentum,
             optimizer=optimizer,
             batchnorm_momentum=batchnorm_momentum,
-            i=50,
+            i=101,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
         )
