@@ -20,6 +20,7 @@ import pickle
 from train_dataset.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
+from train_dataset.utils.test_unet.rruff_helpers import get_rruff_patterns
 
 if "NUMBA_DISABLE_JIT" in os.environ:
     is_debugging = os.environ["NUMBA_DISABLE_JIT"] == "1"
@@ -1072,30 +1073,14 @@ if __name__ == "__main__":
 
     if True:
 
-        # Load some rruff patterns to compare to:
-
-        rruff_x_tests = []
-        rruff_y_tests = []
-
-        with open("../../train_dataset/utils/to_test_on.pickle", "rb") as file:
-            raw_files = pickle.load(file)
-        for i, raw_file in enumerate(raw_files):
-            raw_filename = os.path.basename(raw_file)
-            raw_xy = np.genfromtxt(
-                "../../train_dataset/utils/" + raw_file,
-                dtype=float,
-                delimiter=",",
-                comments="#",
-            )
-
-            x_test = raw_xy[:, 0]
-            y_test = np.array(raw_xy[:, 1])
-
-            y_test -= np.min(y_test)
-            y_test = y_test / np.max(y_test)
-
-            rruff_x_tests.append(x_test)
-            rruff_y_tests.append(y_test)
+        rruff_x_tests, rruff_y_tests, difs, raw_files, parameters = get_rruff_patterns(
+            only_refitted_patterns=True,
+            only_if_dif_exists=True,
+            start_angle=0.0,
+            end_angle=90.24,
+            reduced_resolution=True,  # to be able to use UNet on this
+            return_refitted_parameters=True,
+        )
 
         (
             probability_per_spg_per_element,
@@ -1194,7 +1179,7 @@ if __name__ == "__main__":
                 if True:
                     for pattern in patterns:
                         plt.plot(np.linspace(5, 90, 8501), pattern)
-                        plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])
+                        #plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])
                         plt.show()
 
                         counter += 1

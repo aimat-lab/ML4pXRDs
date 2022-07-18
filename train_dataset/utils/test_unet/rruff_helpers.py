@@ -10,6 +10,7 @@ from jax import jit
 import pickle
 from glob import glob
 import os
+from pathlib import Path
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -636,12 +637,16 @@ def get_rruff_patterns(
 ):
 
     if only_refitted_patterns:
-        with open("rruff_refits.pickle", "rb") as file:
+        with open(
+            os.path.join(Path(__file__).parents[0], "rruff_refits.pickle"), "rb"
+        ) as file:
             parameter_results = pickle.load(file)
             raw_files = [item[0] for item in parameter_results]
             parameters = [item[1] for item in parameter_results]
     elif only_selected_patterns:
-        with open("to_test_on.pickle", "rb") as file:
+        with open(
+            os.path.join(Path(__file__).parents[0], "to_test_on.pickle"), "rb"
+        ) as file:
             raw_files = pickle.load(file)
     else:
         raw_files = glob("../../RRUFF_data/XY_RAW/*.txt")
@@ -658,7 +663,12 @@ def get_rruff_patterns(
     for i, raw_file in enumerate(raw_files):
 
         raw_filename = os.path.basename(raw_file)
-        raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
+        raw_xy = np.genfromtxt(
+            os.path.join(Path(__file__).parents[0], raw_file),
+            dtype=float,
+            delimiter=",",
+            comments="#",
+        )
 
         dif_file = os.path.join(
             "../../RRUFF_data/DIF/",
