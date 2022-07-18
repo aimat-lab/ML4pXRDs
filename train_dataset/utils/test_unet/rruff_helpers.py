@@ -224,14 +224,9 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
         for angle in angles:
             plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
 
-    initial_ys = fit_function_wrapped(
+    initial_ys = fit_function(
         x,
-        **dict(
-            zip(
-                [str(item) for item in range(len(current_bestfits))],
-                current_bestfits,
-            )
-        ),
+        *current_bestfits,
     )
     scaler = np.max(initial_ys)
     initial_ys /= scaler
@@ -369,14 +364,9 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
 
             current_bestfits = list(result.best_values.values())
 
-            result_ys = fit_function_wrapped(
+            result_ys = fit_function(
                 x,
-                **dict(
-                    zip(
-                        [str(item) for item in range(len(current_bestfits))],
-                        current_bestfits,
-                    )
-                ),
+                *current_bestfits,
             )
 
             score = r2_score(y, result_ys)
@@ -630,8 +620,13 @@ def get_rruff_patterns(
         dif_file = glob(dif_file)
 
         if len(dif_file) == 0:
-            continue
-        dif_file = dif_file[0]
+            if only_if_dif_exists:
+                print("Skipping pattern due to missing dif file.")
+                continue
+            else:
+                dif_file = None
+        else:
+            dif_file = dif_file[0]
 
         if len(raw_xy) == 0:
             print("Skipped empty pattern.")
@@ -687,9 +682,7 @@ def get_rruff_patterns(
         y_test = y_test / np.max(y_test)
 
         # For now, don't use those:
-        if (
-            x_test[0] > 5.0 or x_test[-1] < 90.0
-        ) and False:  # TODO: Change this when refit has been rerun
+        if x_test[0] > 5.0 or x_test[-1] < 89.9:
             print("Skipping pattern due to invalid range.")
             continue
 
