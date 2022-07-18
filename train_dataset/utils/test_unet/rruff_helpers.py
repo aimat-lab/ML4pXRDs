@@ -15,6 +15,9 @@ from pathlib import Path
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
 
+N_polynomial_coefficients = 12
+use_K_alpha_splitting = True
+
 
 def fn_x(theta, mean, H):
     return (2 * theta - 2 * mean) / H
@@ -94,7 +97,6 @@ def smeared_peaks(
     eta_2,
     K_alpha_splitting=False,
     wavelength=1.541838,  # needed if K_alpha_splitting=True; wavelength from the DIF file.
-    print_thetas=False,
 ):
 
     # Splitting Kalpha_1, Kalpha_2: https://physics.stackexchange.com/questions/398724/why-is-k-alpha-3-2-always-more-intense-than-k-alpha-1-2-in-copper
@@ -142,9 +144,6 @@ def smeared_peaks(
                 )
             )
 
-            # if print_thetas:
-            #    print(f"{2*theta_1} {2*theta_2}")
-
             peak_1 = (
                 intensity
                 * peak_function(xs / 2, theta_1, U, V, W, X, Y, eta_0, eta_1, eta_2)
@@ -165,113 +164,46 @@ def smeared_peaks(
     return ys
 
 
-def fit_function(
-    xs,
-    a0=0.0,
-    a1=0.0,
-    a2=0.0,
-    a3=0.0,
-    a4=0.0,
-    a5=0.0,
-    U=0.001,
-    V=-0.001,
-    W=0.001,
-    X=1.001,
-    Y=0.001,
-    eta_0=1.0,
-    eta_1=0.0,
-    eta_2=0.0,
-    intensity_scaling=0.03,
-    angles=None,
-    intensities=None,
-    K_alpha_splitting=True,
-    print_thetas=False,
-):
-
-    # V = 0
-
-    polynomial = (
-        a0 + a1 * xs + a2 * xs**2 + a3 * xs**3 + a4 * xs**4 + a5 * xs**5
-    )  # + a4 * xs ** 4 + a5 * xs ** 5
-
-    # add the code from the simulation
-    peaks = intensity_scaling * smeared_peaks(
-        xs,
-        angles,
-        intensities,
-        U,
-        V,
-        W,
-        X,
-        Y,
-        eta_0,
-        eta_1,
-        eta_2,
-        K_alpha_splitting=K_alpha_splitting,
-        print_thetas=print_thetas,
-    )
-
-    return peaks + polynomial
-
-
-fit_function_jit = jit(fit_function)
-
-
 def fit_diffractogram(x, y, angles, intensities, do_plot=True):
-    def fit_function_wrapped(
+    def fit_function(
         xs,
-        a0,
-        a1,
-        a2,
-        a3,
-        a4,
-        a5,
-        U,
-        V,
-        W,
-        X,
-        Y,
-        eta_0,
-        eta_1,
-        eta_2,
-        intensity_scaling,
-        **angles_intensities,
+        *values,
     ):
-        values = list(angles_intensities.values())
-        output = fit_function_jit(
+
+        polynomial = np.zeros(len(xs))
+        for j in range(N_polynomial_coefficients):
+            polynomial += values[j] * xs**j
+
+        # add the code from the simulation
+        peaks = values[N_polynomial_coefficients + 8] * smeared_peaks(
             xs,
-            a0,
-            a1,
-            a2,
-            a3,
-            a4,
-            a5,
-            U,
-            V,
-            W,
-            X,
-            Y,
-            eta_0,
-            eta_1,
-            eta_2,
-            intensity_scaling,
-            values[::2],
-            values[1::2],
+            values[N_polynomial_coefficients + 9 :: 2],
+            values[N_polynomial_coefficients + 10 :: 2],
+            values[N_polynomial_coefficients + 0],
+            values[N_polynomial_coefficients + 1],
+            values[N_polynomial_coefficients + 2],
+            values[N_polynomial_coefficients + 3],
+            values[N_polynomial_coefficients + 4],
+            values[N_polynomial_coefficients + 5],
+            values[N_polynomial_coefficients + 6],
+            values[N_polynomial_coefficients + 7],
+            K_alpha_splitting=use_K_alpha_splitting,
         )
-        return output
+
+        return peaks + polynomial
+
+    fit_function = jit(fit_function)
+
+    def fit_function_wrapped(xs, **kwargs):
+        values = list(kwargs.values())
+        return fit_function(xs, *values)
 
     model = Model(fit_function_wrapped)
 
     strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
     use_extended_synchrotron_range = False
 
-    current_bestfits = [
-        0.0,  # a0
-        0.0,  # a1
-        0.0,  # a2
-        0.0,  # a3
-        0.0,  # a4
-        0.0,  # a5
+    current_bestfits = [0.0] * N_polynomial_coefficients + [
         0.7,  # U
         0.0,  # V
         0.001,  # W
@@ -282,6 +214,7 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
         0.0,  # eta_2
         3.0 / 10.0,  # intensity_scaling
     ]  # default values
+
     for angle, intensity in zip(angles, intensities):
         current_bestfits.append(angle)
         current_bestfits.append(intensity)
@@ -293,18 +226,17 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
 
     initial_ys = fit_function_wrapped(
         x,
-        *current_bestfits[:15],
         **dict(
             zip(
-                [str(item) for item in range(len(current_bestfits[15:]))],
-                current_bestfits[15:],
+                [str(item) for item in range(len(current_bestfits))],
+                current_bestfits,
             )
         ),
     )
     scaler = np.max(initial_ys)
     initial_ys /= scaler
 
-    current_bestfits[11] /= scaler
+    current_bestfits[N_polynomial_coefficients + 8] /= scaler
 
     if do_plot:
         plt.plot(
@@ -339,18 +271,19 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
             else:
                 vary_all_peaks = False
 
-            params.add("a0", current_bestfits[0], vary=vary_background)
-            params.add("a1", current_bestfits[1], vary=vary_background)
-            params.add("a2", current_bestfits[2], vary=vary_background)
-            params.add("a3", current_bestfits[3], vary=vary_background)
-            params.add("a4", current_bestfits[4], vary=vary_background)
-            params.add("a5", current_bestfits[5], vary=vary_background)
+            for j in range(N_polynomial_coefficients):
+                params.add(f"a{j}", current_bestfits[j], vary=vary_background)
+
             params.add(
-                "U", current_bestfits[6], min=0, max=3, vary=vary_instr_parameters
+                "U",
+                current_bestfits[N_polynomial_coefficients],
+                min=0,
+                max=3,
+                vary=vary_instr_parameters,
             )
             params.add(
                 "V",
-                current_bestfits[7],
+                current_bestfits[N_polynomial_coefficients + 1],
                 min=-1,
                 max=0,
                 # vary=vary_instr_parameters,
@@ -358,29 +291,51 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
             )
             params.add(
                 "W",
-                current_bestfits[8],
+                current_bestfits[N_polynomial_coefficients + 2],
                 min=0,
                 max=4,
                 vary=vary_instr_parameters,
             )
             params.add(
                 "X",
-                current_bestfits[9],
+                current_bestfits[N_polynomial_coefficients + 3],
                 min=1 if not use_extended_synchrotron_range else 0,
                 max=3,
                 vary=vary_instr_parameters,
             )
             params.add(
-                "Y", current_bestfits[10], min=0, max=3, vary=vary_instr_parameters
+                "Y",
+                current_bestfits[N_polynomial_coefficients + 4],
+                min=0,
+                max=3,
+                vary=vary_instr_parameters,
             )
-            params.add("eta_0", current_bestfits[11], vary=vary_instr_parameters)
-            params.add("eta_1", current_bestfits[12], vary=vary_instr_parameters)
-            params.add("eta_2", current_bestfits[13], vary=vary_instr_parameters)
-            params.add("intensity_scaling", current_bestfits[14], min=0, max=np.inf)
+            params.add(
+                "eta_0",
+                current_bestfits[N_polynomial_coefficients + 5],
+                vary=vary_instr_parameters,
+            )
+            params.add(
+                "eta_1",
+                current_bestfits[N_polynomial_coefficients + 6],
+                vary=vary_instr_parameters,
+            )
+            params.add(
+                "eta_2",
+                current_bestfits[N_polynomial_coefficients + 7],
+                vary=vary_instr_parameters,
+            )
+            params.add(
+                "intensity_scaling",
+                current_bestfits[N_polynomial_coefficients + 8],
+                min=0,
+                max=np.inf,
+            )
 
             i = 0
             for angle, intensity in zip(
-                current_bestfits[15:][::2], current_bestfits[16:][::2]
+                current_bestfits[N_polynomial_coefficients + 9 :][::2],
+                current_bestfits[N_polynomial_coefficients + 10 :][::2],
             ):
 
                 if strategy_item == "all_minus_peak_pos_intensity":
@@ -416,11 +371,10 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
 
             result_ys = fit_function_wrapped(
                 x,
-                *current_bestfits[:15],
                 **dict(
                     zip(
-                        [str(item) for item in range(len(current_bestfits[15:]))],
-                        current_bestfits[15:],
+                        [str(item) for item in range(len(current_bestfits))],
+                        current_bestfits,
                     )
                 ),
             )
@@ -438,14 +392,13 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
             plt.plot(x, y, label="Original")
             plt.plot(x, result_ys, label="Fitted")
 
+            y_bg = np.zeros(len(x))
+            for j in range(N_polynomial_coefficients):
+                y_bg += current_bestfits[j] * x**j
+
             plt.plot(
                 x,
-                current_bestfits[0]
-                + current_bestfits[1] * x
-                + current_bestfits[2] * x**2
-                + current_bestfits[3] * x**3
-                + current_bestfits[4] * x**4
-                + current_bestfits[5] * x**5,
+                y_bg,
                 label="BG",
             )
 

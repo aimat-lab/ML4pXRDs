@@ -27,18 +27,18 @@ for i, x in enumerate(xs):
 
     if data is not None:
 
-        try:
-            fit_parameters, score = fit_diffractogram(
-                x,
-                ys[i] / np.max(ys[i]),
-                data[:, 0],  # angles
-                data[:, 1] / np.max(data[:, 1]),  # intensities
-                do_plot=False,
-            )
-        except Exception as ex:
-            print("Error fitting diffractogram to sample:")
-            print(ex)
-            continue
+        # try:
+        fit_parameters, score = fit_diffractogram(
+            x,
+            ys[i] / np.max(ys[i]),
+            data[:, 0],  # angles
+            data[:, 1] / np.max(data[:, 1]),  # intensities
+            do_plot=True,
+        )
+        # except Exception as ex:
+        #    print("Error fitting diffractogram to sample:")
+        #    print(ex)
+        #    continue
 
         if score > 0.8:
             parameter_results.append((raw_files[i], fit_parameters))
