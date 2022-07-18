@@ -42,7 +42,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_101_batch_size_145_lr_0.001_group_norm"
+tag = "all-spgs-random-resnet_50_bg_noise_vecsei"
 description = ""
 
 if len(sys.argv) > 1:
@@ -1389,6 +1389,7 @@ params_txt = (
     f"uniformly_distributed: {str(uniformly_distributed)} \n \n"
     f"shuffle_test_match_train_match: {str(shuffle_test_match_train_match)} \n \n"
     f"add_background_and_noise: {str(add_background_and_noise)} \n \n"
+    f"use_vecsei_bg_noise: {str(use_vecsei_bg_noise)} \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
 
@@ -1868,7 +1869,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    disable_batchnorm=False,
         # )
 
-        # Resnet-101
+        # Resnet-50
         model = build_model_resnet_i(
             None,
             N,
@@ -1877,7 +1878,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             momentum=momentum,
             optimizer=optimizer,
             batchnorm_momentum=batchnorm_momentum,
-            i=101,
+            i=50,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
         )
