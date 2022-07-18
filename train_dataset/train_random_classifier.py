@@ -66,7 +66,6 @@ run_analysis_after_run = True
 analysis_per_spg = False
 
 test_every_X_epochs = 1
-# TODO: Change back
 batches_per_epoch = 150 * 6  # doesn't count for direct training
 NO_epochs = 1000
 
@@ -132,10 +131,10 @@ learning_rate = 0.001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
-use_group_norm = True  # TODO: Maybe change back
+use_group_norm = True
 use_reduce_lr_on_plateau = False
 batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
-estimate_bn_averages_using_random = False  # instead of the moving averages # TODO: Change back; this setting right now is for group_norm
+estimate_bn_averages_using_random = False  # instead of the moving averages
 calculate_random_accuracy_using_training_true = False
 calculate_match_accuracy_using_training_true = False
 max_NO_samples_to_test_on = 10000  # this should be plenty; this is only during the run.
@@ -1415,16 +1414,12 @@ def calculate_accuracy_training_true(
     batch_size,
     n_batches=None,
     change_bn_momentum_to=0.0,
-    collect_deltas=False,
 ):
 
     if change_bn_momentum_to != 0.0:
         change_bn_momentum(model, 0.0)  # First, set it to zero
 
     total_correct = 0
-
-    if collect_deltas:
-        deltas = []
 
     if n_batches is None:
         n_batches = int(x_data.shape[0] / batch_size)
@@ -1436,18 +1431,10 @@ def calculate_accuracy_training_true(
         ):  # after the first batch has been processed
             change_bn_momentum(model, change_bn_momentum_to)
 
-        if collect_deltas:
-            before = model.layers[2].moving_mean.numpy()
-
         prediction = model(
             x_data[i * batch_size : (i + 1) * batch_size, :, :],
             training=True,
         )  # run this in training mode
-
-        if collect_deltas:
-            deltas.append(
-                np.average(np.abs(model.layers[2].moving_mean.numpy() - before))
-            )
 
         prediction = np.argmax(prediction, axis=1)
 
@@ -1459,10 +1446,7 @@ def calculate_accuracy_training_true(
 
     accuracy = total_correct / (n_batches * batch_size)
 
-    if collect_deltas:
-        return accuracy, deltas
-    else:
-        return accuracy
+    return accuracy
 
 
 class CustomCallback(keras.callbacks.Callback):
@@ -1480,22 +1464,16 @@ class CustomCallback(keras.callbacks.Callback):
                 metric_names = [metric.name for metric in self.model.metrics]
 
                 if estimate_bn_averages_using_random:
-
                     # We need ~ 1000 samples for a good average
                     n_batches = int(np.ceil(870 / batch_size))
-
-                    accuracy, deltas = calculate_accuracy_training_true(
+                    accuracy = calculate_accuracy_training_true(
                         self.model,
                         val_x_random,
                         val_y_random,  # pre-estimate the bn averages before evaluation
                         batch_size=batch_size,
                         n_batches=n_batches,
                         change_bn_momentum_to=1 - (1 / n_batches),
-                        collect_deltas=log_bn_averages,
                     )
-
-                    for i, delta in enumerate(deltas):  # TODO: Remove this again
-                        tf.summary.scalar(f"delta {i}", data=delta, step=epoch)
 
                 scores_all = self.model.evaluate(
                     x=val_x_all[0:max_NO_samples_to_test_on],
