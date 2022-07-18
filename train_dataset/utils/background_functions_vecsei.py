@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 start_x = 5
 end_x = 90
 N = 8501
-pattern_x = np.linspace(start_x, end_x, N)
 
 ########## Peak profile functions from Vecsei ##########
 
@@ -41,16 +40,11 @@ def trunc_normal(min, max, mean, std):
             continue
 
 
-def generate_background_vecsei():
+def generate_background_noise_vecsei(pattern_x):
 
     diffractogram = np.zeros(N)
 
-    # TODO: find potentially better way of handling noise
-    # patterns go from 0 to 1
-    # diffractogram += np.random.uniform(0.0002, 0.002, N)
-
-    # TODO: To introduce noise, we augment our XRD patterns with a random signal drawn
-    # from a uniform distribution U (0.002, 0.02) between 0.002 and 0.02.
+    diffractogram += np.random.uniform(0.002, 0.02, N)
 
     choices = [1 if x < 0.5 else 0 for x in np.random.uniform(size=4)]
     T = 0.1 / np.sum(choices)
@@ -89,16 +83,16 @@ def generate_background_vecsei():
 
     return diffractogram
 
-    # TODO: Add the theoretical pattern (let it be passed by argument)
-    # using the signal to noise ratio given in the paper
-
 
 ##########
 
 if __name__ == "__main__":
 
+    pattern_x = np.linspace(start_x, end_x, N)
+
     for i in range(0, 100):
-        diff = generate_background_vecsei()
+
+        diff = generate_background_noise_vecsei(pattern_x)
 
         plt.plot(pattern_x, diff)
         plt.show()
