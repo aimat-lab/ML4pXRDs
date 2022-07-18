@@ -163,7 +163,8 @@ uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = False
+add_background_and_noise = True  # TODO: Change back
+use_vecsei_bg_noise = True
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -529,6 +530,7 @@ def get_xy_pattern_wrapper(
         return_angles_intensities=False,
         return_max_unscaled_intensity_angle=False,
         add_background_and_noise=add_background_and_noise,
+        use_vecsei_bg_noise=use_vecsei_bg_noise,
     )
     return patterns[0], corn_sizes[0]
 
@@ -907,6 +909,7 @@ def batch_generator_with_additional(
         verbosity=1,  # Show everything here
         probability_per_spg=probability_per_spg,
         add_background_and_noise=add_background_and_noise,
+        use_vecsei_bg_noise=use_vecsei_bg_noise,
     )
 
     # Set the label to the right index:
@@ -979,6 +982,7 @@ def batch_generator_queue(
                 verbosity=verbosity_generator,
                 probability_per_spg=probability_per_spg,
                 add_background_and_noise=add_background_and_noise,
+                use_vecsei_bg_noise=use_vecsei_bg_noise,
             )
 
             patterns, labels = shuffle(patterns, labels)

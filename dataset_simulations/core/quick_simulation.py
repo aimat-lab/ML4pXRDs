@@ -519,6 +519,7 @@ def get_xy_patterns(
                 )
             else:
                 smeared += generate_background_noise_vecsei(xs)
+                smeared /= np.max(smeared)
 
         results.append(smeared)
 
@@ -1076,9 +1077,9 @@ if __name__ == "__main__":
         rruff_x_tests, rruff_y_tests, difs, raw_files, parameters = get_rruff_patterns(
             only_refitted_patterns=True,
             only_if_dif_exists=True,
-            start_angle=0.0,
-            end_angle=90.24,
-            reduced_resolution=True,  # to be able to use UNet on this
+            start_angle=5.0,
+            end_angle=90.0,
+            reduced_resolution=False,  # to be able to use UNet on this
             return_refitted_parameters=True,
         )
 
@@ -1173,13 +1174,14 @@ if __name__ == "__main__":
                     denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                     lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                     probability_per_spg=probability_per_spg,
-                    add_background_and_noise=True,  # True
+                    add_background_and_noise=True,
+                    use_vecsei_bg_noise=True,
                 )
 
                 if True:
                     for pattern in patterns:
                         plt.plot(np.linspace(5, 90, 8501), pattern)
-                        #plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])
+                        # plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])
                         plt.show()
 
                         counter += 1
