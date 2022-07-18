@@ -51,7 +51,7 @@ def generate_background_noise_vecsei(pattern_x):
 
     if choices[0]:
         diffractogram += f_step_up(
-            pattern_x,
+            pattern_x / 2,
             trunc_normal(0, T, T / 3, T / 7),
             np.random.uniform(10, 60),
             np.random.uniform(0, 1 / 7),
@@ -59,7 +59,7 @@ def generate_background_noise_vecsei(pattern_x):
 
     if choices[1]:
         diffractogram += f_step_down(
-            pattern_x,
+            pattern_x / 2,
             trunc_normal(0, T, T / 3, T / 7),
             np.random.uniform(10, 60),
             np.random.uniform(1 - 1 / 7, 1),
@@ -72,11 +72,11 @@ def generate_background_noise_vecsei(pattern_x):
             if np.random.uniform() < 0.5:
                 alpha_n[i] = 3 * T / (2 * (n_max + 1)) * np.random.uniform(-1, 1)
 
-        diffractogram += f_polynomial(pattern_x, n_max, alpha_n)
+        diffractogram += f_polynomial(pattern_x / 2, n_max, alpha_n)
 
     if choices[3]:
         diffractogram += f_bump(
-            pattern_x,
+            pattern_x / 2,
             trunc_normal(0, 3 * T / 5, 2 * T / 5, 3 * T / 35),
             np.random.uniform(40, 70),
         )
