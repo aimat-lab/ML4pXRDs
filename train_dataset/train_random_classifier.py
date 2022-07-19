@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_50_bg_noise_vecsei"
+tag = "all-spgs-random-resnet_50_lr_0.01"
 description = ""
 
 if len(sys.argv) > 1:
@@ -126,7 +126,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.001
+learning_rate = 0.01
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
@@ -161,8 +161,8 @@ uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = True  # TODO: Change back
-use_vecsei_bg_noise = True
+add_background_and_noise = False
+use_vecsei_bg_noise = False
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
