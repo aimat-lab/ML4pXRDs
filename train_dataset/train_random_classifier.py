@@ -41,7 +41,7 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet_50_lr_0.01"
+tag = "all-spgs-random-resnet_50_lr_0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -66,7 +66,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150 * 6  # doesn't count for direct training
-NO_epochs = 400
+NO_epochs = 1000
 
 # For ViT:
 # structures_per_spg = 1
@@ -126,7 +126,7 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 use_dropout = False
 
-learning_rate = 0.01
+learning_rate = 0.0001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
