@@ -8,7 +8,7 @@ xs, ys, dif_files, raw_files = get_rruff_patterns(
     start_angle=5,
     end_angle=90,
     reduced_resolution=False,
-    only_if_dif_exists=True,
+    only_if_dif_exists=True,  # skips patterns where no dif is file
 )
 
 if True:  # only process 100 patterns for now

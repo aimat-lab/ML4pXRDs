@@ -30,7 +30,6 @@ import sys
 from datetime import datetime
 import time
 import subprocess
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 import gc
@@ -67,7 +66,7 @@ analysis_per_spg = False
 
 test_every_X_epochs = 1
 batches_per_epoch = 150 * 6  # doesn't count for direct training
-NO_epochs = 1000
+NO_epochs = 400
 
 # For ViT:
 # structures_per_spg = 1
