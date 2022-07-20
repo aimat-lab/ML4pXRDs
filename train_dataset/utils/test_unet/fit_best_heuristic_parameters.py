@@ -6,10 +6,14 @@ from lmfit import minimize
 from scipy.optimize import minimize
 import pickle
 
-use_first_N = 5
+use_first_N = 10
+
+N_polynomial_coefficients = 12
 
 ratio_initial = -2.37287
 lambda_initial = 7.311915
+sphere_x_initial = 6.619
+sphere_y_initial = 0.3
 
 do_plot = False
 
@@ -34,14 +38,9 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
 
     for i, pattern in enumerate(ys[0:use_first_N]):
 
-        target_y = (
-            parameters[i][0]
-            + parameters[i][1] * xs[i]
-            + parameters[i][2] * xs[i] ** 2
-            + parameters[i][3] * xs[i] ** 3
-            + parameters[i][4] * xs[i] ** 4
-            + parameters[i][5] * xs[i] ** 5
-        )
+        target_y = np.zeros(len(xs[i]))
+        for j in range(N_polynomial_coefficients):
+            target_y += parameters[i][j] * xs[i] ** j
 
         if method == "rb":
             result = rolling_ball(xs[i], ys[i], parameter_0, parameter_1)
@@ -57,15 +56,21 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
 
 if __name__ == "__main__":
 
-    final_parameters = {}
+    final_parameters_per_method = {}
 
-    for method in ["rb", "arPLS"]:
+    for method in ["arPLS", "rb"]:
+
+        print(f"Showing results of method {method}:")
 
         def wrapper(inputs):
             return loss_function(inputs, method)
 
         if method == "rb":
-            result = minimize(wrapper, [6.619, 0.3], bounds=[(0, np.inf), (0, np.inf)])
+            result = minimize(
+                wrapper,
+                [sphere_x_initial, sphere_y_initial],
+                bounds=[(0, np.inf), (0, np.inf)],
+            )
         elif method == "arPLS":
             result = minimize(
                 wrapper,
@@ -76,19 +81,14 @@ if __name__ == "__main__":
         print(f"Best fit heuristic parameters for {method}:")
         print(result.x)
 
-        final_parameters[method] = result.x
+        final_parameters_per_method[method] = result.x
 
         if do_plot:
-            for i in range(len(xs)):
+            for i in range(len(xs[0 : 2 * use_first_N])):
 
-                target_y = (
-                    parameters[i][0]
-                    + parameters[i][1] * xs[i]
-                    + parameters[i][2] * xs[i] ** 2
-                    + parameters[i][3] * xs[i] ** 3
-                    + parameters[i][4] * xs[i] ** 4
-                    + parameters[i][5] * xs[i] ** 5
-                )
+                target_y = np.zeros(len(xs[i]))
+                for j in range(N_polynomial_coefficients):
+                    target_y += parameters[i][j] * xs[i] ** j
 
                 plt.plot(
                     xs[i],
@@ -120,4 +120,4 @@ if __name__ == "__main__":
                 plt.show()
 
     with open("bestfit_heuristic.pickle", "wb") as file:
-        pickle.dump(final_parameters, file)
+        pickle.dump(final_parameters_per_method, file)
