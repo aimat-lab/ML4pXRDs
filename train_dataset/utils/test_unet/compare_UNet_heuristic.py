@@ -4,10 +4,14 @@ import numpy as np
 import pickle
 from scipy.optimize import curve_fit
 
-skip_first_N = 10
+skip_first_N = 20
+
+N_polynomial_coefficients = 12
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
+
+do_plot = False
 
 xs, ys, difs, raw_files, parameters = get_rruff_patterns(
     only_refitted_patterns=True,
@@ -30,11 +34,17 @@ with open("bestfit_heuristic.pickle", "rb") as file:
     bestfit_parameters = pickle.load(file)
 
 
-def background_fit(xs, a0, a1, a2, a3, a4, a5):
-    return a0 + a1 * xs + a2 * xs**2 + a3 * xs**3 + a4 * xs**4 + a5 * xs**5
+def background_fit(xs, *params):
+    result = np.zeros(len(xs))
+    for j in range(N_polynomial_coefficients):
+        result += params[j] * xs**j
+    return result
 
 
 for method in ["arPLS", "rb"]:
+
+    diffs_method = []
+    diffs_unet = []
 
     for i in range(len(xs)):
 
@@ -56,39 +66,57 @@ for method in ["arPLS", "rb"]:
                 lam=10 ** bestfit_parameters[method][1],
             )
 
-        target_y = (
-            parameters[i][0]
-            + parameters[i][1] * xs[i]
-            + parameters[i][2] * xs[i] ** 2
-            + parameters[i][3] * xs[i] ** 3
-            + parameters[i][4] * xs[i] ** 4
-            + parameters[i][5] * xs[i] ** 5
-        )
+        target_y = np.zeros(len(xs[i]))
+        for j in range(N_polynomial_coefficients):
+            target_y += parameters[i][j] * xs[i] ** j
 
-        plt.plot(xs[i], ys[i], label="Input")
-        plt.plot(xs[i], ys[i] - predictions, label="UNet")
-        plt.plot(xs[i], result_heuristic, label=method)
-        plt.plot(xs[i], target_y, label="Target")
+        if do_plot:
+            plt.plot(xs[i], ys[i], label="Input")
+            plt.plot(xs[i], ys[i] - predictions, label="UNet")
+            plt.plot(xs[i], result_heuristic, label=method)
 
-        xs_to_fit = xs[i][250:]
-        ys_to_fit = ys[i][250:]
-        predictions = predictions[250:]
-        result_heuristic = result_heuristic[250:]
-        target_y = target_y[250:]
+        xs_to_fit = xs[i][500:-500]
+        ys_to_fit = ys[i][500:-500]
+        predictions = predictions[500:-500]
+        result_heuristic = result_heuristic[500:-500]
+        target_y = target_y[500:-500]
 
-        result_unet_fit = curve_fit(background_fit, xs_to_fit, ys_to_fit - predictions)[
-            0
-        ]
+        if do_plot:
+            plt.plot(xs_to_fit, target_y, label="Target")
+
+        result_unet_fit = curve_fit(
+            background_fit,
+            xs_to_fit,
+            ys_to_fit - predictions,
+            p0=[0.0] * N_polynomial_coefficients,
+        )[0]
         ys_unet_fit = background_fit(xs_to_fit, *result_unet_fit)
-        plt.plot(xs_to_fit, ys_unet_fit, label="UNet Fit")
 
-        result_rb_fit = curve_fit(background_fit, xs_to_fit, result_heuristic)[0]
+        if do_plot:
+            plt.plot(xs_to_fit, ys_unet_fit, label="UNet Fit")
+
+        result_rb_fit = curve_fit(
+            background_fit,
+            xs_to_fit,
+            result_heuristic,
+            p0=[0.0] * N_polynomial_coefficients,
+        )[0]
         ys_rb_fit = background_fit(xs_to_fit, *result_rb_fit)
-        plt.plot(xs_to_fit, ys_rb_fit, label=method + " Fit")
 
-        print("Difference UNet:", np.sum(np.square(ys_unet_fit - target_y)))
-        print(f"Difference {method}:", np.sum(np.square(ys_rb_fit - target_y)))
+        if do_plot:
+            plt.plot(xs_to_fit, ys_rb_fit, label=method + " Fit")
 
-        plt.legend()
+        diff_unet = np.sum(np.square(ys_unet_fit - target_y))
+        diffs_unet.append(diff_unet)
+        diff_method = np.sum(np.square(ys_rb_fit - target_y))
+        diffs_method.append(diff_method)
 
-        plt.show()
+        print("Difference UNet:", diff_unet)
+        print(f"Difference {method}:", diff_method)
+
+        if do_plot:
+            plt.legend()
+            plt.show()
+
+    print("Average difference UNet:", np.average(diffs_unet))
+    print(f"Average difference {method}:", np.average(diffs_method))

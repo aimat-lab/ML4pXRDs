@@ -6,7 +6,7 @@ from lmfit import minimize
 from scipy.optimize import minimize
 import pickle
 
-use_first_N = 10
+use_first_N = 20
 
 N_polynomial_coefficients = 12
 
