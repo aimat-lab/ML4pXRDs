@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 from scipy.optimize import curve_fit
 
-skip_first_N = 5
+skip_first_N = 10
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
@@ -17,6 +17,12 @@ xs, ys, difs, raw_files, parameters = get_rruff_patterns(
     reduced_resolution=True,  # to be able to use UNet on this
     return_refitted_parameters=True,
 )
+
+xs = xs[skip_first_N:]
+ys = ys[skip_first_N:]
+difs = difs[skip_first_N:]
+raw_files = raw_files[skip_first_N:]
+parameters = parameters[skip_first_N:]
 
 x_range = np.linspace(5, 90, 8501)
 
