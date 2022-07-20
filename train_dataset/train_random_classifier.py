@@ -40,6 +40,7 @@ from dataset_simulations.core.quick_simulation import get_xy_patterns
 import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
+from train_dataset.utils.test_unet.rruff_helpers import *
 
 tag = "all-spgs-random-resnet_50_lr_0.0001"
 description = ""
@@ -1090,6 +1091,39 @@ with open(out_base + "random_data.pickle", "wb") as file:
         ),
         file,
     )
+
+#########################################################
+# Load the rruff test dataset:
+if add_rruff_validation_dataset:
+
+    xs, ys, dif_files, raw_files = get_rruff_patterns(
+        only_refitted_patterns=False,
+        only_selected_patterns=True,
+        start_angle=5,
+        end_angle=90,
+        reduced_resolution=False,
+        only_if_dif_exists=True,  # skips patterns where no dif is file
+    )
+
+    val_x_rruff = []
+    val_y_rruff = []
+    for i, pattern in enumerate(ys):
+        if len(pattern) == 8501:
+            data, wavelength, spg_number = dif_parser(dif_files[i])
+
+            if spg_number in spgs:
+                val_x_rruff.append(pattern)
+                val_y_rruff.append(spgs.index(spg_number))
+
+    val_y_rruff = np.array(val_y_rruff)
+
+    if scale_patterns_sqrt:
+        val_x_rruff = np.sqrt(val_x_rruff)
+
+    if scale_patterns:
+        val_x_rruff = sc.transform(val_x_rruff)
+
+    val_x_rruff = np.expand_dims(val_x_rruff, axis=2)
 
 #########################################################
 # Prepare the training directly from ICSD OR statistics validation dataset
