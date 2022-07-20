@@ -2004,7 +2004,6 @@ falsely_indices_match = np.argwhere(prediction_match != val_y_match)[:, 0]
 with open(out_base + "rightly_falsely_icsd.pickle", "wb") as file:
     pickle.dump((rightly_indices_match, falsely_indices_match), file)
 
-
 # Get predictions for val_x_random and write rightly_indices / falsely_indices:
 prediction_random = model.predict(val_x_random, batch_size=batch_size)
 prediction_random = np.argmax(prediction_random, axis=1)
@@ -2014,6 +2013,10 @@ falsely_indices_random = np.argwhere(prediction_random != val_y_random)[:, 0]
 
 with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
     pickle.dump((rightly_indices_random, falsely_indices_random), file)
+
+# Get predictions for val_x_rruff:
+prediction_rruff = model.predict(val_x_rruff, batch_size=batch_size)
+prediction_rruff = np.argmax(prediction_rruff, axis=1)
 
 # Get predictions for val_x_randomized and write rightly_indices / falsely_indices:
 if generate_randomized_validation_datasets:
@@ -2082,6 +2085,16 @@ report = classification_report(
 print("Classification report on random dataset:")
 print(report)
 with open(out_base + "classification_report_random.pickle", "wb") as file:
+    pickle.dump(report, file)
+
+report = classification_report(
+    [spgs[i] for i in val_y_rruff],
+    [spgs[i] for i in prediction_rruff],
+    output_dict=True,
+)
+print("Classification report on rruff dataset:")
+print(report)
+with open(out_base + "classification_report_rruff.pickle", "wb") as file:
     pickle.dump(report, file)
 
 if run_analysis_after_run:
