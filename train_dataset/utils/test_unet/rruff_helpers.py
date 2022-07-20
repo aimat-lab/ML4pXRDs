@@ -15,7 +15,7 @@ from pathlib import Path
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
 
-N_polynomial_coefficients = 12
+N_polynomial_coefficients = 8
 use_K_alpha_splitting = True
 
 

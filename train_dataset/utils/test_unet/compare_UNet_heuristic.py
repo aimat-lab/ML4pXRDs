@@ -4,14 +4,14 @@ import numpy as np
 import pickle
 from scipy.optimize import curve_fit
 
-skip_first_N = 20
+skip_first_N = 0
 
-N_polynomial_coefficients = 12
+N_polynomial_coefficients = 8
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
 
-do_plot = False
+do_plot = True
 
 xs, ys, difs, raw_files, parameters = get_rruff_patterns(
     only_refitted_patterns=True,
