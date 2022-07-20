@@ -200,7 +200,12 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
 
     model = Model(fit_function_wrapped)
 
-    strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
+    # strategy = ["all_minus_peak_pos_intensity", "peak_by_peak_plus_bg", "all"]
+    strategy = [
+        "all_minus_peak_pos_intensity",
+        "peak_by_peak_plus_bg",
+        "all_minus_peak_pos_intensity",
+    ]
     use_extended_synchrotron_range = False
 
     current_bestfits = [0.0] * N_polynomial_coefficients + [
@@ -371,10 +376,6 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
 
             score = r2_score(y, result_ys)
             print(f"R2 score: {score}")
-
-        # if score < 0.6:
-        #    print("Bad R2 score.")
-        #    return None
 
         # Only plot after all peaks were fitted separately
 

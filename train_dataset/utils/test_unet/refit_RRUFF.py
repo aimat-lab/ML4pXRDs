@@ -11,11 +11,11 @@ xs, ys, dif_files, raw_files = get_rruff_patterns(
     only_if_dif_exists=True,  # skips patterns where no dif is file
 )
 
-if True:  # only process 100 patterns for now
-    xs = xs[0:100]
-    ys = ys[0:100]
-    dif_files = dif_files[0:100]
-    raw_files = raw_files[0:100]
+if True:
+    xs = xs[0:40]
+    ys = ys[0:40]
+    dif_files = dif_files[0:40]
+    raw_files = raw_files[0:40]
 
 parameter_results = []
 
