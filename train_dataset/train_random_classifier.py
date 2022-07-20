@@ -165,7 +165,7 @@ shuffle_test_match_train_match = False
 add_background_and_noise = False
 use_vecsei_bg_noise = False
 
-add_rruff_validation_dataset = True  # TODO: Change back
+use_rruff_validation_dataset = True  # TODO: Change back
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -1094,7 +1094,7 @@ with open(out_base + "random_data.pickle", "wb") as file:
 
 #########################################################
 # Load the rruff test dataset:
-if add_rruff_validation_dataset:
+if use_rruff_validation_dataset:
 
     xs, ys, dif_files, raw_files = get_rruff_patterns(
         only_refitted_patterns=False,
@@ -1109,7 +1109,11 @@ if add_rruff_validation_dataset:
     val_y_rruff = []
     for i, pattern in enumerate(ys):
         if len(pattern) == 8501:
-            data, wavelength, spg_number = dif_parser(dif_files[i])
+
+            try:
+                data, wavelength, spg_number = dif_parser(dif_files[i])
+            except Exception as ex:
+                continue
 
             if spg_number in spgs:
                 val_x_rruff.append(pattern)
@@ -1504,6 +1508,11 @@ class CustomCallback(keras.callbacks.Callback):
                     y=val_y_random[0:max_NO_samples_to_test_on],
                     verbose=0,
                 )
+                scores_rruff = self.model.evaluate(
+                    x=val_x_rruff[0:max_NO_samples_to_test_on],
+                    y=val_y_rruff[0:max_NO_samples_to_test_on],
+                    verbose=0,
+                )
 
                 if generate_randomized_validation_datasets:
                     scores_randomized_coords = self.model.evaluate(
@@ -1578,6 +1587,11 @@ class CustomCallback(keras.callbacks.Callback):
                     step=epoch,
                 )
                 tf.summary.scalar("loss random", data=scores_random[0], step=epoch)
+                tf.summary.scalar(
+                    "loss rruff",
+                    data=scores_rruff[0],
+                    step=epoch,
+                )
                 if generate_randomized_validation_datasets:
                     tf.summary.scalar(
                         "loss randomized coords",
@@ -1621,6 +1635,11 @@ class CustomCallback(keras.callbacks.Callback):
                 tf.summary.scalar(
                     "accuracy random",
                     data=scores_random[1],
+                    step=epoch,
+                )
+                tf.summary.scalar(
+                    "accuracy rruff",
+                    data=scores_rruff[1],
                     step=epoch,
                 )
 
