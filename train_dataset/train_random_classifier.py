@@ -164,6 +164,8 @@ shuffle_test_match_train_match = False
 add_background_and_noise = False
 use_vecsei_bg_noise = False
 
+add_rruff_validation_dataset = True  # TODO: Change back
+
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
 
@@ -242,34 +244,6 @@ print(
         test_match_pure_metas,
     ),
 ) = load_dataset_info()
-
-"""
-if shuffle_test_match_train_match:
-
-    test_match_labels = []
-    test_metas_flat = [meta[0] for meta in test_metas]
-    for meta in test_match_metas:
-        test_match_labels.append(test_labels[test_metas_flat.index(meta[0])])
-
-    all_metas_tmp = statistics_match_metas + test_match_metas
-    all_labels_tmp = statistics_match_labels + test_match_labels
-
-    indices = list(range(len(all_metas_tmp)))
-    random.shuffle(indices)
-
-    all_metas_shuffled = [all_metas_tmp[i] for i in indices]
-    all_labels_shuffled = [all_labels_tmp[i] for i in indices]
-
-    statistics_match_metas = all_metas_shuffled[0 : len(statistics_match_metas)]
-    statistics_match_labels = all_labels_shuffled[0 : len(statistics_match_metas)]
-
-    test_match_metas = all_metas_shuffled[len(statistics_match_metas) :]
-    test_match_labels = all_labels_shuffled[len(statistics_match_metas) :]
-
-    print(
-        f"Shuffled train and test datasets, sizes: {len(statistics_match_metas)}, {len(test_match_metas)}"
-    )
-"""
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading dataset info.",
@@ -389,11 +363,6 @@ for i, meta in enumerate(test_metas_flat):
     if test_labels[i][0] in spgs or corrected_labels[i] in spgs:
         metas_to_load_test.append(meta)
 
-"""
-if shuffle_test_match_train_match:
-    metas_to_load_test += test_match_metas_flat
-"""
-
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start loading patterns for test dataset.",
     flush=True,
@@ -448,7 +417,6 @@ for i in range(len(icsd_sim_test.sim_crystals)):
             )  # use the converted structure (conventional cell)
             icsd_metas_all.append(icsd_sim_test.sim_metas[i])
     else:
-        # if not shuffle_test_match_train_match:  # otherwise this is OK
         raise Exception("There is a mismatch somewhere.")
 
     if icsd_sim_test.sim_metas[i][0] in test_match_metas_flat:
