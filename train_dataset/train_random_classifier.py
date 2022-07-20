@@ -1125,6 +1125,8 @@ if add_rruff_validation_dataset:
 
     val_x_rruff = np.expand_dims(val_x_rruff, axis=2)
 
+    print("Size of rruff validation dataset:", val_x_rruff.shape, val_y_rruff.shape)
+
 #########################################################
 # Prepare the training directly from ICSD OR statistics validation dataset
 
