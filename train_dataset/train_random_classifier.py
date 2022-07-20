@@ -41,6 +41,10 @@ import random
 import contextlib
 from train_dataset.utils.AdamWarmup import AdamWarmup
 from train_dataset.utils.test_unet.rruff_helpers import *
+from train_dataset.generate_background_noise_utils import generate_samples_gp
+from train_dataset.utils.background_functions_vecsei import (
+    generate_background_noise_vecsei,
+)
 
 tag = "all-spgs-random-resnet_50_lr_0.0001"
 description = ""
@@ -379,6 +383,25 @@ print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading patterns for test dataset.",
     flush=True,
 )
+
+if add_background_and_noise:
+    for i, pattern in enumerate(icsd_sim_test.sim_patterns):
+        for j in range(pattern.shape[0]):
+            if not use_vecsei_bg_noise:
+                pattern[j, :] = generate_samples_gp(
+                    1,
+                    (start_angle, end_angle),
+                    n_angles_output=8501,
+                    icsd_patterns=[pattern[j, :]],
+                    original_range=True,
+                )[0][0]
+            else:
+                pattern[j, :] += generate_background_noise_vecsei(angle_range)
+                pattern[j, :] /= np.max(pattern[j, :])
+
+            # TODO: Remove this again:
+            plt.plot(pattern[j, :])
+            plt.show()
 
 n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
 
