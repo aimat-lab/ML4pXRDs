@@ -4,8 +4,6 @@ import tensorflow as tf
 from train_dataset.utils.resnet_v2_1D import ResNetv2
 from train_dataset.utils.resnet_keras_1D import ResNet
 from train_dataset.utils.transformer_vit import build_model_transformer_vit
-from train_dataset.utils.AdamWarmup import AdamWarmup
-import numpy as np
 
 
 class BinaryAccuracy(tfm.BinaryAccuracy):

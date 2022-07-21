@@ -46,7 +46,7 @@ from train_dataset.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
 
-tag = "all-spgs-random-resnet_50_lr_0.0001"
+tag = "all-spgs-random-resnet_50_additional_dense_layer_lr_0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -1917,7 +1917,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    disable_batchnorm=False,
         # )
 
-        # Resnet-50
+        # Resnet-50 + additional dense layer
         model = build_model_resnet_i(
             None,
             N,
@@ -1929,6 +1929,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             i=50,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
+            add_additional_dense_layer=True,
         )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
