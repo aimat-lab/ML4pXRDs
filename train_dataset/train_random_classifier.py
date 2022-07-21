@@ -1119,7 +1119,7 @@ with open(out_base + "random_data.pickle", "wb") as file:
 # Load the rruff test dataset:
 if use_rruff_validation_dataset:
 
-    xs, ys, dif_files, raw_files = get_rruff_patterns(
+    xs_rruff, ys_rruff, dif_files, raw_files = get_rruff_patterns(
         only_refitted_patterns=False,
         only_selected_patterns=True,
         start_angle=5,
@@ -1130,7 +1130,7 @@ if use_rruff_validation_dataset:
 
     val_x_rruff = []
     val_y_rruff = []
-    for i, pattern in enumerate(ys):
+    for i, pattern in enumerate(ys_rruff):
         if len(pattern) == 8501:
 
             try:
