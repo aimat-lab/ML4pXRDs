@@ -16,7 +16,6 @@ from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 import traceback
 from multiprocessing import Pool
 import train_dataset.generate_background_noise_utils
-import pickle
 from train_dataset.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )

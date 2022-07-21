@@ -824,6 +824,7 @@ def build_model_resnet_i(
     i=10,
     disable_batchnorm=False,
     use_group_norm=False,
+    add_additional_dense_layer=False,
 ):
 
     # resnet_model = ResNet(
@@ -845,7 +846,12 @@ def build_model_resnet_i(
     # predictions = keras.layers.Flatten()(predictions)
 
     predictions = keras.layers.Flatten()(resnet_model.layers[-1].output)
-    predictions = keras.layers.Dense(number_of_output_labels)(predictions)
+
+    if not add_additional_dense_layer:
+        predictions = keras.layers.Dense(number_of_output_labels)(predictions)
+    else:
+        predictions = keras.layers.Dense(256)(predictions)
+        predictions = keras.layers.Dense(number_of_output_labels)(predictions)
 
     model = keras.Model(resnet_model.inputs, outputs=predictions)
 
@@ -878,6 +884,13 @@ def build_model_resnet_i(
 
 
 if __name__ == "__main__":
+
+    print("Resnet 50")
+    model = build_model_resnet_i(
+        None, 8501, 145, 0.0001, 0, "Adam", i=50, add_additional_dense_layer=True
+    )
+
+    exit()
 
     if True:
 
