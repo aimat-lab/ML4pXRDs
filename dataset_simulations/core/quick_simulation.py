@@ -1074,13 +1074,13 @@ if __name__ == "__main__":
 
     if True:
 
-        rruff_x_tests, rruff_y_tests, difs, raw_files, parameters = get_rruff_patterns(
+        rruff_x_tests, rruff_y_tests, difs, raw_files = get_rruff_patterns(
+            only_refitted_patterns=False,
             only_selected_patterns=True,
             only_if_dif_exists=True,
             start_angle=5.0,
             end_angle=90.0,
             reduced_resolution=False,  # to be able to use UNet on this
-            return_refitted_parameters=True,
         )
 
         (
