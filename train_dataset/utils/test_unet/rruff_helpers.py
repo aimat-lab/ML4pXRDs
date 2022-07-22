@@ -593,7 +593,9 @@ def get_rruff_patterns(
         ) as file:
             raw_files = pickle.load(file)
     else:
-        raw_files = glob("../../RRUFF_data/XY_RAW/*.txt")
+        raw_files = glob(
+            os.path.join(Path(__file__).parents[0], "../../RRUFF_data/XY_RAW/*.txt")
+        )
 
     xs = []
     ys = []
@@ -615,6 +617,7 @@ def get_rruff_patterns(
         )
 
         dif_file = os.path.join(
+            Path(__file__).parents[0],
             "../../RRUFF_data/DIF/",
             "__".join(raw_filename.split("__")[:-2]) + "__DIF_File__*.txt",
         )

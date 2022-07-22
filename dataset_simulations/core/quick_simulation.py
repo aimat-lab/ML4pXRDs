@@ -1082,6 +1082,8 @@ if __name__ == "__main__":
             return_refitted_parameters=True,
         )
 
+        print()
+
         (
             probability_per_spg_per_element,
             probability_per_spg_per_element_per_wyckoff,
@@ -1180,7 +1182,7 @@ if __name__ == "__main__":
                 if True:
                     for pattern in patterns:
                         plt.plot(np.linspace(5, 90, 8501), pattern)
-                        # plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])
+                        plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])
                         plt.show()
 
                         counter += 1
