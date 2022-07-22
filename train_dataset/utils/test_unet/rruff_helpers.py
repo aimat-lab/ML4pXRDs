@@ -164,7 +164,9 @@ def smeared_peaks(
     return ys
 
 
-def fit_diffractogram(x, y, angles, intensities, do_plot=True, only_plot_final=False):
+def fit_diffractogram(
+    x, y, angles, intensities, do_plot=True, only_plot_final=False, do_print=True
+):
     def fit_function(
         xs,
         *values,
@@ -375,7 +377,8 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True, only_plot_final=F
             )
 
             score = r2_score(y, result_ys)
-            print(f"R2 score: {score}")
+            if do_print:
+                print(f"R2 score: {score}")
 
         # Only plot after all peaks were fitted separately
 
