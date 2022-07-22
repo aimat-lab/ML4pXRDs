@@ -518,6 +518,7 @@ def get_xy_patterns(
                 )
             else:
                 smeared += generate_background_noise_vecsei(xs)
+                smeared -= np.min(smeared)
                 smeared /= np.max(smeared)
 
         results.append(smeared)
@@ -1074,15 +1075,13 @@ if __name__ == "__main__":
     if True:
 
         rruff_x_tests, rruff_y_tests, difs, raw_files, parameters = get_rruff_patterns(
-            only_refitted_patterns=True,
+            only_selected_patterns=True,
             only_if_dif_exists=True,
             start_angle=5.0,
             end_angle=90.0,
             reduced_resolution=False,  # to be able to use UNet on this
             return_refitted_parameters=True,
         )
-
-        print()
 
         (
             probability_per_spg_per_element,

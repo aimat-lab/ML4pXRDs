@@ -46,7 +46,7 @@ from train_dataset.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
 
-tag = "all-spgs-random-resnet_50_additional_dense_layer_lr_0.0001"
+tag = "all-spgs-random-resnet_50_additional_dense_layer_lr_0.0001_vecsei"
 description = ""
 
 if len(sys.argv) > 1:
@@ -173,7 +173,7 @@ use_rruff_validation_dataset = True
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
 
-local = True  # TODO: Change back
+local = False
 if local:
     NO_workers = 8
     verbosity_tf = 1
@@ -1924,7 +1924,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             i=50,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
-            add_additional_dense_layer=True,
+            add_additional_dense_layer=True,  # one more dense layer
         )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
