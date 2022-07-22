@@ -42,7 +42,7 @@ if __name__ == "__main__":
         only_if_dif_exists=True,  # skips patterns where no dif is file
     )
 
-    if True:  # TODO: Change back
+    if False:  # TODO: Change back
         xs = xs[0:8]
         ys = ys[0:8]
         dif_files = dif_files[0:8]
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     print(raw_files)
     """
 
-    pool = multiprocessing.Pool(processes=8)  # TODO: Change back
+    pool = multiprocessing.Pool(processes=32)
 
     map_results = pool.map(process_pattern, zip(xs, ys, dif_files, raw_files))
     results = [item for item in map_results if (item is not None and item[2] > 0.9)]
