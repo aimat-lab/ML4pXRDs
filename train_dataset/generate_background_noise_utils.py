@@ -13,7 +13,7 @@ from glob import glob
 import os
 import pickle
 from dataset_simulations.simulation import Simulation
-
+from train_dataset.utils.test_unet.rruff_helpers import get_rruff_patterns
 
 n_angles_gp = 60
 max_peaks_per_sample = 200  # max number of peaks per sample
@@ -26,7 +26,8 @@ scaling = 1.0
 # variance = 4.0
 
 # min_variance = 4.0
-min_variance = 7.0
+# min_variance = 7.0
+min_variance = 7.0  # TODO: Change back
 max_variance = 40.0
 
 # for background to peaks ratio:
@@ -377,13 +378,20 @@ if __name__ == "__main__":
         100, (start_x, end_x), n_angles_output=N, icsd_patterns=statistics_patterns
     )
 
-    for i, raw_file in enumerate(raw_files):
+    xs, ys, difs, raw_files = get_rruff_patterns(
+        only_refitted_patterns=False,
+        only_selected_patterns=True,
+        only_if_dif_exists=True,
+        start_angle=5.0,
+        end_angle=90.0,
+        reduced_resolution=False,
+        return_refitted_parameters=False,
+    )
 
-        raw_filename = os.path.basename(raw_file)
-        raw_xy = np.genfromtxt(raw_file, dtype=float, delimiter=",", comments="#")
+    for i in range(len(ys)):
 
-        x_test = raw_xy[:, 0]
-        y_test = raw_xy[:, 1]
+        x_test = xs[i]
+        y_test = ys[i]
 
         y_test = np.array(y_test)
         y_test -= min(y_test)
