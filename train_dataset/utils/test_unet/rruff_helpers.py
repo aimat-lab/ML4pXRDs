@@ -15,7 +15,7 @@ from pathlib import Path
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
 
-N_polynomial_coefficients = 8
+N_polynomial_coefficients = 20
 use_K_alpha_splitting = True
 
 
@@ -164,7 +164,7 @@ def smeared_peaks(
     return ys
 
 
-def fit_diffractogram(x, y, angles, intensities, do_plot=True):
+def fit_diffractogram(x, y, angles, intensities, do_plot=True, only_plot_final=False):
     def fit_function(
         xs,
         *values,
@@ -224,7 +224,7 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
         current_bestfits.append(angle)
         current_bestfits.append(intensity)
 
-    if do_plot:
+    if do_plot and not only_plot_final:
         plt.plot(x, y, label="Original")
         for angle in angles:
             plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
@@ -238,7 +238,7 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
 
     current_bestfits[N_polynomial_coefficients + 8] /= scaler
 
-    if do_plot:
+    if do_plot and not only_plot_final:
         plt.plot(
             x,
             initial_ys,
@@ -246,7 +246,7 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
         )
         plt.show()
 
-    for strategy_item in strategy:
+    for k, strategy_item in enumerate(strategy):
 
         if strategy_item == "peak_by_peak_plus_bg":
             sub_steps = range(len(angles))
@@ -379,7 +379,7 @@ def fit_diffractogram(x, y, angles, intensities, do_plot=True):
 
         # Only plot after all peaks were fitted separately
 
-        if do_plot:
+        if do_plot and (not only_plot_final or (k == (len(strategy) - 1))):
             plt.plot(x, y, label="Original")
             plt.plot(x, result_ys, label="Fitted")
 

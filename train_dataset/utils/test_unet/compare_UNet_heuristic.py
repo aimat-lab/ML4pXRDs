@@ -6,12 +6,12 @@ from scipy.optimize import curve_fit
 
 skip_first_N = 20
 
-N_polynomial_coefficients = 8
+N_polynomial_coefficients = 20
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
 
-do_plot = False
+do_plot = True
 
 xs, ys, difs, raw_files, parameters = get_rruff_patterns(
     only_refitted_patterns=True,
@@ -48,6 +48,8 @@ for method in ["arPLS", "rb"]:
 
     for i in range(len(xs)):
 
+        print(raw_files[i])
+
         predictions = model_unet.predict(np.expand_dims(np.expand_dims(ys[i], 0), -1))[
             0, :, 0
         ]
@@ -72,7 +74,7 @@ for method in ["arPLS", "rb"]:
 
         if do_plot:
             plt.plot(xs[i], ys[i], label="Input")
-            plt.plot(xs[i], ys[i] - predictions, label="UNet")
+            # plt.plot(xs[i], ys[i] - predictions, label="UNet")
             plt.plot(xs[i], result_heuristic, label=method)
 
         xs_to_fit = xs[i][500:-500]
