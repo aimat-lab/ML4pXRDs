@@ -15,6 +15,7 @@ import generate_background_noise_utils
 from datetime import datetime
 from dataset_simulations.random_simulation_utils import load_dataset_info
 import pickle
+import time
 
 tag = "UNetPP"
 training_mode = "train"  # possible: train and test
@@ -58,6 +59,7 @@ if training_mode == "train":
     if use_ICSD_patterns:
 
         with open("../dataset_simulations/prepared_training/meta", "rb") as file:
+
             data = pickle.load(file)
 
             per_element = data[6]

@@ -448,13 +448,13 @@ class Simulation:
                     load_only_N_patterns_each is not None
                 ):  # load patterns using memory mapping
                     self.sim_patterns.extend(
-                        np.load(file, allow_pickle=True, mmap_mode="r")[
+                        np.load(file, allow_pickle=True, mmap_mode="c")[
                             :, 0:load_only_N_patterns_each
                         ]
                     )
                 elif metas_to_load is not None:
                     self.sim_patterns.extend(
-                        np.load(file, allow_pickle=True, mmap_mode="r")
+                        np.load(file, allow_pickle=True, mmap_mode="c")
                     )
                 else:
                     self.sim_patterns.extend(np.load(file, allow_pickle=True))

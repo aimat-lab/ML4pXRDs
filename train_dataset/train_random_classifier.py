@@ -166,15 +166,14 @@ uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = False
-use_vecsei_bg_noise = False
-
-use_rruff_validation_dataset = False
+add_background_and_noise = True
+use_vecsei_bg_noise = True
+use_rruff_validation_dataset = True
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
 
-local = False
+local = True  # TODO: Change back
 if local:
     NO_workers = 8
     verbosity_tf = 1
@@ -398,10 +397,6 @@ if add_background_and_noise:
             else:
                 pattern[j, :] += generate_background_noise_vecsei(angle_range)
                 pattern[j, :] /= np.max(pattern[j, :])
-
-            # TODO: Remove this again:
-            plt.plot(pattern[j, :])
-            plt.show()
 
 n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
 

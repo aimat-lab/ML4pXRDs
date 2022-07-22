@@ -1,5 +1,4 @@
 import tensorflow.keras as keras
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 from glob import glob
