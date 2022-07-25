@@ -27,18 +27,14 @@ max_variance = 40.0
 # for background to peaks ratio:
 scaling_max = 150.0
 
-use_fluct_noise = True
-
+use_fluct_noise = False
 if not use_fluct_noise:
-
-    base_noise_level_min = 0.003
-    base_noise_level_max = 0.03
+    base_noise_level_min = 0.0
+    base_noise_level_max = 0.09
 
     fluct_noise_level_min = 0
     fluct_noise_level_max = 0
-
 else:
-
     base_noise_level_min = 0.0
     # base_noise_level_min = 0.09
     base_noise_level_max = 0.09
