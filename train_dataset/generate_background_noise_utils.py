@@ -522,9 +522,17 @@ if __name__ == "__main__":
         load_only_N_patterns_each=1, metas_to_load=statistics_match_metas_flat, stop=4
     )
     statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
+    statistics_angles = [j for i in icsd_sim_statistics.sim_angles for j in i]
+    statistics_intensities = [j for i in icsd_sim_statistics.sim_intensities for j in i]
 
     xs_generated, ys_generated = generate_samples_gp(
-        100, (start_x, end_x), n_angles_output=N, icsd_patterns=statistics_patterns
+        100,
+        (start_x, end_x),
+        n_angles_output=N,
+        icsd_patterns=statistics_patterns,
+        icsd_angles=statistics_angles,
+        icsd_intensities=statistics_intensities,
+        use_caglioti=True,
     )
 
     xs, ys, difs, raw_files = get_rruff_patterns(
