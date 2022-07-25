@@ -3,6 +3,7 @@ from train_dataset.utils.test_unet.rruff_helpers import *
 import pickle
 import multiprocessing
 import time
+import os
 
 
 def process_pattern(input):
@@ -46,6 +47,8 @@ class PoolProgress:
 
 if __name__ == "__main__":
 
+    os.system("mkdir -p parameters")
+
     xs, ys, dif_files, raw_files = get_rruff_patterns(
         only_refitted_patterns=False,
         only_selected_patterns=True,
@@ -55,11 +58,11 @@ if __name__ == "__main__":
         only_if_dif_exists=True,  # skips patterns where no dif is file
     )
 
-    if False:  # TODO: Change back
-        xs = xs[0:8]
-        ys = ys[0:8]
-        dif_files = dif_files[0:8]
-        raw_files = raw_files[0:8]
+    if False:
+        xs = xs[0:32]
+        ys = ys[0:32]
+        dif_files = dif_files[0:32]
+        raw_files = raw_files[0:32]
 
     """ Example with bump in the beginning
     for i in range(len(raw_files)):
@@ -75,18 +78,31 @@ if __name__ == "__main__":
     print(raw_files)
     """
 
-    with multiprocessing.Pool(processes=32) as pool:
+    # process_pattern((xs[0], ys[0], dif_files[0], raw_files[0]))
+    # exit()
 
-        progress = PoolProgress(pool, update_interval=30)
+    for j in range(0, int(np.ceil(len(xs) / 32))):
 
-        map_results = pool.map_async(process_pattern, zip(xs, ys, dif_files, raw_files))
+        with multiprocessing.Pool(processes=32) as pool:
 
-        progress.track(map_results)
+            progress = PoolProgress(pool, update_interval=30)
 
-        map_results = map_results.get()
-        results = [item for item in map_results if (item is not None and item[2] > 0.9)]
+            map_results = pool.map_async(
+                process_pattern,
+                zip(
+                    xs[j * 32 : (j + 1) * 32],
+                    ys[j * 32 : (j + 1) * 32],
+                    dif_files[j * 32 : (j + 1) * 32],
+                    raw_files[j * 32 : (j + 1) * 32],
+                ),
+            )
 
-    with open("rruff_refits.pickle", "wb") as file:
-        pickle.dump(results, file)
+            progress.track(map_results)
 
-    pool.close()
+            map_results = map_results.get()
+            results = [
+                item for item in map_results if (item is not None and item[2] > 0.9)
+            ]
+
+        with open(f"parameters/rruff_refits_{j}.pickle", "wb") as file:
+            pickle.dump(results, file)

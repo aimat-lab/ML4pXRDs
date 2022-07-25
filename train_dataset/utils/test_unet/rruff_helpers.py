@@ -1,15 +1,15 @@
-import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 from lmfit import Model
 from pyxtal.symmetry import Group
 from lmfit import Parameters
-import jax.numpy as jnp
 from jax import jit
 import pickle
 from glob import glob
 import os
 from pathlib import Path
+import jax.numpy as jnp
+import numpy as np
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -107,7 +107,10 @@ def smeared_peaks(
 
     ys = jnp.zeros(len(xs))
 
-    for twotheta, intensity in zip(pattern_angles, pattern_intensities):
+    # for twotheta, intensity in zip(pattern_angles, pattern_intensities):
+    for i in range(len(pattern_angles)):
+        twotheta = pattern_angles[i]
+        intensity = pattern_intensities[i]
 
         if not K_alpha_splitting:
 
@@ -171,7 +174,7 @@ def fit_diffractogram(
         *values,
     ):
 
-        polynomial = np.zeros(len(xs))
+        polynomial = jnp.zeros(len(xs))
         for j in range(N_polynomial_coefficients):
             polynomial += values[j] * xs**j
 
