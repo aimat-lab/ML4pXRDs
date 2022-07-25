@@ -4,7 +4,6 @@ from sklearn.metrics import r2_score
 from lmfit import Model
 from pyxtal.symmetry import Group
 from lmfit import Parameters
-from jax import jacrev
 import jax.numpy as jnp
 from jax import jit
 import pickle

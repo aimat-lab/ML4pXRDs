@@ -13,9 +13,7 @@ import contextlib
 sys.path.append("../")
 import generate_background_noise_utils
 from datetime import datetime
-from dataset_simulations.random_simulation_utils import load_dataset_info
 import pickle
-import time
 
 tag = "UNetPP"
 training_mode = "train"  # possible: train and test
@@ -35,7 +33,9 @@ number_of_batches = 500
 number_of_epochs = 2000
 
 use_distributed_strategy = True
-use_ICSD_patterns = True
+use_ICSD_patterns = False
+use_caglioti = True
+
 local = False
 
 if not local:
@@ -56,7 +56,7 @@ out_base = "unet/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + 
 
 if training_mode == "train":
 
-    if use_ICSD_patterns:
+    if use_ICSD_patterns or use_caglioti:
 
         with open("../dataset_simulations/prepared_training/meta", "rb") as file:
 
@@ -111,6 +111,8 @@ if training_mode == "train":
             stop=1 if local else None,
         )
         statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
+        statistics_angles = icsd_sim_statistics.sim_angles
+        statistics_intensities = icsd_sim_statistics.sim_intensities
 
     class CustomSequence(keras.utils.Sequence):
         def __init__(self, batch_size, number_of_batches, number_of_epochs):
@@ -140,7 +142,9 @@ if training_mode == "train":
                 self.batch_size,
                 (start_x, end_x),
                 n_angles_output=N,
-                icsd_patterns=statistics_patterns,
+                icsd_patterns=statistics_patterns if use_ICSD_patterns else None,
+                icsd_angles=statistics_angles if use_caglioti else None,
+                icsd_intensities=statistics_intensities if use_caglioti else None,
             )
 
             # if np.any(np.isnan(in_patterns)) or np.any(np.isnan(out_patterns)):

@@ -3,10 +3,6 @@ import random
 import matplotlib.pyplot as plt
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from scipy import interpolate as ip
-import pandas as pd
-from scipy.stats import truncnorm
-import time
 import numba
 from train_dataset.interp_utils import spline_numba
 from glob import glob
@@ -62,8 +58,7 @@ crystallite_size_gauss_max = (
 # NOTE: When using the ICSD patterns directly from the simulation, then this
 # range for crystallite sizes doesn't apply!
 
-use_caglioti = True
-K_alpha_splitting = True
+K_alpha_splitting = True  # only if caglioti is used
 wavelength = 1.541838  # needed if K_alpha_splitting = True
 
 
@@ -85,7 +80,7 @@ def fn_H(theta, U, V, W):
     return np.sqrt(H_squared)
 
 
-def peak_function(theta, mean, U, V, W, eta):
+def peak_function_pseudo_voigt(theta, mean, U, V, W, eta):
 
     C_G = 4 * np.log(2)
     C_L = 4
@@ -105,7 +100,7 @@ lambda_K_alpha_1 = 1.54056  # angstrom
 lambda_K_alpha_2 = 1.54439  # angstrom
 
 
-def smeared_peaks(
+def smeared_peaks_pseudo_voigt(
     xs,
     pattern_angles,
     pattern_intensities,
@@ -128,7 +123,7 @@ def smeared_peaks(
 
         if not K_alpha_splitting:
 
-            peak = intensity * peak_function(
+            peak = intensity * peak_function_pseudo_voigt(
                 xs / 2,
                 twotheta / 2,
                 U,
@@ -165,14 +160,36 @@ def smeared_peaks(
                 )
             )
 
-            peak_1 = intensity * peak_function(xs / 2, theta_1, U, V, W, eta) * 2 / 3
-            peak_2 = intensity * peak_function(xs / 2, theta_2, U, V, W, eta) * 1 / 3
+            peak_1 = (
+                intensity
+                * peak_function_pseudo_voigt(xs / 2, theta_1, U, V, W, eta)
+                * 2
+                / 3
+            )
+            peak_2 = (
+                intensity
+                * peak_function_pseudo_voigt(xs / 2, theta_2, U, V, W, eta)
+                * 1
+                / 3
+            )
 
             ys += peak_1 + peak_2
 
             pass
 
     return ys
+
+
+def smeared_peaks_pseudo_voigt_random(xs, pattern_angles, pattern_intensities):
+
+    U = np.random.uniform(0.0, 3.0)[0]
+    V = 0.0
+    W = np.random.uniform(0.0, 4.0)[0]
+    eta = np.random.uniform(0.0, 1.0)[0]
+
+    return smeared_peaks_pseudo_voigt(
+        xs, pattern_angles, pattern_intensities, U, V, W, eta
+    )
 
 
 ##########
@@ -237,6 +254,9 @@ def generate_samples_gp(
     random_seed=None,
     icsd_patterns=None,
     original_range=False,
+    use_caglioti=False,
+    icsd_angles=None,
+    icsd_intensities=None,
 ):
 
     # x_test = np.linspace(10, 50, 1000)
@@ -260,6 +280,10 @@ def generate_samples_gp(
     gp = GaussianProcessRegressor(kernel=kernel)
     ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples)
 
+    indices_to_select = [
+        random.randint(0, len(icsd_patterns) - 1) for i in range(n_samples)
+    ]
+
     # start = time.time()
     result = add_peaks(
         n_samples,
@@ -269,13 +293,17 @@ def generate_samples_gp(
         pattern_xs,
         min_x,
         max_x,
-        icsd_patterns=[
-            icsd_patterns[random.randint(0, len(icsd_patterns) - 1)]
-            for i in range(n_samples)
-        ]
+        icsd_patterns=[icsd_patterns[index] for index in indices_to_select]
         if icsd_patterns is not None
         else None,
         original_range=original_range,
+        use_caglioti=use_caglioti,
+        icsd_angles=[icsd_angles[index] for index in indices_to_select]
+        if icsd_angles is not None
+        else None,
+        icsd_intensities=[icsd_intensities[index] for index in indices_to_select]
+        if icsd_intensities is not None
+        else None,
     )
 
     if False:
@@ -309,6 +337,9 @@ def add_peaks(
     max_x,
     icsd_patterns=None,
     original_range=False,
+    use_caglioti=False,
+    icsd_angles=None,
+    icsd_intensities=None,
 ):
 
     # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
@@ -339,7 +370,7 @@ def add_peaks(
         scaling = np.random.uniform(0, scaling_max)
         ys_altered_all[i, :] = ys_altered_all[i, :] / weight_background * 10 * scaling
 
-        if icsd_patterns is None:
+        if icsd_patterns is None and not use_caglioti:
 
             domain_size = np.random.uniform(
                 crystallite_size_gauss_min, crystallite_size_gauss_max
@@ -389,7 +420,7 @@ def add_peaks(
                 ys_unaltered_all[i, :] / np.max(ys_unaltered_all[i, :]) * 4
             )
 
-        else:
+        elif not use_caglioti:
 
             if not original_range:
                 ys_unaltered_all[i, 250:4501] = icsd_patterns[i][
@@ -399,6 +430,15 @@ def add_peaks(
                 ys_unaltered_all[i, :] = icsd_patterns[i][:]
 
             ys_unaltered_all[i, :] *= 4
+
+        else:
+
+            ys_unaltered_all[i, :] = smeared_peaks_pseudo_voigt_random(
+                pattern_xs, icsd_angles[i], icsd_intensities[i]
+            )
+            ys_unaltered_all[i, :] = ys_unaltered_all[i, :] / np.max(
+                ys_unaltered_all[i, :]
+            )
 
             # print(np.max(ys_unaltered_all[i, :]))
         ys_altered_all[i, :] += ys_unaltered_all[i, :]
