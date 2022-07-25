@@ -25,9 +25,7 @@ scaling = 1.0
 # variance = 10.0
 # variance = 4.0
 
-# min_variance = 4.0
-# min_variance = 7.0
-min_variance = 7.0  # TODO: Change back!!
+min_variance = 7.0
 max_variance = 40.0
 
 # for background to peaks ratio:
@@ -63,6 +61,121 @@ crystallite_size_gauss_max = (
 )
 # NOTE: When using the ICSD patterns directly from the simulation, then this
 # range for crystallite sizes doesn't apply!
+
+use_caglioti = True
+K_alpha_splitting = True
+wavelength = 1.541838  # needed if K_alpha_splitting = True
+
+
+########## Modified caglioti peak functions ##########
+
+
+def fn_x(theta, mean, H):
+    return (2 * theta - 2 * mean) / H
+
+
+def fn_H(theta, U, V, W):
+
+    H_squared = (
+        U * np.tan(theta / 360 * 2 * np.pi) ** 2
+        + V * np.tan(theta / 360 * 2 * np.pi)
+        + W
+    )
+
+    return np.sqrt(H_squared)
+
+
+def peak_function(theta, mean, U, V, W, eta):
+
+    C_G = 4 * np.log(2)
+    C_L = 4
+
+    H = fn_H(theta, U, V, W)
+    H_dash = H
+
+    x = fn_x(theta, mean, H)
+
+    return eta * C_G ** (1 / 2) / (np.sqrt(np.pi) * H) * np.exp(-1 * C_G * x**2) + (
+        1 - eta
+    ) * C_L ** (1 / 2) / (np.sqrt(np.pi) * H_dash) * (1 + C_L * x**2) ** (-1)
+
+
+# Copper:
+lambda_K_alpha_1 = 1.54056  # angstrom
+lambda_K_alpha_2 = 1.54439  # angstrom
+
+
+def smeared_peaks(
+    xs,
+    pattern_angles,
+    pattern_intensities,
+    U,
+    V,
+    W,
+    eta,
+):
+
+    # Splitting Kalpha_1, Kalpha_2: https://physics.stackexchange.com/questions/398724/why-is-k-alpha-3-2-always-more-intense-than-k-alpha-1-2-in-copper
+    # => ratio 2:1
+    # Only the lorentz polarization correction depends on theta, can most likely be ignored
+    # n * lambda = 2*d*sin(theta)
+    # => lambda_1 / lambda_2 =sin(theta_1) / sin(theta_2)
+    # => sin(theta_2) = sin(theta_1) * lambda_2 / lambda_1
+
+    ys = np.zeros(len(xs))
+
+    for twotheta, intensity in zip(pattern_angles, pattern_intensities):
+
+        if not K_alpha_splitting:
+
+            peak = intensity * peak_function(
+                xs / 2,
+                twotheta / 2,
+                U,
+                V,
+                W,
+                eta,
+            )
+
+            # For more accurate normalization
+            # delta_x = xs[1] - xs[0]
+            # volume = delta_x * np.sum(ys)
+            # ys = y * ys / volume
+
+            ys += peak
+
+        else:
+
+            theta_1 = (
+                360
+                / (2 * np.pi)
+                * np.arcsin(
+                    np.sin(twotheta / 2 * 2 * np.pi / 360)
+                    * lambda_K_alpha_1
+                    / wavelength
+                )
+            )
+            theta_2 = (
+                360
+                / (2 * np.pi)
+                * np.arcsin(
+                    np.sin(twotheta / 2 * 2 * np.pi / 360)
+                    * lambda_K_alpha_2
+                    / wavelength
+                )
+            )
+
+            peak_1 = intensity * peak_function(xs / 2, theta_1, U, V, W, eta) * 2 / 3
+            peak_2 = intensity * peak_function(xs / 2, theta_2, U, V, W, eta) * 1 / 3
+
+            ys += peak_1 + peak_2
+
+            pass
+
+    return ys
+
+
+##########
 
 
 def convert_to_discrete(
