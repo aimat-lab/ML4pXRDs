@@ -61,10 +61,12 @@ wavelength = 1.541838  # needed if K_alpha_splitting = True
 ########## Modified caglioti peak functions ##########
 
 
+@numba.njit
 def fn_x(theta, mean, H):
     return (2 * theta - 2 * mean) / H
 
 
+@numba.njit
 def fn_H(theta, U, V, W):
 
     H_squared = (
@@ -76,6 +78,7 @@ def fn_H(theta, U, V, W):
     return np.sqrt(H_squared)
 
 
+@numba.njit
 def peak_function_pseudo_voigt(theta, mean, U, V, W, eta):
 
     C_G = 4 * np.log(2)
@@ -96,6 +99,7 @@ lambda_K_alpha_1 = 1.54056  # angstrom
 lambda_K_alpha_2 = 1.54439  # angstrom
 
 
+@numba.njit
 def smeared_peaks_pseudo_voigt(
     xs,
     pattern_angles,
@@ -115,7 +119,10 @@ def smeared_peaks_pseudo_voigt(
 
     ys = np.zeros(len(xs))
 
-    for twotheta, intensity in zip(pattern_angles, pattern_intensities):
+    # for twotheta, intensity in zip(pattern_angles, pattern_intensities):
+    for i in range(len(pattern_angles)):
+        twotheta = pattern_angles[i]
+        intensity = pattern_intensities[i]
 
         if not K_alpha_splitting:
 
@@ -176,12 +183,13 @@ def smeared_peaks_pseudo_voigt(
     return ys
 
 
+@numba.njit
 def smeared_peaks_pseudo_voigt_random(xs, pattern_angles, pattern_intensities):
 
-    U = np.random.uniform(0.0, 3.0)[0]
+    U = np.random.uniform(0.0, 3.0)
     V = 0.0
-    W = np.random.uniform(0.0, 4.0)[0]
-    eta = np.random.uniform(0.0, 1.0)[0]
+    W = np.random.uniform(0.0, 4.0)
+    eta = np.random.uniform(0.0, 1.0)
 
     return smeared_peaks_pseudo_voigt(
         xs, pattern_angles, pattern_intensities, U, V, W, eta
@@ -294,10 +302,12 @@ def generate_samples_gp(
         else None,
         original_range=original_range,
         use_caglioti=use_caglioti,
-        icsd_angles=[icsd_angles[index] for index in indices_to_select]
+        icsd_angles=[np.array(icsd_angles[index]) for index in indices_to_select]
         if icsd_angles is not None
         else None,
-        icsd_intensities=[icsd_intensities[index] for index in indices_to_select]
+        icsd_intensities=[
+            np.array(icsd_intensities[index]) for index in indices_to_select
+        ]
         if icsd_intensities is not None
         else None,
     )
@@ -522,8 +532,8 @@ if __name__ == "__main__":
         load_only_N_patterns_each=1, metas_to_load=statistics_match_metas_flat, stop=4
     )
     statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
-    statistics_angles = [j for i in icsd_sim_statistics.sim_angles for j in i]
-    statistics_intensities = [j for i in icsd_sim_statistics.sim_intensities for j in i]
+    statistics_angles = icsd_sim_statistics.sim_angles
+    statistics_intensities = icsd_sim_statistics.sim_intensities
 
     xs_generated, ys_generated = generate_samples_gp(
         100,
