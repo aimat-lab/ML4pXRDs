@@ -145,6 +145,7 @@ if training_mode == "train":
                 icsd_patterns=statistics_patterns if use_ICSD_patterns else None,
                 icsd_angles=statistics_angles if use_caglioti else None,
                 icsd_intensities=statistics_intensities if use_caglioti else None,
+                use_caglioti=use_caglioti,
             )
 
             # if np.any(np.isnan(in_patterns)) or np.any(np.isnan(out_patterns)):

@@ -17,21 +17,21 @@ max_peaks_per_sample = 200  # max number of peaks per sample
 min_peak_height = 0
 
 # GP parameters:
-scaling = 1.0
+gp_scaling = 1.0
 # variance = 10.0
 # variance = 4.0
 
-min_variance = 7.0
-max_variance = 40.0
+gp_min_variance = 3.0
+gp_max_variance = 20.0
 
 # for background to peaks ratio:
-# scaling_max = 150.0
-scaling_max = 50.0
+scaling_max = 15.0
+use_uniform_scaling = False
 
 use_fluct_noise = False
 if not use_fluct_noise:
     base_noise_level_min = 0.0
-    base_noise_level_max = 0.03
+    base_noise_level_max = 0.02
 
     fluct_noise_level_min = 0
     fluct_noise_level_max = 0
@@ -194,10 +194,10 @@ def smeared_peaks_pseudo_voigt_random(xs, pattern_angles, pattern_intensities):
     # )
 
     # U = np.random.uniform(0.0, 3.0)
-    U = np.random.uniform(0.0, 0.4)
+    U = np.random.uniform(0.0, 0.1)
     V = 0.0
     # W = np.random.uniform(0.0, 4.0)
-    W = np.random.uniform(0.0, 0.4)
+    W = np.random.uniform(0.0, 0.1)
 
     eta = np.random.uniform(0.0, 1.0)
 
@@ -264,7 +264,7 @@ def generate_samples_gp(
     x_range,
     n_angles_gp=n_angles_gp,
     n_angles_output=4016,
-    scaling=scaling,
+    scaling=gp_scaling,
     random_seed=None,
     icsd_patterns=None,
     original_range=False,
@@ -287,7 +287,7 @@ def generate_samples_gp(
     ys_gp = np.zeros(shape=(n_angles_gp, n_samples))
 
     # Use the same variance for each batch, this should be fine
-    variance = random.uniform(min_variance, max_variance)
+    variance = random.uniform(gp_min_variance, gp_max_variance)
     kernel = C(scaling, constant_value_bounds="fixed") * RBF(
         variance, length_scale_bounds="fixed"
     )
@@ -383,7 +383,11 @@ def add_peaks(
         ys_altered_all[i, :] -= np.min(ys_altered_all[i, :])
         weight_background = np.sum(ys_altered_all[i, :])
 
-        scaling = np.random.uniform(0, scaling_max)
+        if use_uniform_scaling:
+            scaling = np.random.uniform(0, scaling_max)
+        else:
+            scaling = samples_truncnorm(0, scaling_max / 2, [0, scaling_max])
+
         ys_altered_all[i, :] = ys_altered_all[i, :] / weight_background * 10 * scaling
 
         if icsd_patterns is None and not use_caglioti:
