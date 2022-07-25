@@ -2,6 +2,7 @@ import numpy as np
 from train_dataset.utils.test_unet.rruff_helpers import *
 import pickle
 import multiprocessing
+import time
 
 
 def process_pattern(input):
@@ -29,6 +30,18 @@ def process_pattern(input):
         return (raw_file, fit_parameters, score)
     else:
         return None
+
+
+class PoolProgress:
+    def __init__(self, pool, update_interval=3):
+        self.pool = pool
+        self.update_interval = update_interval
+
+    def track(self, job):
+        task = self.pool._cache[job._job]
+        while task._number_left > 0:
+            print("Tasks remaining = {0}".format(task._number_left * task._chunksize))
+            time.sleep(self.update_interval)
 
 
 if __name__ == "__main__":
@@ -62,12 +75,16 @@ if __name__ == "__main__":
     print(raw_files)
     """
 
-    pool = multiprocessing.Pool(processes=32)
+    with multiprocessing.Pool(processes=32) as pool:
 
-    map_results = pool.map(process_pattern, zip(xs, ys, dif_files, raw_files))
-    results = [item for item in map_results if (item is not None and item[2] > 0.9)]
+        progress = PoolProgress(pool, update_interval=30)
 
-    # print(results)
+        map_results = pool.map_async(process_pattern, zip(xs, ys, dif_files, raw_files))
+
+        progress.track(map_results)
+
+        map_results = map_results.get()
+        results = [item for item in map_results if (item is not None and item[2] > 0.9)]
 
     with open("rruff_refits.pickle", "wb") as file:
         pickle.dump(results, file)
