@@ -25,12 +25,13 @@ min_variance = 7.0
 max_variance = 40.0
 
 # for background to peaks ratio:
-scaling_max = 150.0
+# scaling_max = 150.0
+scaling_max = 50.0
 
 use_fluct_noise = False
 if not use_fluct_noise:
     base_noise_level_min = 0.0
-    base_noise_level_max = 0.09
+    base_noise_level_max = 0.03
 
     fluct_noise_level_min = 0
     fluct_noise_level_max = 0
@@ -186,9 +187,18 @@ def smeared_peaks_pseudo_voigt(
 @numba.njit
 def smeared_peaks_pseudo_voigt_random(xs, pattern_angles, pattern_intensities):
 
-    U = np.random.uniform(0.0, 3.0)
+    # H_squared = (
+    #    U * np.tan(theta / 360 * 2 * np.pi) ** 2
+    #    + V * np.tan(theta / 360 * 2 * np.pi)
+    #    + W
+    # )
+
+    # U = np.random.uniform(0.0, 3.0)
+    U = np.random.uniform(0.0, 0.4)
     V = 0.0
-    W = np.random.uniform(0.0, 4.0)
+    # W = np.random.uniform(0.0, 4.0)
+    W = np.random.uniform(0.0, 0.4)
+
     eta = np.random.uniform(0.0, 1.0)
 
     return smeared_peaks_pseudo_voigt(
