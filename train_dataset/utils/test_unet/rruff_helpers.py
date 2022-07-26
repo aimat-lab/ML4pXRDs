@@ -196,7 +196,7 @@ def fit_diffractogram(
 
         return peaks + polynomial
 
-    fit_function = jit(fit_function)
+    # fit_function = jit(fit_function)
 
     def fit_function_wrapped(xs, **kwargs):
         values = list(kwargs.values())
