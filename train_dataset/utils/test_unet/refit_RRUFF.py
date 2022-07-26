@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # process_pattern((xs[0], ys[0], dif_files[0], raw_files[0]))
     # exit()
 
-    for j in range(0, int(np.ceil(len(xs) / 100))):
+    for j in range(0, int(np.ceil(len(xs) / 200))):
 
         with multiprocessing.Pool(processes=32) as pool:
 
@@ -90,10 +90,10 @@ if __name__ == "__main__":
             map_results = pool.map_async(
                 process_pattern,
                 zip(
-                    xs[j * 100 : (j + 1) * 100],
-                    ys[j * 100 : (j + 1) * 100],
-                    dif_files[j * 100 : (j + 1) * 100],
-                    raw_files[j * 100 : (j + 1) * 100],
+                    xs[j * 200 : (j + 1) * 200],
+                    ys[j * 200 : (j + 1) * 200],
+                    dif_files[j * 200 : (j + 1) * 200],
+                    raw_files[j * 200 : (j + 1) * 200],
                 ),
             )
 
