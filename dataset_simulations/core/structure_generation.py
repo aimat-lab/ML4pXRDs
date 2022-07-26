@@ -129,6 +129,7 @@ def generate_pyxtal_object(
     scale_volume_min_density=True,
     denseness_factors_conditional_sampler_seeds_per_spg=None,
     lattice_paras_density_per_lattice_type=None,
+    fixed_volume=None,
 ):
     """Used to generate a pyxtal object using the given parameters.
 
@@ -165,44 +166,52 @@ def generate_pyxtal_object(
 
     ### 1)
 
-    volume = 0
-    for numIon, specie in zip(multiplicities, species):
-        # r = random.uniform(
-        #    Element(specie).covalent_radius, Element(specie).vdw_radius
-        # )
-        r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
-        volume += numIon * 4 / 3 * np.pi * r**3
+    if fixed_volume is None:
 
-    if factor is not None:
-        volume *= factor
+        volume = 0
+        for numIon, specie in zip(multiplicities, species):
+            # r = random.uniform(
+            #    Element(specie).covalent_radius, Element(specie).vdw_radius
+            # )
+            r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
+            volume += numIon * 4 / 3 * np.pi * r**3
+
+        if factor is not None:
+            volume *= factor
+        else:
+
+            max_sum_cov_volumes = denseness_factors_conditional_sampler_seeds_per_spg[
+                group_object.number
+            ][3]
+
+            if volume > max_sum_cov_volumes:
+                return False
+
+            factor = sample_denseness_factor(
+                volume,
+                denseness_factors_conditional_sampler_seeds_per_spg[
+                    group_object.number
+                ],
+            )
+
+            if factor is None:  # rejection sampler didn't converge
+                return False
+
+            volume *= factor
+
+        if scale_volume_min_density:
+            min_density = 0.75
+            # make sure the volume is not too small
+            if volume / sum(multiplicities) < min_density:
+                volume = sum(multiplicities) * min_density
+                print("Volume has been scaled to match minimum density.")
+
+        if volume > max_volume:
+            return False
+
     else:
 
-        max_sum_cov_volumes = denseness_factors_conditional_sampler_seeds_per_spg[
-            group_object.number
-        ][3]
-
-        if volume > max_sum_cov_volumes:
-            return False
-
-        factor = sample_denseness_factor(
-            volume,
-            denseness_factors_conditional_sampler_seeds_per_spg[group_object.number],
-        )
-
-        if factor is None:  # rejection sampler didn't converge
-            return False
-
-        volume *= factor
-
-    if scale_volume_min_density:
-        min_density = 0.75
-        # make sure the volume is not too small
-        if volume / sum(multiplicities) < min_density:
-            volume = sum(multiplicities) * min_density
-            print("Volume has been scaled to match minimum density.")
-
-    if volume > max_volume:
-        return False
+        volume = fixed_volume
 
     pyxtal_object = pyxtal(molecular=False)
 

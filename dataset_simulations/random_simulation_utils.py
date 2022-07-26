@@ -777,6 +777,7 @@ def generate_structure(
                     scale_volume_min_density=True,  # TODO: Maybe change
                     denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                     lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+                    fixed_volume=fixed_volume,
                 )
             except Exception as ex:
                 print(flush=True)
@@ -2339,7 +2340,7 @@ if __name__ == "__main__":
     if False:
         data = load_dataset_info(check_for_sum_formula_overlap=False)
 
-    if True:
+    if False:
         show_dataset_statistics()
 
     if False:
