@@ -294,9 +294,10 @@ def generate_samples_gp(
     gp = GaussianProcessRegressor(kernel=kernel)
     ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples)
 
-    indices_to_select = [
-        random.randint(0, len(icsd_patterns) - 1) for i in range(n_samples)
-    ]
+    n_indices = (
+        len(icsd_patterns) if icsd_patterns is not None else len(icsd_intensities)
+    )
+    indices_to_select = [random.randint(0, n_indices - 1) for i in range(n_samples)]
 
     # start = time.time()
     result = add_peaks(
