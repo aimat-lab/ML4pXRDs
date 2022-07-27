@@ -3,6 +3,7 @@ from train_dataset.utils.test_unet.heuristic_bg_utils import *
 import numpy as np
 import pickle
 from scipy.optimize import curve_fit
+from skimage.metrics import structural_similarity
 
 skip_first_N = 20
 
@@ -45,6 +46,9 @@ for method in ["arPLS", "rb"]:
 
     diffs_method = []
     diffs_unet = []
+
+    ssims_method = []
+    ssims_unet = []
 
     for i in range(len(xs)):
 
@@ -113,12 +117,23 @@ for method in ["arPLS", "rb"]:
         diff_method = np.sum(np.square(ys_rb_fit - target_y))
         diffs_method.append(diff_method)
 
-        print("Difference UNet:", diff_unet)
-        print(f"Difference {method}:", diff_method)
+        ssims_unet.append(structural_similarity(ys_unet_fit, target_y))
+        ssims_method.append(structural_similarity(ys_rb_fit, target_y))
+
+        print("Difference UNet (mse, ssim):", diff_unet, ssims_unet[-1])
+        print(f"Difference {method} (mse, ssim):", diff_method, ssims_method[-1])
 
         if do_plot:
             plt.legend()
             plt.show()
 
-    print("Average difference UNet:", np.average(diffs_unet))
-    print(f"Average difference {method}:", np.average(diffs_method))
+    print(
+        "Average difference UNet (mse, ssim):",
+        np.average(diffs_unet),
+        np.average(ssims_unet),
+    )
+    print(
+        f"Average difference {method} (mse, ssim):",
+        np.average(diffs_method),
+        np.average(ssims_method),
+    )
