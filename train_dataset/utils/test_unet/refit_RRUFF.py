@@ -24,7 +24,7 @@ def process_pattern(input):
                 do_print=False,
             )
         except Exception as ex:
-            print("Error fitting diffractogram to sample:")
+            print("Error fitting diffractogram to sample:", flush=True)
             print(ex)
             return None
 
@@ -41,7 +41,10 @@ class PoolProgress:
     def track(self, job):
         task = self.pool._cache[job._job]
         while task._number_left > 0:
-            print("Tasks remaining = {0}".format(task._number_left * task._chunksize))
+            print(
+                "Tasks remaining = {0}".format(task._number_left * task._chunksize),
+                flush=True,
+            )
             time.sleep(self.update_interval)
 
 
