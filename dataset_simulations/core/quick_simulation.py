@@ -719,23 +719,28 @@ def get_random_xy_patterns(
         return result_patterns_y, labels, all_structures, all_corn_sizes
 
 
-def plot_timings(timings_per_volume, NO_wyckoffs_per_volume, label):
+def plot_timings(
+    timings_per_volume, NO_wyckoffs_per_volume, label, show_legend=True, make_fit=True
+):
 
     figure_double_width_pub = matplotlib_defaults.pub_width
     plt.figure(
         figsize=(
-            figure_double_width_pub * 0.95,
-            figure_double_width_pub * 0.7,
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
         )
     )
+    plt.xlabel("Number of atoms in asymmetric unit")
+    plt.ylabel("Time / s")
 
     for current_volume in timings_per_volume.keys():
 
-        model = LinearRegression()
-        model.fit(
-            np.expand_dims(NO_wyckoffs_per_volume[current_volume], -1),
-            np.expand_dims(timings_per_volume[current_volume], -1),
-        )
+        if make_fit:
+            model = LinearRegression()
+            model.fit(
+                np.expand_dims(NO_wyckoffs_per_volume[current_volume], -1),
+                np.expand_dims(timings_per_volume[current_volume], -1),
+            )
 
         color = next(plt.gca()._get_lines.prop_cycler)["color"]
 
@@ -744,11 +749,16 @@ def plot_timings(timings_per_volume, NO_wyckoffs_per_volume, label):
             timings_per_volume[current_volume],
             label=f"Volume {current_volume} " + r"$Å^3$",
             color=color,
+            s=8,
         )
-        xs = np.linspace(0, 100, 100)
-        plt.plot(xs, model.predict(np.expand_dims(xs, -1))[:, 0], color=color)
 
-    plt.legend()
+        if make_fit:
+            xs = np.linspace(0, 100, 100)
+            plt.plot(xs, model.predict(np.expand_dims(xs, -1))[:, 0], color=color)
+
+    if show_legend:
+        plt.legend()
+
     plt.tight_layout()
     plt.savefig(f"benchmark_{label}.pdf", bbox_inches="tight")
     plt.show()
@@ -777,7 +787,7 @@ def time_swipe_with_fixed_volume():
     global NO_wyckoffs_log
 
     volumes_to_probe = [500, 1000, 2000, 3000, 4000, 5000, 6000, 7000]
-    N_per_probe = 1000
+    N_per_probe = 500
 
     (
         probability_per_spg_per_element,
@@ -913,10 +923,20 @@ def time_swipe_with_fixed_volume():
         NO_wyckoffs_smeared_per_volume,
         "smearing",
     )
+
+    # For the generation, the volume really doesn't matter at all
+    # So, concatenate all results:
+    flattened_generation_timings = []
+    flattened_generation_NO_wyckoffs = []
+    for key in timings_generation_per_volume.keys():
+        flattened_generation_timings.extend(timings_generation_per_volume[key])
+        flattened_generation_NO_wyckoffs.extend(NO_wyckoffs_generation_per_volume[key])
     plot_timings(
-        timings_generation_per_volume,
-        NO_wyckoffs_generation_per_volume,
+        {1000: flattened_generation_timings},
+        {1000: flattened_generation_NO_wyckoffs},
         "generation",
+        show_legend=False,
+        make_fit=False,
     )
 
 
