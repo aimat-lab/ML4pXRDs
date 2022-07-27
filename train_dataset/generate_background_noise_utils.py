@@ -271,6 +271,7 @@ def generate_samples_gp(
     use_caglioti=False,
     icsd_angles=None,
     icsd_intensities=None,
+    use_ICSD_patterns=None,
 ):
 
     # x_test = np.linspace(10, 50, 1000)
@@ -308,19 +309,14 @@ def generate_samples_gp(
         pattern_xs,
         min_x,
         max_x,
-        icsd_patterns=[icsd_patterns[index] for index in indices_to_select]
-        if icsd_patterns is not None
-        else None,
+        icsd_patterns=[icsd_patterns[index] for index in indices_to_select],
         original_range=original_range,
         use_caglioti=use_caglioti,
-        icsd_angles=[np.array(icsd_angles[index]) for index in indices_to_select]
-        if icsd_angles is not None
-        else None,
+        icsd_angles=[np.array(icsd_angles[index]) for index in indices_to_select],
         icsd_intensities=[
             np.array(icsd_intensities[index]) for index in indices_to_select
-        ]
-        if icsd_intensities is not None
-        else None,
+        ],
+        use_icsd_patterns=use_ICSD_patterns,
     )
 
     if False:
@@ -357,6 +353,7 @@ def add_peaks(
     use_caglioti=False,
     icsd_angles=None,
     icsd_intensities=None,
+    use_icsd_patterns=False,
 ):
 
     # gp.fit(np.atleast_2d([13]).T, np.atleast_2d([2]).T)
@@ -391,7 +388,7 @@ def add_peaks(
 
         ys_altered_all[i, :] = ys_altered_all[i, :] / weight_background * 10 * scaling
 
-        if icsd_patterns is None and not use_caglioti:
+        if not use_icsd_patterns and not use_caglioti:
 
             domain_size = np.random.uniform(
                 crystallite_size_gauss_min, crystallite_size_gauss_max
@@ -571,7 +568,6 @@ if __name__ == "__main__":
     )
 
     for i in range(len(ys)):
-
         x_test = xs[i]
         y_test = ys[i]
 
