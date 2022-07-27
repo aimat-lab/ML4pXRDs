@@ -1,7 +1,9 @@
 import numpy as np
 from train_dataset.utils.test_unet.rruff_helpers import *
 import pickle
-import multiprocessing
+import ray
+
+from ray.util.multiprocessing import Pool
 import time
 import os
 
@@ -81,26 +83,31 @@ if __name__ == "__main__":
     print(raw_files)
     """
 
-    # process_pattern((xs[0], ys[0], dif_files[0], raw_files[0]))
-    # exit()
+    ray.init()
 
-    for j in range(0, int(np.ceil(len(xs) / 200))):
+    chunk_size = 100
+    N_workers = 32
+    N_chunks = int(np.ceil(len(xs) / chunk_size))
 
-        with multiprocessing.Pool(processes=32) as pool:
+    for j in range(0, N_chunks):
 
-            progress = PoolProgress(pool, update_interval=30)
+        print(f"Processing chunk {j+1} of {N_chunks}")
+
+        with Pool(processes=N_workers) as pool:
+
+            # progress = PoolProgress(pool, update_interval=30)
 
             map_results = pool.map_async(
                 process_pattern,
                 zip(
-                    xs[j * 200 : (j + 1) * 200],
-                    ys[j * 200 : (j + 1) * 200],
-                    dif_files[j * 200 : (j + 1) * 200],
-                    raw_files[j * 200 : (j + 1) * 200],
+                    xs[j * chunk_size : (j + 1) * chunk_size],
+                    ys[j * chunk_size : (j + 1) * chunk_size],
+                    dif_files[j * chunk_size : (j + 1) * chunk_size],
+                    raw_files[j * chunk_size : (j + 1) * chunk_size],
                 ),
             )
 
-            progress.track(map_results)
+            # progress.track(map_results)
 
             map_results = map_results.get()
             results = [

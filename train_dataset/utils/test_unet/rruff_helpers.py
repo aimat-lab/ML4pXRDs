@@ -8,8 +8,11 @@ import pickle
 from glob import glob
 import os
 from pathlib import Path
+import time
 import jax.numpy as jnp
 import numpy as np
+import logging
+import jax
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -173,7 +176,6 @@ def fit_diffractogram(
         xs,
         *values,
     ):
-
         polynomial = jnp.zeros(len(xs))
         for j in range(N_polynomial_coefficients):
             polynomial += values[j] * xs**j
@@ -196,7 +198,7 @@ def fit_diffractogram(
 
         return peaks + polynomial
 
-    # fit_function = jit(fit_function)
+    fit_function = jit(fit_function)
 
     def fit_function_wrapped(xs, **kwargs):
         values = list(kwargs.values())
@@ -233,10 +235,21 @@ def fit_diffractogram(
         for angle in angles:
             plt.axvline(x=angle, ymin=0.0, ymax=1.0, color="b", linewidth=0.1)
 
+    """
+    timings = []
+    for i in range(0, 100):
+        start = time.time()
+        
+        if i > 0:
+            timings.append(time.time() - start)
+    print(np.average(timings))
+    """
+
     initial_ys = fit_function(
         x,
         *current_bestfits,
     )
+
     scaler = np.max(initial_ys)
     initial_ys /= scaler
 
