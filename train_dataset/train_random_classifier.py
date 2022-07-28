@@ -46,7 +46,7 @@ from train_dataset.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
 
-tag = "all-spgs-random-resnet_50_additional_dense_layer_lr_0.0001_vecsei"
+tag = "all-spgs-random-bwuni-test"
 description = ""
 
 if len(sys.argv) > 1:
@@ -91,11 +91,14 @@ do_distance_checks = False
 do_merge_checks = False
 use_icsd_statistics = True
 
-if not head_only:
-    # NO_workers = 127 + 127 + 8  # for int-nano cluster
-    NO_workers = 1 * 128 + 1 * 128 + 28  # for int-nano cluster
+if not len(sys.argv) > 3:
+    if not head_only:
+        # NO_workers = 127 + 127 + 8  # for int-nano cluster
+        NO_workers = 1 * 128 + 1 * 128 + 28  # for int-nano cluster
+    else:
+        NO_workers = 30  # for int-nano cluster
 else:
-    NO_workers = 30  # for int-nano cluster
+    NO_workers = int(sys.argv[3])
 
 # NO_workers = 14
 # NO_workers = 40 * 5 + 5  # for bwuni
@@ -160,15 +163,15 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = True
+use_distributed_strategy = False  # TODO: Change back
 
 uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = True
-use_vecsei_bg_noise = True
-use_rruff_validation_dataset = True
+add_background_and_noise = False  # TODO: Change back
+use_vecsei_bg_noise = False
+use_rruff_validation_dataset = False
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -1891,9 +1894,10 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_park(
-        #   None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        # )
+        # TODO: Change back
+        model = build_model_park(
+            None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        )
 
         # model = build_model_park_medium_size(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
@@ -1913,19 +1917,19 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # Resnet-50 + additional dense layer
-        model = build_model_resnet_i(
-            None,
-            N,
-            len(spgs),
-            lr=learning_rate,
-            momentum=momentum,
-            optimizer=optimizer,
-            batchnorm_momentum=batchnorm_momentum,
-            i=50,
-            disable_batchnorm=False,
-            use_group_norm=use_group_norm,
-            add_additional_dense_layer=True,  # one more dense layer
-        )
+        # model = build_model_resnet_i(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    momentum=momentum,
+        #    optimizer=optimizer,
+        #    batchnorm_momentum=batchnorm_momentum,
+        #    i=50,
+        #    disable_batchnorm=False,
+        #    use_group_norm=use_group_norm,
+        #    add_additional_dense_layer=True,  # one more dense layer
+        # )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)

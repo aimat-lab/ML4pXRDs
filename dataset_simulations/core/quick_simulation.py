@@ -749,7 +749,7 @@ def plot_timings(
             timings_per_volume[current_volume],
             label=f"Volume {current_volume} " + r"$Å^3$",
             color=color,
-            s=8,
+            s=2,
         )
 
         if make_fit:
@@ -834,12 +834,14 @@ def time_swipe_with_fixed_volume():
 
     timings_simulation_pattern_per_volume = {}
     timings_simulation_smeared_per_volume = {}
+    timings_simulation_both_per_volume = {}
     timings_generation_per_volume = {}
     NO_wyckoffs_pattern_per_volume = {}
     NO_wyckoffs_smeared_per_volume = {}
+    NO_wyckoffs_both_per_volume = {}
     NO_wyckoffs_generation_per_volume = {}
 
-    for current_volume in volumes_to_probe[0:2]:  # TODO: Change back
+    for current_volume in volumes_to_probe:
 
         timings_simulation_pattern = []
         timings_simulation_smeared = []
@@ -884,6 +886,11 @@ def time_swipe_with_fixed_volume():
             fixed_volume=current_volume,
         )
 
+        timings_simulation_both = [
+            timings_simulation_pattern[i] + timings_simulation_smeared[i]
+            for i in range(len(timings_simulation_pattern))
+        ]
+
         (
             timings_simulation_pattern,
             NO_wyckoffs_simulation_pattern,
@@ -896,6 +903,14 @@ def time_swipe_with_fixed_volume():
             removed,
         ) = remove_outliers(timings_simulation_smeared, NO_wyckoffs_log)
         print(f"Volume {current_volume}: Rejected {removed} outliers for smearing")
+        (
+            timings_simulation_both,
+            NO_wyckoffs_simulation_both,
+            removed,
+        ) = remove_outliers(timings_simulation_both, NO_wyckoffs_log)
+        print(
+            f"Volume {current_volume}: Rejected {removed} outliers for simulation + smearing"
+        )
         timings_generation, NO_wyckoffs_generation, removed = remove_outliers(
             timings_generation, NO_wyckoffs_log
         )
@@ -907,10 +922,12 @@ def time_swipe_with_fixed_volume():
         timings_simulation_smeared_per_volume[
             current_volume
         ] = timings_simulation_smeared
+        timings_simulation_both_per_volume[current_volume] = timings_simulation_both
         timings_generation_per_volume[current_volume] = timings_generation
 
         NO_wyckoffs_pattern_per_volume[current_volume] = NO_wyckoffs_simulation_pattern
         NO_wyckoffs_smeared_per_volume[current_volume] = NO_wyckoffs_simulation_smeared
+        NO_wyckoffs_both_per_volume[current_volume] = NO_wyckoffs_simulation_both
         NO_wyckoffs_generation_per_volume[current_volume] = NO_wyckoffs_generation
 
     plot_timings(
@@ -922,6 +939,11 @@ def time_swipe_with_fixed_volume():
         timings_simulation_smeared_per_volume,
         NO_wyckoffs_smeared_per_volume,
         "smearing",
+    )
+    plot_timings(
+        timings_simulation_both_per_volume,
+        NO_wyckoffs_both_per_volume,
+        "both",
     )
 
     # For the generation, the volume really doesn't matter at all
