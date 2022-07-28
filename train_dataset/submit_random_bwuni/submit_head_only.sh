@@ -9,7 +9,7 @@
 #SBATCH --time=30
 
 source ~/mambaforge/etc/profile.d/conda.sh
-conda activate pyxtal_debug
+conda activate tf
 
 port=6379
 head_node_ip=$(hostname --ip-address)
