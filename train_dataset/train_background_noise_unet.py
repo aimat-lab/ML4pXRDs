@@ -1,3 +1,4 @@
+import time
 from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 import os
@@ -116,6 +117,8 @@ if training_mode == "train":
         statistics_angles = icsd_sim_statistics.sim_angles
         statistics_intensities = icsd_sim_statistics.sim_intensities
 
+    log_wait_timings = []
+
     class CustomSequence(keras.utils.Sequence):
         def __init__(self, batch_size, number_of_batches, number_of_epochs, queue):
             self.batch_size = batch_size
@@ -136,7 +139,13 @@ if training_mode == "train":
             return self.number_of_batches
 
         def __getitem__(self, idx):
-            return self.queue.get()
+            start = time.time()
+            result = self.queue.get()
+            log_wait_timings.append(time.time() - start)
+            return result
+
+    # log to tensorboard
+    file_writer = tf.summary.create_file_writer(out_base + "metrics")
 
     ray.init(
         address="localhost:6379" if not local else None,
@@ -162,9 +171,9 @@ if training_mode == "train":
         icsd_intensities_handle,
     ):
 
-        icsd_patterns = ray.get(icsd_patterns_handle)
-        icsd_angles = ray.get(icsd_angles_handle)
-        icsd_intensities = ray.get(icsd_intensities_handle)
+        # icsd_patterns = ray.get(icsd_patterns_handle)
+        # icsd_angles = ray.get(icsd_angles_handle)
+        # icsd_intensities = ray.get(icsd_intensities_handle)
 
         while True:
             (
@@ -174,9 +183,9 @@ if training_mode == "train":
                 batch_size,
                 (start_x, end_x),
                 n_angles_output=N,
-                icsd_patterns=icsd_patterns,
-                icsd_angles=icsd_angles,
-                icsd_intensities=icsd_intensities,
+                icsd_patterns=icsd_patterns_handle,
+                icsd_angles=icsd_angles_handle,
+                icsd_intensities=icsd_intensities_handle,
                 use_caglioti=use_caglioti,
                 use_ICSD_patterns=use_ICSD_patterns,
             )
@@ -260,6 +269,12 @@ if training_mode == "train":
         )
 
         model.save(out_base + "final")
+
+        ray.shutdown()
+
+        with file_writer.as_default():
+            for i, value in enumerate(log_wait_timings):
+                tf.summary.scalar("waiting time", data=value, step=i)
 
 else:
 
