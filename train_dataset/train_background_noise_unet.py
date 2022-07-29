@@ -148,7 +148,8 @@ if training_mode == "train":
     file_writer = tf.summary.create_file_writer(out_base + "metrics")
 
     ray.init(
-        address="localhost:6379" if not local else None,
+        # address="localhost:6379" if not local else None,
+        address=None,
         include_dashboard=False,
     )
 
