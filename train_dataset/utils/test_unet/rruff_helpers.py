@@ -606,14 +606,15 @@ def get_rruff_patterns(
 
         raw_files = []
         parameters = []
+        scores = []
 
         for refit_file in refit_files:
             with open(refit_file, "rb") as file:
                 parameter_results = pickle.load(file)
-                print(len(parameter_results))
 
                 raw_files.extend([item[0] for item in parameter_results])
                 parameters.extend([item[1] for item in parameter_results])
+                scores.extend([item[2] for item in parameter_results])
 
     elif only_selected_patterns:
         with open(
@@ -633,6 +634,7 @@ def get_rruff_patterns(
 
     if return_refitted_parameters:
         parameters_kept = []
+        scores_kept = []
 
     for i, raw_file in enumerate(raw_files):
 
@@ -739,13 +741,14 @@ def get_rruff_patterns(
 
         if return_refitted_parameters:
             parameters_kept.append(parameters[i])
+            scores_kept.append(scores[i])
 
         dif_files.append(dif_file)
 
     if not return_refitted_parameters:
         return xs, ys, dif_files, raw_files_kept
     else:
-        return xs, ys, dif_files, raw_files_kept, parameters_kept
+        return xs, ys, dif_files, raw_files_kept, parameters_kept, scores_kept
 
 
 if __name__ == "__main__":
