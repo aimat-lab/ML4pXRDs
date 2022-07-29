@@ -2,7 +2,6 @@ import numpy as np
 from train_dataset.utils.test_unet.rruff_helpers import *
 import pickle
 import ray
-
 from ray.util.multiprocessing import Pool
 import time
 import os
@@ -22,7 +21,7 @@ def process_pattern(input):
                 data[:, 0],  # angles
                 data[:, 1] / np.max(data[:, 1]),  # intensities
                 do_plot=False,
-                only_plot_final=True,
+                only_plot_final=False,
                 do_print=False,
             )
         except Exception as ex:
@@ -69,19 +68,20 @@ if __name__ == "__main__":
         dif_files = dif_files[0:32]
         raw_files = raw_files[0:32]
 
-    """ Example with bump in the beginning
-    for i in range(len(raw_files)):
-        if (
-            raw_files[i]
-            == "../../RRUFF_data/XY_RAW/FergusoniteYbeta__R080103-1__Powder__Xray_Data_XY_RAW__9738.txt"
-        ):
-            raw_files = raw_files[i : i + 1]
-            xs = xs[i : i + 1]
-            ys = ys[i : i + 1]
-            dif_files = dif_files[i : i + 1]
-            break
-    print(raw_files)
-    """
+    if False:
+        for i in range(len(raw_files)):
+            if (
+                raw_files[i]
+                # == "../../RRUFF_data/XY_RAW/FergusoniteYbeta__R080103-1__Powder__Xray_Data_XY_RAW__9738.txt"
+                == "../../RRUFF_data/XY_RAW/Cookeite__R061103-1__Powder__Xray_Data_XY_RAW__7829.txt"
+            ):
+                raw_files = raw_files[i : i + 1]
+                xs = xs[i : i + 1]
+                ys = ys[i : i + 1]
+                dif_files = dif_files[i : i + 1]
+                break
+        process_pattern((xs[0], ys[0], dif_files[0], raw_files[0]))
+        exit()
 
     ray.init()
 

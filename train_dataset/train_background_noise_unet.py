@@ -14,6 +14,8 @@ sys.path.append("../")
 import generate_background_noise_utils
 from datetime import datetime
 import pickle
+import ray
+from ray.util.queue import Queue
 
 tag = "UNetPP"
 training_mode = "train"  # possible: train and test
@@ -115,10 +117,11 @@ if training_mode == "train":
         statistics_intensities = icsd_sim_statistics.sim_intensities
 
     class CustomSequence(keras.utils.Sequence):
-        def __init__(self, batch_size, number_of_batches, number_of_epochs):
+        def __init__(self, batch_size, number_of_batches, number_of_epochs, queue):
             self.batch_size = batch_size
             self.number_of_batches = number_of_batches
             self._number_of_epochs = number_of_epochs
+            self.queue = queue
 
         def __call__(self):
             """Return next batch using an infinite generator model."""
@@ -133,36 +136,60 @@ if training_mode == "train":
             return self.number_of_batches
 
         def __getitem__(self, idx):
+            return self.queue.get()
 
-            # while True:
+    ray.init(
+        address="localhost:6379" if not local else None,
+        include_dashboard=False,
+    )
+
+    print()
+    print(ray.cluster_resources())
+    print()
+
+    queue = Queue(maxsize=100)
+
+    icsd_patterns_handle = ray.put(statistics_patterns)
+    icsd_angles_handle = ray.put(statistics_angles)
+    icsd_intensities_handle = ray.put(statistics_intensities)
+
+    @ray.remote(num_cpus=1, num_gpus=0)
+    def batch_generator_queue(
+        queue,
+        batch_size,
+        icsd_patterns_handle,
+        icsd_angles_handle,
+        icsd_intensities_handle,
+    ):
+
+        icsd_patterns = ray.get(icsd_patterns_handle)
+        icsd_angles = ray.get(icsd_angles_handle)
+        icsd_intensities = ray.get(icsd_intensities_handle)
+
+        while True:
             (
                 in_patterns,
                 out_patterns,
             ) = generate_background_noise_utils.generate_samples_gp(
-                self.batch_size,
+                batch_size,
                 (start_x, end_x),
                 n_angles_output=N,
-                icsd_patterns=statistics_patterns,
-                icsd_angles=statistics_angles,
-                icsd_intensities=statistics_intensities,
+                icsd_patterns=icsd_patterns,
+                icsd_angles=icsd_angles,
+                icsd_intensities=icsd_intensities,
                 use_caglioti=use_caglioti,
                 use_ICSD_patterns=use_ICSD_patterns,
             )
+            queue.put((in_patterns, out_patterns))
 
-            # if np.any(np.isnan(in_patterns)) or np.any(np.isnan(out_patterns)):
-            #    print("Encountered NAN")
-            #    continue
-            # else:
-            #    break
-
-            # in_patterns, out_patterns = np.expand_dims(
-            #    in_patterns, axis=2
-            # ), np.expand_dims(out_patterns, axis=2)
-
-            return (
-                in_patterns,
-                out_patterns,
-            )
+    for i in range(0, NO_workers):
+        batch_generator_queue.remote(
+            queue,
+            batch_size,
+            icsd_patterns_handle,
+            icsd_angles_handle,
+            icsd_intensities_handle,
+        )
 
     if use_distributed_strategy:
         strategy = tf.distribute.MirroredStrategy()
@@ -207,7 +234,9 @@ if training_mode == "train":
         # )
 
         if use_distributed_strategy:
-            sequence = CustomSequence(batch_size, number_of_batches, number_of_epochs)
+            sequence = CustomSequence(
+                batch_size, number_of_batches, number_of_epochs, queue
+            )
             dataset = tf.data.Dataset.from_generator(
                 sequence,
                 output_types=(tf.float64, tf.float64),
@@ -221,10 +250,9 @@ if training_mode == "train":
             x=sequence if not use_distributed_strategy else dataset,
             epochs=number_of_epochs,
             verbose=verbosity,
-            max_queue_size=500,
-            workers=NO_workers,
-            use_multiprocessing=True,
-            # callbacks=[cp_callback, keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+            max_queue_size=100,
+            workers=1,
+            use_multiprocessing=False,
             callbacks=[
                 keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
             ],

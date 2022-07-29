@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -296,7 +297,9 @@ def generate_samples_gp(
     ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples)
 
     n_indices = (
-        len(icsd_patterns) if icsd_patterns is not None else len(icsd_intensities)
+        len(icsd_patterns)
+        if (icsd_patterns is not None and len(icsd_patterns) > 0)
+        else len(icsd_intensities)
     )
     indices_to_select = [random.randint(0, n_indices - 1) for i in range(n_samples)]
 
@@ -547,6 +550,17 @@ if __name__ == "__main__":
     statistics_angles = icsd_sim_statistics.sim_angles
     statistics_intensities = icsd_sim_statistics.sim_intensities
 
+    # For jit:
+    _, _ = generate_samples_gp(
+        1,
+        (start_x, end_x),
+        n_angles_output=N,
+        icsd_patterns=statistics_patterns,
+        icsd_angles=statistics_angles,
+        icsd_intensities=statistics_intensities,
+        use_caglioti=True,
+    )
+    start = time.time()
     xs_generated, ys_generated = generate_samples_gp(
         100,
         (start_x, end_x),
@@ -555,7 +569,9 @@ if __name__ == "__main__":
         icsd_angles=statistics_angles,
         icsd_intensities=statistics_intensities,
         use_caglioti=True,
+        use_ICSD_patterns=False,
     )
+    print(time.time() - start)
 
     xs, ys, difs, raw_files = get_rruff_patterns(
         only_refitted_patterns=False,

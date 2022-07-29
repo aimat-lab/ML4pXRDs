@@ -5,11 +5,11 @@ import pickle
 from scipy.optimize import curve_fit
 from skimage.metrics import structural_similarity
 
-skip_first_N = 20  # TODO: Change back
-N_to_process = None  # None possible
+skip_first_N = 20
+N_to_process = None  # None possible => use all
 
 N_polynomial_coefficients = 20
-R2_score_threshold = 0.9
+R2_score_threshold = 0.95  # minimum 0.9
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"
 model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
@@ -70,7 +70,7 @@ for method in ["arPLS", "rb"]:
     ssims_unet = []
 
     for i in range(len(xs)):
-        print(f"{i} of {len(xs)}")
+        print(f"{i} of {len(xs)}, score {scores[i]}")
 
         if print_singular:
             print(raw_files[i])

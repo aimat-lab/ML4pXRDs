@@ -9,6 +9,7 @@ import pickle
 use_first_N = 20
 
 N_polynomial_coefficients = 20
+R2_score_threshold = 0.95 # minimum 0.9
 
 ratio_initial = -2.37287
 lambda_initial = 7.311915
@@ -17,7 +18,7 @@ sphere_y_initial = 0.3
 
 do_plot = False
 
-xs, ys, difs, raw_files, parameters = get_rruff_patterns(
+xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(
     only_refitted_patterns=True,
     only_if_dif_exists=True,
     start_angle=5,
@@ -25,6 +26,15 @@ xs, ys, difs, raw_files, parameters = get_rruff_patterns(
     reduced_resolution=False,
     return_refitted_parameters=True,
 )
+
+for i in reversed(range(len(scores))):
+    if scores[i] < R2_score_threshold:
+        del scores[i]
+        del parameters[i]
+        del raw_files[i]
+        del difs[i]
+        del ys[i]
+        del xs[i]
 
 x_range = np.linspace(5, 90, 8501)
 
