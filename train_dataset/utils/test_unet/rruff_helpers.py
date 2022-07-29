@@ -599,12 +599,22 @@ def get_rruff_patterns(
 ):
 
     if only_refitted_patterns:
-        with open(
-            os.path.join(Path(__file__).parents[0], "rruff_refits.pickle"), "rb"
-        ) as file:
-            parameter_results = pickle.load(file)
-            raw_files = [item[0] for item in parameter_results]
-            parameters = [item[1] for item in parameter_results]
+
+        refit_files = glob(
+            os.path.join(Path(__file__).parents[0], "parameters") + "/*.pickle"
+        )
+
+        raw_files = []
+        parameters = []
+
+        for refit_file in refit_files:
+            with open(refit_file, "rb") as file:
+                parameter_results = pickle.load(file)
+                print(len(parameter_results))
+
+                raw_files.extend([item[0] for item in parameter_results])
+                parameters.extend([item[1] for item in parameter_results])
+
     elif only_selected_patterns:
         with open(
             os.path.join(Path(__file__).parents[0], "to_test_on.pickle"), "rb"
@@ -736,3 +746,7 @@ def get_rruff_patterns(
         return xs, ys, dif_files, raw_files_kept
     else:
         return xs, ys, dif_files, raw_files_kept, parameters_kept
+
+
+if __name__ == "__main__":
+    test = get_rruff_patterns()
