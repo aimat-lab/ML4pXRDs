@@ -33,7 +33,7 @@ print(pattern_x)
 
 batch_size = 300
 number_of_batches = 500
-number_of_epochs = 2000
+number_of_epochs = 5  # TODO: Change back to 2000
 
 use_distributed_strategy = True
 use_ICSD_patterns = False
