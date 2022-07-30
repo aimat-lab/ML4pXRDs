@@ -272,7 +272,7 @@ def generate_samples_gp(
     use_caglioti=False,
     icsd_angles=None,
     icsd_intensities=None,
-    use_ICSD_patterns=None,
+    use_ICSD_patterns=False,
 ):
 
     # x_test = np.linspace(10, 50, 1000)
@@ -296,12 +296,9 @@ def generate_samples_gp(
     gp = GaussianProcessRegressor(kernel=kernel)
     ys_gp = gp.sample_y(xs_gp, random_state=random_seed, n_samples=n_samples)
 
-    n_indices = (
-        len(icsd_patterns)
-        if (icsd_patterns is not None and len(icsd_patterns) > 0)
-        else len(icsd_intensities)
-    )
-    indices_to_select = [random.randint(0, n_indices - 1) for i in range(n_samples)]
+    if use_ICSD_patterns or use_caglioti:
+        n_indices = len(icsd_patterns) if use_ICSD_patterns else len(icsd_intensities)
+        indices_to_select = [random.randint(0, n_indices - 1) for i in range(n_samples)]
 
     # start = time.time()
     result = add_peaks(
@@ -312,13 +309,21 @@ def generate_samples_gp(
         pattern_xs,
         min_x,
         max_x,
-        icsd_patterns=[icsd_patterns[index] for index in indices_to_select],
+        icsd_patterns=[icsd_patterns[index] for index in indices_to_select]
+        if use_ICSD_patterns
+        else [
+            np.random.random(8501)
+        ],  # to please numba type system (TODO: Maybe file a bug)
         original_range=original_range,
         use_caglioti=use_caglioti,
-        icsd_angles=[np.array(icsd_angles[index]) for index in indices_to_select],
+        icsd_angles=[np.array(icsd_angles[index]) for index in indices_to_select]
+        if use_caglioti
+        else [np.random.random(100)],
         icsd_intensities=[
             np.array(icsd_intensities[index]) for index in indices_to_select
-        ],
+        ]
+        if use_caglioti
+        else [np.random.random(100)],
         use_icsd_patterns=use_ICSD_patterns,
     )
 
@@ -565,7 +570,7 @@ if __name__ == "__main__":
         100,
         (start_x, end_x),
         n_angles_output=N,
-        icsd_patterns=statistics_patterns,
+        icsd_patterns=None,
         icsd_angles=statistics_angles,
         icsd_intensities=statistics_intensities,
         use_caglioti=True,
