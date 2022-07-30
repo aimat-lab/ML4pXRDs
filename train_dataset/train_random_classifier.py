@@ -1203,6 +1203,22 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         flush=True,
     )
 
+    if add_background_and_noise:
+        for i, pattern in enumerate(icsd_sim_statistics.sim_patterns):
+            for j in range(pattern.shape[0]):
+                if not use_vecsei_bg_noise:
+                    pattern[j, :] = generate_samples_gp(
+                        1,
+                        (start_angle, end_angle),
+                        n_angles_output=8501,
+                        icsd_patterns=[pattern[j, :]],
+                        original_range=True,
+                    )[0][0]
+                else:
+                    pattern[j, :] += generate_background_noise_vecsei(angle_range)
+                    pattern[j, :] -= np.min(pattern[j, :])
+                    pattern[j, :] /= np.max(pattern[j, :])
+
     statistics_icsd_patterns_match = []
     statistics_icsd_labels_match = []
     statistics_icsd_variations_match = []
