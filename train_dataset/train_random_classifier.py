@@ -46,7 +46,7 @@ from train_dataset.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
 
-tag = "all-spgs-random-bwuni-test"
+tag = "all-spgs-random-direct-training-vecsei"
 description = ""
 
 if len(sys.argv) > 1:
@@ -163,15 +163,15 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False  # TODO: Change back
+use_distributed_strategy = True
 
 uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = False  # TODO: Change back
-use_vecsei_bg_noise = False
-use_rruff_validation_dataset = False
+add_background_and_noise = True
+use_vecsei_bg_noise = True
+use_rruff_validation_dataset = True
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -399,6 +399,7 @@ if add_background_and_noise:
                 )[0][0]
             else:
                 pattern[j, :] += generate_background_noise_vecsei(angle_range)
+                pattern[j, :] -= np.min(pattern[j, :])
                 pattern[j, :] /= np.max(pattern[j, :])
 
 n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
