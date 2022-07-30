@@ -359,6 +359,7 @@ class Simulation:
         load_patterns_angles_intensities=True,
         load_only_N_patterns_each=None,
         metas_to_load=None,
+        load_only_angles_intensities=False,
     ):
 
         self.reset_simulation_status()
@@ -443,21 +444,23 @@ class Simulation:
 
         if load_patterns_angles_intensities:
 
-            for file in patterns_files[first_index:last_index]:
-                if (
-                    load_only_N_patterns_each is not None
-                ):  # load patterns using memory mapping
-                    self.sim_patterns.extend(
-                        np.load(file, allow_pickle=True, mmap_mode="c")[
-                            :, 0:load_only_N_patterns_each
-                        ]
-                    )
-                elif metas_to_load is not None:
-                    self.sim_patterns.extend(
-                        np.load(file, allow_pickle=True, mmap_mode="c")
-                    )
-                else:
-                    self.sim_patterns.extend(np.load(file, allow_pickle=True))
+            if not load_only_angles_intensities:
+
+                for file in patterns_files[first_index:last_index]:
+                    if (
+                        load_only_N_patterns_each is not None
+                    ):  # load patterns using memory mapping
+                        self.sim_patterns.extend(
+                            np.load(file, allow_pickle=True, mmap_mode="c")[
+                                :, 0:load_only_N_patterns_each
+                            ]
+                        )
+                    elif metas_to_load is not None:
+                        self.sim_patterns.extend(
+                            np.load(file, allow_pickle=True, mmap_mode="c")
+                        )
+                    else:
+                        self.sim_patterns.extend(np.load(file, allow_pickle=True))
 
             for file in angles_files[first_index:last_index]:
                 with open(file, "rb") as pickle_file:
@@ -474,12 +477,15 @@ class Simulation:
                 if self.sim_metas[i][0] not in metas_to_load:
 
                     del self.sim_metas[i]
-                    del self.sim_angles[i]
-                    del self.sim_intensities[i]
                     del self.sim_crystals[i]
-                    del self.sim_patterns[i]
                     del self.sim_variations[i]
                     del self.sim_labels[i]
+
+                    if load_patterns_angles_intensities:
+                        if not load_only_angles_intensities:
+                            del self.sim_patterns[i]
+                        del self.sim_angles[i]
+                        del self.sim_intensities[i]
 
     def get_space_group_number(self, id):
 
