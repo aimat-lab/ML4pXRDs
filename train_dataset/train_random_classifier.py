@@ -1911,10 +1911,9 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # TODO: Change back
-        model = build_model_park(
-            None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        )
+        # model = build_model_park(
+        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
 
         # model = build_model_park_medium_size(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
@@ -1934,19 +1933,19 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # Resnet-50 + additional dense layer
-        # model = build_model_resnet_i(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
-        #    batchnorm_momentum=batchnorm_momentum,
-        #    i=50,
-        #    disable_batchnorm=False,
-        #    use_group_norm=use_group_norm,
-        #    add_additional_dense_layer=True,  # one more dense layer
-        # )
+        model = build_model_resnet_i(
+            None,
+            N,
+            len(spgs),
+            lr=learning_rate,
+            momentum=momentum,
+            optimizer=optimizer,
+            batchnorm_momentum=batchnorm_momentum,
+            i=50,
+            disable_batchnorm=False,
+            use_group_norm=use_group_norm,
+            add_additional_dense_layer=True,  # one more dense layer
+        )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
