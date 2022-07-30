@@ -33,7 +33,7 @@ print(pattern_x)
 
 batch_size = 300
 number_of_batches = 500
-number_of_epochs = 5  # TODO: Change back to 2000
+number_of_epochs = 10  # TODO: Change back to 2000
 
 use_distributed_strategy = True
 use_ICSD_patterns = False
@@ -112,8 +112,15 @@ if training_mode == "train":
             load_only_N_patterns_each=1,
             metas_to_load=statistics_match_metas_flat,
             stop=1 if local else None,
+            load_patterns_angles_intensities=True,
+            load_only_angles_intensities=use_caglioti,  # only angles and intensities needed in this case!
         )
-        statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
+        if not use_caglioti:
+            statistics_patterns = [
+                j for i in icsd_sim_statistics.sim_patterns for j in i
+            ]
+        else:
+            statistics_patterns = None
         statistics_angles = icsd_sim_statistics.sim_angles
         statistics_intensities = icsd_sim_statistics.sim_intensities
 
