@@ -152,7 +152,7 @@ use_conditional_density = True
 sample_lattice_paras_from_kde = True
 
 load_only_N_patterns_each_test = 1  # None possible
-load_only_N_patterns_each_train = 2  # None possible
+load_only_N_patterns_each_train = 1  # None possible
 
 scale_patterns = False
 scale_patterns_sqrt = False
