@@ -170,8 +170,10 @@ if training_mode == "train":
     queue = Queue(maxsize=100)
 
     icsd_patterns_handle = ray.put(statistics_patterns)
-    icsd_angles_handle = ray.put(statistics_angles)
-    icsd_intensities_handle = ray.put(statistics_intensities)
+    statistics_angles_np = [np.array(item) for item in statistics_angles]
+    icsd_angles_handle = ray.put(statistics_angles_np)
+    statistics_intensities_np = [np.array(item) for item in statistics_intensities]
+    icsd_intensities_handle = ray.put(statistics_intensities_np)
 
     @ray.remote(num_cpus=1, num_gpus=0)
     def batch_generator_queue(
