@@ -33,16 +33,15 @@ print(pattern_x)
 
 batch_size = 300
 number_of_batches = 500
-number_of_epochs = 10  # TODO: Change back to 2000
+number_of_epochs = 2000
 
 use_distributed_strategy = True
 use_ICSD_patterns = False
 use_caglioti = True
 
 local = False
-
 if not local:
-    NO_workers = 30
+    NO_workers = 28 + 128
     verbosity = 2
 else:
     NO_workers = 7
@@ -52,7 +51,12 @@ print(
     f"Training with {batch_size * number_of_batches * number_of_epochs} samples in total"
 )
 
-out_base = "unet/" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + "_" + tag + "/"
+if len(sys.argv) > 1:
+    date_time = sys.argv[1]  # get it from the bash script
+    out_base = "unet/" + date_time + "/"
+else:
+    date_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    out_base = "unet/" + date_time + "_" + tag + "/"
 
 # with open("unet/scaler", "rb") as file:
 #    scaler = pickle.load(file)
@@ -155,8 +159,7 @@ if training_mode == "train":
     file_writer = tf.summary.create_file_writer(out_base + "metrics")
 
     ray.init(
-        # address="localhost:6379" if not local else None,
-        address=None,
+        address="localhost:6379" if not local else None,
         include_dashboard=False,
     )
 
