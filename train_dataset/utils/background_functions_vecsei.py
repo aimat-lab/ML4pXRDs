@@ -47,39 +47,44 @@ def generate_background_noise_vecsei(pattern_x):
     diffractogram += np.random.uniform(0.002, 0.02, N)
 
     choices = [1 if x < 0.5 else 0 for x in np.random.uniform(size=4)]
-    T = 0.1 / np.sum(choices)
 
-    if choices[0]:
-        diffractogram += f_step_up(
-            pattern_x / 2,
-            trunc_normal(0, T, T / 3, T / 7),
-            np.random.uniform(10, 60),
-            np.random.uniform(0, 1 / 7),
-        )
+    summed = np.sum(choices)
 
-    if choices[1]:
-        diffractogram += f_step_down(
-            pattern_x / 2,
-            trunc_normal(0, T, T / 3, T / 7),
-            np.random.uniform(10, 60),
-            np.random.uniform(1 - 1 / 7, 1),
-        )
+    if summed > 0.0:
 
-    if choices[2]:
-        n_max = np.random.randint(0, 5)
-        alpha_n = np.zeros(n_max + 1)
-        for i, alpha in enumerate(alpha_n):
-            if np.random.uniform() < 0.5:
-                alpha_n[i] = 3 * T / (2 * (n_max + 1)) * np.random.uniform(-1, 1)
+        T = 0.1 / summed
 
-        diffractogram += f_polynomial(pattern_x / 2, n_max, alpha_n)
+        if choices[0]:
+            diffractogram += f_step_up(
+                pattern_x / 2,
+                trunc_normal(0, T, T / 3, T / 7),
+                np.random.uniform(10, 60),
+                np.random.uniform(0, 1 / 7),
+            )
 
-    if choices[3]:
-        diffractogram += f_bump(
-            pattern_x / 2,
-            trunc_normal(0, 3 * T / 5, 2 * T / 5, 3 * T / 35),
-            np.random.uniform(40, 70),
-        )
+        if choices[1]:
+            diffractogram += f_step_down(
+                pattern_x / 2,
+                trunc_normal(0, T, T / 3, T / 7),
+                np.random.uniform(10, 60),
+                np.random.uniform(1 - 1 / 7, 1),
+            )
+
+        if choices[2]:
+            n_max = np.random.randint(0, 5)
+            alpha_n = np.zeros(n_max + 1)
+            for i, alpha in enumerate(alpha_n):
+                if np.random.uniform() < 0.5:
+                    alpha_n[i] = 3 * T / (2 * (n_max + 1)) * np.random.uniform(-1, 1)
+
+            diffractogram += f_polynomial(pattern_x / 2, n_max, alpha_n)
+
+        if choices[3]:
+            diffractogram += f_bump(
+                pattern_x / 2,
+                trunc_normal(0, 3 * T / 5, 2 * T / 5, 3 * T / 35),
+                np.random.uniform(40, 70),
+            )
 
     return diffractogram
 
