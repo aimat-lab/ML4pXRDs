@@ -1213,6 +1213,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
                         n_angles_output=8501,
                         icsd_patterns=[pattern[j, :]],
                         original_range=True,
+                        use_icsd_patterns=True
                     )[0][0]
                 else:
                     pattern[j, :] += generate_background_noise_vecsei(angle_range)
