@@ -13,6 +13,7 @@ import jax.numpy as jnp
 import numpy as np
 import logging
 import jax
+import pandas as pd
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -639,6 +640,7 @@ def get_rruff_patterns(
     for i, raw_file in enumerate(raw_files):
 
         raw_filename = os.path.basename(raw_file)
+
         raw_xy = np.genfromtxt(
             os.path.join(Path(__file__).parents[0], raw_file),
             dtype=float,
@@ -751,5 +753,85 @@ def get_rruff_patterns(
         return xs, ys, dif_files, raw_files_kept, parameters_kept, scores_kept
 
 
+def get_icsd_ids_from_RRUFF(raw_files):
+
+    jobid = os.getenv("SLURM_JOB_ID")
+    if jobid is not None and jobid != "":
+        csv_path = os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv")
+    else:  # local
+        csv_path = "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv"
+
+    icsd_info = pd.read_csv(csv_path, sep=",", skiprows=1)
+
+    ids = list(icsd_info["CollectionCode"])
+    icsd_mineral_names = list(icsd_info["MineralName"])
+    icsd_mineral_groups = list(icsd_info["MineralGroup"])
+    icsd_chemical_names = list(icsd_info["ChemicalName"])
+
+    ids_output = []
+    counter = 0
+
+    raw_files_found_indices = []
+
+    for i, file in enumerate(raw_files):
+
+        filename = os.path.basename(file)
+
+        rruff_mineral_name = filename.split("__")[0]
+
+        indices_occurences_mineral_names = [
+            i for i, x in enumerate(icsd_mineral_names) if x == rruff_mineral_name
+        ]
+        ids_output.extend([ids[index] for index in indices_occurences_mineral_names])
+
+        indices_occurences_chemical_names = [
+            i for i, x in enumerate(icsd_chemical_names) if x == rruff_mineral_name
+        ]
+        ids_output.extend([ids[index] for index in indices_occurences_chemical_names])
+
+        indices_occurences_mineral_groups = [
+            i for i, x in enumerate(icsd_mineral_groups) if x == rruff_mineral_name
+        ]
+        ids_output.extend([ids[index] for index in indices_occurences_mineral_groups])
+
+        if (
+            len(indices_occurences_mineral_names) > 0
+            or len(indices_occurences_chemical_names) > 0
+            or len(indices_occurences_mineral_groups) > 0
+        ):
+            counter += 1
+            raw_files_found_indices.append(i)
+
+    print(f"{counter} of {len(raw_files)} found in ICSD")
+
+    ids_output = np.unique(ids_output)
+
+    print(f"{len(ids_output)} ICSD entries to be excluded.")
+
+    return (
+        ids_output,
+        raw_files_found_indices,
+    )  # (ICSD ids to be excluded from training, indices of raw files that have been successfully matched with ICSD)
+
+
 if __name__ == "__main__":
-    test = get_rruff_patterns()
+
+    if True:
+        xs_rruff, ys_rruff, dif_files, raw_files = get_rruff_patterns(
+            only_refitted_patterns=False,
+            only_selected_patterns=True,
+            start_angle=5,
+            end_angle=90,
+            reduced_resolution=False,
+            only_if_dif_exists=True,  # skips patterns where no dif is file
+        )
+    else:
+        raw_files = [
+            "../../RRUFF_data/XY_RAW/Zincite__R060027-1__Powder__Xray_Data_XY_RAW__2193.txt",
+            "../../RRUFF_data/XY_RAW/BastnasiteCe__R050409-1__Powder__Xray_Data_XY_RAW__1679.txt",
+            "../../RRUFF_data/XY_RAW/Germanite__R050439-1__Powder__Xray_Data_XY_RAW__1620.txt",
+            "../../RRUFF_data/XY_RAW/Vesuvianite__R050489-1__Powder__Xray_Data_XY_RAW__1793.txt",
+            "../../RRUFF_data/XY_RAW/Vesuvianite__R050035-1__Powder__Xray_Data_XY_RAW__4058.txt",
+        ]
+
+    get_icsd_ids_from_RRUFF(raw_files)

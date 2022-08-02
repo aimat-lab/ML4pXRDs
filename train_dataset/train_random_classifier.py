@@ -45,8 +45,9 @@ from train_dataset.generate_background_noise_utils import generate_samples_gp
 from train_dataset.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
+from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-random-direct-training-vecsei"
+tag = "all-spgs-direct-training-original-model-vecsei"
 description = ""
 
 if len(sys.argv) > 1:
@@ -70,14 +71,16 @@ run_analysis_after_run = True
 analysis_per_spg = False
 
 test_every_X_epochs = 1
-batches_per_epoch = 150 * 6  # doesn't count for direct training
+# batches_per_epoch = 150 * 6  # doesn't count for direct training
+batches_per_epoch = 150 * 1  # doesn't count for direct training # TODO: Change back
 NO_epochs = 1000
 
 # For ViT:
 # structures_per_spg = 1
 # NO_corn_sizes = 1
 
-structures_per_spg = 1  # for all spgs
+# structures_per_spg = 1
+structures_per_spg = 6  # TODO: Change back
 
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
@@ -127,14 +130,15 @@ use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
 use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+# TODO: Change back
 
 use_statistics_dataset_as_validation = False
 generate_randomized_validation_datasets = False
 randomization_step = 3  # Only use every n'th sample for the randomization process
 
-use_dropout = False
+use_dropout = True  # TODO: Change back
 
-learning_rate = 0.0001
+learning_rate = 0.0003  # TODO: Change back
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
@@ -163,7 +167,7 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = True
+use_distributed_strategy = False  # TODO: Change back
 
 uniformly_distributed = False
 
@@ -172,6 +176,7 @@ shuffle_test_match_train_match = False
 add_background_and_noise = True
 use_vecsei_bg_noise = True
 use_rruff_validation_dataset = True
+exclude_rruff_items_from_statistics = True
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -1127,6 +1132,15 @@ if use_rruff_validation_dataset:
         only_if_dif_exists=True,  # skips patterns where no dif is file
     )
 
+    if exclude_rruff_items_from_statistics:
+        icsd_ids_to_exclude, raw_files_found_indices = get_icsd_ids_from_RRUFF(
+            raw_files
+        )
+        xs_rruff = [xs_rruff[i] for i in raw_files_found_indices]
+        ys_rruff = [ys_rruff[i] for i in raw_files_found_indices]
+        dif_files = [dif_files[i] for i in raw_files_found_indices]
+        raw_files = [raw_files[i] for i in raw_files_found_indices]
+
     val_x_rruff = []
     val_y_rruff = []
     for i, pattern in enumerate(ys_rruff):
@@ -1213,7 +1227,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
                         n_angles_output=8501,
                         icsd_patterns=[pattern[j, :]],
                         original_range=True,
-                        use_icsd_patterns=True
+                        use_icsd_patterns=True,
                     )[0][0]
                 else:
                     pattern[j, :] += generate_background_noise_vecsei(angle_range)
@@ -1231,19 +1245,25 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
             icsd_sim_statistics.sim_metas[i][0] in statistics_match_metas_flat
             and icsd_sim_statistics.sim_labels[i][0] in spgs
         ):
-            statistics_icsd_patterns_match.append(icsd_sim_statistics.sim_patterns[i])
-            statistics_icsd_labels_match.append(icsd_sim_statistics.sim_labels[i])
-            statistics_icsd_variations_match.append(
-                icsd_sim_statistics.sim_variations[i]
-            )
-            statistics_icsd_crystals_match.append(
-                statistics_crystals[
-                    statistics_match_metas_flat.index(
-                        icsd_sim_statistics.sim_metas[i][0]
-                    )
-                ]
-            )  # use the converted structure (conventional cell)
-            statistics_icsd_metas_match.append(icsd_sim_statistics.sim_metas[i])
+            if (
+                not exclude_rruff_items_from_statistics
+            ) or icsd_sim_statistics.sim_metas[i][0] not in icsd_ids_to_exclude:
+
+                statistics_icsd_patterns_match.append(
+                    icsd_sim_statistics.sim_patterns[i]
+                )
+                statistics_icsd_labels_match.append(icsd_sim_statistics.sim_labels[i])
+                statistics_icsd_variations_match.append(
+                    icsd_sim_statistics.sim_variations[i]
+                )
+                statistics_icsd_crystals_match.append(
+                    statistics_crystals[
+                        statistics_match_metas_flat.index(
+                            icsd_sim_statistics.sim_metas[i][0]
+                        )
+                    ]
+                )  # use the converted structure (conventional cell)
+                statistics_icsd_metas_match.append(icsd_sim_statistics.sim_metas[i])
 
     n_patterns_per_crystal_statistics = len(icsd_sim_statistics.sim_patterns[0])
 
@@ -1912,9 +1932,9 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_park(
-        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        # )
+        model = build_model_park(
+            None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        )
 
         # model = build_model_park_medium_size(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
@@ -1934,19 +1954,19 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # Resnet-50 + additional dense layer
-        model = build_model_resnet_i(
-            None,
-            N,
-            len(spgs),
-            lr=learning_rate,
-            momentum=momentum,
-            optimizer=optimizer,
-            batchnorm_momentum=batchnorm_momentum,
-            i=50,
-            disable_batchnorm=False,
-            use_group_norm=use_group_norm,
-            add_additional_dense_layer=True,  # one more dense layer
-        )
+        # model = build_model_resnet_i(
+        #    None,
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    momentum=momentum,
+        #    optimizer=optimizer,
+        #    batchnorm_momentum=batchnorm_momentum,
+        #    i=50,
+        #    disable_batchnorm=False,
+        #    use_group_norm=use_group_norm,
+        #    add_additional_dense_layer=True,  # one more dense layer
+        # )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
