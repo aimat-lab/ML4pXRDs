@@ -47,7 +47,7 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-direct-training-original-model-vecsei-exclude-nothing"
+tag = "all-spgs-direct-training-original-model-vecsei-exclude-prototypes"
 description = ""
 
 if len(sys.argv) > 1:
@@ -176,8 +176,8 @@ shuffle_test_match_train_match = False
 add_background_and_noise = True
 use_vecsei_bg_noise = True
 use_rruff_validation_dataset = True
-exclude_rruff_items_from_statistics = False  # TODO: Change back
-exclude_whole_prototype = False
+exclude_rruff_items_from_statistics = True  # TODO: Change back
+exclude_whole_prototype = True
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -1153,7 +1153,7 @@ if use_rruff_validation_dataset:
                 for index in id_indices_to_exclude
             ]
             prototypes_to_exclude = [
-                item for item in prototypes_to_exclude if not np.isnan(item)
+                item for item in prototypes_to_exclude if isinstance(item, str)
             ]
 
             indices_to_exclude = [
