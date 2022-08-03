@@ -47,7 +47,7 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-direct-training-original-model-vecsei"
+tag = "all-spgs-direct-training-original-model-vecsei-exclude-prototypes"
 description = ""
 
 if len(sys.argv) > 1:
@@ -177,6 +177,7 @@ add_background_and_noise = True
 use_vecsei_bg_noise = True
 use_rruff_validation_dataset = True
 exclude_rruff_items_from_statistics = True
+exclude_whole_prototype = True
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -1136,10 +1137,38 @@ if use_rruff_validation_dataset:
         icsd_ids_to_exclude, raw_files_found_indices = get_icsd_ids_from_RRUFF(
             raw_files
         )
+
         xs_rruff = [xs_rruff[i] for i in raw_files_found_indices]
         ys_rruff = [ys_rruff[i] for i in raw_files_found_indices]
         dif_files = [dif_files[i] for i in raw_files_found_indices]
         raw_files = [raw_files[i] for i in raw_files_found_indices]
+
+        if exclude_whole_prototype:
+
+            id_indices_to_exclude = [
+                icsd_sim_test.icsd_ids.index(item) for item in icsd_ids_to_exclude
+            ]
+            prototypes_to_exclude = [
+                icsd_sim_test.icsd_structure_types[index]
+                for index in id_indices_to_exclude
+            ]
+            prototypes_to_exclude = [
+                item for item in prototypes_to_exclude if not np.isnan(item)
+            ]
+
+            indices_to_exclude = [
+                i
+                for i in range(len(icsd_sim_test.icsd_ids))
+                if icsd_sim_test.icsd_structure_types[i] in prototypes_to_exclude
+            ]
+
+            icsd_ids_to_exclude = [
+                icsd_sim_test.icsd_ids[i] for i in indices_to_exclude
+            ]
+
+            print(
+                f"Excluding {len(icsd_ids_to_exclude)} structures, belonging to {len(np.unique(prototypes_to_exclude))} unique prototypes, from dataset due to occurence in RRUFF."
+            )
 
     val_x_rruff = []
     val_y_rruff = []

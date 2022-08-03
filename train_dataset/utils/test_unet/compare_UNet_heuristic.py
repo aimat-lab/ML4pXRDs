@@ -9,13 +9,14 @@ skip_first_N = 20
 N_to_process = None  # None possible => use all
 
 N_polynomial_coefficients = 20
-R2_score_threshold = 0.95  # minimum 0.9
+R2_score_threshold = 0.9  # minimum 0.9
 
-unet_model_path = "10-06-2022_13-12-26_UNetPP"
+unet_model_path = "10-06-2022_13-12-26_UNetPP"  # Previous model, this had superior accuracy to the heuristic algorithms.
+# unet_model_path = "31-07-2022_12-40-47"  # with caglioti + different bg parameters etc.
 model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
 
 do_plot = False
-print_singular = False
+print_singular = True
 
 xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(
     only_refitted_patterns=True,

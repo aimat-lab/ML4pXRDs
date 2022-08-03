@@ -23,8 +23,10 @@ tag = "UNetPP"
 training_mode = "test"  # possible: train and test
 
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
-# to_test = "06-06-2022_22-15-44_UNetPP"
-to_test = "30-07-2022_10-20-17_UNetPP"
+to_test = "06-06-2022_22-15-44_UNetPP"
+# to_test = "30-07-2022_10-20-17_UNetPP"
+# to_test = "31-07-2022_12-40-47"
+# to_test = "10-06-2022_13-12-26_UNetPP"
 
 pattern_x = np.arange(0, 90.24, 0.02)
 start_x = pattern_x[0]
