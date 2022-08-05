@@ -7,6 +7,8 @@ from skimage.metrics import structural_similarity
 import matplotlib.pyplot as plt
 import matplotlib_defaults
 
+figure_double_width_pub = matplotlib_defaults.pub_width
+
 skip_first_N = 20
 N_to_process = 100  # None possible => use all # TODO: Change back
 
@@ -73,6 +75,14 @@ for method in ["arPLS", "rb"]:
     ssims_unet = []
 
     for i in range(len(xs)):
+
+        plt.figure(
+            figsize=(
+                figure_double_width_pub * 0.95,
+                figure_double_width_pub * 0.7,
+            )
+        )
+
         print(f"{i} of {len(xs)}, score {scores[i]}")
 
         if print_singular:
@@ -107,6 +117,7 @@ for method in ["arPLS", "rb"]:
 
         xs_to_fit = xs[i][500:-500]
         ys_to_fit = ys[i][500:-500]
+        unet_full_prediction = predictions
         predictions = predictions[500:-500]
         result_heuristic = result_heuristic[500:-500]
         target_y = target_y[500:-500]
@@ -123,7 +134,7 @@ for method in ["arPLS", "rb"]:
         ys_unet_fit = background_fit(xs_to_fit, *result_unet_fit)
 
         if do_plot:
-            plt.plot(xs_to_fit, ys_unet_fit, label="UNet Fit")
+            plt.plot(xs_to_fit, ys_unet_fit, label="U-Net Fit")
 
         result_heuristic_fit = curve_fit(
             background_fit,
@@ -155,6 +166,27 @@ for method in ["arPLS", "rb"]:
 
         if do_plot:
             plt.legend()
+            plt.ylim((0, 0.15))
+            plt.xlabel(r"$2 \theta$")
+            plt.ylabel(r"Intensity / rel.")
+            plt.savefig(f"comparison_{i}.pdf")
+            plt.show()
+
+        if do_plot:
+            plt.figure(
+                figsize=(
+                    figure_double_width_pub * 0.95,
+                    figure_double_width_pub * 0.7,
+                )
+            )
+            plt.plot(xs[i], ys[i], label="Input")
+            plt.plot(xs[i], unet_full_prediction, label="U-Net result")
+            # plt.ylim((0, 0.4))
+
+            plt.legend()
+            plt.xlabel(r"$2 \theta$")
+            plt.ylabel(r"Intensity / rel.")
+            plt.savefig(f"unet_{i}.pdf")
             plt.show()
 
     print(
@@ -168,14 +200,14 @@ for method in ["arPLS", "rb"]:
         np.average(ssims_method),
     )
 
-    figure_double_width_pub = matplotlib_defaults.pub_width
-    plt.figure(
-        figsize=(
-            figure_double_width_pub * 0.95 * 0.5,
-            figure_double_width_pub * 0.7 * 0.5,
+    if False:
+        plt.figure(
+            figsize=(
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
+            )
         )
-    )
-    plt.hist(diffs_unet, alpha=0.5, label="U-Net squared error", bins=15)
-    plt.hist(diffs_method, alpha=0.5, label=method + " squared error", bins=15)
-    plt.legend()
-    plt.savefig(f"diffs_{method}.pdf")
+        plt.hist(diffs_unet, alpha=0.5, label="U-Net squared error", bins=15)
+        plt.hist(diffs_method, alpha=0.5, label=method + " squared error", bins=15)
+        plt.legend()
+        plt.savefig(f"diffs_{method}.pdf")
