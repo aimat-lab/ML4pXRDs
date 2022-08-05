@@ -4,9 +4,11 @@ import numpy as np
 import pickle
 from scipy.optimize import curve_fit
 from skimage.metrics import structural_similarity
+import matplotlib.pyplot as plt
+import matplotlib_defaults
 
 skip_first_N = 20
-N_to_process = None  # None possible => use all
+N_to_process = 100  # None possible => use all # TODO: Change back
 
 N_polynomial_coefficients = 20
 R2_score_threshold = 0.9  # minimum 0.9
@@ -123,25 +125,25 @@ for method in ["arPLS", "rb"]:
         if do_plot:
             plt.plot(xs_to_fit, ys_unet_fit, label="UNet Fit")
 
-        result_rb_fit = curve_fit(
+        result_heuristic_fit = curve_fit(
             background_fit,
             xs_to_fit,
             result_heuristic,
             p0=[0.0] * N_polynomial_coefficients,
             maxfev=20000,
         )[0]
-        ys_rb_fit = background_fit(xs_to_fit, *result_rb_fit)
+        ys_heuristic_fit = background_fit(xs_to_fit, *result_heuristic_fit)
 
         if do_plot:
-            plt.plot(xs_to_fit, ys_rb_fit, label=method + " Fit")
+            plt.plot(xs_to_fit, ys_heuristic_fit, label=method + " Fit")
 
         diff_unet = np.sum(np.square(ys_unet_fit - target_y))
         diffs_unet.append(diff_unet)
-        diff_method = np.sum(np.square(ys_rb_fit - target_y))
+        diff_method = np.sum(np.square(ys_heuristic_fit - target_y))
         diffs_method.append(diff_method)
 
         ssims_unet.append(structural_similarity(ys_unet_fit, target_y))
-        ssims_method.append(structural_similarity(ys_rb_fit, target_y))
+        ssims_method.append(structural_similarity(ys_heuristic_fit, target_y))
 
         if print_singular:
             print("Difference / score UNet (mse, ssim):", diff_unet, ssims_unet[-1])
@@ -165,3 +167,15 @@ for method in ["arPLS", "rb"]:
         np.average(diffs_method),
         np.average(ssims_method),
     )
+
+    figure_double_width_pub = matplotlib_defaults.pub_width
+    plt.figure(
+        figsize=(
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
+        )
+    )
+    plt.hist(diffs_unet, alpha=0.5, label="U-Net squared error", bins=15)
+    plt.hist(diffs_method, alpha=0.5, label=method + " squared error", bins=15)
+    plt.legend()
+    plt.savefig(f"diffs_{method}.pdf")

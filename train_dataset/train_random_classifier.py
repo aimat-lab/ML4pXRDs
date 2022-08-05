@@ -47,7 +47,7 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-direct-training-original-model-vecsei-exclude-prototypes"
+tag = "all-spgs-random-resnet-50-additional-dense-sqrt-scaling-lr-0.0001"
 description = ""
 
 if len(sys.argv) > 1:
@@ -71,8 +71,7 @@ run_analysis_after_run = True
 analysis_per_spg = False
 
 test_every_X_epochs = 1
-# batches_per_epoch = 150 * 6  # doesn't count for direct training
-batches_per_epoch = 150 * 1  # doesn't count for direct training # TODO: Change back
+batches_per_epoch = 150 * 6  # doesn't count for direct training
 NO_epochs = 1000
 
 # For ViT:
@@ -80,7 +79,7 @@ NO_epochs = 1000
 # NO_corn_sizes = 1
 
 # structures_per_spg = 1
-structures_per_spg = 6  # TODO: Change back
+structures_per_spg = 1
 
 # structures_per_spg = 5
 # structures_per_spg = 10  # for (2,15) tuple
@@ -129,16 +128,15 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
-# TODO: Change back
+use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
 
-use_statistics_dataset_as_validation = False
-generate_randomized_validation_datasets = False
+use_statistics_dataset_as_validation = True  # TODO: Change back
+generate_randomized_validation_datasets = True
 randomization_step = 3  # Only use every n'th sample for the randomization process
 
-use_dropout = True  # TODO: Change back
+use_dropout = False
 
-learning_rate = 0.0003  # TODO: Change back
+learning_rate = 0.0001
 
 momentum = 0.9  # only used with SGD
 optimizer = "Adam"  # not used for ViT
@@ -159,7 +157,7 @@ load_only_N_patterns_each_test = 1  # None possible
 load_only_N_patterns_each_train = 1  # None possible
 
 scale_patterns = False
-scale_patterns_sqrt = False
+scale_patterns_sqrt = True  # TODO: Change back
 
 use_retention_of_patterns = False
 retention_rate = 0.7
@@ -167,17 +165,17 @@ retention_rate = 0.7
 verbosity_tf = 2
 verbosity_generator = 2
 
-use_distributed_strategy = False  # TODO: Change back
+use_distributed_strategy = True
 
 uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = True
-use_vecsei_bg_noise = True
-use_rruff_validation_dataset = True
-exclude_rruff_items_from_statistics = True  # TODO: Change back
-exclude_whole_prototype = True
+add_background_and_noise = False  # TODO: Change back
+use_vecsei_bg_noise = False
+use_rruff_validation_dataset = False
+exclude_rruff_items_from_statistics = False
+exclude_whole_prototype = False
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
@@ -1961,9 +1959,9 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        model = build_model_park(
-            None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        )
+        # model = build_model_park(
+        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
 
         # model = build_model_park_medium_size(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
@@ -1983,19 +1981,19 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # Resnet-50 + additional dense layer
-        # model = build_model_resnet_i(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
-        #    batchnorm_momentum=batchnorm_momentum,
-        #    i=50,
-        #    disable_batchnorm=False,
-        #    use_group_norm=use_group_norm,
-        #    add_additional_dense_layer=True,  # one more dense layer
-        # )
+        model = build_model_resnet_i(
+            None,
+            N,
+            len(spgs),
+            lr=learning_rate,
+            momentum=momentum,
+            optimizer=optimizer,
+            batchnorm_momentum=batchnorm_momentum,
+            i=50,
+            disable_batchnorm=False,
+            use_group_norm=use_group_norm,
+            add_additional_dense_layer=True,  # one more dense layer
+        )
 
         # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
         # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)

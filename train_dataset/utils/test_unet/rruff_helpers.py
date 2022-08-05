@@ -14,6 +14,7 @@ import numpy as np
 import logging
 import jax
 import pandas as pd
+import matplotlib_defaults
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -171,7 +172,14 @@ def smeared_peaks(
 
 
 def fit_diffractogram(
-    x, y, angles, intensities, do_plot=True, only_plot_final=False, do_print=True
+    x,
+    y,
+    angles,
+    intensities,
+    do_plot=True,
+    only_plot_final=False,
+    do_print=True,
+    save_index=None,
 ):
     def fit_function(
         xs,
@@ -399,8 +407,17 @@ def fit_diffractogram(
         # Only plot after all peaks were fitted separately
 
         if do_plot and (not only_plot_final or (k == (len(strategy) - 1))):
-            plt.plot(x, y, label="Original")
-            plt.plot(x, result_ys, label="Fitted")
+
+            figure_double_width_pub = matplotlib_defaults.pub_width
+            plt.figure(
+                figsize=(
+                    figure_double_width_pub * 0.95,
+                    figure_double_width_pub * 0.7,
+                )
+            )
+
+            plt.plot(x, y, label="Original pattern")
+            plt.plot(x, result_ys, label="Profile fit")
 
             y_bg = np.zeros(len(x))
             for j in range(N_polynomial_coefficients):
@@ -409,10 +426,16 @@ def fit_diffractogram(
             plt.plot(
                 x,
                 y_bg,
-                label="BG",
+                label="Background polynomial",
             )
 
             plt.legend()
+
+            plt.xlabel(r"$2\theta$")
+            plt.ylabel(r"Intensity / rel.")
+            if save_index is not None:
+                plt.savefig(f"example_fit_{save_index}.pdf")
+
             plt.show()
 
     return current_bestfits, score

@@ -21,11 +21,12 @@ from ray.util.queue import Queue
 tag = "UNetPP"
 # TODO: Change back
 training_mode = "test"  # possible: train and test
+measure_overfitting = True  # only if training_mode == "test"
 
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
-to_test = "06-06-2022_22-15-44_UNetPP"
+# to_test = "06-06-2022_22-15-44_UNetPP"
 # to_test = "30-07-2022_10-20-17_UNetPP"
-# to_test = "31-07-2022_12-40-47"
+to_test = "31-07-2022_12-40-47"
 # to_test = "10-06-2022_13-12-26_UNetPP"
 
 pattern_x = np.arange(0, 90.24, 0.02)
@@ -43,7 +44,7 @@ use_distributed_strategy = True
 use_ICSD_patterns = False
 use_caglioti = True
 
-local = False
+local = True  # TODO: Change back!
 if not local:
     NO_workers = 28 + 128
     verbosity = 2
@@ -65,72 +66,104 @@ else:
 # with open("unet/scaler", "rb") as file:
 #    scaler = pickle.load(file)
 
-if training_mode == "train":
+if use_ICSD_patterns or use_caglioti:
 
-    if use_ICSD_patterns or use_caglioti:
+    with open("../dataset_simulations/prepared_training/meta", "rb") as file:
 
-        with open("../dataset_simulations/prepared_training/meta", "rb") as file:
+        data = pickle.load(file)
 
-            data = pickle.load(file)
+        per_element = data[6]
 
-            per_element = data[6]
+        counter_per_spg_per_element = data[0]
+        if per_element:
+            counts_per_spg_per_element_per_wyckoff = data[1]
+        else:
+            counts_per_spg_per_wyckoff = data[1]
+        NO_wyckoffs_prob_per_spg = data[2]
+        NO_unique_elements_prob_per_spg = data[3]
 
-            counter_per_spg_per_element = data[0]
-            if per_element:
-                counts_per_spg_per_element_per_wyckoff = data[1]
-            else:
-                counts_per_spg_per_wyckoff = data[1]
-            NO_wyckoffs_prob_per_spg = data[2]
-            NO_unique_elements_prob_per_spg = data[3]
+        if per_element:
+            NO_repetitions_prob_per_spg_per_element = data[4]
+        else:
+            NO_repetitions_prob_per_spg = data[4]
+        denseness_factors_per_spg = data[5]
 
-            if per_element:
-                NO_repetitions_prob_per_spg_per_element = data[4]
-            else:
-                NO_repetitions_prob_per_spg = data[4]
-            denseness_factors_per_spg = data[5]
+        statistics_metas = data[7]
+        statistics_labels = data[8]
+        statistics_match_metas = data[9]
+        statistics_match_labels = data[10]
+        test_metas = data[11]
+        test_labels = data[12]
+        corrected_labels = data[13]
+        test_match_metas = data[14]
+        test_match_pure_metas = data[15]
 
-            statistics_metas = data[7]
-            statistics_labels = data[8]
-            statistics_match_metas = data[9]
-            statistics_match_labels = data[10]
-            test_metas = data[11]
-            test_labels = data[12]
-            corrected_labels = data[13]
-            test_match_metas = data[14]
-            test_match_pure_metas = data[15]
+    path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
+    jobid = os.getenv("SLURM_JOB_ID")
+    if jobid is not None and jobid != "":
+        icsd_sim_statistics = Simulation(
+            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
+            os.path.expanduser("~/Databases/ICSD/cif/"),
+        )
+        icsd_sim_statistics.output_dir = path_to_patterns
+    else:  # local
+        icsd_sim_statistics = Simulation(
+            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
+            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
+        )
+        icsd_sim_statistics.output_dir = path_to_patterns
 
-        path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
-        jobid = os.getenv("SLURM_JOB_ID")
+    statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
+
+    icsd_sim_statistics.load(
+        load_only_N_patterns_each=1,
+        metas_to_load=statistics_match_metas_flat,
+        stop=10 if local else None,
+        load_patterns_angles_intensities=True,
+        load_only_angles_intensities=use_caglioti,  # only angles and intensities needed in this case!
+    )
+    if not use_caglioti:
+        statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
+    else:
+        statistics_patterns = None
+    statistics_angles = icsd_sim_statistics.sim_angles
+    statistics_intensities = icsd_sim_statistics.sim_intensities
+
+    if (
+        training_mode == "test"
+    ):  # also read some patterns from the match dataset to measure overfitting
+
         if jobid is not None and jobid != "":
-            icsd_sim_statistics = Simulation(
+            icsd_sim_test = Simulation(
                 os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
                 os.path.expanduser("~/Databases/ICSD/cif/"),
             )
-            icsd_sim_statistics.output_dir = path_to_patterns
+            icsd_sim_test.output_dir = path_to_patterns
         else:  # local
-            icsd_sim_statistics = Simulation(
+            icsd_sim_test = Simulation(
                 "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
                 "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
             )
-            icsd_sim_statistics.output_dir = path_to_patterns
+            icsd_sim_test.output_dir = path_to_patterns
 
-        statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
+        test_match_metas_flat = [item[0] for item in test_match_metas]
 
-        icsd_sim_statistics.load(
+        icsd_sim_test.load(
             load_only_N_patterns_each=1,
-            metas_to_load=statistics_match_metas_flat,
-            stop=1 if local else None,
+            metas_to_load=test_match_metas_flat,
+            stop=10 if local else None,
             load_patterns_angles_intensities=True,
             load_only_angles_intensities=use_caglioti,  # only angles and intensities needed in this case!
         )
         if not use_caglioti:
-            statistics_patterns = [
-                j for i in icsd_sim_statistics.sim_patterns for j in i
-            ]
+            test_patterns = [j for i in icsd_sim_test.sim_patterns for j in i]
         else:
-            statistics_patterns = None
-        statistics_angles = icsd_sim_statistics.sim_angles
-        statistics_intensities = icsd_sim_statistics.sim_intensities
+            test_patterns = None
+        test_angles = icsd_sim_test.sim_angles
+        test_intensities = icsd_sim_test.sim_intensities
+
+
+if training_mode == "train":
 
     log_wait_timings = []
 
@@ -298,7 +331,14 @@ else:
     model = keras.models.load_model("unet/" + to_test + "/final")
 
     test_batch = generate_background_noise_utils.generate_samples_gp(
-        100, (start_x, end_x), n_angles_output=N
+        2000,
+        (start_x, end_x),
+        n_angles_output=N,
+        use_caglioti=use_caglioti,
+        icsd_angles=test_angles,
+        icsd_intensities=test_intensities,
+        use_ICSD_patterns=use_ICSD_patterns,
+        icsd_patterns=test_patterns,
     )
 
     # test_xs = scaler.transform(test_batch[0])
@@ -312,6 +352,8 @@ else:
             repeated_y = np.repeat([0], y_test.shape[1] - 1700)
             x_test[i, :] = np.concatenate((x_test[i, 0:1700], repeated_x))
             y_test[i, :] = np.concatenate((y_test[i, 0:1700], repeated_y))
+
+    print(model.evaluate(x_test, y_test))
 
     predictions = model.predict(x_test)
 
