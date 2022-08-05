@@ -19,15 +19,19 @@ import ray
 from ray.util.queue import Queue
 
 tag = "UNetPP"
-# TODO: Change back
-training_mode = "test"  # possible: train and test
-measure_overfitting = True  # only if training_mode == "test"
+training_mode = "train"  # possible: train and test
+measure_overfitting = False  # only if training_mode == "test"
 
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
 # to_test = "06-06-2022_22-15-44_UNetPP"
 # to_test = "30-07-2022_10-20-17_UNetPP"
 to_test = "31-07-2022_12-40-47"
 # to_test = "10-06-2022_13-12-26_UNetPP"
+
+continue_run = True  # TODO: Change back
+pretrained_model_path = (
+    "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/unet/31-07-2022_12-40-47/final"
+)
 
 pattern_x = np.arange(0, 90.24, 0.02)
 start_x = pattern_x[0]
@@ -44,7 +48,7 @@ use_distributed_strategy = True
 use_ICSD_patterns = False
 use_caglioti = True
 
-local = True  # TODO: Change back!
+local = False
 if not local:
     NO_workers = 28 + 128
     verbosity = 2
@@ -255,42 +259,47 @@ if training_mode == "train":
 
     with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()):
 
-        my_unet = UNet(
-            length=N,
-            model_depth=5,  # height
-            num_channel=1,  # input
-            model_width=5,  # first conv number of channels, danach immer verdoppeln
-            kernel_size=64,
-            output_nums=1,
-            problem_type="Regression",
-        )
-        # model = my_unet.UNet()
-        model = my_unet.UNetPP()
+        if not continue_run:
+            my_unet = UNet(
+                length=N,
+                model_depth=5,  # height
+                num_channel=1,  # input
+                model_width=5,  # first conv number of channels, danach immer verdoppeln
+                kernel_size=64,
+                output_nums=1,
+                problem_type="Regression",
+            )
+            # model = my_unet.UNet()
+            model = my_unet.UNetPP()
 
-        # length: Input Signal Length
-        # model_depth: Depth of the Model
-        # model_width: Width of the Input Layer of the Model
-        # num_channel: Number of Channels allowed by the Model
-        # kernel_size: Kernel or Filter Size of the Convolutional Layers
-        # problem_type: Classification (Binary or Multiclass) or Regression
-        # output_nums: Output Classes (Classification Mode) or Features (Regression Mode)
-        # ds: Checks where Deep Supervision is active or not, either 0 or 1 [Default value set as 0]
-        # ae: Enables or diables the AutoEncoder Mode, either 0 or 1 [Default value set as 0]
-        # alpha: This Parameter is only for MultiResUNet, default value is 1
-        # feature_number: Number of Features or Embeddings to be extracted from the AutoEncoder in the A_E Mode
-        # is_transconv: (TRUE - Transposed Convolution, FALSE - UpSampling) in the Encoder Layer
+            # length: Input Signal Length
+            # model_depth: Depth of the Model
+            # model_width: Width of the Input Layer of the Model
+            # num_channel: Number of Channels allowed by the Model
+            # kernel_size: Kernel or Filter Size of the Convolutional Layers
+            # problem_type: Classification (Binary or Multiclass) or Regression
+            # output_nums: Output Classes (Classification Mode) or Features (Regression Mode)
+            # ds: Checks where Deep Supervision is active or not, either 0 or 1 [Default value set as 0]
+            # ae: Enables or diables the AutoEncoder Mode, either 0 or 1 [Default value set as 0]
+            # alpha: This Parameter is only for MultiResUNet, default value is 1
+            # feature_number: Number of Features or Embeddings to be extracted from the AutoEncoder in the A_E Mode
+            # is_transconv: (TRUE - Transposed Convolution, FALSE - UpSampling) in the Encoder Layer
 
-        # keras.utils.plot_model(model, show_shapes=True)
+            # keras.utils.plot_model(model, show_shapes=True)
 
-        model.summary()
+            model.summary()
 
-        model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError())
+            model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError())
 
-        # cp_callback = keras.callbacks.ModelCheckpoint(
-        #    filepath=out_base + "cps" + "/weights{epoch}",
-        #    save_weights_only=True,
-        #    verbose=1,
-        # )
+            # cp_callback = keras.callbacks.ModelCheckpoint(
+            #    filepath=out_base + "cps" + "/weights{epoch}",
+            #    save_weights_only=True,
+            #    verbose=1,
+            # )
+
+        else:
+
+            model = keras.models.load_model(pretrained_model_path)
 
         if use_distributed_strategy:
             sequence = CustomSequence(
