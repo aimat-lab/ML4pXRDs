@@ -6,12 +6,12 @@ from lmfit import minimize
 from scipy.optimize import minimize
 import pickle
 
-use_first_N = 20
+use_first_N = 10
 
 N_polynomial_coefficients = 20
-R2_score_threshold = 0.9  # minimum 0.9
+R2_score_threshold = 0.95  # minimum 0.9
 
-ratio_initial = -2.37287
+ratio_initial = 10 ** (-2.37287)
 lambda_initial = 7.311915
 sphere_x_initial = 6.619
 sphere_y_initial = 0.3
@@ -55,9 +55,7 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
         if method == "rb":
             result = rolling_ball(xs[i], ys[i], parameter_0, parameter_1)
         elif method == "arPLS":
-            result = baseline_arPLS(
-                ys[i], ratio=10**parameter_0, lam=10**parameter_1
-            )
+            result = baseline_arPLS(ys[i], ratio=parameter_0, lam=10**parameter_1)
 
         loss += np.sum((target_y - result) ** 2)
 
@@ -80,13 +78,22 @@ if __name__ == "__main__":
                 wrapper,
                 [sphere_x_initial, sphere_y_initial],
                 bounds=[(0, np.inf), (0, np.inf)],
+                method="Nelder-Mead",
+                options={"maxiter": 1000000},
             )
         elif method == "arPLS":
             result = minimize(
                 wrapper,
                 [ratio_initial, lambda_initial],
-                bounds=[(-np.inf, np.inf), (0, np.inf)],
+                bounds=[(0.001, 0.1), (2, 10)],
+                method="Nelder-Mead",
+                options={"maxiter": 1000000},
             )
+
+        if not result.success:
+            raise ValueError(result.message)
+        else:
+            print("Fit successful.")
 
         print(f"Best fit heuristic parameters for {method}:")
         print(result.x)
@@ -103,7 +110,7 @@ if __name__ == "__main__":
                 plt.plot(
                     xs[i],
                     baseline_arPLS(
-                        ys[i], ratio=10**ratio_initial, lam=10**lambda_initial
+                        ys[i], ratio=ratio_initial, lam=10**lambda_initial
                     ),
                     label="Initial",
                 )
@@ -121,7 +128,7 @@ if __name__ == "__main__":
                         xs[i],
                         baseline_arPLS(
                             ys[i],
-                            ratio=10 ** result.x[0],
+                            ratio=result.x[0],
                             lam=10 ** result.x[1],
                         ),
                         label="arPLS",
