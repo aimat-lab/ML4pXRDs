@@ -47,7 +47,7 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-random-resnet-50-additional-dense-sqrt-scaling-lr-0.0001"
+tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-vecsei-exclude-prototypes"
 description = ""
 
 if len(sys.argv) > 1:
@@ -128,10 +128,11 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
+# TODO: Change back
 
-use_statistics_dataset_as_validation = True  # TODO: Change back
-generate_randomized_validation_datasets = True
+use_statistics_dataset_as_validation = False
+generate_randomized_validation_datasets = False
 randomization_step = 3  # Only use every n'th sample for the randomization process
 
 use_dropout = False
@@ -157,7 +158,7 @@ load_only_N_patterns_each_test = 1  # None possible
 load_only_N_patterns_each_train = 1  # None possible
 
 scale_patterns = False
-scale_patterns_sqrt = True  # TODO: Change back
+scale_patterns_sqrt = False  # TODO: Change back
 
 use_retention_of_patterns = False
 retention_rate = 0.7
@@ -171,11 +172,11 @@ uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = False  # TODO: Change back
-use_vecsei_bg_noise = False
-use_rruff_validation_dataset = False
-exclude_rruff_items_from_statistics = False
-exclude_whole_prototype = False
+add_background_and_noise = True  # TODO: Change back
+use_vecsei_bg_noise = True
+use_rruff_validation_dataset = True
+exclude_rruff_items_from_statistics = True
+exclude_whole_prototype = True
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/07-06-2022_09-43-41/final"
