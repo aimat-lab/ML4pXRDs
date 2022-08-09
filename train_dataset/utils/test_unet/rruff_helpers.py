@@ -827,7 +827,7 @@ def get_icsd_ids_from_RRUFF(raw_files):
 
     print(f"{counter} of {len(raw_files)} found in ICSD")
 
-    ids_output = np.unique(ids_output)
+    ids_output = list(np.unique(ids_output))
 
     print(f"{len(ids_output)} ICSD entries to be excluded.")
 

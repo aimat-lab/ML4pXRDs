@@ -964,7 +964,7 @@ def time_swipe_with_fixed_volume():
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
 
         time_swipe_with_fixed_volume()
 
@@ -1270,7 +1270,7 @@ if __name__ == "__main__":
         plt.show()
         """
 
-    if False:
+    if True:
 
         rruff_x_tests, rruff_y_tests, difs, raw_files = get_rruff_patterns(
             only_refitted_patterns=False,

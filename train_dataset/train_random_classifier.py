@@ -1133,6 +1133,7 @@ if use_rruff_validation_dataset:
     )
 
     if exclude_rruff_items_from_statistics:
+
         icsd_ids_to_exclude, raw_files_found_indices = get_icsd_ids_from_RRUFF(
             raw_files
         )
@@ -1161,9 +1162,10 @@ if use_rruff_validation_dataset:
                 if icsd_sim_test.icsd_structure_types[i] in prototypes_to_exclude
             ]
 
-            icsd_ids_to_exclude = [
-                icsd_sim_test.icsd_ids[i] for i in indices_to_exclude
-            ]
+            icsd_ids_to_exclude.extend(
+                [icsd_sim_test.icsd_ids[i] for i in indices_to_exclude]
+            )
+            icsd_ids_to_exclude = np.unique(icsd_ids_to_exclude)
 
             print(
                 f"Excluding {len(icsd_ids_to_exclude)} structures, belonging to {len(np.unique(prototypes_to_exclude))} unique prototypes, from dataset due to occurence in RRUFF."
