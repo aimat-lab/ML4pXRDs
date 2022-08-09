@@ -47,8 +47,10 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-vecsei-exclude-prototypes"
+tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-vecsei-exclude-prototypes-and-structures-properly"
 description = ""
+
+print("Processing tag", tag)
 
 if len(sys.argv) > 1:
     date_time = sys.argv[1]  # get it from the bash script
