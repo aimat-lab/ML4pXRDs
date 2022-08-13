@@ -2,6 +2,7 @@
 # It is altered and optimized to run using numba.
 # If performance is not a concern to you, you should use the original pymatgen implementation.
 
+from re import sub
 from dataset_simulations.random_simulation_utils import generate_structures
 from dataset_simulations.random_simulation_utils import load_dataset_info
 import json
@@ -23,6 +24,7 @@ from train_dataset.utils.test_unet.rruff_helpers import get_rruff_patterns
 from pyxtal.symmetry import Group
 from sklearn.linear_model import LinearRegression
 import matplotlib_defaults
+import random
 
 if "NUMBA_DISABLE_JIT" in os.environ:
     is_debugging = os.environ["NUMBA_DISABLE_JIT"] == "1"
@@ -561,6 +563,71 @@ def get_xy_patterns(
                 return results, corn_sizes
             else:
                 return results, corn_sizes, max_unscaled_intensity_angle
+
+
+def mix_patterns_add_background(
+    patterns,
+    max_impurity_percentage=0.05,
+    add_background_and_noise=True,
+    use_vecsei_bg_noise=False,
+    depth_two=False,
+    two_theta_range=(5, 90),
+    do_plot=False,
+):
+
+    xs = np.linspace(two_theta_range[0], two_theta_range[1], 8501)
+
+    for i, tmp_pattern in enumerate(patterns):
+
+        if depth_two:
+            pattern = tmp_pattern[0]
+        else:
+            pattern = tmp_pattern
+
+        if not (i == (len(patterns) - 1)):
+
+            to_add_index = random.randint(i + 1, len(patterns) - 1)
+            to_add_pattern = patterns[to_add_index]
+            if depth_two:
+                to_add_pattern = to_add_pattern[0]
+
+            impurity_percentage = random.random() * max_impurity_percentage
+            pattern[:] = (
+                1 - impurity_percentage
+            ) * pattern + impurity_percentage * to_add_pattern
+
+            pattern[:] = pattern[:] / np.max(pattern)
+
+            if do_plot:
+                plt.plot(xs, pattern, alpha=0.5, label="Final pattern")
+                plt.plot(
+                    xs,
+                    impurity_percentage * to_add_pattern,
+                    alpha=0.5,
+                    label="Added impurity",
+                )
+                plt.show()
+
+        if add_background_and_noise:
+            if not use_vecsei_bg_noise:
+                # assign inplace:
+                pattern[
+                    :
+                ] = train_dataset.generate_background_noise_utils.generate_samples_gp(
+                    1,
+                    two_theta_range,
+                    n_angles_output=8501,
+                    icsd_patterns=[pattern],
+                    original_range=True,
+                )[
+                    0
+                ][
+                    0
+                ]
+            else:
+                pattern += generate_background_noise_vecsei(xs)
+                pattern -= np.min(pattern)
+                pattern /= np.max(pattern)
 
 
 def get_random_xy_patterns(
@@ -1372,11 +1439,21 @@ if __name__ == "__main__":
                     denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                     lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                     probability_per_spg=probability_per_spg,
-                    add_background_and_noise=True,
-                    use_vecsei_bg_noise=True,
+                    add_background_and_noise=False,
+                    use_vecsei_bg_noise=False,
                 )
 
                 if True:
+                    mix_patterns_add_background(
+                        patterns,
+                        max_impurity_percentage=0.05,
+                        add_background_and_noise=True,
+                        use_vecsei_bg_noise=False,
+                        depth_two=False,
+                        do_plot=True,
+                    )
+
+                if False:
                     for pattern in patterns:
                         plt.plot(np.linspace(5, 90, 8501), pattern)
                         plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])

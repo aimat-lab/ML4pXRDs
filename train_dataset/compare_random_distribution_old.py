@@ -89,7 +89,7 @@ plt.savefig("distribution_spgs.png")
 ########## Plotting the histogram of number of elements in icsd
 
 lengths = []
-for i, id in enumerate(icsd_sim.icsd_sumformulas):
+for i, id in enumerate(icsd_sim.icsd_sumformulas): 
     lengths.append(len(id.split(" ")))
 
 plt.figure()
