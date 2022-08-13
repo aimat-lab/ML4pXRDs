@@ -573,6 +573,7 @@ def mix_patterns_add_background(
     depth_two=False,
     two_theta_range=(5, 90),
     do_plot=False,
+    do_mix=True,
 ):
 
     xs = np.linspace(two_theta_range[0], two_theta_range[1], 8501)
@@ -584,7 +585,7 @@ def mix_patterns_add_background(
         else:
             pattern = tmp_pattern
 
-        if not (i == (len(patterns) - 1)):
+        if (not (i == (len(patterns) - 1))) and do_mix:
 
             to_add_index = random.randint(i + 1, len(patterns) - 1)
             to_add_pattern = patterns[to_add_index]
@@ -1443,6 +1444,8 @@ if __name__ == "__main__":
                     use_vecsei_bg_noise=False,
                 )
 
+                plt.plot(patterns[0])
+
                 if True:
                     mix_patterns_add_background(
                         patterns,
@@ -1452,6 +1455,9 @@ if __name__ == "__main__":
                         depth_two=False,
                         do_plot=True,
                     )
+
+                plt.plot(patterns[0])
+                plt.show()
 
                 if False:
                     for pattern in patterns:

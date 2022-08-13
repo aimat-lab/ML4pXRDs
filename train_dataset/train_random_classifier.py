@@ -1,5 +1,6 @@
 import tensorflow.keras as keras
 from dataset_simulations.core.quick_simulation import get_random_xy_patterns
+from dataset_simulations.core.quick_simulation import mix_patterns_add_background
 from dataset_simulations.random_simulation_utils import load_dataset_info
 import numpy as np
 from models import (
@@ -47,7 +48,7 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-vecsei-exclude-prototypes-and-structures-properly"
+tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-gp-exclude-prototypes-impurities"
 description = ""
 
 print("Processing tag", tag)
@@ -130,11 +131,12 @@ use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoff
 use_all_data_per_spg = False  # Overwrites all the previous ones
 use_coordinates_directly = False
 use_lattice_paras_directly = False
-use_icsd_structures_directly = True  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
-# TODO: Change back
+use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
 
 use_statistics_dataset_as_validation = False
-generate_randomized_validation_datasets = False
+generate_randomized_validation_datasets = (
+    False  # Keep in mind that these do not include mixing of impurity patterns!
+)
 randomization_step = 3  # Only use every n'th sample for the randomization process
 
 use_dropout = False
@@ -160,7 +162,7 @@ load_only_N_patterns_each_test = 1  # None possible
 load_only_N_patterns_each_train = 1  # None possible
 
 scale_patterns = False
-scale_patterns_sqrt = False  # TODO: Change back
+scale_patterns_sqrt = False
 
 use_retention_of_patterns = False
 retention_rate = 0.7
@@ -175,7 +177,9 @@ uniformly_distributed = False
 shuffle_test_match_train_match = False
 
 add_background_and_noise = True  # TODO: Change back
-use_vecsei_bg_noise = True
+use_vecsei_bg_noise = False  # TODO: Change back
+mix_impurities = True  # TODO: Change back
+max_impurity_percentage = 0.05
 use_rruff_validation_dataset = True
 exclude_rruff_items_from_statistics = True
 exclude_whole_prototype = True
@@ -393,22 +397,32 @@ print(
     flush=True,
 )
 
-if add_background_and_noise:
-    for i, pattern in enumerate(icsd_sim_test.sim_patterns):
-        for j in range(pattern.shape[0]):
-            if not use_vecsei_bg_noise:
-                pattern[j, :] = generate_samples_gp(
-                    1,
-                    (start_angle, end_angle),
-                    n_angles_output=8501,
-                    icsd_patterns=[pattern[j, :]],
-                    original_range=True,
-                    use_ICSD_patterns=True,
-                )[0][0]
-            else:
-                pattern[j, :] += generate_background_noise_vecsei(angle_range)
-                pattern[j, :] -= np.min(pattern[j, :])
-                pattern[j, :] /= np.max(pattern[j, :])
+if add_background_and_noise or mix_impurities:
+    mix_patterns_add_background(
+        icsd_sim_test.sim_patterns,
+        max_impurity_percentage=max_impurity_percentage,
+        add_background_and_noise=add_background_and_noise,
+        use_vecsei_bg_noise=use_vecsei_bg_noise,
+        depth_two=True,
+        do_mix=mix_impurities,
+    )
+
+    # old bg code
+    # for i, pattern in enumerate(icsd_sim_test.sim_patterns):
+    #    for j in range(pattern.shape[0]):
+    #        if not use_vecsei_bg_noise:
+    #            pattern[j, :] = generate_samples_gp(
+    #                1,
+    #                (start_angle, end_angle),
+    #                n_angles_output=8501,
+    #                icsd_patterns=[pattern[j, :]],
+    #                original_range=True,
+    #                use_ICSD_patterns=True,
+    #            )[0][0]
+    #        else:
+    #            pattern[j, :] += generate_background_noise_vecsei(angle_range)
+    #            pattern[j, :] -= np.min(pattern[j, :])
+    #            pattern[j, :] /= np.max(pattern[j, :])
 
 n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
 
@@ -905,9 +919,21 @@ def batch_generator_with_additional(
         per_element=per_element,
         verbosity=1,  # Show everything here
         probability_per_spg=probability_per_spg,
-        add_background_and_noise=add_background_and_noise,
-        use_vecsei_bg_noise=use_vecsei_bg_noise,
+        add_background_and_noise=add_background_and_noise
+        if not mix_impurities
+        else False,
+        use_vecsei_bg_noise=use_vecsei_bg_noise if not mix_impurities else False,
     )
+
+    if mix_impurities:
+        mix_patterns_add_background(
+            patterns,
+            max_impurity_percentage=max_impurity_percentage,
+            add_background_and_noise=add_background_and_noise,
+            use_vecsei_bg_noise=use_vecsei_bg_noise,
+            depth_two=False,
+            do_mix=mix_impurities,
+        )
 
     # Set the label to the right index:
     for i in range(0, len(labels)):
@@ -978,9 +1004,23 @@ def batch_generator_queue(
                 per_element=per_element,
                 verbosity=verbosity_generator,
                 probability_per_spg=probability_per_spg,
-                add_background_and_noise=add_background_and_noise,
-                use_vecsei_bg_noise=use_vecsei_bg_noise,
+                add_background_and_noise=add_background_and_noise
+                if not mix_impurities
+                else False,
+                use_vecsei_bg_noise=use_vecsei_bg_noise
+                if not mix_impurities
+                else False,
             )
+
+            if mix_impurities:
+                mix_patterns_add_background(
+                    patterns,
+                    max_impurity_percentage=max_impurity_percentage,
+                    add_background_and_noise=add_background_and_noise,
+                    use_vecsei_bg_noise=use_vecsei_bg_noise,
+                    depth_two=False,
+                    do_mix=mix_impurities,
+                )
 
             patterns, labels = shuffle(patterns, labels)
 
@@ -1250,22 +1290,32 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         flush=True,
     )
 
-    if add_background_and_noise:
-        for i, pattern in enumerate(icsd_sim_statistics.sim_patterns):
-            for j in range(pattern.shape[0]):
-                if not use_vecsei_bg_noise:
-                    pattern[j, :] = generate_samples_gp(
-                        1,
-                        (start_angle, end_angle),
-                        n_angles_output=8501,
-                        icsd_patterns=[pattern[j, :]],
-                        original_range=True,
-                        use_icsd_patterns=True,
-                    )[0][0]
-                else:
-                    pattern[j, :] += generate_background_noise_vecsei(angle_range)
-                    pattern[j, :] -= np.min(pattern[j, :])
-                    pattern[j, :] /= np.max(pattern[j, :])
+    if add_background_and_noise or mix_impurities:
+        mix_patterns_add_background(
+            icsd_sim_statistics.sim_patterns,
+            max_impurity_percentage=max_impurity_percentage,
+            add_background_and_noise=add_background_and_noise,
+            use_vecsei_bg_noise=use_vecsei_bg_noise,
+            depth_two=True,
+            do_mix=mix_impurities,
+        )
+
+        # old bg code
+        # for i, pattern in enumerate(icsd_sim_statistics.sim_patterns):
+        #    for j in range(pattern.shape[0]):
+        #        if not use_vecsei_bg_noise:
+        #            pattern[j, :] = generate_samples_gp(
+        #                1,
+        #                (start_angle, end_angle),
+        #                n_angles_output=8501,
+        #                icsd_patterns=[pattern[j, :]],
+        #                original_range=True,
+        #                use_icsd_patterns=True,
+        #            )[0][0]
+        #        else:
+        #            pattern[j, :] += generate_background_noise_vecsei(angle_range)
+        #            pattern[j, :] -= np.min(pattern[j, :])
+        #            pattern[j, :] /= np.max(pattern[j, :])
 
     statistics_icsd_patterns_match = []
     statistics_icsd_labels_match = []
