@@ -620,6 +620,7 @@ def mix_patterns_add_background(
                     n_angles_output=8501,
                     icsd_patterns=[pattern],
                     original_range=True,
+                    use_ICSD_patterns=True,
                 )[
                     0
                 ][
@@ -1453,7 +1454,7 @@ if __name__ == "__main__":
                         add_background_and_noise=True,
                         use_vecsei_bg_noise=False,
                         depth_two=False,
-                        do_plot=True,
+                        do_plot=False,
                     )
 
                 plt.plot(patterns[0])
