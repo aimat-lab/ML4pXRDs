@@ -607,6 +607,7 @@ def mix_patterns_add_background(
                     alpha=0.5,
                     label="Added impurity",
                 )
+                plt.legend()
                 plt.show()
 
         if add_background_and_noise:
@@ -1445,8 +1446,6 @@ if __name__ == "__main__":
                     use_vecsei_bg_noise=False,
                 )
 
-                plt.plot(patterns[0])
-
                 if True:
                     mix_patterns_add_background(
                         patterns,
@@ -1457,10 +1456,7 @@ if __name__ == "__main__":
                         do_plot=False,
                     )
 
-                plt.plot(patterns[0])
-                plt.show()
-
-                if False:
+                if True:
                     for pattern in patterns:
                         plt.plot(np.linspace(5, 90, 8501), pattern)
                         plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])

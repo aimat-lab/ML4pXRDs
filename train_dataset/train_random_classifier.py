@@ -48,7 +48,7 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-gp-exclude-prototypes-impurities"
+tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-gp-exclude-prototypes-add-impurities"
 description = ""
 
 print("Processing tag", tag)
@@ -1196,8 +1196,12 @@ if use_rruff_validation_dataset:
                 for index in id_indices_to_exclude
             ]
             prototypes_to_exclude = [
-                item for item in prototypes_to_exclude if isinstance(item, str)
+                item
+                for item in prototypes_to_exclude
+                if (isinstance(item, str) and item != "")
             ]
+
+            print("Prototypes to exclude:", repr(np.unique(prototypes_to_exclude)))
 
             indices_to_exclude = [
                 i

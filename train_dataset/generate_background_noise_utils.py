@@ -455,7 +455,7 @@ def add_peaks(
             else:
                 ys_unaltered_all[i, :] = icsd_patterns[i][:]
 
-            ys_unaltered_all[i, :] *= 4
+            ys_unaltered_all[i, :] *= 1
 
         else:
 
