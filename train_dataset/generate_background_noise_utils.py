@@ -442,8 +442,8 @@ def add_peaks(
 
                 peak_sizes.append(peak_size)
 
-            ys_unaltered_all[i, :] = (
-                ys_unaltered_all[i, :] / np.max(ys_unaltered_all[i, :]) * 4
+            ys_unaltered_all[i, :] = ys_unaltered_all[i, :] / np.max(
+                ys_unaltered_all[i, :]
             )
 
         elif not use_caglioti:
@@ -454,8 +454,6 @@ def add_peaks(
                 ]  # this has already been normalized during the simulation
             else:
                 ys_unaltered_all[i, :] = icsd_patterns[i][:]
-
-            ys_unaltered_all[i, :] *= 1
 
         else:
 
