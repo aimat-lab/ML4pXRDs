@@ -17,16 +17,22 @@ from datetime import datetime
 import pickle
 import ray
 from ray.util.queue import Queue
+import matplotlib_defaults
+
+figure_double_width_pub = matplotlib_defaults.pub_width
 
 tag = "UNetPP"
-training_mode = "train"  # possible: train and test
-measure_overfitting = False  # only if training_mode == "test"
+training_mode = "test"  # possible: train and test
+N_to_plot = 20  # only for test
+plot_separately = True
+show_plots = False
 
 # to_test = "removal_03-12-2021_16-48-30_UNetPP" # pretty damn good
 # to_test = "06-06-2022_22-15-44_UNetPP"
 # to_test = "30-07-2022_10-20-17_UNetPP"
-to_test = "31-07-2022_12-40-47"
+# to_test = "31-07-2022_12-40-47"
 # to_test = "10-06-2022_13-12-26_UNetPP"
+to_test = "05-08-2022_07-59-47"
 
 continue_run = True  # TODO: Change back
 pretrained_model_path = (
@@ -48,7 +54,7 @@ use_distributed_strategy = True
 use_ICSD_patterns = False
 use_caglioti = True
 
-local = False
+local = True
 if not local:
     NO_workers = 28 + 128
     verbosity = 2
@@ -133,9 +139,7 @@ if use_ICSD_patterns or use_caglioti:
     statistics_angles = icsd_sim_statistics.sim_angles
     statistics_intensities = icsd_sim_statistics.sim_intensities
 
-    if (
-        training_mode == "test"
-    ):  # also read some patterns from the match dataset to measure overfitting
+    if training_mode == "test":  # read some patterns from the match dataset for testing
 
         if jobid is not None and jobid != "":
             icsd_sim_test = Simulation(
@@ -350,9 +354,6 @@ else:
         icsd_patterns=test_patterns,
     )
 
-    # test_xs = scaler.transform(test_batch[0])
-    test_xs = test_batch[0]
-
     x_test, y_test = test_batch[0], test_batch[1]
 
     if False:
@@ -362,40 +363,99 @@ else:
             x_test[i, :] = np.concatenate((x_test[i, 0:1700], repeated_x))
             y_test[i, :] = np.concatenate((y_test[i, 0:1700], repeated_y))
 
+    print("Model evaluation:")
     print(model.evaluate(x_test, y_test))
 
     predictions = model.predict(x_test)
 
     os.system("mkdir -p predictions")
-    for i, prediction in enumerate(predictions):
+
+    for i, prediction in enumerate(predictions[0:N_to_plot]):
+
+        plt.figure(
+            figsize=(
+                figure_double_width_pub * 0.95 * 0.5,
+                figure_double_width_pub * 0.7 * 0.5,
+            )
+        )
 
         plt.xlabel(r"$2 \theta$")
-        plt.ylabel("Intensity")
+        plt.ylabel("Intensity / rel.")
 
-        plt.plot(pattern_x, prediction[:, 0], label="Prediction")
+        if not plot_separately:
 
-        plt.plot(
-            pattern_x,
-            test_batch[0][:][i],
-            label="Input pattern",
-        )
+            plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
-        plt.plot(
-            pattern_x,
-            test_batch[1][:][i],
-            label="Target",
-        )
+            plt.plot(
+                pattern_x,
+                test_batch[0][:][i],
+                label="Input pattern",
+            )
 
-        plt.plot(
-            pattern_x,
-            test_batch[0][:][i] - prediction[:, 0],
-            label="Prediced background and noise",
-            linestyle="dotted",
-        )
+            plt.plot(
+                pattern_x,
+                test_batch[1][:][i],
+                label="Target",
+            )
 
-        plt.legend()
+            plt.plot(
+                pattern_x,
+                test_batch[0][:][i] - prediction[:, 0],
+                label="Prediced background and noise",
+                linestyle="dotted",
+            )
 
-        # plt.savefig(f"predictions/prediction_{i}.png")
+            plt.legend()
+            plt.tight_layout()
 
-        plt.show()
-        plt.figure()
+            plt.savefig(f"predictions/test_{i}.pdf", bbox_inches="tight")
+
+            if show_plots:
+                plt.show()
+
+        else:
+
+            plt.plot(
+                pattern_x,
+                test_batch[0][:][i],
+                label="Input pattern",
+            )
+            # plt.legend()
+            plt.tight_layout()
+            plt.savefig(f"predictions/input_{i}.pdf", bbox_inches="tight")
+            if show_plots:
+                plt.show()
+
+            plt.figure(
+                figsize=(
+                    figure_double_width_pub * 0.95 * 0.5,
+                    figure_double_width_pub * 0.7 * 0.5,
+                )
+            )
+            plt.xlabel(r"$2 \theta$")
+            plt.ylabel("Intensity / rel.")
+            plt.plot(
+                pattern_x,
+                test_batch[1][:][i],
+                label="Target",
+            )
+            # plt.legend()
+            plt.tight_layout()
+            plt.savefig(f"predictions/target_{i}.pdf", bbox_inches="tight")
+            if show_plots:
+                plt.show()
+
+            plt.figure(
+                figsize=(
+                    figure_double_width_pub * 0.95 * 0.5,
+                    figure_double_width_pub * 0.7 * 0.5,
+                )
+            )
+            plt.xlabel(r"$2 \theta$")
+            plt.ylabel("Intensity / rel.")
+            plt.plot(pattern_x, prediction[:, 0], label="Prediction")
+            # plt.legend()
+            plt.tight_layout()
+            plt.savefig(f"predictions/prediction_{i}.pdf", bbox_inches="tight")
+            if show_plots:
+                plt.show()
