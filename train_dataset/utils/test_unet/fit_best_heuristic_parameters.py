@@ -101,7 +101,7 @@ if __name__ == "__main__":
         final_parameters_per_method[method] = result.x
 
         if do_plot:
-            for i in range(len(xs[0 : 2 * use_first_N])):
+            for i in range(len(xs[0:5])):
 
                 target_y = np.zeros(len(xs[i]))
                 for j in range(N_polynomial_coefficients):

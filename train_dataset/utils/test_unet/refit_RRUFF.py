@@ -20,10 +20,10 @@ def process_pattern(input):
                 y / np.max(y),
                 data[:, 0],  # angles
                 data[:, 1] / np.max(data[:, 1]),  # intensities
-                do_plot=True,  # TODO: Change back
+                do_plot=False,
                 only_plot_final=True,
                 do_print=False,
-                save_index=0,  # TODO: Change back
+                save_index=0,
             )
         except Exception as ex:
             print("Error fitting diffractogram to sample:", flush=True)
@@ -33,21 +33,6 @@ def process_pattern(input):
         return (raw_file, fit_parameters, score)
     else:
         return None
-
-
-class PoolProgress:
-    def __init__(self, pool, update_interval=3):
-        self.pool = pool
-        self.update_interval = update_interval
-
-    def track(self, job):
-        task = self.pool._cache[job._job]
-        while task._number_left > 0:
-            print(
-                "Tasks remaining = {0}".format(task._number_left * task._chunksize),
-                flush=True,
-            )
-            time.sleep(self.update_interval)
 
 
 if __name__ == "__main__":
@@ -84,7 +69,7 @@ if __name__ == "__main__":
         process_pattern((xs[0], ys[0], dif_files[0], raw_files[0]))
         exit()
 
-    if True:
+    if False:
         for i in range(len(raw_files)):
             process_pattern((xs[i], ys[i], dif_files[i], raw_files[i]))
 
@@ -100,8 +85,6 @@ if __name__ == "__main__":
 
         with Pool(processes=N_workers) as pool:
 
-            # progress = PoolProgress(pool, update_interval=30)
-
             map_results = pool.map_async(
                 process_pattern,
                 zip(
@@ -112,12 +95,8 @@ if __name__ == "__main__":
                 ),
             )
 
-            # progress.track(map_results)
-
             map_results = map_results.get()
-            results = [
-                item for item in map_results if (item is not None and item[2] > 0.9)
-            ]
+            results = [item for item in map_results if item is not None]
 
         with open(f"parameters/rruff_refits_{j}.pickle", "wb") as file:
             pickle.dump(results, file)

@@ -15,6 +15,7 @@ import logging
 import jax
 import pandas as pd
 import matplotlib_defaults
+import scipy.integrate as integrate
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
@@ -48,13 +49,23 @@ def fn_eta(theta, eta_0, eta_1, eta_2):
 
 def peak_function(theta, mean, U, V, W, X, Y, eta_0, eta_1, eta_2):
 
-    C_G = 4 * jnp.log(2)
-    C_L = 4
+    # C_G = 4 * jnp.log(2)
+    # C_L = 4
 
     H = fn_H(theta, U, V, W)
     H_dash = fn_H_dash(theta, X, Y)
-
     eta = fn_eta(theta, eta_0, eta_1, eta_2)
+
+    sigma_gaussian = H / (
+        2 * jnp.sqrt(2 * jnp.log(2))
+    )  # with respect to the width in theta (see maple)!
+    gamma_lorentzian = 0.5 * H_dash
+
+    return eta * 1 / (sigma_gaussian * jnp.sqrt(2 * jnp.pi)) * jnp.exp(
+        -0.5 * ((theta - mean) / sigma_gaussian) ** 2
+    ) + (1 - eta) * 1 / (jnp.pi * gamma_lorentzian) * (
+        gamma_lorentzian**2 / ((theta - mean) ** 2 + gamma_lorentzian**2)
+    )
 
     # Lambda = (
     #    H**5
@@ -71,16 +82,23 @@ def peak_function(theta, mean, U, V, W, X, Y, eta_0, eta_1, eta_2):
     #    + 0.11116 * (H_dash / Lambda) ** 3
     # )
 
-    x = fn_x(theta, mean, H)
+    # x = fn_x(theta, mean, H) # Mistake!
 
-    return eta * C_G ** (1 / 2) / (jnp.sqrt(jnp.pi) * H) * jnp.exp(
-        -1 * C_G * x**2
-    ) + (1 - eta) * C_L ** (1 / 2) / (jnp.sqrt(jnp.pi) * H_dash) * (
-        1 + C_L * x**2
-    ) ** (
-        -1
-    )
+    # return eta * C_G ** (1 / 2) / (jnp.sqrt(jnp.pi) * H) * jnp.exp(
+    #    -1 * C_G * x**2
+    # ) + (1 - eta) * C_L ** (1 / 2) / (jnp.sqrt(jnp.pi) * H_dash) * (
+    #    1 + C_L * x**2
+    # ) ** (
+    #    -1
+    # )
 
+
+# print(
+#    integrate.quad(
+#        lambda x: peak_function(x, 5, 1, 0.3, 0.5, 0.3, 0.2, 0.5, 0, 0), -np.inf, np.inf
+#    )
+# )
+# exit()
 
 # Copper:
 lambda_K_alpha_1 = 1.54056  # angstrom

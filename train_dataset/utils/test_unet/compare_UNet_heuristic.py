@@ -45,6 +45,7 @@ ys = ys[skip_first_N:]
 difs = difs[skip_first_N:]
 raw_files = raw_files[skip_first_N:]
 parameters = parameters[skip_first_N:]
+scores = scores[skip_first_N:]
 
 if N_to_process is not None:
     xs = xs[:N_to_process]
@@ -52,6 +53,7 @@ if N_to_process is not None:
     difs = difs[:N_to_process]
     raw_files = raw_files[:N_to_process]
     parameters = parameters[:N_to_process]
+    scores = scores[:N_to_process]
 
 x_range = np.linspace(5, 90, 8501)
 
@@ -142,12 +144,6 @@ for i in range(len(xs)):
 
         if do_plot:
             plt.plot(xs[i], result_heuristic, label=method)
-
-        # Calculate the differences on a restricted range:
-        xs_to_fit = xs[i][500:-500]
-        ys_to_fit = ys[i][500:-500]
-
-        # print(f"{xs_to_fit[0]} .. {xs_to_fit[-1]}")
 
         result_heuristic = result_heuristic[500:-500]
 
