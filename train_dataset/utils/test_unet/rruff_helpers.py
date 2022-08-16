@@ -20,7 +20,7 @@ import scipy.integrate as integrate
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
 
-N_polynomial_coefficients = 10  # TODO: Change back
+N_polynomial_coefficients = 20
 use_K_alpha_splitting = True
 
 
@@ -54,7 +54,9 @@ def peak_function(theta, mean, U, V, W, X, Y, eta_0, eta_1, eta_2):
 
     # theta => mean
     H = fn_H(mean, U, V, W)
-    H_dash = fn_H_dash(mean, X, Y)
+    # H_dash = fn_H_dash(mean, X, Y)
+    H_dash = H
+
     eta = fn_eta(mean, eta_0, eta_1, eta_2)
 
     sigma_gaussian = H / (
@@ -349,7 +351,8 @@ def fit_diffractogram(
                 min=1 if not use_extended_synchrotron_range else 0,
                 max=3,
                 # max=2,
-                vary=vary_instr_parameters,
+                # vary=vary_instr_parameters,
+                vary=False,
             )
             params.add(
                 "Y",
@@ -357,7 +360,8 @@ def fit_diffractogram(
                 min=0,
                 max=3,
                 # max=1,
-                vary=vary_instr_parameters,
+                # vary=vary_instr_parameters,
+                vary=False,
             )
             params.add(
                 "eta_0",
@@ -459,12 +463,12 @@ def fit_diffractogram(
             if save_index is not None:
                 plt.savefig(f"example_fit_{save_index}.pdf")
 
-            print("U,V,W,X,Y,eta_0,eta_1,eta_2")
-            print(
-                current_bestfits[
-                    N_polynomial_coefficients : N_polynomial_coefficients + 8
-                ]
-            )
+            # print("U,V,W,X,Y,eta_0,eta_1,eta_2")
+            # print(
+            #    current_bestfits[
+            #        N_polynomial_coefficients : N_polynomial_coefficients + 8
+            #    ]
+            # )
 
             plt.show()
 
