@@ -20,7 +20,7 @@ import scipy.integrate as integrate
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
 
-N_polynomial_coefficients = 20
+N_polynomial_coefficients = 12
 use_K_alpha_splitting = True
 
 
@@ -228,11 +228,11 @@ def fit_diffractogram(
 
         return peaks + polynomial
 
-    fit_function = jit(fit_function)
+    fit_function_jitted = jit(fit_function)
 
     def fit_function_wrapped(xs, **kwargs):
         values = list(kwargs.values())
-        return fit_function(xs, *values)
+        return fit_function_jitted(xs, *values)
 
     model = Model(fit_function_wrapped)
 

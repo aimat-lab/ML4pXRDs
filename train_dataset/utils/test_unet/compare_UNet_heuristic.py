@@ -12,7 +12,7 @@ figure_double_width_pub = matplotlib_defaults.pub_width
 skip_first_N = 10
 N_to_process = None  # None possible => use all
 
-N_polynomial_coefficients = 20
+N_polynomial_coefficients = 12
 R2_score_threshold = 0.95  # minimum 0.9
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"  # Previous model, this had superior accuracy to the heuristic algorithms.

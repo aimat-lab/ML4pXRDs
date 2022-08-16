@@ -8,7 +8,7 @@ import pickle
 
 use_first_N = 10
 
-N_polynomial_coefficients = 20
+N_polynomial_coefficients = 12
 R2_score_threshold = 0.95  # minimum 0.9
 
 ratio_initial = 10 ** (-2.37287)
