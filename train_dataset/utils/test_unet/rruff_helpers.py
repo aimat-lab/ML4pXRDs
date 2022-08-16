@@ -20,7 +20,7 @@ import scipy.integrate as integrate
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
 # Parameter ranges from: file:///home/henrik/Downloads/PowderDiff26201188-93%20(1).pdf
 
-N_polynomial_coefficients = 20
+N_polynomial_coefficients = 10  # TODO: Change back
 use_K_alpha_splitting = True
 
 
@@ -52,9 +52,10 @@ def peak_function(theta, mean, U, V, W, X, Y, eta_0, eta_1, eta_2):
     # C_G = 4 * jnp.log(2)
     # C_L = 4
 
-    H = fn_H(theta, U, V, W)
-    H_dash = fn_H_dash(theta, X, Y)
-    eta = fn_eta(theta, eta_0, eta_1, eta_2)
+    # theta => mean
+    H = fn_H(mean, U, V, W)
+    H_dash = fn_H_dash(mean, X, Y)
+    eta = fn_eta(mean, eta_0, eta_1, eta_2)
 
     sigma_gaussian = H / (
         2 * jnp.sqrt(2 * jnp.log(2))
@@ -323,6 +324,7 @@ def fit_diffractogram(
                 current_bestfits[N_polynomial_coefficients],
                 min=0,
                 max=3,
+                # max=1,
                 vary=vary_instr_parameters,
             )
             params.add(
@@ -338,6 +340,7 @@ def fit_diffractogram(
                 current_bestfits[N_polynomial_coefficients + 2],
                 min=0,
                 max=4,
+                # max=1,
                 vary=vary_instr_parameters,
             )
             params.add(
@@ -345,6 +348,7 @@ def fit_diffractogram(
                 current_bestfits[N_polynomial_coefficients + 3],
                 min=1 if not use_extended_synchrotron_range else 0,
                 max=3,
+                # max=2,
                 vary=vary_instr_parameters,
             )
             params.add(
@@ -352,6 +356,7 @@ def fit_diffractogram(
                 current_bestfits[N_polynomial_coefficients + 4],
                 min=0,
                 max=3,
+                # max=1,
                 vary=vary_instr_parameters,
             )
             params.add(
@@ -453,6 +458,13 @@ def fit_diffractogram(
             plt.ylabel(r"Intensity / rel.")
             if save_index is not None:
                 plt.savefig(f"example_fit_{save_index}.pdf")
+
+            print("U,V,W,X,Y,eta_0,eta_1,eta_2")
+            print(
+                current_bestfits[
+                    N_polynomial_coefficients : N_polynomial_coefficients + 8
+                ]
+            )
 
             plt.show()
 
