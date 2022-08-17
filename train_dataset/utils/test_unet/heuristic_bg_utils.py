@@ -96,6 +96,9 @@ def rolling_ball(xs, ys, sphere_x=6.619, sphere_y=0.3, ax=None):
     # Filter noise
     ys = filtfilt(b, a, ys, padtype="constant")
 
+    # plt.plot(ys)
+    # plt.show()
+
     # ax.plot(xs, np.array(ys) + 1, label="Noise filtered")
 
     width = sphere_x / (xs[1] - xs[0])

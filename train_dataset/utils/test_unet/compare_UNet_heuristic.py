@@ -15,6 +15,8 @@ N_to_process = None  # None possible => use all
 N_polynomial_coefficients = 12
 R2_score_threshold = 0.97  # minimum 0.9
 
+ratio_fixed = 10 ** (-5)
+
 unet_model_path = "10-06-2022_13-12-26_UNetPP"  # Previous model, this had superior accuracy to the heuristic algorithms.
 # unet_model_path = "31-07-2022_12-40-47"  # with caglioti + different bg parameters etc.
 # unet_model_path = "05-08-2022_07-59-47"  # Latest model with caglioti # continuation!
@@ -146,8 +148,10 @@ for i in range(len(xs)):
         else:
             result_heuristic = baseline_arPLS(
                 ys[i],
-                ratio=bestfit_parameters[method][0],
-                lam=10 ** bestfit_parameters[method][1],
+                ratio=ratio_fixed,
+                # ratio=10 ** (-5),
+                lam=10 ** bestfit_parameters[method][0],
+                # lam=10 ** (9.15943541e00),
             )
 
         if do_plot:

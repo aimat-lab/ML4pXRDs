@@ -11,7 +11,8 @@ use_first_N = 10
 N_polynomial_coefficients = 12
 R2_score_threshold = 0.97
 
-ratio_initial = 10 ** (-2.37287)
+# ratio_initial = 10 ** (-2.37287)
+ratio_fixed = 10 ** (-5)
 lambda_initial = 7.311915
 sphere_x_initial = 6.619
 sphere_y_initial = 0.3
@@ -41,9 +42,6 @@ x_range = np.linspace(5, 90, 8501)
 
 def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
 
-    parameter_0 = inputs[0]
-    parameter_1 = inputs[1]
-
     loss = 0
 
     for i, pattern in enumerate(ys[0:use_first_N]):
@@ -53,9 +51,9 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
             target_y += parameters[i][j] * xs[i] ** j
 
         if method == "rb":
-            result = rolling_ball(xs[i], ys[i], parameter_0, parameter_1)
+            result = rolling_ball(xs[i], ys[i], inputs[0], inputs[1])
         elif method == "arPLS":
-            result = baseline_arPLS(ys[i], ratio=parameter_0, lam=10**parameter_1)
+            result = baseline_arPLS(ys[i], ratio=ratio_fixed, lam=10 ** inputs[0])
 
         loss += np.sum((target_y - result) ** 2)
 
@@ -84,8 +82,8 @@ if __name__ == "__main__":
         elif method == "arPLS":
             result = minimize(
                 wrapper,
-                [ratio_initial, lambda_initial],
-                bounds=[(0.001, 0.1), (2, 10)],
+                [lambda_initial],
+                bounds=[(2, 10)],
                 method="Nelder-Mead",
                 options={"maxiter": 1000000},
             )
@@ -109,9 +107,7 @@ if __name__ == "__main__":
 
                 plt.plot(
                     xs[i],
-                    baseline_arPLS(
-                        ys[i], ratio=ratio_initial, lam=10**lambda_initial
-                    ),
+                    baseline_arPLS(ys[i], ratio=ratio_fixed, lam=10**lambda_initial),
                     label="Initial",
                 )
                 plt.plot(xs[i], target_y, label="Target")
@@ -128,8 +124,8 @@ if __name__ == "__main__":
                         xs[i],
                         baseline_arPLS(
                             ys[i],
-                            ratio=result.x[0],
-                            lam=10 ** result.x[1],
+                            ratio=ratio_fixed,
+                            lam=10 ** result.x[0],
                         ),
                         label="arPLS",
                     )
