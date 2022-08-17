@@ -19,9 +19,9 @@ def process_pattern(input):
                 y / np.max(y),
                 data[:, 0],  # angles
                 data[:, 1] / np.max(data[:, 1]),  # intensities
-                do_plot=False,
-                only_plot_final=True,
-                do_print=False,
+                do_plot=True,  # TODO: Change back
+                only_plot_final=False,  # TODO: Change back
+                do_print=True,  # TODO: Change back
                 save_index=0,
             )
         except Exception as ex:
@@ -68,9 +68,14 @@ if __name__ == "__main__":
         process_pattern((xs[0], ys[0], dif_files[0], raw_files[0]))
         exit()
 
-    if False:
-        for i in range(len(raw_files)):
-            process_pattern((xs[i], ys[i], dif_files[i], raw_files[i]))
+    # if True:
+    #    for i in range(len(raw_files)):
+    #        if (
+    #            "Tugarinovite__R100218-1__Powder__Xray_Data_XY_RAW__10681.txt"
+    #            in raw_files[i]
+    #        ):
+    #            process_pattern((xs[i], ys[i], dif_files[i], raw_files[i]))
+    #            exit()
 
     ray.init()
 

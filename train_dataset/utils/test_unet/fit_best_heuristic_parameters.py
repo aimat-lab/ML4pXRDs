@@ -9,7 +9,7 @@ import pickle
 use_first_N = 10
 
 N_polynomial_coefficients = 12
-R2_score_threshold = 0.95  # minimum 0.9
+R2_score_threshold = 0.97
 
 ratio_initial = 10 ** (-2.37287)
 lambda_initial = 7.311915

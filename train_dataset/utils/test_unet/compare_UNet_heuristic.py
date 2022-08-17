@@ -13,10 +13,13 @@ skip_first_N = 10
 N_to_process = None  # None possible => use all
 
 N_polynomial_coefficients = 12
-R2_score_threshold = 0.95  # minimum 0.9
+R2_score_threshold = 0.97  # minimum 0.9
 
 unet_model_path = "10-06-2022_13-12-26_UNetPP"  # Previous model, this had superior accuracy to the heuristic algorithms.
 # unet_model_path = "31-07-2022_12-40-47"  # with caglioti + different bg parameters etc.
+# unet_model_path = "05-08-2022_07-59-47"  # Latest model with caglioti # continuation!
+# These two latest runs had faulty caglioti peak profiles! Therefore, the run from 10-06 is used in the thesis!
+
 model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
 
 do_plot = False
@@ -39,6 +42,8 @@ for i in reversed(range(len(scores))):
         del difs[i]
         del ys[i]
         del xs[i]
+
+print(len(xs))
 
 xs = xs[skip_first_N:]
 ys = ys[skip_first_N:]
@@ -78,12 +83,15 @@ ssims_unet = []
 
 for i in range(len(xs)):
 
-    plt.figure(
-        figsize=(
-            figure_double_width_pub * 0.95,
-            figure_double_width_pub * 0.7,
+    # print(raw_files[i])
+
+    if do_plot:
+        plt.figure(
+            figsize=(
+                figure_double_width_pub * 0.95,
+                figure_double_width_pub * 0.7,
+            )
         )
-    )
 
     print(f"{i} of {len(xs)}, score {scores[i]}")
 
@@ -207,6 +215,18 @@ print(
     np.average(diffs_rb),
     np.average(ssims_rb),
 )
+
+counter_unet_better_than_arPLS = 0
+for i in range(len(diffs_unet)):
+    if diffs_unet[i] < diffs_arPLS[i]:
+        counter_unet_better_than_arPLS += 1
+print(f"{counter_unet_better_than_arPLS} of {len(diffs_unet)} UNet better than arPLS")
+
+counter_unet_better_than_rb = 0
+for i in range(len(diffs_unet)):
+    if diffs_unet[i] < diffs_rb[i]:
+        counter_unet_better_than_rb += 1
+print(f"{counter_unet_better_than_rb} of {len(diffs_unet)} UNet better than rb")
 
 if False:
     plt.figure(
