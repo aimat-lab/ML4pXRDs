@@ -87,6 +87,8 @@ for i in range(len(xs)):
 
     # print(raw_files[i])
 
+    print(raw_files[i])
+
     if do_plot:
         plt.figure(
             figsize=(

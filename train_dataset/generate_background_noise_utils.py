@@ -64,11 +64,6 @@ wavelength = 1.541838  # needed if K_alpha_splitting = True
 
 
 @numba.njit
-def fn_x(theta, mean, H):
-    return (2 * theta - 2 * mean) / H
-
-
-@numba.njit
 def fn_H(theta, U, V, W):
 
     H_squared = (
@@ -83,17 +78,20 @@ def fn_H(theta, U, V, W):
 @numba.njit
 def peak_function_pseudo_voigt(theta, mean, U, V, W, eta):
 
-    C_G = 4 * np.log(2)
-    C_L = 4
-
-    H = fn_H(theta, U, V, W)
+    H = fn_H(mean, U, V, W)
+    # H_dash = fn_H_dash(mean, X, Y)
     H_dash = H
 
-    x = fn_x(theta, mean, H)
+    sigma_gaussian = H / (
+        2 * np.sqrt(2 * np.log(2))
+    )  # with respect to the width in theta (see maple)!
+    gamma_lorentzian = 0.5 * H_dash
 
-    return eta * C_G ** (1 / 2) / (np.sqrt(np.pi) * H) * np.exp(-1 * C_G * x**2) + (
-        1 - eta
-    ) * C_L ** (1 / 2) / (np.sqrt(np.pi) * H_dash) * (1 + C_L * x**2) ** (-1)
+    return eta * 1 / (sigma_gaussian * np.sqrt(2 * np.pi)) * np.exp(
+        -0.5 * ((theta - mean) / sigma_gaussian) ** 2
+    ) + (1 - eta) * 1 / (np.pi * gamma_lorentzian) * (
+        gamma_lorentzian**2 / ((theta - mean) ** 2 + gamma_lorentzian**2)
+    )
 
 
 # Copper:
@@ -179,8 +177,6 @@ def smeared_peaks_pseudo_voigt(
             )
 
             ys += peak_1 + peak_2
-
-            pass
 
     return ys
 
@@ -552,6 +548,35 @@ if __name__ == "__main__":
     statistics_patterns = [j for i in icsd_sim_statistics.sim_patterns for j in i]
     statistics_angles = icsd_sim_statistics.sim_angles
     statistics_intensities = icsd_sim_statistics.sim_intensities
+
+    if True:
+        xs_generated_cag, ys_generated_cag = generate_samples_gp(
+            1,
+            (start_x, end_x),
+            n_angles_output=N,
+            icsd_patterns=None,
+            icsd_angles=statistics_angles[0:1],
+            icsd_intensities=statistics_intensities[0:1],
+            use_caglioti=True,
+            use_ICSD_patterns=False,
+        )
+        xs_generated_comp, ys_generated_comp = generate_samples_gp(
+            1,
+            (start_x, end_x),
+            n_angles_output=N,
+            icsd_patterns=statistics_patterns[0:1],
+            icsd_angles=None,
+            icsd_intensities=None,
+            use_caglioti=False,
+            use_ICSD_patterns=True,
+        )
+
+        plt.plot(ys_generated_cag[0], label="Caglioti")
+        plt.plot(ys_generated_comp[0], label="Gaussian (directly from simulation)")
+        plt.legend()
+        plt.show()
+
+        exit()
 
     # For jit:
     _, _ = generate_samples_gp(

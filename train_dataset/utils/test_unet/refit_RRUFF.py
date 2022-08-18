@@ -19,9 +19,9 @@ def process_pattern(input):
                 y / np.max(y),
                 data[:, 0],  # angles
                 data[:, 1] / np.max(data[:, 1]),  # intensities
-                do_plot=True,  # TODO: Change back
-                only_plot_final=False,  # TODO: Change back
-                do_print=True,  # TODO: Change back
+                do_plot=True,
+                only_plot_final=True,
+                do_print=False,
                 save_index=0,
             )
         except Exception as ex:
@@ -68,14 +68,20 @@ if __name__ == "__main__":
         process_pattern((xs[0], ys[0], dif_files[0], raw_files[0]))
         exit()
 
-    # if True:
-    #    for i in range(len(raw_files)):
-    #        if (
-    #            "Tugarinovite__R100218-1__Powder__Xray_Data_XY_RAW__10681.txt"
-    #            in raw_files[i]
-    #        ):
-    #            process_pattern((xs[i], ys[i], dif_files[i], raw_files[i]))
-    #            exit()
+    if False:
+        for i in range(len(raw_files)):
+            if (
+                "Petalite__R060365-1__Powder__Xray_Data_XY_RAW__2845.txt"
+                in raw_files[i]
+                or "Fluorite__R050115-1__Powder__Xray_Data_XY_RAW__916.txt"
+                in raw_files[i]
+                or "Hauyne__R050606-1__Powder__Xray_Data_XY_RAW__1990.txt"
+                in raw_files[i]
+                or "Cuprite__R050374-1__Powder__Xray_Data_XY_RAW__1594.txt"
+                in raw_files[i]
+            ):
+                process_pattern((xs[i], ys[i], dif_files[i], raw_files[i]))
+        exit()
 
     ray.init()
 
