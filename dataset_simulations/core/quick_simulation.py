@@ -17,6 +17,9 @@ from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 import traceback
 from multiprocessing import Pool
 import train_dataset.generate_background_noise_utils
+from train_dataset.generate_background_noise_utils import (
+    smeared_peaks_pseudo_voigt_random,
+)
 from train_dataset.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
@@ -478,6 +481,7 @@ def get_xy_patterns(
     return_max_unscaled_intensity_angle=False,
     add_background_and_noise=False,
     use_vecsei_bg_noise=False,
+    caglioti_broadening=False,
 ):
 
     if return_corn_sizes:
@@ -509,7 +513,10 @@ def get_xy_patterns(
             pymatgen_crystallite_size_gauss_min,
             pymatgen_crystallite_size_gauss_max,
         )
-        smeared = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
+        if not caglioti_broadening:
+            smeared = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
+        else:
+            smeared = smeared_peaks_pseudo_voigt_random(xs, angles, intensities)
 
         if add_background_and_noise:
             if not use_vecsei_bg_noise:
@@ -670,6 +677,7 @@ def get_random_xy_patterns(
     probability_per_spg=None,
     add_background_and_noise=False,
     use_vecsei_bg_noise=False,
+    caglioti_broadening=False,
 ):
 
     result_patterns_y = []
@@ -759,6 +767,7 @@ def get_random_xy_patterns(
                     return_corn_sizes=return_additional,
                     add_background_and_noise=add_background_and_noise,
                     use_vecsei_bg_noise=use_vecsei_bg_noise,
+                    caglioti_broadening=caglioti_broadening,
                 )
 
                 if return_additional:
