@@ -191,10 +191,10 @@ def smeared_peaks_pseudo_voigt_random(xs, pattern_angles, pattern_intensities):
     # )
 
     # U = np.random.uniform(0.0, 3.0)
-    U = np.random.uniform(0.0, 0.1)
+    U = np.random.uniform(0.0, 0.01)
     V = 0.0
     # W = np.random.uniform(0.0, 4.0)
-    W = np.random.uniform(0.0, 0.1)
+    W = np.random.uniform(0.0, 0.01)
 
     eta = np.random.uniform(0.0, 1.0)
 
@@ -549,7 +549,7 @@ if __name__ == "__main__":
     statistics_angles = icsd_sim_statistics.sim_angles
     statistics_intensities = icsd_sim_statistics.sim_intensities
 
-    if True:
+    if False:
         xs_generated_cag, ys_generated_cag = generate_samples_gp(
             1,
             (start_x, end_x),
@@ -599,7 +599,7 @@ if __name__ == "__main__":
         use_caglioti=True,
         use_ICSD_patterns=False,
     )
-    print(time.time() - start)
+    print(f"Time to generate the patterns: {time.time() - start}")
 
     xs, ys, difs, raw_files = get_rruff_patterns(
         only_refitted_patterns=False,
