@@ -144,6 +144,8 @@ for i in range(len(xs)):
                 ys[i],
                 bestfit_parameters[method][0],
                 bestfit_parameters[method][1],
+                # 24.43999445,
+                # 0.18473314,
             )
         else:
             result_heuristic = baseline_arPLS(
@@ -151,7 +153,7 @@ for i in range(len(xs)):
                 ratio=ratio_fixed,
                 # ratio=10 ** (-5),
                 lam=10 ** bestfit_parameters[method][0],
-                # lam=10 ** (9.15943541e00),
+                # lam=10**10,
             )
 
         if do_plot:

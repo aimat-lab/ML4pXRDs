@@ -6,13 +6,15 @@ from lmfit import minimize
 from scipy.optimize import minimize
 import pickle
 
-use_first_N = 10
+start = 0
+use_N = 10
 
 N_polynomial_coefficients = 12
 R2_score_threshold = 0.97
 
 # ratio_initial = 10 ** (-2.37287)
 ratio_fixed = 10 ** (-5)
+
 lambda_initial = 7.311915
 sphere_x_initial = 6.619
 sphere_y_initial = 0.3
@@ -44,7 +46,7 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
 
     loss = 0
 
-    for i, pattern in enumerate(ys[0:use_first_N]):
+    for i in range(start, start + use_N):
 
         target_y = np.zeros(len(xs[i]))
         for j in range(N_polynomial_coefficients):
