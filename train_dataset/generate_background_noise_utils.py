@@ -29,7 +29,7 @@ gp_max_variance = 20.0
 scaling_max = 15.0
 use_uniform_scaling = False
 
-use_fluct_noise = False
+use_fluct_noise = True
 if not use_fluct_noise:
     base_noise_level_min = 0.0
     base_noise_level_max = 0.02
@@ -37,13 +37,12 @@ if not use_fluct_noise:
     fluct_noise_level_min = 0
     fluct_noise_level_max = 0
 else:
+
     base_noise_level_min = 0.0
-    # base_noise_level_min = 0.09
-    base_noise_level_max = 0.09
+    base_noise_level_max = 0.02
 
     fluct_noise_level_min = 0.0
-    # fluct_noise_level_min = 0.04
-    fluct_noise_level_max = 0.04
+    fluct_noise_level_max = 0.16
 
 # sigma_min = 0.1
 # sigma_max = 0.5
