@@ -48,7 +48,7 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-gp-exclude-prototypes-add-impurities"
+tag = "all-spgs-direct-resnet-50-additional-dense-lr-0.0001-gp-exclude-prototypes-without-impurities-caglioti-broadening"
 description = ""
 
 print("Processing tag", tag)
@@ -176,9 +176,10 @@ uniformly_distributed = False
 
 shuffle_test_match_train_match = False
 
-add_background_and_noise = True  # TODO: Change back
-use_vecsei_bg_noise = False  # TODO: Change back
-mix_impurities = True  # TODO: Change back
+add_background_and_noise = True
+use_vecsei_bg_noise = False
+caglioti_broadening = True  # TODO: Change back
+mix_impurities = False  # TODO: Change back
 max_impurity_percentage = 0.05
 use_rruff_validation_dataset = True
 exclude_rruff_items_from_statistics = True
@@ -542,6 +543,7 @@ def get_xy_pattern_wrapper(
         return_max_unscaled_intensity_angle=False,
         add_background_and_noise=add_background_and_noise,
         use_vecsei_bg_noise=use_vecsei_bg_noise,
+        caglioti_broadening=caglioti_broadening,
     )
     return patterns[0], corn_sizes[0]
 
@@ -923,6 +925,7 @@ def batch_generator_with_additional(
         if not mix_impurities
         else False,
         use_vecsei_bg_noise=use_vecsei_bg_noise if not mix_impurities else False,
+        caglioti_broadening=caglioti_broadening,
     )
 
     if mix_impurities:
@@ -1010,6 +1013,7 @@ def batch_generator_queue(
                 use_vecsei_bg_noise=use_vecsei_bg_noise
                 if not mix_impurities
                 else False,
+                caglioti_broadening=caglioti_broadening,
             )
 
             if mix_impurities:
