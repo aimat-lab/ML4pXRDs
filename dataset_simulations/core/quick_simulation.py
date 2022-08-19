@@ -551,6 +551,7 @@ def get_xy_patterns(
                         n_angles_output=8501,
                         icsd_patterns=[smeared],
                         original_range=True,
+                        use_ICSD_patterns=True,
                     )[0][0]
                 )
             else:
@@ -658,6 +659,7 @@ def mix_patterns_add_background(
                 ][
                     0
                 ]
+
             else:
                 pattern += generate_background_noise_vecsei(xs)
                 pattern -= np.min(pattern)
