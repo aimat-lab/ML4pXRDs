@@ -155,7 +155,7 @@ for i in range(len(xs)):
                 ratio=ratio_fixed,
                 # ratio=10 ** (-5),
                 lam=10 ** bestfit_parameters[method][0],
-                # lam=10**10,
+                # lam=10 ** (7.5),
             )
 
         if do_plot:

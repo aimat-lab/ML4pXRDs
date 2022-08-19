@@ -102,7 +102,6 @@ if __name__ == "__main__":
 
         if do_plot:
             for i in range(len(xs[0:5])):
-
                 target_y = np.zeros(len(xs[i]))
                 for j in range(N_polynomial_coefficients):
                     target_y += parameters[i][j] * xs[i] ** j
@@ -133,6 +132,21 @@ if __name__ == "__main__":
                     )
                 plt.legend()
                 plt.show()
+
+    if True:
+        plt.plot(xs[0], ys[0])
+        plot_heuristic_fit(
+            xs[0],
+            ys[0],
+            [
+                final_parameters_per_method["rb"][0],
+                final_parameters_per_method["rb"][1],
+                5,
+                final_parameters_per_method["arPLS"][0],
+                1.0,
+                2.0,
+            ],
+        )
 
     with open("bestfit_heuristic.pickle", "wb") as file:
         pickle.dump(final_parameters_per_method, file)

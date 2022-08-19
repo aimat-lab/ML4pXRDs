@@ -14,10 +14,8 @@ import pybaselines
 
 # Define default background subtraction parameters:
 # baseline_arPLS parameters:
-default_ratio_exponent = -2.37287
+fixed_ratio = 10 ** (-5)
 default_lambda_exponent = 7.311915
-default_arPLS_ratio = 10**default_ratio_exponent
-default_arPLS_lam = 10**default_lambda_exponent
 arPLS_niter = 100
 
 # rolling ball parameters:
@@ -137,7 +135,7 @@ def update_wave(
     fig,
     do_remove,
 ):
-    current_ratio_exponent = slider_1_arPLS.val
+    current_ratio = slider_1_arPLS.val
     current_lambda_exponent = slider_2_arPLS.val
     current_rolling_ball_sphere_x = slider_1_rb.val
     current_rolling_ball_sphere_y = slider_2_rb.val
@@ -149,12 +147,12 @@ def update_wave(
         ax.lines[-1].remove()
         ax.lines[-1].remove()
 
-    value1 = 10**current_ratio_exponent
-    slider_1_arPLS.valtext.set_text(f"{value1:.3E} {current_ratio_exponent:.3f}")
+    value1 = current_ratio
+    slider_1_arPLS.valtext.set_text(f"{value1:.3E} {current_ratio:.3f}")
     value2 = 10**current_lambda_exponent
     slider_2_arPLS.valtext.set_text(f"{value2:.3E} {current_lambda_exponent:.3f}")
 
-    baseline = baseline_arPLS(ys, value1, value2)
+    baseline = baseline_arPLS(ys, fixed_ratio, value2)
     ax.plot(xs, baseline, label="arPLS", c="b")
 
     background = rolling_ball(
@@ -182,7 +180,7 @@ def plot_heuristic_fit(xs, ys, current_parameters):
         (
             rolling_ball_sphere_x,
             rolling_ball_sphere_y,
-            ratio_exponent,
+            ratio,
             lambda_exponent,
             wavelet_num_std,
             wavelet_min_length,
@@ -190,7 +188,7 @@ def plot_heuristic_fit(xs, ys, current_parameters):
     else:
         rolling_ball_sphere_x = default_rolling_ball_sphere_x
         rolling_ball_sphere_y = default_rolling_ball_sphere_y
-        ratio_exponent = default_ratio_exponent
+        ratio = fixed_ratio
         lambda_exponent = default_lambda_exponent
         wavelet_num_std = default_wavelet_num_std
         wavelet_min_length = default_wavelet_min_length
@@ -222,11 +220,11 @@ def plot_heuristic_fit(xs, ys, current_parameters):
             bottom_1 = 0.18
             min_1 = -3
             max_1 = -1
-            valinit_1 = ratio_exponent
+            valinit_1 = ratio
 
             bottom_2 = 0.12
             min_2 = 2
-            max_2 = 9
+            max_2 = 10
             valinit_2 = lambda_exponent
 
             valfmt = "%E"
