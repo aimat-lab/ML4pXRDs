@@ -168,6 +168,11 @@ def smeared_peaks_pseudo_voigt(
                 * 2
                 / 3
             )
+
+            if False:
+                test = peak_function_pseudo_voigt(xs / 2, theta_1, U, V, W, eta)
+                print((xs[1] - xs[0]) * np.sum(test))
+
             peak_2 = (
                 intensity
                 * peak_function_pseudo_voigt(xs / 2, theta_2, U, V, W, eta)

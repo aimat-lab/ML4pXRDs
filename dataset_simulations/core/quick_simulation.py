@@ -512,11 +512,35 @@ def get_xy_patterns(
         corn_size = np.random.uniform(
             pymatgen_crystallite_size_gauss_min,
             pymatgen_crystallite_size_gauss_max,
-        )
+        )  # this is not used for caglioti broadening!
+
         if not caglioti_broadening:
             smeared = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
         else:
             smeared = smeared_peaks_pseudo_voigt_random(xs, angles, intensities)
+            smeared /= np.max(smeared)
+
+            if False:
+
+                # For numba precompilation:
+                _ = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
+
+                start = time.time()
+                smeared_old = smeared_peaks(
+                    xs, angles, intensities, corn_size, wavelength
+                )
+                print(f"{time.time()-start}s for old")
+                start = time.time()
+                smeared_caglioti = smeared_peaks_pseudo_voigt_random(
+                    xs, angles, intensities
+                )
+                smeared_caglioti /= np.max(smeared_caglioti)
+                print(f"{time.time()-start}s for caglioti")
+
+                plt.plot(smeared_old, label="old")
+                plt.plot(smeared_caglioti, label="caglioti")
+                plt.legend()
+                plt.show()
 
         if add_background_and_noise:
             if not use_vecsei_bg_noise:
@@ -1430,7 +1454,7 @@ if __name__ == "__main__":
                     two_theta_range=(5, 90),
                     max_NO_elements=100,
                     do_print=False,
-                    return_additional=True,  # False # TODO: Try also false here!
+                    return_additional=True,
                     do_distance_checks=False,
                     do_merge_checks=False,
                     use_icsd_statistics=True,
@@ -1451,11 +1475,12 @@ if __name__ == "__main__":
                     denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                     lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                     probability_per_spg=probability_per_spg,
-                    add_background_and_noise=False,
+                    add_background_and_noise=True,
                     use_vecsei_bg_noise=False,
+                    caglioti_broadening=True,
                 )
 
-                if True:
+                if False:
                     mix_patterns_add_background(
                         patterns,
                         max_impurity_percentage=0.05,
@@ -1467,8 +1492,13 @@ if __name__ == "__main__":
 
                 if True:
                     for pattern in patterns:
-                        plt.plot(np.linspace(5, 90, 8501), pattern)
-                        plt.plot(rruff_x_tests[counter], rruff_y_tests[counter])
+                        plt.plot(np.linspace(5, 90, 8501), pattern, label="generated")
+                        plt.plot(
+                            rruff_x_tests[counter],
+                            rruff_y_tests[counter],
+                            label="rruff",
+                        )
+                        plt.legend()
                         plt.show()
 
                         counter += 1
