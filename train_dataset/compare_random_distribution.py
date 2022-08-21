@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
-    calculate_conventionals = False  # TODO: Maybe change back
+    calculate_conventionals = False
 
     compute_magpie_features = False
 
