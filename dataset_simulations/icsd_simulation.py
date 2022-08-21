@@ -97,7 +97,23 @@ if __name__ == "__main__":
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
 
-    print()
+    if True:
+        indices = [
+            i
+            for i in range(len(simulation.icsd_structure_types))
+            if not isinstance(simulation.icsd_structure_types[i], str)
+        ]
+
+        sum_formulas = [simulation.icsd_sumformulas[i] for i in indices]
+        formulas = [simulation.icsd_formulas[i] for i in indices]
+
+        print("Sum formulas")
+        print(len(sum_formulas))
+        print(len(np.unique(sum_formulas)))
+
+        print("Formulas")
+        print(len(formulas))
+        print(len(np.unique(formulas)))
 
     if False:
 
@@ -122,7 +138,7 @@ if __name__ == "__main__":
 
         pass
 
-    if True:
+    if False:
         simulation.plot_histogram_of_spgs(do_show=False)
 
     if False:
