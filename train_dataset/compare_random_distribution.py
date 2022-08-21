@@ -29,8 +29,8 @@ import matplotlib_defaults
 figure_double_width_pub = matplotlib_defaults.pub_width
 figure_double_width = 10
 
-fix_important_ranges = True  # TODO: Maybe change back
-zoom = False  # TODO: Change back
+fix_important_ranges = True
+zoom = True
 
 if __name__ == "__main__":
 
@@ -2934,7 +2934,7 @@ if __name__ == "__main__":
             x2=3000,
             y1=0,
             y2=0.2 * 1e-3,
-            zoom_value=3.0,
+            zoom_value=3.0 * 1.35,
         )
 
     for flag in [True, False]:
@@ -3092,7 +3092,7 @@ if __name__ == "__main__":
             force_int_bins=True,
             fixed_x_min=0 if fix_important_ranges else None,
             fixed_y_max=30 if fix_important_ranges else None,
-            zoom=True,
+            zoom=zoom if not flag else False,
             x1=10,
             x2=20,
             y1=0,
