@@ -1,3 +1,4 @@
+from typing import final
 from train_dataset.utils.test_unet.rruff_helpers import get_rruff_patterns
 from train_dataset.utils.test_unet.heuristic_bg_utils import *
 import numpy as np
@@ -6,7 +7,6 @@ from lmfit import minimize
 from scipy.optimize import minimize
 import pickle
 
-start = 0
 use_N = 10
 
 N_polynomial_coefficients = 12
@@ -19,7 +19,7 @@ lambda_initial = 7.311915
 sphere_x_initial = 6.619
 sphere_y_initial = 0.3
 
-do_plot = False
+do_plot = True
 
 xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(
     only_refitted_patterns=True,
@@ -42,11 +42,11 @@ for i in reversed(range(len(scores))):
 x_range = np.linspace(5, 90, 8501)
 
 
-def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
+def loss_function(inputs, indices, method="rb"):  # possible methods: "rb", "arPLS"
 
     loss = 0
 
-    for i in range(start, start + use_N):
+    for i in indices:
 
         target_y = np.zeros(len(xs[i]))
         for j in range(N_polynomial_coefficients):
@@ -64,44 +64,52 @@ def loss_function(inputs, method="rb"):  # possible methods: "rb", "arPLS"
 
 if __name__ == "__main__":
 
-    final_parameters_per_method = {}
+    # repeat this procedure 5 times
+    for k in range(0, 5):
 
-    for method in ["arPLS", "rb"]:
+        # randomly pick indices to perform the fitting on:
+        indices = np.random.choice(list(range(len(xs))), size=use_N)
 
-        print(f"Showing results of method {method}:")
+        final_parameters_per_method = {}
 
-        def wrapper(inputs):
-            return loss_function(inputs, method)
+        for method in ["arPLS", "rb"]:
 
-        if method == "rb":
-            result = minimize(
-                wrapper,
-                [sphere_x_initial, sphere_y_initial],
-                bounds=[(0, np.inf), (0, np.inf)],
-                method="Nelder-Mead",
-                options={"maxiter": 1000000},
-            )
-        elif method == "arPLS":
-            result = minimize(
-                wrapper,
-                [lambda_initial],
-                bounds=[(2, 10)],
-                method="Nelder-Mead",
-                options={"maxiter": 1000000},
-            )
+            print(f"Showing results of method {method}:")
 
-        if not result.success:
-            raise ValueError(result.message)
-        else:
-            print("Fit successful.")
+            def wrapper(inputs):
+                return loss_function(inputs, indices, method)
 
-        print(f"Best fit heuristic parameters for {method}:")
-        print(result.x)
+            if method == "rb":
+                result = minimize(
+                    wrapper,
+                    [sphere_x_initial, sphere_y_initial],
+                    bounds=[(0, np.inf), (0, np.inf)],
+                    method="Nelder-Mead",
+                    options={"maxiter": 1000000},
+                )
+            elif method == "arPLS":
+                result = minimize(
+                    wrapper,
+                    [lambda_initial],
+                    bounds=[(2, 11)],
+                    method="Nelder-Mead",
+                    options={"maxiter": 1000000},
+                )
 
-        final_parameters_per_method[method] = result.x
+            if not result.success:
+                raise ValueError(result.message)
+            else:
+                print("Fit successful.")
+
+            print(f"Best fit heuristic parameters for {method}:")
+            print(result.x)
+
+            final_parameters_per_method[method] = result.x
 
         if do_plot:
-            for i in range(len(xs[0:5])):
+
+            for i in indices:
+
                 target_y = np.zeros(len(xs[i]))
                 for j in range(N_polynomial_coefficients):
                     target_y += parameters[i][j] * xs[i] ** j
@@ -114,39 +122,44 @@ if __name__ == "__main__":
                 plt.plot(xs[i], target_y, label="Target")
                 plt.plot(xs[i], ys[i], label="Pattern")
 
-                if method == "rb":
-                    plt.plot(
+                plt.plot(
+                    xs[i],
+                    rolling_ball(
                         xs[i],
-                        rolling_ball(xs[i], ys[i], result.x[0], result.x[1]),
-                        label="RB",
-                    )
-                elif method == "arPLS":
-                    plt.plot(
-                        xs[i],
-                        baseline_arPLS(
-                            ys[i],
-                            ratio=ratio_fixed,
-                            lam=10 ** result.x[0],
-                        ),
-                        label="arPLS",
-                    )
+                        ys[i],
+                        final_parameters_per_method["rb"][0],
+                        final_parameters_per_method["rb"][1],
+                    ),
+                    label="RB",
+                )
+                plt.plot(
+                    xs[i],
+                    baseline_arPLS(
+                        ys[i],
+                        ratio=ratio_fixed,
+                        lam=10 ** final_parameters_per_method["arPLS"][0],
+                    ),
+                    label="arPLS",
+                )
                 plt.legend()
                 plt.show()
 
-    if True:
-        plt.plot(xs[0], ys[0])
-        plot_heuristic_fit(
-            xs[0],
-            ys[0],
-            [
-                final_parameters_per_method["rb"][0],
-                final_parameters_per_method["rb"][1],
-                5,
-                final_parameters_per_method["arPLS"][0],
-                1.0,
-                2.0,
-            ],
-        )
+        # For testing by hand
+        # if True:
+        #    plt.plot(xs[0], ys[0])
+        #    plot_heuristic_fit(
+        #        xs[0],
+        #        ys[0],
+        #        [
+        #            final_parameters_per_method["rb"][0],
+        #            final_parameters_per_method["rb"][1],
+        #            5,
+        #            final_parameters_per_method["arPLS"][0],
+        #            1.0,
+        #            2.0,
+        #        ],
+        #    )
 
-    with open("bestfit_heuristic.pickle", "wb") as file:
-        pickle.dump(final_parameters_per_method, file)
+        raw_files_used_for_fitting = [raw_files[l] for l in indices]
+        with open(f"bestfit_heuristic_{k}.pickle", "wb") as file:
+            pickle.dump((final_parameters_per_method, raw_files_used_for_fitting), file)
