@@ -105,7 +105,7 @@ def rolling_ball(xs, ys, sphere_x=6.619, sphere_y=0.3, ax=None):
     # ax.add_patch(Ellipse(xy=(10, 0.6), width=sphere_x, height=sphere_y))
     yb = restoration.rolling_ball(
         ys,
-        kernel=restoration.ellipsoid_kernel((width,), height),
+        kernel=restoration.ellipsoid_kernel((width,), height),  # num_threads=2
     )
 
     # ax.plot(xs, yb + 1, label="Baseline")

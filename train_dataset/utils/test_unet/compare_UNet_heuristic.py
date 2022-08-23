@@ -24,6 +24,7 @@ model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
 
 do_plot = False
 print_singular = False
+dont_use_excluded = True
 
 xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(
     only_refitted_patterns=True,
@@ -34,8 +35,14 @@ xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(
     return_refitted_parameters=True,
 )
 
+if dont_use_excluded:
+    with open("to_exclude.pickle", "rb") as file:
+        to_exclude = pickle.load(file)
+
 for i in reversed(range(len(scores))):
-    if scores[i] < R2_score_threshold:
+    if scores[i] < R2_score_threshold or (
+        dont_use_excluded and raw_files[i] in to_exclude
+    ):
         del scores[i]
         del parameters[i]
         del raw_files[i]
@@ -73,6 +80,15 @@ for bestfit_filename in bestfit_filenames:
 
     xs_current = [xs[l] for l in range(0, len(xs)) if l not in indices_used_for_fitting]
     ys_current = [ys[l] for l in range(0, len(xs)) if l not in indices_used_for_fitting]
+    parameters_current = [
+        parameters[l] for l in range(0, len(xs)) if l not in indices_used_for_fitting
+    ]
+    scores_current = [
+        scores[l] for l in range(0, len(xs)) if l not in indices_used_for_fitting
+    ]
+    raw_files_current = [
+        raw_files[l] for l in range(0, len(xs)) if l not in indices_used_for_fitting
+    ]
 
     diffs_arPLS = []
     diffs_rb = []
@@ -84,9 +100,7 @@ for bestfit_filename in bestfit_filenames:
 
     for i in range(len(xs_current)):
 
-        # print(raw_files[i])
-
-        print(raw_files[i])
+        print(raw_files_current[i])
 
         if do_plot:
             plt.figure(
@@ -96,14 +110,11 @@ for bestfit_filename in bestfit_filenames:
                 )
             )
 
-        print(f"{i} of {len(xs_current)}, score {scores[i]}")
+        print(f"{i} of {len(xs_current)}, score {scores_current[i]}")
 
         if do_plot:
             plt.plot(xs_current[i], ys_current[i], label="Input")
             # plt.plot(xs_current[i], ys_current[i] - predictions, label="UNet")
-
-        if print_singular:
-            print(raw_files[i])
 
         predictions = model_unet.predict(
             np.expand_dims(np.expand_dims(ys_current[i], 0), -1)
@@ -122,7 +133,7 @@ for bestfit_filename in bestfit_filenames:
 
         target_y = np.zeros(len(xs_current[i]))
         for j in range(N_polynomial_coefficients):
-            target_y += parameters[i][j] * xs_current[i] ** j
+            target_y += parameters_current[i][j] * xs_current[i] ** j
 
         if do_plot:
             plt.plot(xs_current[i], target_y, label="Rietveld (target)")
@@ -257,7 +268,7 @@ for bestfit_filename in bestfit_filenames:
         plt.legend()
         plt.savefig(f"diffs_{method}.pdf")
 
-print("Final (averaged over 5 runs) results:")
+print("Final (averaged over N runs) results:")
 
 print(
     "Average difference / score UNet (mse, ssim):",

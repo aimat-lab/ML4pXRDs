@@ -8,6 +8,9 @@ from scipy.optimize import minimize
 import pickle
 
 use_N = 10
+repeat_N = 3
+select_which_to_remove = False
+dont_use_excluded = True
 
 N_polynomial_coefficients = 12
 R2_score_threshold = 0.97
@@ -20,6 +23,7 @@ sphere_x_initial = 6.619
 sphere_y_initial = 0.3
 
 do_plot = True
+plot_N = 1
 
 xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(
     only_refitted_patterns=True,
@@ -30,14 +34,22 @@ xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(
     return_refitted_parameters=True,
 )
 
+if dont_use_excluded:
+    with open("to_exclude.pickle", "rb") as file:
+        to_exclude = pickle.load(file)
+
 for i in reversed(range(len(scores))):
-    if scores[i] < R2_score_threshold:
+
+    if scores[i] < R2_score_threshold or (
+        dont_use_excluded and raw_files[i] in to_exclude
+    ):
         del scores[i]
         del parameters[i]
         del raw_files[i]
         del difs[i]
         del ys[i]
         del xs[i]
+
 
 x_range = np.linspace(5, 90, 8501)
 
@@ -64,8 +76,33 @@ def loss_function(inputs, indices, method="rb"):  # possible methods: "rb", "arP
 
 if __name__ == "__main__":
 
-    # repeat this procedure 5 times
-    for k in range(0, 5):
+    if select_which_to_remove:
+
+        to_exclude = []
+
+        for i in range(0, len(xs)):
+            plt.plot(xs[i], ys[i], label="Input")
+
+            target_y = np.zeros(len(xs[i]))
+            for j in range(N_polynomial_coefficients):
+                target_y += parameters[i][j] * xs[i] ** j
+
+            plt.plot(xs[i], target_y, label="Ground truth fitted")
+            plt.legend()
+            plt.show()
+
+            exclude = input("Exclude? (Y/N)")
+
+            if exclude == "Y" or exclude == "y":
+                to_exclude.append(raw_files[i])
+
+        with open("to_exclude.pickle", "wb") as file:
+            pickle.dump(to_exclude, file)
+
+        exit()
+
+    # repeat this procedure repeat_N times
+    for k in range(0, repeat_N):
 
         # randomly pick indices to perform the fitting on:
         indices = np.random.choice(list(range(len(xs))), size=use_N)
@@ -108,7 +145,7 @@ if __name__ == "__main__":
 
         if do_plot:
 
-            for i in indices:
+            for i in indices[0:plot_N]:
 
                 target_y = np.zeros(len(xs[i]))
                 for j in range(N_polynomial_coefficients):
