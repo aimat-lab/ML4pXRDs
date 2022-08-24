@@ -48,7 +48,7 @@ from train_dataset.utils.background_functions_vecsei import (
 )
 from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
-tag = "all-spgs-direct-training-original-model-vecsei-exclude-nothing-continue-03-08-2022_11-53-55"
+tag = "all-spgs-direct-training-original-model-vecsei-exclude-nothing-continue-23-08-2022_12-44-03"
 description = ""
 
 print("Processing tag", tag)
@@ -77,7 +77,7 @@ test_every_X_epochs = 1
 batches_per_epoch = (
     150 * 1
 )  # doesn't count for direct training # TODO: Change back to 6!
-NO_epochs = 1000
+NO_epochs = 2000  # TODO: Change back
 
 # For ViT:
 # structures_per_spg = 1
@@ -189,7 +189,7 @@ exclude_rruff_items_from_statistics = False  # This also uses only the rruff ite
 exclude_whole_prototype = False
 
 use_pretrained_model = True  # Make it possible to resume from a previous training run
-pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/03-08-2022_11-53-55/final"
+pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/23-08-2022_12-44-03/final"
 
 local = False
 if local:
