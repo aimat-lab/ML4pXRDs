@@ -8,7 +8,7 @@ from scipy.optimize import minimize
 import pickle
 
 use_N = 10
-repeat_N = 3
+repeat_N = 5
 select_which_to_remove = False
 dont_use_excluded = True
 
@@ -22,7 +22,7 @@ lambda_initial = 7.311915
 sphere_x_initial = 6.619
 sphere_y_initial = 0.3
 
-do_plot = True
+do_plot = False
 plot_N = 1
 
 xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(

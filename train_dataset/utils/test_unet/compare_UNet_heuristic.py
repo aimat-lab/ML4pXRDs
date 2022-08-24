@@ -23,7 +23,7 @@ unet_model_path = "10-06-2022_13-12-26_UNetPP"  # Previous model, this had super
 model_unet = keras.models.load_model("../../unet/" + unet_model_path + "/final")
 
 do_plot = False
-print_singular = False
+print_singular = True
 dont_use_excluded = True
 
 xs, ys, difs, raw_files, parameters, scores = get_rruff_patterns(
@@ -233,6 +233,23 @@ for bestfit_filename in bestfit_filenames:
         np.average(diffs_rb),
         np.average(ssims_rb),
     )
+
+    if False:
+        print(
+            "Median difference / score UNet (mse, ssim):",
+            np.median(diffs_unet),
+            np.median(ssims_unet),
+        )
+        print(
+            f"Median difference / score arPLS (mse, ssim):",
+            np.median(diffs_arPLS),
+            np.median(ssims_arPLS),
+        )
+        print(
+            f"Median difference / score rb (mse, ssim):",
+            np.median(diffs_rb),
+            np.median(ssims_rb),
+        )
 
     average_diffs_unet.append(np.average(diffs_unet))
     average_diffs_arPLS.append(np.average(diffs_arPLS))
