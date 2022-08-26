@@ -883,12 +883,10 @@ def build_model_resnet_i(
 
 if __name__ == "__main__":
 
-    print("Resnet 50")
+    print("Resnet_50_additional_dense")
     model = build_model_resnet_i(
         None, 8501, 145, 0.0001, 0, "Adam", i=50, add_additional_dense_layer=True
     )
-
-    exit()
 
     if True:
 
