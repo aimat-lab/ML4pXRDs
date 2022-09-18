@@ -5,6 +5,7 @@
 
 # Import Necessary Libraries
 import tensorflow as tf
+from tensorflow.keras.utils import plot_model
 
 
 def Conv_Block(inputs, model_width, kernel, multiplier):
@@ -754,8 +755,8 @@ if __name__ == "__main__":
         output_nums=1,
         problem_type="Regression",
     )
-    # model = my_unet.UNet()
-    model = my_unet.UNetPP()
+    model = my_unet.UNet()
+    # model = my_unet.UNetPP()
 
     # length: Input Signal Length
     # model_depth: Depth of the Model
@@ -773,3 +774,5 @@ if __name__ == "__main__":
     # keras.utils.plot_model(model, show_shapes=True)
 
     model.summary()
+
+    plot_model(model, to_file="model.png", show_shapes=True)

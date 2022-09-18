@@ -290,15 +290,21 @@ print("Final (averaged over N runs) results:")
 print(
     "Average difference / score UNet (mse, ssim):",
     np.average(average_diffs_unet),
+    f"(+- {np.std(average_diffs_unet)})",
     np.average(average_ssim_unet),
+    f"(+- {np.std(average_ssim_unet)})",
 )
 print(
     f"Average difference / score arPLS (mse, ssim):",
     np.average(average_diffs_arPLS),
+    f"(+- {np.std(average_diffs_arPLS)})",
     np.average(average_ssim_arPLS),
+    f"(+- {np.std(average_ssim_arPLS)})",
 )
 print(
     f"Average difference / score rb (mse, ssim):",
     np.average(average_diffs_rb),
+    f"(+- {np.std(average_diffs_rb)})",
     np.average(average_ssim_rb),
+    f"(+- {np.std(average_ssim_rb)})",
 )

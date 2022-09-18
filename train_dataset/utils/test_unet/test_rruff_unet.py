@@ -7,6 +7,7 @@ from scipy.interpolate import CubicSpline
 import pickle
 from train_dataset.utils.test_unet.rruff_helpers import *
 from train_dataset.utils.test_unet.heuristic_bg_utils import *
+from scipy.signal import savgol_filter
 
 # This script is used to apply UNet and classification in sequence OR for selecting which patterns to test on
 # Direct prediction of spg is done inside the training script
@@ -16,8 +17,9 @@ use_only_selected = True
 use_only_refitted = False
 do_plot = False
 
-unet_model_path = "10-06-2022_13-12-26_UNetPP"
-classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/29-05-2022_22-12-56/"  # direct run
+unet_model_path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/unet/10-06-2022_13-12-26_UNetPP"
+# classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/29-05-2022_22-12-56/"  # direct run
+classification_model_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/21-08-2022_12-40-17/"
 classification_model_path = classification_model_base + "final"
 
 pattern_x_unet = np.arange(0, 90.24, 0.02)
@@ -25,19 +27,20 @@ start_x_unet = pattern_x_unet[0]
 end_x_unet = pattern_x_unet[-1]
 N_unet = len(pattern_x_unet)  # UNet works without error for N ~ 2^model_depth
 
-model_unet = keras.models.load_model("../unet/" + unet_model_path + "/final")
+model_unet = keras.models.load_model(unet_model_path + "/final")
 model_classification = keras.models.load_model(classification_model_path)
 
 with open(classification_model_base + "spgs.pickle", "rb") as file:
     spgs = pickle.load(file)
 
-xs, ys, difs, raw_files, parameters = get_rruff_patterns(
-    only_refitted_patterns=use_only_refitted,
+xs, ys, difs, raw_files = get_rruff_patterns(
     only_if_dif_exists=True,
     start_angle=0.0,
     end_angle=90.24,
     reduced_resolution=True,  # to be able to use UNet on this
-    return_refitted_parameters=True,
+    return_refitted_parameters=False,
+    only_selected_patterns=use_only_selected,
+    only_refitted_patterns=use_only_refitted,
 )
 
 patterns_counter = 0
@@ -45,7 +48,7 @@ correct_counter = 0
 correct_top5_counter = 0
 raw_files_keep = []
 
-for i, ys in enumerate(ys):
+for i, y_test in enumerate(ys):
 
     print(f"{i} of {len(raw_files)}")
 
@@ -54,14 +57,7 @@ for i, ys in enumerate(ys):
     else:
         plt.clf()
 
-    # Model:
-    pattern_x_unet = np.arange(0, 90.24, 0.02)
-    start_x_unet = pattern_x_unet[0]
-    end_x_unet = pattern_x_unet[-1]
-    N_unet = len(pattern_x_unet)  # UNet works without error for N ~ 2^model_depth
-
     x_test = xs[i]
-    y_test = ys[i]
 
     if not select_which_to_use_for_testing:
 

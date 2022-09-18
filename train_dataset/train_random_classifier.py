@@ -2024,6 +2024,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
+        # 7-label-version!
         # model = build_model_park(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )

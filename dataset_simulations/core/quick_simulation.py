@@ -26,8 +26,10 @@ from train_dataset.utils.background_functions_vecsei import (
 from train_dataset.utils.test_unet.rruff_helpers import get_rruff_patterns
 from pyxtal.symmetry import Group
 from sklearn.linear_model import LinearRegression
-import matplotlib_defaults
 import random
+import matplotlib_defaults
+
+figure_double_width_pub = matplotlib_defaults.pub_width
 
 if "NUMBA_DISABLE_JIT" in os.environ:
     is_debugging = os.environ["NUMBA_DISABLE_JIT"] == "1"
@@ -629,17 +631,37 @@ def mix_patterns_add_background(
                 1 - impurity_percentage
             ) * pattern + impurity_percentage * to_add_pattern
 
-            pattern[:] = pattern[:] / np.max(pattern)
+            normalizer = np.max(pattern)
+            pattern[:] = pattern[:] / normalizer
 
             if do_plot:
-                plt.plot(xs, pattern, alpha=0.5, label="Final pattern")
+
+                plt.figure(
+                    figsize=(
+                        figure_double_width_pub * 0.95,
+                        figure_double_width_pub * 0.7,
+                    )
+                )
+
+                plt.tight_layout()
+
+                plt.plot(xs, pattern, alpha=0.5, label="Total pattern")
                 plt.plot(
                     xs,
                     impurity_percentage * to_add_pattern,
                     alpha=0.5,
-                    label="Added impurity",
+                    label="Added impurity phase",
                 )
                 plt.legend()
+
+                plt.xlabel(r"$2\theta$")
+                plt.ylabel(r"Intensity / rel.")
+
+                plt.savefig(
+                    f"pattern_example_{i}.pdf",
+                    bbox_inches="tight",
+                )
+
                 plt.show()
 
         if add_background_and_noise:
@@ -1477,12 +1499,12 @@ if __name__ == "__main__":
                     denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                     lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                     probability_per_spg=probability_per_spg,
-                    add_background_and_noise=True,
+                    add_background_and_noise=False,
                     use_vecsei_bg_noise=False,
                     caglioti_broadening=True,
                 )
 
-                if False:
+                if True:
                     mix_patterns_add_background(
                         patterns,
                         max_impurity_percentage=0.05,
@@ -1490,17 +1512,37 @@ if __name__ == "__main__":
                         use_vecsei_bg_noise=False,
                         depth_two=False,
                         do_plot=False,
+                        do_mix=True,
                     )
 
                 if True:
-                    for pattern in patterns:
-                        plt.plot(np.linspace(5, 90, 8501), pattern, label="generated")
-                        plt.plot(
-                            rruff_x_tests[counter],
-                            rruff_y_tests[counter],
-                            label="rruff",
+                    for i, pattern in enumerate(patterns):
+
+                        plt.figure(
+                            figsize=(
+                                figure_double_width_pub * 0.95,
+                                figure_double_width_pub * 0.7,
+                            )
                         )
-                        plt.legend()
+
+                        plt.tight_layout()
+
+                        plt.plot(np.linspace(5, 90, 8501), pattern)
+                        # plt.plot(
+                        #    rruff_x_tests[counter],
+                        #    rruff_y_tests[counter],
+                        #    label="rruff",
+                        # )
+                        # plt.legend()
+
+                        plt.xlabel(r"$2\theta$")
+                        plt.ylabel(r"Intensity / rel.")
+
+                        plt.savefig(
+                            f"pattern_example_{i}.pdf",
+                            bbox_inches="tight",
+                        )
+
                         plt.show()
 
                         counter += 1
