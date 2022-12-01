@@ -30,10 +30,18 @@ The repository contains the following components:
     To run the training script, the following additional dependencies must be
     installed:
 
-    - ray > XXX
-    - tensorflow > XXX
+    - `ray` > XXX
+    - `tensorflow` > XXX
 
-    Also make sure that the CUDA and cuDNN dependencies of tensorflow (the
+    Also make sure that the `CUDA` and `cuDNN` dependencies of `tensorflow` (the
     correct version that is compatible with your tensorflow version) are
     installed. We refer refer to the table available on
     https://www.tensorflow.org/install/source#tested_build_configurations.
+
+# Documentation
+
+## Optimized simulation of powder XRDs
+
+## Generation of synthetic crystals
+
+## Training
