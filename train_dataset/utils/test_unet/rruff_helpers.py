@@ -14,7 +14,7 @@ import numpy as np
 import logging
 import jax
 import pandas as pd
-import matplotlib_defaults
+import utils.matplotlib_defaults as matplotlib_defaults
 import scipy.integrate as integrate
 
 ########## Peak profile functions from https://en.wikipedia.org/wiki/Rietveld_refinement ##########
@@ -44,7 +44,7 @@ def fn_H_dash(theta, X, Y):
 
 
 def fn_eta(theta, eta_0, eta_1, eta_2):
-    return eta_0 + eta_1 * 2 * theta + eta_2 * theta**2
+    return eta_0 + eta_1 * 2 * theta + eta_2 * theta ** 2
 
 
 def peak_function(theta, mean, U, V, W, X, Y, eta_0, eta_1, eta_2):
@@ -67,7 +67,7 @@ def peak_function(theta, mean, U, V, W, X, Y, eta_0, eta_1, eta_2):
     return eta * 1 / (sigma_gaussian * jnp.sqrt(2 * jnp.pi)) * jnp.exp(
         -0.5 * ((theta - mean) / sigma_gaussian) ** 2
     ) + (1 - eta) * 1 / (jnp.pi * gamma_lorentzian) * (
-        gamma_lorentzian**2 / ((theta - mean) ** 2 + gamma_lorentzian**2)
+        gamma_lorentzian ** 2 / ((theta - mean) ** 2 + gamma_lorentzian ** 2)
     )
 
     # Lambda = (
@@ -203,12 +203,11 @@ def fit_diffractogram(
     save_index=None,
 ):
     def fit_function(
-        xs,
-        *values,
+        xs, *values,
     ):
         polynomial = jnp.zeros(len(xs))
         for j in range(N_polynomial_coefficients):
-            polynomial += values[j] * xs**j
+            polynomial += values[j] * xs ** j
 
         # add the code from the simulation
         peaks = values[N_polynomial_coefficients + 8] * smeared_peaks(
@@ -275,10 +274,7 @@ def fit_diffractogram(
     print(np.average(timings))
     """
 
-    initial_ys = fit_function(
-        x,
-        *current_bestfits,
-    )
+    initial_ys = fit_function(x, *current_bestfits,)
 
     scaler = np.max(initial_ys)
     initial_ys /= scaler
@@ -287,9 +283,7 @@ def fit_diffractogram(
 
     if do_plot and not only_plot_final:
         plt.plot(
-            x,
-            initial_ys,
-            label="Initial",
+            x, initial_ys, label="Initial",
         )
         plt.show()
 
@@ -397,11 +391,7 @@ def fit_diffractogram(
                     vary = vary_all_peaks or (i == sub_step)
 
                 params.add(
-                    f"peak_pos_{i}",
-                    angle,
-                    min=angle - 2,
-                    max=angle + 2,
-                    vary=vary,
+                    f"peak_pos_{i}", angle, min=angle - 2, max=angle + 2, vary=vary,
                 )  # +- 2°
                 params.add(
                     f"peak_int_{i}",
@@ -422,10 +412,7 @@ def fit_diffractogram(
 
             current_bestfits = list(result.best_values.values())
 
-            result_ys = fit_function(
-                x,
-                *current_bestfits,
-            )
+            result_ys = fit_function(x, *current_bestfits,)
 
             score = r2_score(y, result_ys)
             if do_print:
@@ -437,10 +424,7 @@ def fit_diffractogram(
 
             figure_double_width_pub = matplotlib_defaults.pub_width
             plt.figure(
-                figsize=(
-                    figure_double_width_pub * 0.95,
-                    figure_double_width_pub * 0.7,
-                )
+                figsize=(figure_double_width_pub * 0.95, figure_double_width_pub * 0.7,)
             )
 
             plt.plot(x, y, label="Original pattern")
@@ -448,12 +432,10 @@ def fit_diffractogram(
 
             y_bg = np.zeros(len(x))
             for j in range(N_polynomial_coefficients):
-                y_bg += current_bestfits[j] * x**j
+                y_bg += current_bestfits[j] * x ** j
 
             plt.plot(
-                x,
-                y_bg,
-                label="Background polynomial",
+                x, y_bg, label="Background polynomial",
             )
 
             plt.legend()

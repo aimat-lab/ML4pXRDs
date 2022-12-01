@@ -6,7 +6,7 @@ import pickle
 from scipy.optimize import curve_fit
 from skimage.metrics import structural_similarity
 import matplotlib.pyplot as plt
-import matplotlib_defaults
+import utils.matplotlib_defaults as matplotlib_defaults
 
 figure_double_width_pub = matplotlib_defaults.pub_width
 
@@ -56,7 +56,7 @@ x_range = np.linspace(5, 90, 8501)
 def background_fit(xs, *params):
     result = np.zeros(len(xs))
     for j in range(N_polynomial_coefficients):
-        result += params[j] * xs**j
+        result += params[j] * xs ** j
     return result
 
 
@@ -104,10 +104,7 @@ for bestfit_filename in bestfit_filenames:
 
         if do_plot:
             plt.figure(
-                figsize=(
-                    figure_double_width_pub * 0.95,
-                    figure_double_width_pub * 0.7,
-                )
+                figsize=(figure_double_width_pub * 0.95, figure_double_width_pub * 0.7,)
             )
 
         print(f"{i} of {len(xs_current)}, score {scores_current[i]}")
@@ -203,10 +200,7 @@ for bestfit_filename in bestfit_filenames:
 
         if do_plot:
             plt.figure(
-                figsize=(
-                    figure_double_width_pub * 0.95,
-                    figure_double_width_pub * 0.7,
-                )
+                figsize=(figure_double_width_pub * 0.95, figure_double_width_pub * 0.7,)
             )
             plt.plot(xs_current[i], ys_current[i], label="Input")
             plt.plot(xs_current[i], predictions, label="U-Net result")

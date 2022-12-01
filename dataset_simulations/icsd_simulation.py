@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pymatgen.io.cif import CifParser
 from dataset_simulations.core.quick_simulation import get_xy_patterns
-import matplotlib_defaults
+import utils.matplotlib_defaults as matplotlib_defaults
 
 
 class ICSDSimulation(Simulation):
@@ -33,9 +33,7 @@ class ICSDSimulation(Simulation):
 
             if space_group_number is not None:
                 result = self.add_path_to_be_simulated(
-                    path,
-                    [space_group_number],
-                    [self.icsd_ids[i]],
+                    path, [space_group_number], [self.icsd_ids[i]],
                 )
 
                 if result is None:

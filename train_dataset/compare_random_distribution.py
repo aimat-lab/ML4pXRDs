@@ -24,7 +24,7 @@ from pymatgen.core.periodic_table import Species
 from utils.entropy import get_chemical_ordering
 from utils.entropy import get_structural_complexity
 
-import matplotlib_defaults
+import utils.matplotlib_defaults as matplotlib_defaults
 
 figure_double_width_pub = matplotlib_defaults.pub_width
 figure_double_width = 10
