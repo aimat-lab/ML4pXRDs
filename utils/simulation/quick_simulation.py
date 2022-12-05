@@ -16,14 +16,14 @@ import matplotlib.pyplot as plt
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
 import traceback
 from multiprocessing import Pool
-import train_dataset.generate_background_noise_utils
-from train_dataset.generate_background_noise_utils import (
+import training.generate_background_noise_utils
+from training.generate_background_noise_utils import (
     smeared_peaks_pseudo_voigt_random,
 )
-from train_dataset.utils.background_functions_vecsei import (
+from training.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
-from train_dataset.utils.test_unet.rruff_helpers import get_rruff_patterns
+from training.utils.test_unet.rruff_helpers import get_rruff_patterns
 from pyxtal.symmetry import Group
 from sklearn.linear_model import LinearRegression
 import random
@@ -546,16 +546,14 @@ def get_xy_patterns(
 
         if add_background_and_noise:
             if not use_vecsei_bg_noise:
-                smeared = (
-                    train_dataset.generate_background_noise_utils.generate_samples_gp(
-                        1,
-                        two_theta_range,
-                        n_angles_output=8501,
-                        icsd_patterns=[smeared],
-                        original_range=True,
-                        use_ICSD_patterns=True,
-                    )[0][0]
-                )
+                smeared = training.generate_background_noise_utils.generate_samples_gp(
+                    1,
+                    two_theta_range,
+                    n_angles_output=8501,
+                    icsd_patterns=[smeared],
+                    original_range=True,
+                    use_ICSD_patterns=True,
+                )[0][0]
             else:
                 smeared += generate_background_noise_vecsei(xs)
                 smeared -= np.min(smeared)
@@ -669,7 +667,7 @@ def mix_patterns_add_background(
                 # assign inplace:
                 pattern[
                     :
-                ] = train_dataset.generate_background_noise_utils.generate_samples_gp(
+                ] = training.generate_background_noise_utils.generate_samples_gp(
                     1,
                     two_theta_range,
                     n_angles_output=8501,

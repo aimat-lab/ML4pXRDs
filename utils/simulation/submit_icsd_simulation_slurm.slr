@@ -1,12 +1,9 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=128
-#SBATCH --time=10-72:00:00
+#SBATCH --time=48:00:00
 #SBATCH --job-name=icsd_sim
 #SBATCH --mem=256000mb
-
-# --time=30
-# --time=48:00:00
 
 export PARNODES="$SLURM_CPUS_PER_TASK"
 export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"

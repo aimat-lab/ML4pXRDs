@@ -10,8 +10,8 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.ase import AseAtomsAdaptor
 from ase.visualize import view
 from ase.io import write
-from train_dataset.utils.analyse_magpie import get_magpie_features
-from train_dataset.utils.denseness_factor import get_denseness_factor
+from training.utils.analyse_magpie import get_magpie_features
+from training.utils.denseness_factor import get_denseness_factor
 from pyxtal.symmetry import Group
 
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes

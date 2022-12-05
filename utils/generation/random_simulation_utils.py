@@ -1,5 +1,5 @@
 from sympy import E
-from train_dataset.utils.denseness_factor import get_denseness_factor
+from training.utils.denseness_factor import get_denseness_factor
 from pyxtal import pyxtal
 import matplotlib.pyplot as plt
 import numpy as np

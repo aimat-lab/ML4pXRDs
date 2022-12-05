@@ -40,13 +40,13 @@ from utils.generation.structure_generation import randomize
 from utils.simulation.quick_simulation import get_xy_patterns
 import random
 import contextlib
-from train_dataset.utils.AdamWarmup import AdamWarmup
-from train_dataset.utils.test_unet.rruff_helpers import *
-from train_dataset.generate_background_noise_utils import generate_samples_gp
-from train_dataset.utils.background_functions_vecsei import (
+from training.utils.AdamWarmup import AdamWarmup
+from training.utils.test_unet.rruff_helpers import *
+from training.generate_background_noise_utils import generate_samples_gp
+from training.utils.background_functions_vecsei import (
     generate_background_noise_vecsei,
 )
-from train_dataset.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
+from training.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
 tag = "all-spgs-random-resnet-50-additional-dense-lr-0.0001-gp-exclude-prototypes-WITH-impurities-caglioti-broadening"
 description = ""
