@@ -1,9 +1,7 @@
 import tensorflow.keras as keras
 import tensorflow.keras.metrics as tfm
 import tensorflow as tf
-from training.utils.resnet_v2_1D import ResNetv2
 from training.utils.resnet_keras_1D import ResNet
-from training.utils.transformer_vit import build_model_transformer_vit
 
 
 class BinaryAccuracy(tfm.BinaryAccuracy):
@@ -777,40 +775,6 @@ def build_model_park_tiny_size(
     return model
 
 
-def build_model_resnet_50_old(
-    hp=None,
-    number_of_input_values=8501,
-    number_of_output_labels=2,
-    dropout_rate=False,
-    lr=0.0003,
-):
-
-    model_width = 16  # Width of the Initial Layer, subsequent layers start from here
-
-    Model = ResNetv2(
-        number_of_input_values,
-        1,
-        model_width,
-        problem_type="Regression",  # this just yields a linear last layer (no activation) => from_logits can be used
-        output_nums=number_of_output_labels,
-        pooling="avg",
-        dropout_rate=dropout_rate,
-    ).ResNet50()
-
-    Model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
-        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=[
-            keras.metrics.SparseCategoricalAccuracy(),
-            keras.metrics.SparseTopKCategoricalAccuracy(k=5),
-        ],
-    )
-
-    Model.summary()
-
-    return Model
-
-
 def build_model_resnet_i(
     hp=None,
     number_of_input_values=8501,
@@ -962,9 +926,3 @@ if __name__ == "__main__":
 
     print("Resnet 152")
     model = build_model_resnet_i(None, 8501, 145, 0.0001, 0, "Adam", i=152)
-
-    if False:
-        print("ViT")
-        model = build_model_transformer_vit(None, 8501, 145, 0.0001, 600, 1500)
-        # model.save("test")
-        # model = keras.models.load_model("test", custom_objects={"AdamWarmup": AdamWarmup})

@@ -11,14 +11,14 @@ The repository contains the following components:
 1. Optimized simulation
 
     The code of the optimized simulation of powder XRDs (using numba LLVM
-    just-in-time compilation) can be found in `./utils/simulation/`. This code
+    just-in-time compilation) can be found in `./tools/simulation/`. This code
     is based on the implementation found in the
     [`pymatgen`](https://github.com/materialsproject/pymatgen) [1] library.
 
 2. Generation of synthetic crystals
 
     The code of the generation of synthetic crystals can be found in
-    `./utils/generation/`.
+    `./tools/generation/`.
 
 3. Distributed training
 
@@ -31,7 +31,7 @@ The repository contains the following components:
 
 Before using our provided training script, the code for the simulation of pXRDs
 and generation of synthetic crystals should be installed as a package using `pip
-install -e ./utils/`, ideally in a separate python of anaconda environment. This
+install -e ./tools/`, ideally in a separate python of anaconda environment. This
 will automatically install all required dependencies. The provided utilities are
 potentially also interesting to use for other projects concerning powder XRDs.
 

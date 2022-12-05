@@ -8,7 +8,7 @@ from pyxtal.symmetry import Group
 from pyxtal.symmetry import get_pbc_and_lattice
 import time
 import pickle
-from utils.simulation.simulation import Simulation
+from tools.simulation.simulation import Simulation
 from pymatgen.io.cif import CifParser
 import os
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -17,14 +17,14 @@ from sklearn.neighbors import KernelDensity
 from pyxtal.crystal import atom_site
 from pyxtal.lattice import Lattice
 from pymatgen.analysis.diffraction.xrd import XRDCalculator  # for debugging
-from utils.generation.structure_generation import generate_pyxtal_object
+from tools.generation.structure_generation import generate_pyxtal_object
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.model_selection import train_test_split
 import math
 from glob import glob
 
 import statsmodels.api as sm
-from utils.generation.structure_generation import sample_denseness_factor
+from tools.generation.structure_generation import sample_denseness_factor
 
 # import warnings
 # with warnings.catch_warnings():

@@ -1,11 +1,11 @@
-from utils.simulation.simulation import Simulation
+from tools.simulation.simulation import Simulation
 import functools
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from pymatgen.io.cif import CifParser
-from utils.simulation.quick_simulation import get_xy_patterns
-import utils.matplotlib_defaults as matplotlib_defaults
+from tools.simulation.quick_simulation import get_xy_patterns
+import tools.matplotlib_defaults as matplotlib_defaults
 
 
 class ICSDSimulation(Simulation):

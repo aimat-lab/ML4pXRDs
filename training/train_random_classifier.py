@@ -1,7 +1,7 @@
 import tensorflow.keras as keras
-from utils.simulation.quick_simulation import get_random_xy_patterns
-from utils.simulation.quick_simulation import mix_patterns_add_background
-from utils.generation.random_simulation_utils import load_dataset_info
+from tools.simulation.quick_simulation import get_random_xy_patterns
+from tools.simulation.quick_simulation import mix_patterns_add_background
+from tools.generation.random_simulation_utils import load_dataset_info
 import numpy as np
 from models import (
     build_model_park,
@@ -18,11 +18,10 @@ from models import (
 )
 
 # from utils.transformer import build_model_transformer
-from utils.transformer_vit import build_model_transformer_vit
 from utils.distributed_utils import map_to_remote
 import os
 from sklearn.utils import shuffle
-from utils.simulation.simulation import Simulation
+from tools.simulation.simulation import Simulation
 import ray
 from ray.util.queue import Queue
 import pickle
@@ -36,17 +35,11 @@ from pyxtal.symmetry import Group
 import gc
 import psutil
 from sklearn.preprocessing import StandardScaler
-from utils.generation.structure_generation import randomize
-from utils.simulation.quick_simulation import get_xy_patterns
+from tools.generation.structure_generation import randomize
+from tools.simulation.quick_simulation import get_xy_patterns
 import random
 import contextlib
 from training.utils.AdamWarmup import AdamWarmup
-from training.utils.test_unet.rruff_helpers import *
-from training.generate_background_noise_utils import generate_samples_gp
-from training.utils.background_functions_vecsei import (
-    generate_background_noise_vecsei,
-)
-from training.utils.test_unet.rruff_helpers import get_icsd_ids_from_RRUFF
 
 tag = "all-spgs-random-resnet-50-additional-dense-lr-0.0001-gp-exclude-prototypes-WITH-impurities-caglioti-broadening"
 description = ""
@@ -2069,15 +2062,6 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
-
-        # model = build_model_transformer_vit(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    lr=learning_rate,
-        #    epochs=NO_epochs,
-        #    steps_per_epoch=batches_per_epoch,
-        # )
 
         # model = build_model_park_gigantic_size(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate

@@ -3,8 +3,8 @@
 # If performance is not a concern to you, you should use the original pymatgen implementation.
 
 from re import sub
-from utils.generation.random_simulation_utils import generate_structures
-from utils.generation.random_simulation_utils import load_dataset_info
+from tools.generation.random_simulation_utils import generate_structures
+from tools.generation.random_simulation_utils import load_dataset_info
 import json
 import os
 from math import asin, cos, degrees, pi, radians, sin
@@ -27,7 +27,7 @@ from training.utils.test_unet.rruff_helpers import get_rruff_patterns
 from pyxtal.symmetry import Group
 from sklearn.linear_model import LinearRegression
 import random
-import utils.matplotlib_defaults as matplotlib_defaults
+import tools.matplotlib_defaults as matplotlib_defaults
 
 figure_double_width_pub = matplotlib_defaults.pub_width
 

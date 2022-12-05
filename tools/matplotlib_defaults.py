@@ -2,11 +2,12 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import os
 
-# Use computer modern font (sans-serif)
+# Define some sensible matplotlib default parameters that can be imported / used in other places
 
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is None or jobid == "":
     mpl.rcParams["text.usetex"] = True
+    # Use computer modern font (sans-serif)
     mpl.rcParams["font.family"] = "sans-serif"
     mpl.rcParams["mathtext.fontset"] = "cm"
 

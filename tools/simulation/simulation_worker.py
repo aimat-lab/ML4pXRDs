@@ -13,7 +13,7 @@ from numba import jit
 import time
 
 from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
-from utils.simulation.quick_simulation import get_xy_patterns
+from tools.simulation.quick_simulation import get_xy_patterns
 
 
 # xrayutilities

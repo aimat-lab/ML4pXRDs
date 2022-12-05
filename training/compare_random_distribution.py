@@ -17,20 +17,20 @@ from pyxtal.symmetry import Group
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
-from utils.simulation.quick_simulation import get_xy_patterns
+from tools.simulation.quick_simulation import get_xy_patterns
 
 from pymatgen.core.periodic_table import Species
 
 from utils.entropy import get_chemical_ordering
 from utils.entropy import get_structural_complexity
 
-import utils.matplotlib_defaults as matplotlib_defaults
+import tools.matplotlib_defaults as matplotlib_defaults
 
 figure_double_width_pub = matplotlib_defaults.pub_width
 figure_double_width = 10
 
 fix_important_ranges = True
-zoom = True
+zoom = True  # Add zoomed-in subplots inside the main plot
 
 if __name__ == "__main__":
 
