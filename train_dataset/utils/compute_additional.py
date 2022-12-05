@@ -1,8 +1,8 @@
 import tensorflow.keras as keras
-from dataset_simulations.random_simulation_utils import load_dataset_info
+from utils.generation.random_simulation_utils import load_dataset_info
 import numpy as np
 import os
-from dataset_simulations.simulation import Simulation
+from utils.simulation.simulation import Simulation
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import sys
 from ase.io import write

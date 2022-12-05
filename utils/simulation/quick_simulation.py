@@ -3,8 +3,8 @@
 # If performance is not a concern to you, you should use the original pymatgen implementation.
 
 from re import sub
-from dataset_simulations.random_simulation_utils import generate_structures
-from dataset_simulations.random_simulation_utils import load_dataset_info
+from utils.generation.random_simulation_utils import generate_structures
+from utils.generation.random_simulation_utils import load_dataset_info
 import json
 import os
 from math import asin, cos, degrees, pi, radians, sin
@@ -83,7 +83,7 @@ def __get_pattern_optimized(
             s = g_hkl / 2
 
             # Store s^2 since we are using it a few times.
-            s2 = s ** 2
+            s2 = s**2
 
             # Vectorized computation of g.r for all fractional coords and
             # hkl.
@@ -343,7 +343,7 @@ def get_pattern(structure, wavelength, two_theta_range=(0, 90)):
             s = g_hkl / 2
 
             # Store s^2 since we are using it a few times.
-            s2 = s ** 2
+            s2 = s**2
 
             # Vectorized computation of g.r for all fractional coords and
             # hkl.
@@ -437,7 +437,11 @@ def calc_std_dev(two_theta, tau, wavelength):
 
 @numba.njit(cache=True)
 def smeared_peaks(
-    xs, pattern_angles, pattern_intensities, domain_size, wavelength,
+    xs,
+    pattern_angles,
+    pattern_intensities,
+    domain_size,
+    wavelength,
 ):
 
     ys = np.zeros(len(xs))
@@ -448,7 +452,7 @@ def smeared_peaks(
         peak = (
             intensity
             / (sigma * np.sqrt(2 * np.pi))
-            * np.exp(-1 / (2 * sigma ** 2) * (xs - twotheta) ** 2)
+            * np.exp(-1 / (2 * sigma**2) * (xs - twotheta) ** 2)
         )
 
         # delta_x = xs[1] - xs[0]
@@ -508,7 +512,8 @@ def get_xy_patterns(
     for i in range(0, NO_corn_sizes):
 
         corn_size = np.random.uniform(
-            pymatgen_crystallite_size_gauss_min, pymatgen_crystallite_size_gauss_max,
+            pymatgen_crystallite_size_gauss_min,
+            pymatgen_crystallite_size_gauss_max,
         )  # this is not used for caglioti broadening!
 
         if not caglioti_broadening:
@@ -541,18 +546,16 @@ def get_xy_patterns(
 
         if add_background_and_noise:
             if not use_vecsei_bg_noise:
-                smeared = train_dataset.generate_background_noise_utils.generate_samples_gp(
-                    1,
-                    two_theta_range,
-                    n_angles_output=8501,
-                    icsd_patterns=[smeared],
-                    original_range=True,
-                    use_ICSD_patterns=True,
-                )[
-                    0
-                ][
-                    0
-                ]
+                smeared = (
+                    train_dataset.generate_background_noise_utils.generate_samples_gp(
+                        1,
+                        two_theta_range,
+                        n_angles_output=8501,
+                        icsd_patterns=[smeared],
+                        original_range=True,
+                        use_ICSD_patterns=True,
+                    )[0][0]
+                )
             else:
                 smeared += generate_background_noise_vecsei(xs)
                 smeared -= np.min(smeared)
@@ -655,7 +658,8 @@ def mix_patterns_add_background(
                 plt.ylabel(r"Intensity / rel.")
 
                 plt.savefig(
-                    f"pattern_example_{i}.pdf", bbox_inches="tight",
+                    f"pattern_example_{i}.pdf",
+                    bbox_inches="tight",
                 )
 
                 plt.show()
@@ -1064,7 +1068,9 @@ def time_swipe_with_fixed_volume():
         "smearing",
     )
     plot_timings(
-        timings_simulation_both_per_volume, NO_wyckoffs_both_per_volume, "both",
+        timings_simulation_both_per_volume,
+        NO_wyckoffs_both_per_volume,
+        "both",
     )
 
     # For the generation, the volume really doesn't matter at all
@@ -1129,7 +1135,8 @@ if __name__ == "__main__":
             )
 
         Pool(8).starmap(
-            to_map, [() for _ in range(5000)],
+            to_map,
+            [() for _ in range(5000)],
         )
 
     if False:
@@ -1532,7 +1539,8 @@ if __name__ == "__main__":
                         plt.ylabel(r"Intensity / rel.")
 
                         plt.savefig(
-                            f"pattern_example_{i}.pdf", bbox_inches="tight",
+                            f"pattern_example_{i}.pdf",
+                            bbox_inches="tight",
                         )
 
                         plt.show()

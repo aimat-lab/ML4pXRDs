@@ -9,7 +9,7 @@ from train_dataset.interp_utils import spline_numba
 from glob import glob
 import os
 import pickle
-from dataset_simulations.simulation import Simulation
+from utils.simulation.simulation import Simulation
 from train_dataset.utils.test_unet.rruff_helpers import get_rruff_patterns
 
 n_angles_gp = 60

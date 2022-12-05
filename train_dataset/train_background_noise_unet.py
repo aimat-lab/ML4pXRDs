@@ -2,7 +2,7 @@ import time
 from UNet_1DCNN import UNet
 import tensorflow.keras as keras
 import os
-from dataset_simulations.simulation import Simulation
+from utils.simulation.simulation import Simulation
 
 os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
@@ -204,7 +204,8 @@ if training_mode == "train":
     file_writer = tf.summary.create_file_writer(out_base + "metrics")
 
     ray.init(
-        address="localhost:6379" if not local else None, include_dashboard=False,
+        address="localhost:6379" if not local else None,
+        include_dashboard=False,
     )
 
     print()
@@ -324,7 +325,9 @@ if training_mode == "train":
             max_queue_size=100,
             workers=1,
             use_multiprocessing=False,
-            callbacks=[keras.callbacks.TensorBoard(log_dir=out_base + "tb"),],
+            callbacks=[
+                keras.callbacks.TensorBoard(log_dir=out_base + "tb"),
+            ],
             steps_per_epoch=number_of_batches,
         )
 
@@ -384,11 +387,15 @@ else:
             plt.plot(pattern_x, prediction[:, 0], label="Prediction")
 
             plt.plot(
-                pattern_x, test_batch[0][:][i], label="Input pattern",
+                pattern_x,
+                test_batch[0][:][i],
+                label="Input pattern",
             )
 
             plt.plot(
-                pattern_x, test_batch[1][:][i], label="Target",
+                pattern_x,
+                test_batch[1][:][i],
+                label="Target",
             )
 
             plt.plot(
@@ -409,7 +416,9 @@ else:
         else:
 
             plt.plot(
-                pattern_x, test_batch[0][:][i], label="Input pattern",
+                pattern_x,
+                test_batch[0][:][i],
+                label="Input pattern",
             )
             # plt.legend()
             plt.tight_layout()
@@ -426,7 +435,9 @@ else:
             plt.xlabel(r"$2 \theta$")
             plt.ylabel("Intensity / rel.")
             plt.plot(
-                pattern_x, test_batch[1][:][i], label="Target",
+                pattern_x,
+                test_batch[1][:][i],
+                label="Target",
             )
             # plt.legend()
             plt.tight_layout()

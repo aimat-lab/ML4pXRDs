@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This is the original resnet code from the tensorflow repository, modified to
+# work with 1D data and use group normalization instead of batch normalization.
+
 """Contains definitions of ResNet and ResNet-RS models."""
 
 from typing import Callable, Optional

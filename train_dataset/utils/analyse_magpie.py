@@ -1,4 +1,4 @@
-from dataset_simulations.random_simulation_utils import generate_structures
+from utils.generation.random_simulation_utils import generate_structures
 
 from magpie_python.vassal.data.Cell import Cell
 from magpie_python.vassal.data.Atom import Atom

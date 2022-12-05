@@ -1,7 +1,7 @@
 from concurrent.futures import process
 from xml.etree.ElementInclude import include
 from sklearn.metrics import classification_report
-from dataset_simulations.random_simulation_utils import load_dataset_info
+from utils.generation.random_simulation_utils import load_dataset_info
 import pickle
 import sys
 import matplotlib.pyplot as plt

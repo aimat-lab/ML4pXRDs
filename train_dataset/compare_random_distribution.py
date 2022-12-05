@@ -17,7 +17,7 @@ from pyxtal.symmetry import Group
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
-from dataset_simulations.core.quick_simulation import get_xy_patterns
+from utils.simulation.quick_simulation import get_xy_patterns
 
 from pymatgen.core.periodic_table import Species
 

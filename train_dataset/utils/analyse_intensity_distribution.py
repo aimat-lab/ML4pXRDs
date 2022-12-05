@@ -1,10 +1,10 @@
 import os
 import numpy as np
-from dataset_simulations.simulation import Simulation
+from utils.simulation.simulation import Simulation
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import matplotlib.pyplot as plt
-from dataset_simulations.random_simulation_utils import load_dataset_info
-from dataset_simulations.core.quick_simulation import get_random_xy_patterns
+from utils.generation.random_simulation_utils import load_dataset_info
+from utils.simulation.quick_simulation import get_random_xy_patterns
 import ray
 
 if __name__ == "__main__":
