@@ -55,12 +55,22 @@ https://www.tensorflow.org/install/source#tested_build_configurations.
 
 ## Training
 
-- TODO: Write about the available options in the beginning of the training script
+In order to perform the training, you first need to generate a dataset. This is
+based on the structures from the ICSD dataset. Thus, a license to the ICSD
+database is needed.
+
+- TODO: How to simulate the dataset
+
+In the beginning of the training script (`train_random_classifier.py`), you can
+find options of the training including detailed explanations. While you should look
+through all options, the following options need to be changed regardless:
+- "path_to_patterns"
+- "path_to_icsd_directory_local" or "path_to_icsd_directory_cluster"
+
 - TODO: Change configuration of computing nodes in the training script
 - TODO: Command line options of the training script
-- TODO: List the datasets that are used for validation
-- TODO: ICSD data needed => Get license
 
+- TODO: List the datasets that are used for validation
 Used validation sets:
     - All ICSD entries
     - ICSD entries that match simulation parameters

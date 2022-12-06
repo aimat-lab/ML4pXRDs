@@ -1,10 +1,9 @@
 # Contains functions to generate patterns with smeared peaks.
+# This code uses the output of simulation_core.py
 
 from tools.generation.random_simulation_utils import generate_structures
 from tools.generation.random_simulation_utils import load_dataset_info
-from math import asin, cos, degrees, pi, radians, sin
 import numpy as np
-import collections
 import time
 import numba
 import matplotlib.pyplot as plt

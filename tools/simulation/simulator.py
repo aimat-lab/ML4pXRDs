@@ -23,18 +23,13 @@ simulation_software = (
     "pymatgen_numba"  # possible: pymatgen, xrayutilities and pymatgen_numba
 )
 
-# as Vecsei:
+# Same as Vecsei et al. 2019:
 angle_min = 5
 angle_max = 90
 angle_n = 8501
 
-# as Park:
-# angle_min = 10
-# angle_max = 110
-# angle_n = 10001
 
-
-class Simulation:
+class Simulator:
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         random.seed(1234)
 
@@ -696,7 +691,7 @@ class Simulation:
     def get_wyckoff_info(self, id):
         # return: is_pure_occupancy, number_of_placements, wyckoff_str
         cif_path = self.icsd_paths[self.icsd_ids.index(id)]
-        return Simulation.__get_wyckoff_info(cif_path)
+        return Simulator.__get_wyckoff_info(cif_path)
 
     def plot(self, together=1):
 
@@ -816,7 +811,7 @@ class Simulation:
 
 if __name__ == "__main__":
 
-    simulation = Simulation(
+    simulation = Simulator(
         "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
         "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
     )

@@ -1,4 +1,4 @@
-from tools.simulation.simulation import Simulation
+from tools.simulation.simulator import Simulator
 import functools
 import os
 import numpy as np
@@ -8,7 +8,7 @@ from tools.simulation.simulation_core import get_xy_patterns
 import tools.matplotlib_defaults as matplotlib_defaults
 
 
-class ICSDSimulation(Simulation):
+class ICSDSimulator(Simulator):
     def __init__(self, icsd_info_file_path, icsd_cifs_dir):
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
@@ -87,12 +87,12 @@ if __name__ == "__main__":
 
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
-        simulation = ICSDSimulation(
+        simulation = ICSDSimulator(
             os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
             os.path.expanduser("~/Databases/ICSD/cif/"),
         )
     else:  # local
-        simulation = ICSDSimulation(
+        simulation = ICSDSimulator(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )

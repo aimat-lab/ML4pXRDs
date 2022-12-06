@@ -8,7 +8,7 @@ from pyxtal.symmetry import Group
 from pyxtal.symmetry import get_pbc_and_lattice
 import time
 import pickle
-from tools.simulation.simulation import Simulation
+from tools.simulation.simulator import Simulator
 from pymatgen.io.cif import CifParser
 import os
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -989,14 +989,14 @@ def prepare_training(
     path_to_patterns = "./patterns/icsd_vecsei/"
 
     if jobid is not None and jobid != "":
-        sim = Simulation(
+        sim = Simulator(
             os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
             os.path.expanduser("~/Databases/ICSD/cif/"),
         )
         sim.output_dir = path_to_patterns
 
     else:  # local
-        sim = Simulation(
+        sim = Simulator(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
@@ -1540,13 +1540,13 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         path_to_patterns = "./patterns/icsd_vecsei/"
         jobid = os.getenv("SLURM_JOB_ID")
         if jobid is not None and jobid != "":
-            sim = Simulation(
+            sim = Simulator(
                 os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
                 os.path.expanduser("~/Databases/ICSD/cif/"),
             )
             sim.output_dir = path_to_patterns
         else:  # local
-            sim = Simulation(
+            sim = Simulator(
                 "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
                 "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
             )
@@ -2092,13 +2092,13 @@ def convert_add_statistics_labels():
     jobid = os.getenv("SLURM_JOB_ID")
     path_to_patterns = "./patterns/icsd_vecsei/"
     if jobid is not None and jobid != "":
-        sim = Simulation(
+        sim = Simulator(
             os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
             os.path.expanduser("~/Databases/ICSD/cif/"),
         )
         sim.output_dir = path_to_patterns
     else:  # local
-        sim = Simulation(
+        sim = Simulator(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
