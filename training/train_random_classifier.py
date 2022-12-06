@@ -14,10 +14,7 @@ from models import (
     build_model_park_original_spg,
     build_model_park_tiny_size,
     build_model_resnet_i,
-    build_model_resnet_50_old,
 )
-
-# from utils.transformer import build_model_transformer
 from utils.distributed_utils import map_to_remote
 import os
 from sklearn.utils import shuffle
@@ -41,126 +38,98 @@ import random
 import contextlib
 from training.utils.AdamWarmup import AdamWarmup
 
-tag = "all-spgs-random-resnet-50-additional-dense-lr-0.0001-gp-exclude-prototypes-WITH-impurities-caglioti-broadening"
-description = ""
+tag = "name_of_current_run"
+description = "Description of current run"
 
-print("Processing tag", tag)
+run_analysis_after_training = (
+    True  # run analysis script "compare_random_distribution.py" after training
+)
+analysis_per_spg = False  # run the analysis script separately for each spg (and once for all spgs together)
 
-if len(sys.argv) > 1:
-    date_time = sys.argv[1]  # get it from the bash script
-    out_base = "classifier_spgs/" + date_time + "/"
-else:
-    date_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-    out_base = "classifier_spgs/" + date_time + "_" + tag + "/"
+# If this setting is True, the training uses the crystals from the statistics
+# dataset to form the training dataset. No synthetic crystals will be generated
+# and no on-the-fly simulation will take place. It is advised to use this
+# setting in combination with head_only, since much less computing ressources
+# are required.
+use_icsd_structures_directly = False
 
-if len(sys.argv) > 2 and sys.argv[2] == "head_only":
-    head_only = True
-    print("Running in head-only mode.", flush=True)
-else:
-    head_only = False
-
-os.system("mkdir -p " + out_base)
-os.system("mkdir -p " + out_base + "tuner_tb")
-os.system("touch " + out_base + tag)
-
-run_analysis_after_run = True
-analysis_per_spg = False
-
-test_every_X_epochs = 1
-batches_per_epoch = 150 * 6  # doesn't count for direct training
+test_every_X_epochs = 1  # compute validation accuracies every X epochs
+# Maximum number of samples to test on for each of the constructed validation
+# datasets.
+max_NO_samples_to_test_on = 10000
+# The following setting only applies for training on synthetic crystals. When
+# training on ICSD crystals directly, the whole dataset is used for each epoch.
+batches_per_epoch = 150 * 6
 NO_epochs = 1000
 
-# For ViT:
-# structures_per_spg = 1
-# NO_corn_sizes = 1
-
-# structures_per_spg = 1
+# How many structures to generate per spg. Only applies for training using synthetic crystals.
 structures_per_spg = 1
-
-# structures_per_spg = 5
-# structures_per_spg = 10  # for (2,15) tuple
-# structures_per_spg = 10  # for (2,15) tuple
-# NO_corn_sizes = 5
+# How many different crystallite sizes to use for each generated crystal. Only applies for training using synthetic crystals.
 NO_corn_sizes = 1
-# structures_per_spg = 1  # 30-spg
-# NO_corn_sizes = 3 # 30-spg
 
-do_distance_checks = False
-do_merge_checks = False
-use_icsd_statistics = True
-
-if not len(sys.argv) > 3:
-    if not head_only:
-        # NO_workers = 127 + 127 + 8  # for int-nano cluster
-        NO_workers = 1 * 128 + 1 * 128 + 28  # for int-nano cluster
-    else:
-        NO_workers = 30  # for int-nano cluster
-else:
-    NO_workers = int(sys.argv[3])
-
-# NO_workers = 14
-# NO_workers = 40 * 5 + 5  # for bwuni
-
-queue_size = 100  # if use_retention_of_patterns==True, then this is not used
+# Queue size of the ray queue (used to fetch generated patterns from worker nodes)
+queue_size = 100
+# Queue size of the tensorflow queue of batches used while training
 queue_size_tf = 50
 
-# NO_random_batches = 20
-# NO_random_swipes = 1000  # make this smaller for the all-spgs run
-# NO_random_swipes = 300 # 30-spg
+# Used to generate the validation dataset of patterns based on synthetic crystals.
+NO_random_validation_samples_per_spg = 100
 
-NO_random_samples_per_spg = 100
-
+# Maximum volume and number of atoms in asymmetric unit for synthetic crystals.
 generation_max_volume = 7000
 generation_max_NO_wyckoffs = 100
 
-validation_max_volume = 7000  # None possible
-validation_max_NO_wyckoffs = 100  # None possible
-
+# Perform check of spg after generating a crystal using software `spglib`.
 do_symmetry_checks = True
 
-use_NO_wyckoffs_counts = True
-use_element_repetitions = True  # Overwrites use_NO_wyckoffs_counts
-use_kde_per_spg = False  # Overwrites use_element_repetitions and use_NO_wyckoffs_counts
-use_all_data_per_spg = False  # Overwrites all the previous ones
-use_coordinates_directly = False
-use_lattice_paras_directly = False
-use_icsd_structures_directly = False  # This overwrites most of the previous settings and doesn't generate any crystals randomly (except for validation)!
-
+# Whether or not to validate also on patterns simulated from the statistics
+# dataset. This setting cannot be used together with
+# `use_icsd_structures_directly`, since here the statistics dataset is already
+# used for training.
 use_statistics_dataset_as_validation = False
-generate_randomized_validation_datasets = (
-    False  # Keep in mind that these do not include mixing of impurity patterns!
-)
+
+# The following setting can be used to analyze the difference in accuracy
+# between training (using synthetic crystals) and patterns simulated from the
+# ICSD. (See the discussion in our paper) Three additional validation datasets
+# will be generated, which are all based on the ICSD validation dataset. In the
+# first one, the ICSD coordinates are replaced with uniformly sampled
+# coordinates (using the same approach that we use to generate the synthetic
+# crystals). In the second one, the lattice parameters are replaced (lattice
+# parameters are sampled using the KDE as described in the paper). In the third
+# one, both coordinates and the lattice parameters are replaced / resampled.
+generate_randomized_validation_datasets = False
 randomization_step = 3  # Only use every n'th sample for the randomization process
 
+# This only applies only to the models that support dropout, especially those
+# originating from Park et al. (2020)
 use_dropout = False
-
 learning_rate = 0.0001
 
-momentum = 0.9  # only used with SGD
-optimizer = "Adam"  # not used for ViT
+optimizer = "Adam"
+# Use group normalization instead of batch normalization. This setting only
+# applies for the ResNet models, where batch normalization was observed to
+# result in unstable training.
 use_group_norm = True
-use_reduce_lr_on_plateau = False
-batchnorm_momentum = 0.0  # only used by ResNet and gigantic_more_dense_bn currently
-estimate_bn_averages_using_random = False  # instead of the moving averages
-calculate_random_accuracy_using_training_true = False
-calculate_match_accuracy_using_training_true = False
-max_NO_samples_to_test_on = 10000  # this should be plenty; this is only during the run.
-log_bn_averages = False
+batchnorm_momentum = 0.0  # only used by ResNet (if use_group_norm is False)
 
-use_denseness_factors_density = True
-use_conditional_density = True
+# The denseness factors are sampled from a KDE. If the following setting is
+# True, the denseness factor is conditioned on the sum of atomic volumes.
+use_conditional_denseness_factor_sampling = True
+# If this is False, the lattice parameters are sampled using the heuristic
+# implementation of the python library `pyxtal`.
 sample_lattice_paras_from_kde = True
 
-load_only_N_patterns_each_test = 1  # None possible
-load_only_N_patterns_each_train = 1  # None possible
+# There might be multiple crystallite sizes for each ICSD crystal found in the
+# dataset. This setting controls how many of them should be used / loaded for
+# training and testing. If the setting is "None", all patterns are used.
+load_only_N_patterns_each_test = 1
+load_only_N_patterns_each_statistics = 1
 
-scale_patterns = False
-scale_patterns_sqrt = False
+preprocess_patterns_sqrt = False  # Apply the sqrt function to the patterns as a preprocessing step (see Zaloga et al. 2020).
 
-use_retention_of_patterns = False
-retention_rate = 0.7
-
+# Verbosity setting as passed to fit function of tf
 verbosity_tf = 2
+generator_verbose = False
 verbosity_generator = 2
 
 use_distributed_strategy = True
@@ -181,12 +150,47 @@ exclude_whole_prototype = True
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/23-08-2022_12-44-03/final"
 
+# Allow execution from bash (script), where the timestamp is passed as an arg
+if len(sys.argv) > 1:
+    date_time = sys.argv[1]
+    out_base = "classifier_spgs/" + date_time + "/"
+else:
+    date_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    out_base = "classifier_spgs/" + date_time + "_" + tag + "/"
+
+print("Processing tag", tag)
+
+# Allow head-only execution, where only one head computing node (with a GPU)
+# without additional computing nodes is used
+if len(sys.argv) > 2 and sys.argv[2] == "head_only":
+    head_only = True
+    print("Running in head-only mode.", flush=True)
+else:
+    head_only = False
+
+os.system("mkdir -p " + out_base)
+os.system("mkdir -p " + out_base + "tuner_tb")
+os.system("touch " + out_base + tag)
+
+if not len(sys.argv) > 3:
+    if not head_only:
+        # NO_workers = 127 + 127 + 8  # for int-nano cluster
+        NO_workers = 1 * 128 + 1 * 128 + 28  # for int-nano cluster
+    else:
+        NO_workers = 30  # for int-nano cluster
+else:
+    NO_workers = int(sys.argv[3])
+
+# NO_workers = 14
+# NO_workers = 40 * 5 + 5  # for bwuni
+
+
 local = False
 if local:
     NO_workers = 8
     verbosity_tf = 1
     verbosity_generator = 1
-    NO_random_samples_per_spg = 5
+    NO_random_validation_samples_per_spg = 5
     randomization_step = 20
     use_distributed_strategy = False
 
@@ -214,7 +218,7 @@ spgs = list(range(1, 231))
 # spgs = [2, 15]
 
 if len(spgs) == 2:
-    NO_random_samples_per_spg = 500
+    NO_random_validation_samples_per_spg = 500
 
 # as Park:
 # start_angle, end_angle, N = 10, 110, 10001
@@ -291,7 +295,7 @@ if not use_element_repetitions:
 if not use_denseness_factors_density:
     denseness_factors_density_per_spg = None
 
-if not use_conditional_density:
+if not use_conditional_denseness_factor_sampling:
     denseness_factors_conditional_sampler_seeds_per_spg = None
 
 if not sample_lattice_paras_from_kde:
@@ -845,11 +849,7 @@ if generate_randomized_validation_datasets:
     assert len(val_x_randomized_lattice) == len(val_y_randomized_lattice)
     assert len(val_x_randomized_both) == len(val_y_randomized_both)
 
-queue = Queue(
-    maxsize=queue_size
-    if not use_retention_of_patterns
-    else int(batches_per_epoch * (1 - retention_rate))
-)  # store a maximum of `queue_size` batches
+queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
 
 # all_data_per_spg_handle = ray.put(all_data_per_spg)
 
@@ -1027,7 +1027,7 @@ def batch_generator_queue(
 
             patterns = np.array(patterns)
 
-            if scale_patterns_sqrt:
+            if preprocess_patterns_sqrt:
                 patterns = np.sqrt(patterns)
 
             if sc is not None:
@@ -1075,7 +1075,7 @@ scheduler_fn = lambda input: batch_generator_with_additional.remote(
 )
 results = map_to_remote(
     scheduler_fn=scheduler_fn,
-    inputs=range(NO_random_samples_per_spg),
+    inputs=range(NO_random_validation_samples_per_spg),
     NO_workers=NO_workers,
 )
 
@@ -1110,7 +1110,7 @@ for result in results:
 
 val_y_random = np.array(val_y_random)
 
-if scale_patterns_sqrt:
+if preprocess_patterns_sqrt:
     val_x_random = np.sqrt(val_x_random)
     val_x_all = np.sqrt(val_x_all)
     val_x_match_correct_spgs = np.sqrt(val_x_match_correct_spgs)
@@ -1231,7 +1231,7 @@ if use_rruff_validation_dataset:
 
     val_y_rruff = np.array(val_y_rruff)
 
-    if scale_patterns_sqrt:
+    if preprocess_patterns_sqrt:
         val_x_rruff = np.sqrt(val_x_rruff)
 
     if scale_patterns:
@@ -1281,7 +1281,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     icsd_sim_statistics.load(
         load_only_N_patterns_each=load_only_N_patterns_each_test
         if use_statistics_dataset_as_validation
-        else load_only_N_patterns_each_train,
+        else load_only_N_patterns_each_statistics,
         metas_to_load=statistics_match_metas_flat,
         stop=1 if local else None,
     )  # to not overflow the memory if local
@@ -1428,7 +1428,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     statistics_y_match = np.array(statistics_y_match)
 
-    if scale_patterns_sqrt:
+    if preprocess_patterns_sqrt:
         statistics_x_match = np.sqrt(statistics_x_match)
 
     if scale_patterns:
@@ -1462,7 +1462,7 @@ assert not np.any(np.isnan(val_x_match))
 assert not np.any(np.isnan(val_y_match))
 assert len(val_x_match) == len(val_y_match)
 
-if scale_patterns_sqrt:
+if preprocess_patterns_sqrt:
     val_x_match = np.sqrt(val_x_match)
 
 if scale_patterns:
@@ -1515,8 +1515,6 @@ params_txt = (
     f"do_distance_checks: {str(do_distance_checks)}  \n"
     f"do_merge_checks: {str(do_merge_checks)}  \n  \n"
     f"use_icsd_statistics: {str(use_icsd_statistics)}  \n  \n"
-    f"validation_max_volume: {str(validation_max_volume)}  \n"
-    f"validation_max_NO_wyckoffs: {str(validation_max_NO_wyckoffs)}  \n  \n"
     f"spgs: {str(spgs)}  \n  \n"
     f"do_symmetry_checks: {str(do_symmetry_checks)}  \n  \n"
     f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)} \n \n \n"
@@ -1531,7 +1529,7 @@ params_txt = (
     f"use_icsd_structures_directly: {str(use_icsd_structures_directly)} \n \n \n"
     f"load_only_N_patterns_each_test: {str(load_only_N_patterns_each_test)} \n \n \n"
     f"scale_patterns: {str(scale_patterns)} \n \n \n"
-    f"use_conditional_density: {str(use_conditional_density)} \n \n \n"
+    f"use_conditional_density: {str(use_conditional_denseness_factor_sampling)} \n \n \n"
     f"use_statistics_dataset_as_validation: {str(use_statistics_dataset_as_validation)} \n \n \n"
     f"sample_lattice_paras_from_kde: {str(sample_lattice_paras_from_kde)} \n \n \n"
     f"per_element: {str(per_element)} \n \n"
@@ -2239,7 +2237,7 @@ if use_rruff_validation_dataset:
     with open(out_base + "classification_report_rruff.pickle", "wb") as file:
         pickle.dump(report, file)
 
-if run_analysis_after_run:
+if run_analysis_after_training:
 
     print("Starting analysis now...", flush=True)
 
