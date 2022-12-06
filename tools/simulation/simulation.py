@@ -18,8 +18,6 @@ import re
 
 num_files = 127
 num_processes = 127
-# num_files = 8
-# num_processes = 8
 
 simulation_software = (
     "pymatgen_numba"  # possible: pymatgen, xrayutilities and pymatgen_numba

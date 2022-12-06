@@ -1,0 +1,1161 @@
+# Contains functions to generate patterns with smeared peaks.
+
+from tools.generation.random_simulation_utils import generate_structures
+from tools.generation.random_simulation_utils import load_dataset_info
+from math import asin, cos, degrees, pi, radians, sin
+import numpy as np
+import collections
+import time
+import numba
+import matplotlib.pyplot as plt
+from dataset_simulations.spectrum_generation.peak_broadening import BroadGen
+import traceback
+from multiprocessing import Pool
+from pyxtal.symmetry import Group
+from sklearn.linear_model import LinearRegression
+import random
+import tools.matplotlib_defaults as matplotlib_defaults
+
+figure_double_width_pub = matplotlib_defaults.pub_width
+
+# Range of crystallite sizes to choose uniformly from:
+pymatgen_crystallite_size_gauss_min = 20
+pymatgen_crystallite_size_gauss_max = 100
+
+
+@numba.njit(cache=True)
+def calc_std_dev(two_theta, tau, wavelength):
+    """
+    calculate standard deviation based on angle (two theta) and domain size (tau)
+    Args:
+        two_theta: angle in two theta space
+        tau: domain size in nm
+    Returns:
+        standard deviation for gaussian kernel
+    """
+    ## Calculate FWHM based on the Scherrer equation
+    K = 0.9  ## shape factor
+    wavelength = wavelength * 0.1  ## angstrom to nm
+    theta = np.radians(two_theta / 2.0)  ## Bragg angle in radians
+    beta = (K * wavelength) / (np.cos(theta) * tau)  # in radians
+
+    ## Convert FWHM to std deviation of gaussian
+    sigma = np.sqrt(1 / (2 * np.log(2))) * 0.5 * np.degrees(beta)
+    return sigma
+
+
+@numba.njit(cache=True)
+def smeared_peaks(
+    xs,
+    pattern_angles,
+    pattern_intensities,
+    domain_size,
+    wavelength,
+):
+
+    ys = np.zeros(len(xs))
+
+    for twotheta, intensity in zip(pattern_angles, pattern_intensities):
+
+        sigma = calc_std_dev(twotheta, domain_size, wavelength)
+        peak = (
+            intensity
+            / (sigma * np.sqrt(2 * np.pi))
+            * np.exp(-1 / (2 * sigma**2) * (xs - twotheta) ** 2)
+        )
+
+        # delta_x = xs[1] - xs[0]
+        # volume = delta_x * np.sum(ys)
+        # ys = y * ys / volume
+
+        ys += peak
+
+    return ys / np.max(ys)
+
+
+# timings:
+timings_simulation_pattern = []
+timings_simulation_smeared = []
+timings_generation = []
+NO_wyckoffs_log = []
+
+
+def get_xy_patterns(
+    structure,
+    wavelength,
+    xs,
+    NO_corn_sizes=1,
+    two_theta_range=(0, 90),
+    do_print=False,
+    return_corn_sizes=False,
+    return_angles_intensities=False,
+    return_max_unscaled_intensity_angle=False,
+    add_background_and_noise=False,
+    use_vecsei_bg_noise=False,
+    caglioti_broadening=False,
+):
+
+    if return_corn_sizes:
+        corn_sizes = []
+
+    if do_print:
+        start = time.time()
+
+    if not return_max_unscaled_intensity_angle:
+        angles, intensities = get_pattern_optimized(
+            structure, wavelength, two_theta_range, False
+        )
+    else:
+        angles, intensities, max_unscaled_intensity_angle = get_pattern_optimized(
+            structure, wavelength, two_theta_range, False, True
+        )
+
+    if do_print:
+        timings_simulation_pattern.append(time.time() - start)
+
+    if do_print:
+        start = time.time()
+
+    results = []
+
+    for i in range(0, NO_corn_sizes):
+
+        corn_size = np.random.uniform(
+            pymatgen_crystallite_size_gauss_min,
+            pymatgen_crystallite_size_gauss_max,
+        )  # this is not used for caglioti broadening!
+
+        if not caglioti_broadening:
+            smeared = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
+        else:
+            smeared = smeared_peaks_pseudo_voigt_random(xs, angles, intensities)
+            smeared /= np.max(smeared)
+
+            if False:
+
+                # For numba precompilation:
+                _ = smeared_peaks(xs, angles, intensities, corn_size, wavelength)
+
+                start = time.time()
+                smeared_old = smeared_peaks(
+                    xs, angles, intensities, corn_size, wavelength
+                )
+                print(f"{time.time()-start}s for old")
+                start = time.time()
+                smeared_caglioti = smeared_peaks_pseudo_voigt_random(
+                    xs, angles, intensities
+                )
+                smeared_caglioti /= np.max(smeared_caglioti)
+                print(f"{time.time()-start}s for caglioti")
+
+                plt.plot(smeared_old, label="old")
+                plt.plot(smeared_caglioti, label="caglioti")
+                plt.legend()
+                plt.show()
+
+        if add_background_and_noise:
+            if not use_vecsei_bg_noise:
+                smeared = training.generate_background_noise_utils.generate_samples_gp(
+                    1,
+                    two_theta_range,
+                    n_angles_output=8501,
+                    icsd_patterns=[smeared],
+                    original_range=True,
+                    use_ICSD_patterns=True,
+                )[0][0]
+            else:
+                smeared += generate_background_noise_vecsei(xs)
+                smeared -= np.min(smeared)
+                smeared /= np.max(smeared)
+
+        results.append(smeared)
+
+        if return_corn_sizes:
+            corn_sizes.append(corn_size)
+
+    if do_print:
+        timings_simulation_smeared.append((time.time() - start) / NO_corn_sizes)
+
+    if not return_corn_sizes:
+        if return_angles_intensities:
+            if not return_max_unscaled_intensity_angle:
+                return results, angles, intensities
+            else:
+                return results, angles, intensities, max_unscaled_intensity_angle
+        else:
+            if not return_max_unscaled_intensity_angle:
+                return results
+            else:
+                return results, max_unscaled_intensity_angle
+    else:
+        if return_angles_intensities:
+            if not return_max_unscaled_intensity_angle:
+                return results, corn_sizes, angles, intensities
+            else:
+                return (
+                    results,
+                    corn_sizes,
+                    angles,
+                    intensities,
+                    max_unscaled_intensity_angle,
+                )
+        else:
+            if not return_max_unscaled_intensity_angle:
+                return results, corn_sizes
+            else:
+                return results, corn_sizes, max_unscaled_intensity_angle
+
+
+def mix_patterns_add_background(
+    patterns,
+    max_impurity_percentage=0.05,
+    add_background_and_noise=True,
+    use_vecsei_bg_noise=False,
+    depth_two=False,
+    two_theta_range=(5, 90),
+    do_plot=False,
+    do_mix=True,
+):
+
+    xs = np.linspace(two_theta_range[0], two_theta_range[1], 8501)
+
+    for i, tmp_pattern in enumerate(patterns):
+
+        if depth_two:
+            pattern = tmp_pattern[0]
+        else:
+            pattern = tmp_pattern
+
+        if (not (i == (len(patterns) - 1))) and do_mix:
+
+            to_add_index = random.randint(i + 1, len(patterns) - 1)
+            to_add_pattern = patterns[to_add_index]
+            if depth_two:
+                to_add_pattern = to_add_pattern[0]
+
+            impurity_percentage = random.random() * max_impurity_percentage
+            pattern[:] = (
+                1 - impurity_percentage
+            ) * pattern + impurity_percentage * to_add_pattern
+
+            normalizer = np.max(pattern)
+            pattern[:] = pattern[:] / normalizer
+
+            if do_plot:
+
+                plt.figure(
+                    figsize=(
+                        figure_double_width_pub * 0.95,
+                        figure_double_width_pub * 0.7,
+                    )
+                )
+
+                plt.tight_layout()
+
+                plt.plot(xs, pattern, alpha=0.5, label="Total pattern")
+                plt.plot(
+                    xs,
+                    impurity_percentage * to_add_pattern,
+                    alpha=0.5,
+                    label="Added impurity phase",
+                )
+                plt.legend()
+
+                plt.xlabel(r"$2\theta$")
+                plt.ylabel(r"Intensity / rel.")
+
+                plt.savefig(
+                    f"pattern_example_{i}.pdf",
+                    bbox_inches="tight",
+                )
+
+                plt.show()
+
+        if add_background_and_noise:
+            if not use_vecsei_bg_noise:
+                # assign inplace:
+                pattern[
+                    :
+                ] = training.generate_background_noise_utils.generate_samples_gp(
+                    1,
+                    two_theta_range,
+                    n_angles_output=8501,
+                    icsd_patterns=[pattern],
+                    original_range=True,
+                    use_ICSD_patterns=True,
+                )[
+                    0
+                ][
+                    0
+                ]
+
+            else:
+                pattern += generate_background_noise_vecsei(xs)
+                pattern -= np.min(pattern)
+                pattern /= np.max(pattern)
+
+
+def get_random_xy_patterns(
+    spgs,
+    structures_per_spg,
+    wavelength,
+    N,
+    NO_corn_sizes=1,
+    two_theta_range=(0, 90),
+    max_NO_elements=10,
+    do_print=False,
+    return_additional=False,
+    do_distance_checks=True,
+    fixed_volume=None,
+    do_merge_checks=True,
+    use_icsd_statistics=False,
+    probability_per_spg_per_element=None,
+    probability_per_spg_per_element_per_wyckoff=None,
+    max_volume=None,
+    NO_wyckoffs_prob_per_spg=None,
+    do_symmetry_checks=True,
+    set_NO_elements_to_max=False,
+    force_wyckoff_indices=True,
+    use_element_repetitions_instead_of_NO_wyckoffs=False,
+    NO_unique_elements_prob_per_spg=None,
+    NO_repetitions_prob_per_spg_per_element=None,
+    denseness_factors_density_per_spg=None,
+    kde_per_spg=None,
+    all_data_per_spg=None,
+    use_coordinates_directly=False,
+    use_lattice_paras_directly=False,
+    group_object_per_spg=None,
+    denseness_factors_conditional_sampler_seeds_per_spg=None,
+    lattice_paras_density_per_lattice_type=None,
+    per_element=False,
+    verbosity=2,
+    probability_per_spg=None,
+    add_background_and_noise=False,
+    use_vecsei_bg_noise=False,
+    caglioti_broadening=False,
+):
+
+    result_patterns_y = []
+    labels = []
+    all_corn_sizes = []
+    all_structures = []
+
+    xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
+
+    for spg in spgs:
+
+        if do_print:
+            start = time.time()
+
+        structures = []
+        current_spgs = []
+        for _ in range(structures_per_spg):
+
+            if probability_per_spg is not None:
+                spg = np.random.choice(
+                    list(probability_per_spg.keys()),
+                    size=1,
+                    p=list(probability_per_spg.values()),
+                )[0]
+
+            current_spgs.append(spg)
+
+            if group_object_per_spg is not None and spg in group_object_per_spg.keys():
+                group_object = group_object_per_spg[spg]
+            else:
+                group_object = None
+
+            generated_structures = generate_structures(
+                spg,
+                1,
+                max_NO_elements,
+                do_distance_checks=do_distance_checks,
+                fixed_volume=fixed_volume,
+                do_merge_checks=do_merge_checks,
+                use_icsd_statistics=use_icsd_statistics,
+                probability_per_spg_per_element=probability_per_spg_per_element,
+                probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+                max_volume=max_volume,
+                NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
+                do_symmetry_checks=do_symmetry_checks,
+                set_NO_elements_to_max=set_NO_elements_to_max,
+                force_wyckoff_indices=force_wyckoff_indices,
+                use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
+                NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+                NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+                denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+                kde_per_spg=kde_per_spg,
+                all_data_per_spg=all_data_per_spg,
+                use_coordinates_directly=use_coordinates_directly,
+                use_lattice_paras_directly=use_lattice_paras_directly,
+                group_object=group_object,
+                denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+                lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+                per_element=per_element,
+                verbosity=verbosity,
+                return_original_pyxtal_object=do_print,
+            )
+            if do_print:
+                NO_wyckoffs_log.append(len(generated_structures[0][1].atom_sites))
+                generated_structures = [item[0] for item in generated_structures]
+
+            structures.extend(generated_structures)
+
+        if do_print:
+            timings_generation.append(time.time() - start)
+
+        for i, structure in enumerate(structures):
+
+            current_spg = current_spgs[i]
+
+            # print(structure.volume)
+
+            try:
+
+                patterns_ys = get_xy_patterns(
+                    structure,
+                    wavelength,
+                    xs,
+                    NO_corn_sizes,
+                    two_theta_range,
+                    do_print=do_print,
+                    return_corn_sizes=return_additional,
+                    add_background_and_noise=add_background_and_noise,
+                    use_vecsei_bg_noise=use_vecsei_bg_noise,
+                    caglioti_broadening=caglioti_broadening,
+                )
+
+                if return_additional:
+                    patterns_ys, corn_sizes = patterns_ys
+
+            except Exception as ex:
+
+                print("Error simulating pattern:")
+                print(ex)
+                print("".join(traceback.format_exception(None, ex, ex.__traceback__)))
+
+                if "list index" in str(ex):
+                    print(structure)
+
+            else:
+
+                labels.extend([current_spg] * NO_corn_sizes)
+                result_patterns_y.extend(patterns_ys)
+
+                if return_additional:
+                    all_corn_sizes.extend(corn_sizes)
+
+                all_structures.extend(structures)
+
+    if not return_additional:
+        return result_patterns_y, labels
+    else:
+        return result_patterns_y, labels, all_structures, all_corn_sizes
+
+
+def plot_timings(
+    timings_per_volume, NO_wyckoffs_per_volume, label, show_legend=True, make_fit=True
+):
+
+    figure_double_width_pub = matplotlib_defaults.pub_width
+    plt.figure(
+        figsize=(
+            figure_double_width_pub * 0.95 * 0.5,
+            figure_double_width_pub * 0.7 * 0.5,
+        )
+    )
+    plt.xlabel("Number of atoms in asymmetric unit")
+    plt.ylabel("Time / s")
+
+    for current_volume in timings_per_volume.keys():
+
+        if make_fit:
+            model = LinearRegression()
+            model.fit(
+                np.expand_dims(NO_wyckoffs_per_volume[current_volume], -1),
+                np.expand_dims(timings_per_volume[current_volume], -1),
+            )
+
+        color = next(plt.gca()._get_lines.prop_cycler)["color"]
+
+        plt.scatter(
+            NO_wyckoffs_per_volume[current_volume],
+            timings_per_volume[current_volume],
+            label=f"Volume {current_volume} " + r"$Å^3$",
+            color=color,
+            s=2,
+        )
+
+        if make_fit:
+            xs = np.linspace(0, 100, 100)
+            plt.plot(xs, model.predict(np.expand_dims(xs, -1))[:, 0], color=color)
+
+    if show_legend:
+        plt.legend()
+
+    plt.tight_layout()
+    plt.savefig(f"benchmark_{label}.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def remove_outliers(timings, NO_wyckoffs):
+
+    timings = np.array(timings)
+    NO_wyckoffs = np.array(NO_wyckoffs)
+
+    before = timings.shape[0]
+    distance_from_mean = abs(timings - np.mean(timings))
+    selector = distance_from_mean < 4 * np.std(timings)
+
+    timings = timings[selector]
+    NO_wyckoffs = NO_wyckoffs[selector]
+
+    return timings, NO_wyckoffs, before - len(timings)
+
+
+def time_swipe_with_fixed_volume():
+
+    global timings_simulation_pattern
+    global timings_simulation_smeared
+    global timings_generation
+    global NO_wyckoffs_log
+
+    volumes_to_probe = [500, 1000, 2000, 3000, 4000, 5000, 6000, 7000]
+    N_per_probe = 500
+
+    (
+        probability_per_spg_per_element,
+        probability_per_spg_per_element_per_wyckoff,
+        NO_wyckoffs_prob_per_spg,
+        NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element,
+        denseness_factors_density_per_spg,
+        kde_per_spg,
+        all_data_per_spg_tmp,
+        denseness_factors_conditional_sampler_seeds_per_spg,
+        lattice_paras_density_per_lattice_type,
+        per_element,
+        represented_spgs,
+        (
+            statistics_metas,
+            statistics_labels,
+            statistics_crystals,
+            statistics_match_metas,
+            statistics_match_labels,
+            test_metas,
+            test_labels,
+            test_crystals,
+            corrected_labels,
+            test_match_metas,
+            test_match_pure_metas,
+        ),
+    ) = load_dataset_info()
+
+    group_object_per_spg = {}
+    for spg in represented_spgs:
+        group_object_per_spg[spg] = Group(spg, dim=3)
+
+    probability_per_spg = {}
+    for i, label in enumerate(statistics_match_labels):
+        if label[0] in represented_spgs:
+            if label[0] in probability_per_spg.keys():
+                probability_per_spg[label[0]] += 1
+            else:
+                probability_per_spg[label[0]] = 1
+    total = np.sum(list(probability_per_spg.values()))
+    for key in probability_per_spg.keys():
+        probability_per_spg[key] /= total
+
+    timings_simulation_pattern_per_volume = {}
+    timings_simulation_smeared_per_volume = {}
+    timings_simulation_both_per_volume = {}
+    timings_generation_per_volume = {}
+    NO_wyckoffs_pattern_per_volume = {}
+    NO_wyckoffs_smeared_per_volume = {}
+    NO_wyckoffs_both_per_volume = {}
+    NO_wyckoffs_generation_per_volume = {}
+
+    for current_volume in volumes_to_probe:
+
+        timings_simulation_pattern = []
+        timings_simulation_smeared = []
+        timings_generation = []
+        NO_wyckoffs_log = []
+
+        patterns, labels = get_random_xy_patterns(
+            spgs=[0] * N_per_probe,
+            structures_per_spg=1,
+            wavelength=1.5406,  # Cu-K line
+            # wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
+            N=8501,
+            NO_corn_sizes=1,
+            two_theta_range=(5, 90),
+            max_NO_elements=100,
+            do_print=True,  # get timings
+            do_distance_checks=False,
+            do_merge_checks=False,
+            use_icsd_statistics=True,
+            probability_per_spg_per_element=probability_per_spg_per_element,
+            probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+            max_volume=7001,
+            NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
+            do_symmetry_checks=True,
+            force_wyckoff_indices=True,
+            use_element_repetitions_instead_of_NO_wyckoffs=True,
+            NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+            denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+            kde_per_spg=None,
+            all_data_per_spg=None,
+            use_coordinates_directly=False,
+            use_lattice_paras_directly=False,
+            group_object_per_spg=group_object_per_spg,
+            denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+            lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+            per_element=per_element,
+            verbosity=2,
+            probability_per_spg=probability_per_spg,
+            add_background_and_noise=False,
+            use_vecsei_bg_noise=False,
+            fixed_volume=current_volume,
+        )
+
+        timings_simulation_both = [
+            timings_simulation_pattern[i] + timings_simulation_smeared[i]
+            for i in range(len(timings_simulation_pattern))
+        ]
+
+        (
+            timings_simulation_pattern,
+            NO_wyckoffs_simulation_pattern,
+            removed,
+        ) = remove_outliers(timings_simulation_pattern, NO_wyckoffs_log)
+        print(f"Volume {current_volume}: Rejected {removed} outliers for simulation")
+        (
+            timings_simulation_smeared,
+            NO_wyckoffs_simulation_smeared,
+            removed,
+        ) = remove_outliers(timings_simulation_smeared, NO_wyckoffs_log)
+        print(f"Volume {current_volume}: Rejected {removed} outliers for smearing")
+        (
+            timings_simulation_both,
+            NO_wyckoffs_simulation_both,
+            removed,
+        ) = remove_outliers(timings_simulation_both, NO_wyckoffs_log)
+        print(
+            f"Volume {current_volume}: Rejected {removed} outliers for simulation + smearing"
+        )
+        timings_generation, NO_wyckoffs_generation, removed = remove_outliers(
+            timings_generation, NO_wyckoffs_log
+        )
+        print(f"Volume {current_volume}: Rejected {removed} outliers for generation")
+
+        timings_simulation_pattern_per_volume[
+            current_volume
+        ] = timings_simulation_pattern
+        timings_simulation_smeared_per_volume[
+            current_volume
+        ] = timings_simulation_smeared
+        timings_simulation_both_per_volume[current_volume] = timings_simulation_both
+        timings_generation_per_volume[current_volume] = timings_generation
+
+        NO_wyckoffs_pattern_per_volume[current_volume] = NO_wyckoffs_simulation_pattern
+        NO_wyckoffs_smeared_per_volume[current_volume] = NO_wyckoffs_simulation_smeared
+        NO_wyckoffs_both_per_volume[current_volume] = NO_wyckoffs_simulation_both
+        NO_wyckoffs_generation_per_volume[current_volume] = NO_wyckoffs_generation
+
+    plot_timings(
+        timings_simulation_pattern_per_volume,
+        NO_wyckoffs_pattern_per_volume,
+        "simulation",
+    )
+    plot_timings(
+        timings_simulation_smeared_per_volume,
+        NO_wyckoffs_smeared_per_volume,
+        "smearing",
+    )
+    plot_timings(
+        timings_simulation_both_per_volume,
+        NO_wyckoffs_both_per_volume,
+        "both",
+    )
+
+    # For the generation, the volume really doesn't matter at all
+    # So, concatenate all results:
+    flattened_generation_timings = []
+    flattened_generation_NO_wyckoffs = []
+    for key in timings_generation_per_volume.keys():
+        flattened_generation_timings.extend(timings_generation_per_volume[key])
+        flattened_generation_NO_wyckoffs.extend(NO_wyckoffs_generation_per_volume[key])
+    plot_timings(
+        {1000: flattened_generation_timings},
+        {1000: flattened_generation_NO_wyckoffs},
+        "generation",
+        show_legend=False,
+        make_fit=False,
+    )
+
+
+if __name__ == "__main__":
+
+    if False:
+
+        time_swipe_with_fixed_volume()
+
+    if False:
+
+        (
+            probability_per_element,
+            probability_per_spg_per_wyckoff,
+        ) = load_dataset_info()
+
+        max_NO_elements = 100
+
+        get_random_xy_patterns(
+            [5],
+            1,
+            1.5406,
+            9000,
+            1,
+            return_additional=False,
+            max_NO_elements=max_NO_elements,
+            do_distance_checks=False,
+        )
+
+        def to_map():
+            get_random_xy_patterns(
+                spgs=[14, 104, 129, 176],
+                structures_per_spg=5,
+                # wavelength=1.5406,  # TODO: Cu-K line
+                wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
+                N=8501,
+                NO_corn_sizes=5,
+                two_theta_range=(3.9, 51.6),
+                max_NO_elements=max_NO_elements,
+                do_print=False,
+                do_distance_checks=False,
+                do_merge_checks=False,
+                use_icsd_statistics=True,
+                probability_per_element=probability_per_element,
+                probability_per_spg_per_wyckoff=probability_per_spg_per_wyckoff,
+                max_volume=7000,
+            )
+
+        Pool(8).starmap(
+            to_map,
+            [() for _ in range(5000)],
+        )
+
+    if False:
+
+        structures = [
+            generate_structures(
+                spg,
+                1,
+                30,
+                -1,
+                False,
+                None,
+                False,
+                False,
+                None,
+                None,
+                7000,
+                False,
+                None,
+                False,
+            )[0]
+            for spg in range(1, 231)
+        ]
+
+        print("Done generating structures.")
+
+        data_non_opt = []
+        start = time.time()
+        for i, structure in enumerate(structures):
+            print(i)
+            data_non_opt.append(get_pattern(structure, 1.5406, (5, 90)))
+        stop = time.time()
+        time_non_optimized = (stop - start) / len(structures)
+
+        # To load numba functions
+        get_pattern_optimized(structures[0], 1.5406, (5, 90), do_print=False)
+
+        data_opt = []
+        start = time.time()
+        for i, structure in enumerate(structures):
+            print(i)
+            data_opt.append(get_pattern_optimized(structure, 1.5406, (5, 90)))
+        stop = time.time()
+        time_optimized = (stop - start) / len(structures)
+
+        print(
+            "Took {} s for non-optimized version per structure".format(
+                time_non_optimized
+            )
+        )
+        print("Took {} s for optimized version per structure".format(time_optimized))
+        print(f"Optimized version is {time_non_optimized/time_optimized}x faster")
+
+        difference_angles = 0
+        difference_intensities = 0
+
+        for i, data in enumerate(data_non_opt):
+            difference_angles += np.sum(
+                np.abs(np.array(data_opt[i][0]) - np.array(data_non_opt[i][0]))
+            )
+            difference_intensities += np.sum(
+                np.abs(np.array(data_opt[i][1]) - np.array(data_non_opt[i][1]))
+            )
+
+        print("Numerical differences:")
+        print(f"Angles: {difference_angles}")
+        print(f"Intensities: {difference_intensities}")
+
+    if False:
+
+        structures = random_simulation_utils.generate_structures(223, 1)
+        xs = np.linspace(10, 90, 8016)
+
+        ys = get_xy_pattern(structures[0], 1.5, xs, 100, (10, 90))
+        plt.plot(xs, ys, label="Optimized")
+
+        broadener = BroadGen(
+            structures[0],
+            min_domain_size=pymatgen_crystallite_size_gauss_min,
+            max_domain_size=pymatgen_crystallite_size_gauss_max,
+            min_angle=10,
+            max_angle=90,
+            wavelength=1.5,
+        )
+        diffractogram, domain_size = broadener.broadened_spectrum(
+            domain_size=100, N=8016
+        )
+        plt.plot(xs, diffractogram)
+        plt.show()
+
+    if False:
+
+        # to load numba:
+        get_random_xy_patterns(
+            [15],
+            1,
+            1.207930,
+            8501,
+            1,
+            (3.9184, 51.6343),
+            10,
+            False,
+            False,
+            False,
+            None,
+            False,
+        )
+
+        volumes = np.linspace(100, 7000, 12)
+        NOs_wyckoffs = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+
+        if True:  # TODO: Change back
+            volumes = volumes[:5]
+            NOs_wyckoffs = NOs_wyckoffs[:5]
+
+        xs = []  # volumes
+        ys = []  # NO_wyckoffs
+        zs1 = []  # average_timing_gen
+        zs2 = []  # average_timing_sim
+        zs3 = []  # time per swipe
+
+        for i, volume in enumerate(volumes):
+            print(f"### Volume: {volume}")
+
+            for j, NO_wyckoffs in enumerate(NOs_wyckoffs):
+                print(f"### NO_wyckoffs: {NO_wyckoffs}")
+
+                (
+                    average_timing_gen,
+                    average_timing_sim,
+                    time_per_swipe,
+                ) = time_swipe_with_fixed_volume(volume, NO_wyckoffs)
+
+                xs.append(volume)
+                ys.append(NO_wyckoffs)
+                zs1.append(average_timing_gen)
+                zs2.append(average_timing_sim)
+                zs3.append(time_per_swipe)
+
+        figure_zs1 = plt.figure()
+        plot_zs1 = figure_zs1.add_subplot(111)
+        plot_zs1.set_title("Average timing generating")
+        figure_zs2 = plt.figure()
+        plot_zs2 = figure_zs2.add_subplot(111)
+        plot_zs2.set_title("Average timing simulation")
+        figure_zs3 = plt.figure()
+        plot_zs3 = figure_zs3.add_subplot(111)
+        plot_zs3.set_title("Time per swipe")
+
+        current_volume = -1
+        for (
+            volume,
+            NO_wyckoff,
+            average_timing_gen,
+            average_timing_sim,
+            time_per_swipe,
+        ) in zip(xs, ys, zs1, zs2, zs3):
+
+            if volume != current_volume and current_volume != -1:
+
+                plot_zs1.plot(
+                    current_NO_wyckoffs,
+                    current_zs1,
+                    label=f"{current_volume}" + r" $A^3$",
+                )
+
+                plot_zs2.plot(
+                    current_NO_wyckoffs,
+                    current_zs2,
+                    label=f"{current_volume}" + r" $A^3$",
+                )
+
+                plot_zs3.plot(
+                    current_NO_wyckoffs,
+                    current_zs3,
+                    label=f"{current_volume}" + r" $A^3$",
+                )
+
+            if current_volume == -1 or volume != current_volume:
+                current_volume = volume
+                current_zs1 = []
+                current_zs2 = []
+                current_zs3 = []
+                current_NO_wyckoffs = []
+
+            current_zs1.append(average_timing_gen)
+            current_zs2.append(average_timing_sim)
+            current_zs3.append(time_per_swipe)
+            current_NO_wyckoffs.append(NO_wyckoff)
+
+        plot_zs1.legend()
+        plot_zs2.legend()
+        plot_zs3.legend()
+
+        figure_zs1.savefig("timings_generation.png")
+        figure_zs2.savefig("timings_simulation.png")
+        figure_zs3.savefig("timings_swipe.png")
+
+        # Test some edge cases separately:
+
+        (
+            average_timing_gen,
+            average_timing_sim,
+            time_per_swipe,
+        ) = time_swipe_with_fixed_volume(10000, 150)
+        print("Timing for volume 10000, 150 NO_wyckoffs:")
+        print(f"Average_timing_gen: {average_timing_gen}")
+        print(f"Average_timing_sim: {average_timing_sim}")
+        print(f"Time_per_swipe: {time_per_swipe}")
+
+        (
+            average_timing_gen,
+            average_timing_sim,
+            time_per_swipe,
+        ) = time_swipe_with_fixed_volume(20000, 200)
+        print("Timing for volume 20000, 200 NO_wyckoffs:")
+        print(f"Average_timing_gen: {average_timing_gen}")
+        print(f"Average_timing_sim: {average_timing_sim}")
+        print(f"Time_per_swipe: {time_per_swipe}")
+
+        """
+        cm = plt.cm.get_cmap("RdYlBu")
+        sc = plt.scatter(xs, ys, c=zs1, s=20, cmap=cm)
+        clb = plt.colorbar(sc)
+        clb.ax.get_yaxis().labelpad = 15
+        clb.ax.set_ylabel("Time in s", rotation=270)
+        plt.xlabel(r"Volume / $Å^3$")
+        plt.ylabel("Max number of set wyckoffs")
+        plt.title("Timings generation")
+        plt.tight_layout()
+        plt.savefig("timings_generation.png", bbox_inches="tight")
+        plt.show()
+
+        plt.figure()
+        cm = plt.cm.get_cmap("RdYlBu")
+        sc = plt.scatter(xs, ys, c=zs2, s=20, cmap=cm)
+        clb = plt.colorbar(sc)
+        clb.ax.get_yaxis().labelpad = 15
+        clb.ax.set_ylabel("Time in s", rotation=270)
+        plt.xlabel(r"Volume / $Å^3$")
+        plt.ylabel("Number of set wyckoffs")
+        plt.title("Timings simulation")
+        plt.tight_layout()
+        plt.savefig("timings_simulation.png", bbox_inches="tight")
+        plt.show()
+
+        plt.figure()
+        cm = plt.cm.get_cmap("RdYlBu")
+        sc = plt.scatter(xs, ys, c=zs3, s=20, cmap=cm)
+        clb = plt.colorbar(sc)
+        clb.ax.get_yaxis().labelpad = 15
+        clb.ax.set_ylabel("Time in s", rotation=270)
+        plt.xlabel(r"Volume / $Å^3$")
+        plt.ylabel("Number of set wyckoffs")
+        plt.title("Time per swipe")
+        plt.tight_layout()
+        plt.savefig("timings_swipe.png", bbox_inches="tight")
+        plt.show()
+        """
+
+    if True:
+
+        rruff_x_tests, rruff_y_tests, difs, raw_files = get_rruff_patterns(
+            only_refitted_patterns=False,
+            only_selected_patterns=True,
+            only_if_dif_exists=True,
+            start_angle=5.0,
+            end_angle=90.0,
+            reduced_resolution=False,  # to be able to use UNet on this
+        )
+
+        (
+            probability_per_spg_per_element,
+            probability_per_spg_per_element_per_wyckoff,
+            NO_wyckoffs_prob_per_spg,
+            NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg_per_element,
+            denseness_factors_density_per_spg,
+            kde_per_spg,
+            all_data_per_spg_tmp,
+            denseness_factors_conditional_sampler_seeds_per_spg,
+            lattice_paras_density_per_lattice_type,
+            per_element,
+            represented_spgs,
+            (
+                statistics_metas,
+                statistics_labels,
+                statistics_crystals,
+                statistics_match_metas,
+                statistics_match_labels,
+                test_metas,
+                test_labels,
+                test_crystals,
+                corrected_labels,
+                test_match_metas,
+                test_match_pure_metas,
+            ),
+        ) = load_dataset_info()
+
+        all_counter = len(test_metas) + len(statistics_metas)
+        match_counter = len(test_match_metas) + len(statistics_match_labels)
+        print(f"All counter: {all_counter}")
+        print(f"Match counter: {match_counter}")
+        print(f"Match is {match_counter/all_counter*100}% of all")
+
+        spgs = list(range(1, 231))
+        for i in reversed(range(len(spgs))):
+            if denseness_factors_density_per_spg[spgs[i]] is None:
+                del spgs[i]
+        n_per_spg = 6
+
+        probability_per_spg = {}
+        for i, label in enumerate(statistics_match_labels):
+            if label[0] in spgs:
+                if label[0] in probability_per_spg.keys():
+                    probability_per_spg[label[0]] += 1
+                else:
+                    probability_per_spg[label[0]] = 1
+        total = np.sum(list(probability_per_spg.values()))
+        for key in probability_per_spg.keys():
+            probability_per_spg[key] /= total
+
+        print(f"Batch size: {n_per_spg * len(spgs)}")
+        counter = 0
+        timings = []
+        for i in range(0, 5):  # make 5 batches
+            # for spg in represented_spgs:
+
+            start = time.time()
+
+            for j in range(0, n_per_spg):
+
+                patterns, labels, structures, corn_sizes = get_random_xy_patterns(
+                    spgs=spgs,
+                    structures_per_spg=1,
+                    wavelength=1.5406,  # Cu-Ka line
+                    N=8501,
+                    NO_corn_sizes=1,
+                    two_theta_range=(5, 90),
+                    max_NO_elements=100,
+                    do_print=False,
+                    return_additional=True,
+                    do_distance_checks=False,
+                    do_merge_checks=False,
+                    use_icsd_statistics=True,
+                    probability_per_spg_per_element=probability_per_spg_per_element,
+                    probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+                    max_volume=7000,
+                    NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
+                    do_symmetry_checks=True,
+                    force_wyckoff_indices=True,
+                    use_element_repetitions_instead_of_NO_wyckoffs=True,
+                    NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+                    NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+                    denseness_factors_density_per_spg=denseness_factors_density_per_spg,
+                    kde_per_spg=None,
+                    all_data_per_spg=None,
+                    use_coordinates_directly=False,
+                    use_lattice_paras_directly=False,
+                    denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+                    lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+                    probability_per_spg=probability_per_spg,
+                    add_background_and_noise=False,
+                    use_vecsei_bg_noise=False,
+                    caglioti_broadening=True,
+                )
+
+                if True:
+                    mix_patterns_add_background(
+                        patterns,
+                        max_impurity_percentage=0.05,
+                        add_background_and_noise=True,
+                        use_vecsei_bg_noise=False,
+                        depth_two=False,
+                        do_plot=False,
+                        do_mix=True,
+                    )
+
+                if True:
+                    for i, pattern in enumerate(patterns):
+
+                        plt.figure(
+                            figsize=(
+                                figure_double_width_pub * 0.95,
+                                figure_double_width_pub * 0.7,
+                            )
+                        )
+
+                        plt.tight_layout()
+
+                        plt.plot(np.linspace(5, 90, 8501), pattern)
+                        # plt.plot(
+                        #    rruff_x_tests[counter],
+                        #    rruff_y_tests[counter],
+                        #    label="rruff",
+                        # )
+                        # plt.legend()
+
+                        plt.xlabel(r"$2\theta$")
+                        plt.ylabel(r"Intensity / rel.")
+
+                        plt.savefig(
+                            f"pattern_example_{i}.pdf",
+                            bbox_inches="tight",
+                        )
+
+                        plt.show()
+
+                        counter += 1
+
+            timings.append(time.time() - start)
+
+        print(np.average(timings))
+
+        # ~37s for 2-spg vs ~23s for all-spg
