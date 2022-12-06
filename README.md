@@ -6,6 +6,9 @@ diffractograms". It can be used to train machine learning models (e.g. for the
 classification of space groups) on powder XRD patterns simulated on-the-fly from
 synthetically generated random crystal structures.
 
+If you have any problems using the provided software or if you find any bugs,
+feel free to contact us or add a new issue in the Github repository.
+
 The repository contains the following components:
 
 1. Optimized simulation
@@ -51,6 +54,18 @@ https://www.tensorflow.org/install/source#tested_build_configurations.
 ## Generation of synthetic crystals
 
 ## Training
+
+- TODO: Write about the available options in the beginning of the training script
+- TODO: Change configuration of computing nodes in the training script
+- TODO: Command line options of the training script
+- TODO: List the datasets that are used for validation
+- TODO: ICSD data needed => Get license
+
+Used validation sets:
+    - All ICSD entries
+    - ICSD entries that match simulation parameters
+    - Pre-computed random dataset (the one from the comparison script)
+    - Gap between training and val acc that matches simulation parameters
 
 # References
 [1] Ong, S. P., Richards, W. D., Jain, A., Hautier, G., Kocher, M., Cholia, S., Gunter, D., Chevrier, V. L., Persson, K. A., & Ceder, G. (2013). Python Materials Genomics (pymatgen): A robust, open-source python library for materials analysis (Version 2022.1.24) [Computer software]. https://doi.org/10.1016/j.commatsci.2012.10.028

@@ -4,7 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from pymatgen.io.cif import CifParser
-from tools.simulation.quick_simulation import get_xy_patterns
+from tools.simulation.simulation_core import get_xy_patterns
 import tools.matplotlib_defaults as matplotlib_defaults
 
 

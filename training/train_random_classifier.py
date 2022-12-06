@@ -1,6 +1,6 @@
 import tensorflow.keras as keras
-from tools.simulation.quick_simulation import get_random_xy_patterns
-from tools.simulation.quick_simulation import mix_patterns_add_background
+from tools.simulation.simulation_core import get_random_xy_patterns
+from tools.simulation.simulation_core import mix_patterns_add_background
 from tools.generation.random_simulation_utils import load_dataset_info
 import numpy as np
 from models import (
@@ -31,12 +31,14 @@ from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 import gc
 import psutil
-from sklearn.preprocessing import StandardScaler
 from tools.generation.structure_generation import randomize
-from tools.simulation.quick_simulation import get_xy_patterns
+from tools.simulation.simulation_core import get_xy_patterns
 import random
 import contextlib
 from training.utils.AdamWarmup import AdamWarmup
+
+#######################################################################################################################
+##### Configuration of the training script
 
 tag = "name_of_current_run"
 description = "Description of current run"
@@ -90,7 +92,7 @@ use_statistics_dataset_as_validation = False
 
 # The following setting can be used to analyze the difference in accuracy
 # between training (using synthetic crystals) and patterns simulated from the
-# ICSD. (See the discussion in our paper) Three additional validation datasets
+# ICSD (see the discussion in our paper). Three additional validation datasets
 # will be generated, which are all based on the ICSD validation dataset. In the
 # first one, the ICSD coordinates are replaced with uniformly sampled
 # coordinates (using the same approach that we use to generate the synthetic
@@ -130,25 +132,39 @@ preprocess_patterns_sqrt = False  # Apply the sqrt function to the patterns as a
 # Verbosity setting as passed to fit function of tf
 verbosity_tf = 2
 generator_verbose = False
-verbosity_generator = 2
 
+# Use more than one GPU on the head node
 use_distributed_strategy = True
 
+# Instead of following the distribution of spg labels found in the ICSD, uniformly distribute them
 uniformly_distributed = False
 
+# Shuffle the statistics (train) dataset with the test dataset. This option can
+# be used to judge the impact that the structure type based split has on the
+# test performance.
 shuffle_test_match_train_match = False
 
-add_background_and_noise = True
-use_vecsei_bg_noise = False
-caglioti_broadening = True
-mix_impurities = True
-max_impurity_percentage = 0.05
-use_rruff_validation_dataset = True
-exclude_rruff_items_from_statistics = True  # This also uses only the rruff items that were able to be matched with the ICSD
-exclude_whole_prototype = True
-
 use_pretrained_model = False  # Make it possible to resume from a previous training run
-pretrained_model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/23-08-2022_12-44-03/final"
+pretrained_model_path = "/path/to/model"
+
+# This option can be used to run training locally (with restricted computing resources)
+# If True, only 8 cores are used.
+local = False
+
+# All spg labels to train on; Keep in mind that spgs that do not have more than
+# 50 crystals in the statistics dataset will be excluded
+spgs = list(range(1, 231))
+
+# Path to the presimulated patterns used for testing
+path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"  # TODO: Update
+
+# Path to the ICSD directory that contains the "ICSD_data_from_API.csv" file
+# and the "cif" directory (which contains all the ICSD cif files)
+path_to_icsd_directory_local = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
+path_to_icsd_directory_cluster = os.path.expanduser("~/Databases/ICSD/")
+
+#######################################################################################################################
+#######################################################################################################################
 
 # Allow execution from bash (script), where the timestamp is passed as an arg
 if len(sys.argv) > 1:
@@ -159,6 +175,7 @@ else:
     out_base = "classifier_spgs/" + date_time + "_" + tag + "/"
 
 print("Processing tag", tag)
+print("Training files are in", out_base)
 
 # Allow head-only execution, where only one head computing node (with a GPU)
 # without additional computing nodes is used
@@ -174,22 +191,17 @@ os.system("touch " + out_base + tag)
 
 if not len(sys.argv) > 3:
     if not head_only:
-        # NO_workers = 127 + 127 + 8  # for int-nano cluster
-        NO_workers = 1 * 128 + 1 * 128 + 28  # for int-nano cluster
+        # By default, we use 2*128 cores on separate compute nodes + 28 cores on the head node
+        NO_workers = 1 * 128 + 1 * 128 + 28
     else:
-        NO_workers = 30  # for int-nano cluster
+        NO_workers = 30
 else:
     NO_workers = int(sys.argv[3])
 
-# NO_workers = 14
-# NO_workers = 40 * 5 + 5  # for bwuni
-
-
-local = False
 if local:
     NO_workers = 8
-    verbosity_tf = 1
-    verbosity_generator = 1
+    verbosity_tf = 1  # make it verbose
+    generator_verbose = True
     NO_random_validation_samples_per_spg = 5
     randomization_step = 20
     use_distributed_strategy = False
@@ -198,32 +210,7 @@ git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
 )
 
-# spgs = [14, 104] # works well, relatively high val_acc
-# spgs = [129, 176] # 93.15%, pretty damn well!
-# spgs = [
-#    2,
-#    15,
-# ]  # pretty much doesn't work at all (so far!), val_acc ~40%, after a full night: ~43%
-# after a full night with random volume factors: binary_accuracy: 0.7603 - val_loss: 0.8687 - val_binary_accuracy: 0.4749; still bad
-# spgs = [14, 104, 129, 176]  # after 100 epochs: 0.8503 val accuracy
-# all spgs (~200): loss: sparse_categorical_accuracy: 0.1248 - val_sparse_categorical_accuracy: 0.0713; it is a beginning!
-
-# spgs = list(range(201, 231))
-
-# spgs = list(range(10, 21))
-# spgs = list(range(150, 231))
-# spgs = list(range(100, 231))
-
-spgs = list(range(1, 231))
-# spgs = [2, 15]
-
-if len(spgs) == 2:
-    NO_random_validation_samples_per_spg = 500
-
-# as Park:
-# start_angle, end_angle, N = 10, 110, 10001
-
-# as Vecsei:
+# 2-theta-range and length patterns (same as used by Vecsei et al. 2019)
 start_angle, end_angle, N = 5, 90, 8501
 angle_range = np.linspace(start_angle, end_angle, N)
 print(f"Start-angle: {start_angle}, end-angle: {end_angle}, N: {N}", flush=True)
@@ -234,20 +221,20 @@ print(
 )
 
 (
-    probability_per_spg_per_element,
-    probability_per_spg_per_element_per_wyckoff,
-    NO_wyckoffs_prob_per_spg,
+    probability_per_spg_per_element,  # To choose the elements
+    probability_per_spg_per_element_per_wyckoff,  # TODO: Rename this
+    NO_wyckoffs_prob_per_spg,  # TODO: Remove
     NO_unique_elements_prob_per_spg,
     NO_repetitions_prob_per_spg_per_element,
     denseness_factors_density_per_spg,
-    kde_per_spg,
-    all_data_per_spg_tmp,
+    kde_per_spg,  # TODO: Remove
+    all_data_per_spg_tmp,  # TODO: Remove
     denseness_factors_conditional_sampler_seeds_per_spg,
     lattice_paras_density_per_lattice_type,
-    per_element,
-    represented_spgs,
+    per_element,  # TODO: Remove
+    represented_spgs,  # spgs that are well-represented (>= 50 crystals in statistics dataset)
     (
-        statistics_metas,
+        statistics_metas,  # IDs in ICSD database
         statistics_labels,
         statistics_crystals,
         statistics_match_metas,
@@ -266,52 +253,11 @@ print(
     flush=True,
 )
 
-if scale_patterns and use_icsd_structures_directly:
-    raise Exception(
-        "Invalid options: Scaling patterns not compatible with direct icsd training."
-    )
-
-if not use_kde_per_spg:
-    kde_per_spg = None
-
-if not use_icsd_statistics:
-    (
-        probability_per_spg_per_element,
-        probability_per_spg_per_element_per_wyckoff,
-        NO_wyckoffs_prob_per_spg,
-    ) = (
-        None,
-        None,
-        None,
-    )
-
-if not use_NO_wyckoffs_counts:
-    NO_wyckoffs_prob_per_spg = None
-
-if not use_element_repetitions:
-    NO_unique_elements_prob_per_spg = None
-    NO_repetitions_prob_per_spg_per_element = None
-
-if not use_denseness_factors_density:
-    denseness_factors_density_per_spg = None
-
 if not use_conditional_denseness_factor_sampling:
     denseness_factors_conditional_sampler_seeds_per_spg = None
 
 if not sample_lattice_paras_from_kde:
     lattice_paras_density_per_lattice_type = None
-
-if not use_all_data_per_spg:
-    all_data_per_spg = None
-else:
-    all_data_per_spg = {}
-    for spg in spgs:
-        all_data_per_spg[spg] = all_data_per_spg_tmp[spg]
-
-if estimate_bn_averages_using_random and batchnorm_momentum != 0.0:
-    raise Exception(
-        "Estimating the bn averages using the random distribution is only supported if batchnorm_momentum = 0.0."
-    )
 
 for i in reversed(range(0, len(spgs))):
     if spgs[i] not in represented_spgs:
@@ -324,6 +270,8 @@ print("len(spgs): ", len(spgs))
 print("batch_size: ", batch_size)
 
 if not uniformly_distributed:
+    # Calculate the probability to pick each space group when generating the
+    # synthetic crystals
     probability_per_spg = {}
     for i, label in enumerate(statistics_match_labels):
         if label[0] in spgs:
@@ -339,36 +287,25 @@ else:
 
 ray.init(
     address="localhost:6379" if not local else None,
-    include_dashboard=False,
+    include_dashboard=False,  # Can be used to have a nice overview of the currently used hardware ressources
 )
 
-print()
+print("Ray cluster resources:")
 print(ray.cluster_resources())
-print()
 
-# Construct validation sets
-# Used validation sets:
-# - All ICSD entries
-# - ICSD entries that match simulation parameters
-# - Pre-computed random dataset (the one from the comparison script)
-# - Gap between training and val acc that matches simulation parameters
-
-path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"
 jobid = os.getenv("SLURM_JOB_ID")
 if jobid is not None and jobid != "":
-    icsd_sim_test = Simulation(
-        os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
-        os.path.expanduser("~/Databases/ICSD/cif/"),
-    )
-    icsd_sim_test.output_dir = path_to_patterns
-else:  # local
-    icsd_sim_test = Simulation(
-        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-    )
-    icsd_sim_test.output_dir = path_to_patterns
+    path_to_icsd_directory = path_to_icsd_directory_cluster
+else:
+    path_to_icsd_directory = path_to_icsd_directory_local
 
-##### Prepare test datasets #####
+icsd_sim_test = Simulation(
+    os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
+    os.path.join(path_to_icsd_directory, "cif/"),
+)
+icsd_sim_test.output_dir = path_to_patterns
+
+##### Prepare test datasets
 
 test_metas_flat = [item[0] for item in test_metas]
 test_match_metas_flat = [item[0] for item in test_match_metas]
@@ -386,41 +323,16 @@ print(
 
 icsd_sim_test.load(
     load_only_N_patterns_each=load_only_N_patterns_each_test,
-    stop=1 if local else None,
-    metas_to_load=metas_to_load_test,
-)  # to not overflow the memory
+    stop=1
+    if local
+    else None,  # Only load a fraction of all patterns / crystals if running locally
+    metas_to_load=metas_to_load_test,  # Only load the patterns with the ICSD ids from the test dataset
+)
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading patterns for test dataset.",
     flush=True,
 )
-
-if add_background_and_noise or mix_impurities:
-    mix_patterns_add_background(
-        icsd_sim_test.sim_patterns,
-        max_impurity_percentage=max_impurity_percentage,
-        add_background_and_noise=add_background_and_noise,
-        use_vecsei_bg_noise=use_vecsei_bg_noise,
-        depth_two=True,
-        do_mix=mix_impurities,
-    )
-
-    # old bg code
-    # for i, pattern in enumerate(icsd_sim_test.sim_patterns):
-    #    for j in range(pattern.shape[0]):
-    #        if not use_vecsei_bg_noise:
-    #            pattern[j, :] = generate_samples_gp(
-    #                1,
-    #                (start_angle, end_angle),
-    #                n_angles_output=8501,
-    #                icsd_patterns=[pattern[j, :]],
-    #                original_range=True,
-    #                use_ICSD_patterns=True,
-    #            )[0][0]
-    #        else:
-    #            pattern[j, :] += generate_background_noise_vecsei(angle_range)
-    #            pattern[j, :] -= np.min(pattern[j, :])
-    #            pattern[j, :] /= np.max(pattern[j, :])
 
 n_patterns_per_crystal_test = len(icsd_sim_test.sim_patterns[0])
 
@@ -430,18 +342,25 @@ icsd_variations_all = []
 icsd_crystals_all = []
 icsd_metas_all = []
 
+# "match" test dataset contains all patterns with less than 100 atoms in the asymmetric unit
+# and volume smaller than 7000 A^3
 icsd_patterns_match = []
 icsd_labels_match = []
 icsd_variations_match = []
 icsd_crystals_match = []
 icsd_metas_match = []
 
+# This validation dataset has "corrected labels", meaning that instead of using
+# the spg label as provided by the ICSD, we use the spg label as output by
+# `spglib`
 icsd_patterns_match_corrected_labels = []
 icsd_labels_match_corrected_labels = []
 icsd_variations_match_corrected_labels = []
 icsd_crystals_match_corrected_labels = []
 icsd_metas_match_corrected_labels = []
 
+# This validation dataset only contains `pure` crystals, meaning crystals that
+# do not have partial occupancies
 icsd_patterns_match_corrected_labels_pure = []
 icsd_labels_match_corrected_labels_pure = []
 icsd_variations_match_corrected_labels_pure = []
@@ -457,7 +376,7 @@ for i in range(len(icsd_sim_test.sim_crystals)):
             icsd_variations_all.append(icsd_sim_test.sim_variations[i])
             icsd_crystals_all.append(
                 test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
-            )  # use the converted structure (conventional cell)
+            )  # uses the converted structure (conventional cell)
             icsd_metas_all.append(icsd_sim_test.sim_metas[i])
     else:
         raise Exception("There is a mismatch somewhere.")
@@ -470,12 +389,12 @@ for i in range(len(icsd_sim_test.sim_crystals)):
             icsd_variations_match.append(icsd_sim_test.sim_variations[i])
             icsd_crystals_match.append(
                 test_crystals[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
-            )  # use the converted structure (conventional cell)
+            )  # uses the converted structure (conventional cell)
             icsd_metas_match.append(icsd_sim_test.sim_metas[i])
 
         if (
             corrected_labels[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
-            in spgs  # also excludes "None"
+            in spgs  # Also excludes "None" (if the corrected label could not be determined)
         ):
             icsd_patterns_match_corrected_labels.append(icsd_sim_test.sim_patterns[i])
             icsd_labels_match_corrected_labels.append(
@@ -492,7 +411,7 @@ for i in range(len(icsd_sim_test.sim_crystals)):
     if icsd_sim_test.sim_metas[i][0] in test_match_pure_metas_flat:
         if (
             corrected_labels[test_metas_flat.index(icsd_sim_test.sim_metas[i][0])]
-            in spgs  # also excludes "None"
+            in spgs  # Also excludes "None" (if the corrected label could not be determined)
         ):
             icsd_patterns_match_corrected_labels_pure.append(
                 icsd_sim_test.sim_patterns[i]
@@ -508,21 +427,12 @@ for i in range(len(icsd_sim_test.sim_crystals)):
             )  # use the converted structure (conventional cell)
             icsd_metas_match_corrected_labels_pure.append(icsd_sim_test.sim_metas[i])
 
+# Save the spgs that were used (for the analysis script)
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)
 
-with open(out_base + "icsd_data.pickle", "wb") as file:
-    pickle.dump(
-        (
-            icsd_crystals_match,
-            icsd_labels_match,
-            [item[:, 0] for item in icsd_variations_match],
-            icsd_metas_match,
-        ),
-        file,
-    )
-
-
+# This (remote) function is later only used to simulate the patterns of the randomized ICSD crystals
+# (with replaced coordinates of lattice parameters)
 @ray.remote(num_cpus=1, num_gpus=0)
 def get_xy_pattern_wrapper(
     crystal,
@@ -538,14 +448,11 @@ def get_xy_pattern_wrapper(
         return_corn_sizes=True,
         return_angles_intensities=False,
         return_max_unscaled_intensity_angle=False,
-        add_background_and_noise=add_background_and_noise,
-        use_vecsei_bg_noise=use_vecsei_bg_noise,
-        caglioti_broadening=caglioti_broadening,
     )
     return patterns[0], corn_sizes[0]
 
 
-####### Generate match (corrected spgs) validation set with randomized coordinates and reference:
+##### Generate match (corrected spgs) validation set with randomized coordinates and reference:
 
 if generate_randomized_validation_datasets:
 
@@ -560,10 +467,12 @@ if generate_randomized_validation_datasets:
         randomize_lattice=False,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
     )
+    # We also get reference crystals, where nothing has been randomized.
+    # They differ slightly from the input crystals, because partial occupancies have been ignored.
+    # (pyxtal currently doesn't support partial occupancies)
 
     errors_counter = 0
     for i in reversed(range(len(labels))):
-
         label = labels[i]
 
         if label is not None:
@@ -574,6 +483,9 @@ if generate_randomized_validation_datasets:
                 del randomized_coords_crystals[i]
                 del reference_crystals[i]
 
+    # Because `pyxtal` uses slightly different parameters for `spglib`, the
+    # obtained spg label from `pyxtal` and from our code (when obtaining the
+    # corrected labels) differ in rare cases
     print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
 
     randomized_coords_crystals = [
@@ -582,7 +494,7 @@ if generate_randomized_validation_datasets:
     reference_crystals = [item for item in reference_crystals if item is not None]
     labels = [item for item in labels if item is not None]
 
-    # Simulate on ray cluster:
+    # Simulate patterns on ray cluster:
     scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
     results = map_to_remote(
         scheduler_fn=scheduler_fn,
@@ -604,6 +516,7 @@ if generate_randomized_validation_datasets:
     for i in range(0, len(labels)):
         randomized_coords_labels.append(spgs.index(labels[i]))
 
+    # For further analysis, save the generated crystals:
     with open(out_base + "randomized_coords_data.pickle", "wb") as file:
         pickle.dump(
             (
@@ -616,9 +529,7 @@ if generate_randomized_validation_datasets:
             file,
         )
 
-##############
-
-####### Generate match (corrected spgs) validation set with randomized lattice:
+##### Generate match (corrected spgs) validation set with randomized lattice parameters:
 
 if generate_randomized_validation_datasets:
 
@@ -677,9 +588,7 @@ if generate_randomized_validation_datasets:
             file,
         )
 
-##############
-
-####### Generate match (corrected spgs) validation set with randomized lattice and coords:
+##### Generate match (corrected spgs) validation set with randomized lattice and coords:
 
 if generate_randomized_validation_datasets:
 
@@ -743,12 +652,7 @@ if generate_randomized_validation_datasets:
         flush=True,
     )
 
-##############
-
-print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start constructing numpy arrays.",
-    flush=True,
-)
+#####
 
 val_y_all = []
 for i, label in enumerate(icsd_labels_all):
@@ -759,8 +663,6 @@ val_x_all = []
 for pattern in icsd_patterns_all:
     for sub_pattern in pattern:
         val_x_all.append(sub_pattern)
-
-# Moved creation of val_x_match and val_y_match down for shuffling option
 
 val_y_match_correct_spgs = []
 for i, label in enumerate(icsd_labels_match_corrected_labels):
@@ -784,12 +686,10 @@ for pattern in icsd_patterns_match_corrected_labels_pure:
     for sub_pattern in pattern:
         val_x_match_correct_spgs_pure.append(sub_pattern)
 
-
 if generate_randomized_validation_datasets:
 
     val_y_randomized_coords = []
     for i, label in enumerate(randomized_coords_labels):
-        # val_y_randomized.append(spgs.index(label))
         val_y_randomized_coords.append(label)
     val_y_randomized_coords = np.array(val_y_randomized_coords)
 
@@ -799,7 +699,6 @@ if generate_randomized_validation_datasets:
 
     val_y_randomized_ref = []
     for i, label in enumerate(randomized_coords_labels):
-        # val_y_randomized_ref.append(spgs.index(label))
         val_y_randomized_ref.append(label)
     val_y_randomized_ref = np.array(val_y_randomized_ref)
 
@@ -809,7 +708,6 @@ if generate_randomized_validation_datasets:
 
     val_y_randomized_lattice = []
     for i, label in enumerate(randomized_lattice_labels):
-        # val_y_randomized.append(spgs.index(label))
         val_y_randomized_lattice.append(label)
     val_y_randomized_lattice = np.array(val_y_randomized_lattice)
 
@@ -819,19 +717,12 @@ if generate_randomized_validation_datasets:
 
     val_y_randomized_both = []
     for i, label in enumerate(randomized_both_labels):
-        # val_y_randomized.append(spgs.index(label))
         val_y_randomized_both.append(label)
     val_y_randomized_both = np.array(val_y_randomized_both)
 
     val_x_randomized_both = []
     for pattern in randomized_both_patterns:
         val_x_randomized_both.append(pattern)
-
-print(
-    f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done constructing numpy arrays.",
-    flush=True,
-)
-
 
 assert not np.any(np.isnan(val_x_all))
 assert not np.any(np.isnan(val_y_all))
@@ -849,23 +740,23 @@ if generate_randomized_validation_datasets:
     assert len(val_x_randomized_lattice) == len(val_y_randomized_lattice)
     assert len(val_x_randomized_both) == len(val_y_randomized_both)
 
-queue = Queue(maxsize=queue_size)  # store a maximum of `queue_size` batches
-
-# all_data_per_spg_handle = ray.put(all_data_per_spg)
+queue = Queue(
+    maxsize=queue_size
+)  # store a maximum of `queue_size` batches in the ray queue
 
 
 def auto_garbage_collect(pct=93.0):
     """
-    auto_garbage_collection - Call the garbage collection if memory used is greater than 80% of total available memory.
+    auto_garbage_collection - Call the garbage collection if memory used is greater than 93% of total available memory.
                               This is called to deal with an issue in Ray not freeing up used memory.
 
-        pct - Default value of 80%.  Amount of memory in use that triggers the garbage collection call.
+        pct - Default value of 93%.  Amount of memory in use that triggers the garbage collection call.
     """
     if psutil.virtual_memory().percent >= pct:
         gc.collect()
-    return
 
 
+# This function is used to generate the validation dataset from synthetic crystals
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_with_additional(
     spgs,
@@ -875,16 +766,12 @@ def batch_generator_with_additional(
     end_angle,
     max_NO_elements,
     NO_corn_sizes,
-    # all_data_per_spg_handle,
 ):
-
-    # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
 
     patterns, labels, structures, corn_sizes = get_random_xy_patterns(
         spgs=spgs,
         structures_per_spg=structures_per_spg,
         wavelength=1.5406,  # Cu-Ka line
-        # wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
         N=N,
         NO_corn_sizes=NO_corn_sizes,
         two_theta_range=(start_angle, end_angle),
@@ -921,16 +808,6 @@ def batch_generator_with_additional(
         caglioti_broadening=caglioti_broadening,
     )
 
-    if mix_impurities:
-        mix_patterns_add_background(
-            patterns,
-            max_impurity_percentage=max_impurity_percentage,
-            add_background_and_noise=add_background_and_noise,
-            use_vecsei_bg_noise=use_vecsei_bg_noise,
-            depth_two=False,
-            do_mix=mix_impurities,
-        )
-
     # Set the label to the right index:
     for i in range(0, len(labels)):
         labels[i] = spgs.index(labels[i])
@@ -943,6 +820,7 @@ def batch_generator_with_additional(
     return patterns, labels, structures, corn_sizes
 
 
+# This function is used for the on-the-fly generation of training data:
 @ray.remote(num_cpus=1, num_gpus=0)
 def batch_generator_queue(
     queue,
@@ -953,24 +831,19 @@ def batch_generator_queue(
     end_angle,
     max_NO_elements,
     NO_corn_sizes,
-    sc=None
-    # all_data_per_spg_handle,
 ):
 
-    # all_data_per_spg_worker = ray.get(all_data_per_spg_handle)
-
+    # Pass in the group object to speed up the process (do not construct it from scratch every time)
     group_object_per_spg = {}
     for spg in spgs:
         group_object_per_spg[spg] = Group(spg, dim=3)
 
     while True:
         try:
-
             patterns, labels = get_random_xy_patterns(
                 spgs=spgs,
                 structures_per_spg=structures_per_spg,
                 wavelength=1.5406,  # Cu-K line
-                # wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
                 N=N,
                 NO_corn_sizes=NO_corn_sizes,
                 two_theta_range=(start_angle, end_angle),
@@ -990,7 +863,6 @@ def batch_generator_queue(
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
                 kde_per_spg=kde_per_spg,
-                # all_data_per_spg=all_data_per_spg_worker,
                 all_data_per_spg=all_data_per_spg,
                 use_coordinates_directly=use_coordinates_directly,
                 use_lattice_paras_directly=use_lattice_paras_directly,
@@ -1009,19 +881,9 @@ def batch_generator_queue(
                 caglioti_broadening=caglioti_broadening,
             )
 
-            if mix_impurities:
-                mix_patterns_add_background(
-                    patterns,
-                    max_impurity_percentage=max_impurity_percentage,
-                    add_background_and_noise=add_background_and_noise,
-                    use_vecsei_bg_noise=use_vecsei_bg_noise,
-                    depth_two=False,
-                    do_mix=mix_impurities,
-                )
-
             patterns, labels = shuffle(patterns, labels)
 
-            # Set the label to the right index:
+            # Use the index as target:
             for i in range(0, len(labels)):
                 labels[i] = spgs.index(labels[i])
 
@@ -1029,9 +891,6 @@ def batch_generator_queue(
 
             if preprocess_patterns_sqrt:
                 patterns = np.sqrt(patterns)
-
-            if sc is not None:
-                patterns = sc.transform(patterns)
 
             patterns = np.expand_dims(patterns, axis=2)
 
@@ -1046,23 +905,23 @@ def batch_generator_queue(
             print("Error occurred in worker:")
             print(ex)
             print(
-                type(ex).__name__,  # TypeError
-                __file__,  # /tmp/example.py
-                ex.__traceback__.tb_lineno,  # 2
+                type(ex).__name__,
+                __file__,
+                ex.__traceback__.tb_lineno,
             )
 
 
-# For the comparison script:
-# pre-store some batches to compare to the rightly / falsely classified icsd samples
-
-random_comparison_crystals = []
-random_comparison_labels = []
-random_comparison_corn_sizes = []
+# Generate validation dataset based on synthetic crystals
 
 print(
     f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating validation random structures.",
     flush=True,
 )
+
+# These three lists will be pickled to a file to later use them in the analysis script
+random_comparison_crystals = []
+random_comparison_labels = []
+random_comparison_corn_sizes = []
 
 scheduler_fn = lambda input: batch_generator_with_additional.remote(
     spgs,
@@ -1121,23 +980,6 @@ if preprocess_patterns_sqrt:
         val_x_randomized_lattice = np.sqrt(val_x_randomized_lattice)
         val_x_randomized_both = np.sqrt(val_x_randomized_both)
 
-if scale_patterns:
-    sc = StandardScaler(with_mean=False)
-    val_x_random = sc.fit_transform(val_x_random)
-
-    with open(out_base + "sc.pickle", "wb") as file:
-        pickle.dump(sc, file)
-
-    val_x_all = sc.transform(val_x_all)
-    val_x_match_correct_spgs = sc.transform(val_x_match_correct_spgs)
-    val_x_match_correct_spgs_pure = sc.transform(val_x_match_correct_spgs_pure)
-
-    if generate_randomized_validation_datasets:
-        val_x_randomized_coords = sc.transform(val_x_randomized_coords)
-        val_x_randomized_ref = sc.transform(val_x_randomized_ref)
-        val_x_randomized_lattice = sc.transform(val_x_randomized_lattice)
-        val_x_randomized_both = sc.transform(val_x_randomized_both)
-
 val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
@@ -1149,6 +991,7 @@ if generate_randomized_validation_datasets:
     val_x_randomized_lattice = np.expand_dims(val_x_randomized_lattice, axis=2)
     val_x_randomized_both = np.expand_dims(val_x_randomized_both, axis=2)
 
+# Store them for usage in the analysis script
 with open(out_base + "random_data.pickle", "wb") as file:
     pickle.dump(
         (
@@ -1159,91 +1002,11 @@ with open(out_base + "random_data.pickle", "wb") as file:
         file,
     )
 
-#########################################################
-# Load the rruff test dataset:
-if use_rruff_validation_dataset:
+#####
 
-    xs_rruff, ys_rruff, dif_files, raw_files = get_rruff_patterns(
-        only_refitted_patterns=False,
-        only_selected_patterns=True,
-        start_angle=5,
-        end_angle=90,
-        reduced_resolution=False,
-        only_if_dif_exists=True,  # skips patterns where no dif is file
-    )
-
-    if exclude_rruff_items_from_statistics:
-
-        icsd_ids_to_exclude, raw_files_found_indices = get_icsd_ids_from_RRUFF(
-            raw_files
-        )
-
-        xs_rruff = [xs_rruff[i] for i in raw_files_found_indices]
-        ys_rruff = [ys_rruff[i] for i in raw_files_found_indices]
-        dif_files = [dif_files[i] for i in raw_files_found_indices]
-        raw_files = [raw_files[i] for i in raw_files_found_indices]
-
-        if exclude_whole_prototype:
-
-            id_indices_to_exclude = [
-                icsd_sim_test.icsd_ids.index(item) for item in icsd_ids_to_exclude
-            ]
-            prototypes_to_exclude = [
-                icsd_sim_test.icsd_structure_types[index]
-                for index in id_indices_to_exclude
-            ]
-            prototypes_to_exclude = [
-                item
-                for item in prototypes_to_exclude
-                if (isinstance(item, str) and item != "")
-            ]
-
-            print("Prototypes to exclude:", repr(np.unique(prototypes_to_exclude)))
-
-            indices_to_exclude = [
-                i
-                for i in range(len(icsd_sim_test.icsd_ids))
-                if icsd_sim_test.icsd_structure_types[i] in prototypes_to_exclude
-            ]
-
-            icsd_ids_to_exclude.extend(
-                [icsd_sim_test.icsd_ids[i] for i in indices_to_exclude]
-            )
-            icsd_ids_to_exclude = np.unique(icsd_ids_to_exclude)
-
-            print(
-                f"Excluding {len(icsd_ids_to_exclude)} structures, belonging to {len(np.unique(prototypes_to_exclude))} unique prototypes, from dataset due to occurence in RRUFF."
-            )
-
-    val_x_rruff = []
-    val_y_rruff = []
-    for i, pattern in enumerate(ys_rruff):
-        if len(pattern) == 8501:
-
-            try:
-                data, wavelength, spg_number = dif_parser(dif_files[i])
-            except Exception as ex:
-                continue
-
-            if spg_number in spgs:
-                val_x_rruff.append(pattern)
-                val_y_rruff.append(spgs.index(spg_number))
-
-    val_y_rruff = np.array(val_y_rruff)
-
-    if preprocess_patterns_sqrt:
-        val_x_rruff = np.sqrt(val_x_rruff)
-
-    if scale_patterns:
-        val_x_rruff = sc.transform(val_x_rruff)
-
-    val_x_rruff = np.expand_dims(val_x_rruff, axis=2)
-
-    print("Size of rruff validation dataset:", val_x_rruff.shape, val_y_rruff.shape)
-
-#########################################################
-# Prepare the training directly from ICSD OR statistics validation dataset
-
+# If use_icsd_structures_directly, then create the training dataset
+# If use_statistics_dataset_as_validation, then create validation dataset
+# (both are based on the statistics dataset, it is just used for different purposes)
 if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     if use_icsd_structures_directly and use_statistics_dataset_as_validation:
@@ -1252,17 +1015,15 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         )
 
     if jobid is not None and jobid != "":
-        icsd_sim_statistics = Simulation(
-            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
-            os.path.expanduser("~/Databases/ICSD/cif/"),
-        )
-        icsd_sim_statistics.output_dir = path_to_patterns
+        path_to_icsd_directory = path_to_icsd_directory_cluster
     else:  # local
-        icsd_sim_statistics = Simulation(
-            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-        )
-        icsd_sim_statistics.output_dir = path_to_patterns
+        path_to_icsd_directory = path_to_icsd_directory_local
+
+    icsd_sim_statistics = Simulation(
+        os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
+        os.path.join(path_to_icsd_directory, "cif/"),
+    )
+    icsd_sim_statistics.output_dir = path_to_patterns
 
     statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
 
@@ -1284,39 +1045,12 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         else load_only_N_patterns_each_statistics,
         metas_to_load=statistics_match_metas_flat,
         stop=1 if local else None,
-    )  # to not overflow the memory if local
+    )
 
     print(
         f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done loading patterns for statistics / training.",
         flush=True,
     )
-
-    if add_background_and_noise or mix_impurities:
-        mix_patterns_add_background(
-            icsd_sim_statistics.sim_patterns,
-            max_impurity_percentage=max_impurity_percentage,
-            add_background_and_noise=add_background_and_noise,
-            use_vecsei_bg_noise=use_vecsei_bg_noise,
-            depth_two=True,
-            do_mix=mix_impurities,
-        )
-
-        # old bg code
-        # for i, pattern in enumerate(icsd_sim_statistics.sim_patterns):
-        #    for j in range(pattern.shape[0]):
-        #        if not use_vecsei_bg_noise:
-        #            pattern[j, :] = generate_samples_gp(
-        #                1,
-        #                (start_angle, end_angle),
-        #                n_angles_output=8501,
-        #                icsd_patterns=[pattern[j, :]],
-        #                original_range=True,
-        #                use_icsd_patterns=True,
-        #            )[0][0]
-        #        else:
-        #            pattern[j, :] += generate_background_noise_vecsei(angle_range)
-        #            pattern[j, :] -= np.min(pattern[j, :])
-        #            pattern[j, :] /= np.max(pattern[j, :])
 
     statistics_icsd_patterns_match = []
     statistics_icsd_labels_match = []
@@ -1329,29 +1063,24 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
             icsd_sim_statistics.sim_metas[i][0] in statistics_match_metas_flat
             and icsd_sim_statistics.sim_labels[i][0] in spgs
         ):
-            if (
-                not exclude_rruff_items_from_statistics
-            ) or icsd_sim_statistics.sim_metas[i][0] not in icsd_ids_to_exclude:
 
-                statistics_icsd_patterns_match.append(
-                    icsd_sim_statistics.sim_patterns[i]
-                )
-                statistics_icsd_labels_match.append(icsd_sim_statistics.sim_labels[i])
-                statistics_icsd_variations_match.append(
-                    icsd_sim_statistics.sim_variations[i]
-                )
-                statistics_icsd_crystals_match.append(
-                    statistics_crystals[
-                        statistics_match_metas_flat.index(
-                            icsd_sim_statistics.sim_metas[i][0]
-                        )
-                    ]
-                )  # use the converted structure (conventional cell)
-                statistics_icsd_metas_match.append(icsd_sim_statistics.sim_metas[i])
+            statistics_icsd_patterns_match.append(icsd_sim_statistics.sim_patterns[i])
+            statistics_icsd_labels_match.append(icsd_sim_statistics.sim_labels[i])
+            statistics_icsd_variations_match.append(
+                icsd_sim_statistics.sim_variations[i]
+            )
+            statistics_icsd_crystals_match.append(
+                statistics_crystals[
+                    statistics_match_metas_flat.index(
+                        icsd_sim_statistics.sim_metas[i][0]
+                    )
+                ]
+            )  # Use the converted structure (conventional cell)
+            statistics_icsd_metas_match.append(icsd_sim_statistics.sim_metas[i])
 
     n_patterns_per_crystal_statistics = len(icsd_sim_statistics.sim_patterns[0])
 
-    ##########
+    #####
 
     if not shuffle_test_match_train_match:
 
@@ -1377,6 +1106,9 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     else:
 
+        # Shuffle the statistics and test (match) dataset to make a comparison of the two possible splits possible:
+        # Random vs. structure type based
+
         val_y_match = []
         val_x_match = []
         statistics_y_match = []
@@ -1386,9 +1118,11 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
             len(icsd_labels_match) * n_patterns_per_crystal_test
             + len(statistics_icsd_labels_match) * n_patterns_per_crystal_statistics
         )
+        # Probability to put a pattern into the test dataset:
         probability_test = len(icsd_labels_match) * n_patterns_per_crystal_test / total
 
         for i in range(len(icsd_labels_match)):
+
             label = icsd_labels_match[i]
             pattern = icsd_patterns_match[i]
 
@@ -1420,8 +1154,6 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
                     [spgs.index(label[0])] * n_patterns_per_crystal_statistics
                 )
 
-    ##########
-
     statistics_x_match, statistics_y_match = shuffle(
         statistics_x_match, statistics_y_match
     )
@@ -1431,16 +1163,13 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     if preprocess_patterns_sqrt:
         statistics_x_match = np.sqrt(statistics_x_match)
 
-    if scale_patterns:
-        statistics_x_match = sc.transform(statistics_x_match)
-
     statistics_x_match = np.expand_dims(statistics_x_match, axis=2)
 
     print(
         "Size of statistics / training dataset: ", statistics_x_match.shape, flush=True
     )
 
-else:
+else:  # if statistics dataset is not used, just construct the match test dataset
 
     val_y_match = []
     for i, label in enumerate(icsd_labels_match):
@@ -1450,8 +1179,6 @@ else:
     for pattern in icsd_patterns_match:
         for sub_pattern in pattern:
             val_x_match.append(sub_pattern)
-
-##########
 
 val_y_match = np.array(val_y_match)
 print("Numbers in validation set (that matches sim parameters):")
@@ -1465,17 +1192,14 @@ assert len(val_x_match) == len(val_y_match)
 if preprocess_patterns_sqrt:
     val_x_match = np.sqrt(val_x_match)
 
-if scale_patterns:
-    val_x_match = sc.transform(val_x_match)
-
 val_x_match = np.expand_dims(val_x_match, axis=2)
 
-print("Size of test dataset: ", val_x_match.shape, flush=True)
+print("Size of match test dataset: ", val_x_match.shape, flush=True)
 
-#########################################################
+#####
 
+# Start worker tasks for on-the-fly generation of crystals + simulation
 if not use_icsd_structures_directly:
-    # Start worker tasks
     for i in range(0, NO_workers):
         batch_generator_queue.remote(
             queue,
@@ -1486,15 +1210,12 @@ if not use_icsd_structures_directly:
             end_angle,
             generation_max_NO_wyckoffs,
             NO_corn_sizes,
-            sc=sc if scale_patterns else None
-            # all_data_per_spg_handle,
         )
 
 tb_callback = keras.callbacks.TensorBoard(out_base + "tuner_tb")
 
 # log parameters to tensorboard
 file_writer = tf.summary.create_file_writer(out_base + "metrics")
-
 
 params_txt = (
     f"tag: {tag}  \n"
@@ -1512,23 +1233,12 @@ params_txt = (
     f"start_angle: {start_angle}  \n"
     f"end_angle: {end_angle}  \n"
     f"N: {N}  \n  \n"
-    f"do_distance_checks: {str(do_distance_checks)}  \n"
-    f"do_merge_checks: {str(do_merge_checks)}  \n  \n"
-    f"use_icsd_statistics: {str(use_icsd_statistics)}  \n  \n"
     f"spgs: {str(spgs)}  \n  \n"
     f"do_symmetry_checks: {str(do_symmetry_checks)}  \n  \n"
-    f"use_NO_wyckoffs_counts: {str(use_NO_wyckoffs_counts)} \n \n \n"
-    f"use_element_repetitions: {str(use_element_repetitions)} \n \n \n"
     f"use_dropout: {str(use_dropout)} \n \n \n"
     f"learning_rate: {str(learning_rate)} \n \n \n"
-    f"use_denseness_factors_density: {str(use_denseness_factors_density)} \n \n \n"
-    f"use_kde_per_spg: {str(use_kde_per_spg)} \n \n \n"
-    f"use_all_data_per_spg: {str(use_all_data_per_spg)} \n \n \n"
-    f"use_coordinates_directly: {str(use_coordinates_directly)} \n \n \n"
-    f"use_lattice_paras_directly: {str(use_lattice_paras_directly)} \n \n \n"
     f"use_icsd_structures_directly: {str(use_icsd_structures_directly)} \n \n \n"
     f"load_only_N_patterns_each_test: {str(load_only_N_patterns_each_test)} \n \n \n"
-    f"scale_patterns: {str(scale_patterns)} \n \n \n"
     f"use_conditional_density: {str(use_conditional_denseness_factor_sampling)} \n \n \n"
     f"use_statistics_dataset_as_validation: {str(use_statistics_dataset_as_validation)} \n \n \n"
     f"sample_lattice_paras_from_kde: {str(sample_lattice_paras_from_kde)} \n \n \n"
@@ -1536,69 +1246,11 @@ params_txt = (
     f"use_distributed_strategy: {str(use_distributed_strategy)} \n \n"
     f"uniformly_distributed: {str(uniformly_distributed)} \n \n"
     f"shuffle_test_match_train_match: {str(shuffle_test_match_train_match)} \n \n"
-    f"add_background_and_noise: {str(add_background_and_noise)} \n \n"
-    f"use_vecsei_bg_noise: {str(use_vecsei_bg_noise)} \n \n"
-    f"caglioti_broadening: {str(caglioti_broadening)} \n \n"
     f"ray cluster resources: {str(ray.cluster_resources())}"
 )
-
 log_wait_timings = []
 
-
-def change_bn_momentum(model, bn_momentum):
-    """This is quite hacky. But what needs to be done, needs to be done."""
-
-    for layer in model.layers:
-        if "batch_normalization" in layer._name:
-            layer.momentum = bn_momentum
-        if hasattr(layer, "sub_layers"):
-            for sub_layer in layer.sub_layers:
-                if "batch_normalization" in sub_layer._name:
-                    sub_layer.momentum = bn_momentum
-
-
-def calculate_accuracy_training_true(
-    model,
-    x_data,
-    y_data,
-    batch_size,
-    n_batches=None,
-    change_bn_momentum_to=0.0,
-):
-
-    if change_bn_momentum_to != 0.0:
-        change_bn_momentum(model, 0.0)  # First, set it to zero
-
-    total_correct = 0
-
-    if n_batches is None:
-        n_batches = int(x_data.shape[0] / batch_size)
-
-    for i in range(0, n_batches):  # only use actually full batches here for testing
-
-        if (
-            i == 1 and change_bn_momentum_to != 0.0
-        ):  # after the first batch has been processed
-            change_bn_momentum(model, change_bn_momentum_to)
-
-        prediction = model(
-            x_data[i * batch_size : (i + 1) * batch_size, :, :],
-            training=True,
-        )  # run this in training mode
-
-        prediction = np.argmax(prediction, axis=1)
-
-        rightly_indices = np.argwhere(
-            prediction == y_data[i * batch_size : (i + 1) * batch_size]
-        )[:, 0]
-
-        total_correct += len(rightly_indices)
-
-    accuracy = total_correct / (n_batches * batch_size)
-
-    return accuracy
-
-
+# This callback is used to calculate all the test accuracies
 class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
 
@@ -1608,22 +1260,11 @@ class CustomCallback(keras.callbacks.Callback):
 
             with file_writer.as_default():
 
+                # Log the current queue size to make debugging easier
                 tf.summary.scalar("queue size", data=queue.size(), step=epoch)
 
                 # gather metric names form model
                 metric_names = [metric.name for metric in self.model.metrics]
-
-                if estimate_bn_averages_using_random:
-                    # We need ~ 1000 samples for a good average
-                    n_batches = int(np.ceil(870 / batch_size))
-                    accuracy = calculate_accuracy_training_true(
-                        self.model,
-                        val_x_random,
-                        val_y_random,  # pre-estimate the bn averages before evaluation
-                        batch_size=batch_size,
-                        n_batches=n_batches,
-                        change_bn_momentum_to=1 - (1 / n_batches),
-                    )
 
                 scores_all = self.model.evaluate(
                     x=val_x_all[0:max_NO_samples_to_test_on],
@@ -1650,12 +1291,6 @@ class CustomCallback(keras.callbacks.Callback):
                     y=val_y_random[0:max_NO_samples_to_test_on],
                     verbose=0,
                 )
-                if use_rruff_validation_dataset:
-                    scores_rruff = self.model.evaluate(
-                        x=val_x_rruff[0:max_NO_samples_to_test_on],
-                        y=val_y_rruff[0:max_NO_samples_to_test_on],
-                        verbose=0,
-                    )
 
                 if generate_randomized_validation_datasets:
                     scores_randomized_coords = self.model.evaluate(
@@ -1693,30 +1328,6 @@ class CustomCallback(keras.callbacks.Callback):
 
                 assert metric_names[0] == "loss"
 
-                if (
-                    calculate_random_accuracy_using_training_true
-                ):  # for debugging of batchnormalization
-                    accuracy_random_training_true = calculate_accuracy_training_true(
-                        self.model, val_x_random, val_y_random, batch_size=batch_size
-                    )
-                    tf.summary.scalar(
-                        "accuracy random training=True",
-                        data=accuracy_random_training_true,
-                        step=epoch,
-                    )
-
-                if (
-                    calculate_match_accuracy_using_training_true
-                ):  # for debugging of batchnormalization
-                    accuracy_match_training_true = calculate_accuracy_training_true(
-                        self.model, val_x_match, val_y_match, batch_size=batch_size
-                    )
-                    tf.summary.scalar(
-                        "accuracy match training=True",
-                        data=accuracy_match_training_true,
-                        step=epoch,
-                    )
-
                 tf.summary.scalar("loss all", data=scores_all[0], step=epoch)
                 tf.summary.scalar("loss match", data=scores_match[0], step=epoch)
                 tf.summary.scalar(
@@ -1730,12 +1341,7 @@ class CustomCallback(keras.callbacks.Callback):
                     step=epoch,
                 )
                 tf.summary.scalar("loss random", data=scores_random[0], step=epoch)
-                if use_rruff_validation_dataset:
-                    tf.summary.scalar(
-                        "loss rruff",
-                        data=scores_rruff[0],
-                        step=epoch,
-                    )
+
                 if generate_randomized_validation_datasets:
                     tf.summary.scalar(
                         "loss randomized coords",
@@ -1755,6 +1361,7 @@ class CustomCallback(keras.callbacks.Callback):
                         data=scores_randomized_both[0],
                         step=epoch,
                     )
+
                 if use_statistics_dataset_as_validation:
                     tf.summary.scalar(
                         "loss statistics", data=scores_statistics[0], step=epoch
@@ -1781,12 +1388,6 @@ class CustomCallback(keras.callbacks.Callback):
                     data=scores_random[1],
                     step=epoch,
                 )
-                if use_rruff_validation_dataset:
-                    tf.summary.scalar(
-                        "accuracy rruff",
-                        data=scores_rruff[1],
-                        step=epoch,
-                    )
 
                 if generate_randomized_validation_datasets:
                     tf.summary.scalar(
@@ -1828,39 +1429,18 @@ class CustomCallback(keras.callbacks.Callback):
                     "learning_rate", data=self.model.optimizer.lr, step=epoch
                 )
 
-                if log_bn_averages:
-                    mean = np.average(self.model.layers[2].moving_mean.numpy())
-                    variance = np.average(self.model.layers[2].moving_variance.numpy())
-                    tf.summary.scalar("bn_0_average_means", data=mean, step=epoch)
-                    tf.summary.scalar(
-                        "bn_0_average_variances", data=variance, step=epoch
-                    )
-                    tf.summary.scalar(
-                        "bn_0_mean_0",
-                        data=self.model.layers[2].moving_mean.numpy()[0],
-                        step=epoch,
-                    )
-                    tf.summary.scalar(
-                        "bn_0_variance_0",
-                        data=self.model.layers[2].moving_variance.numpy()[0],
-                        step=epoch,
-                    )
 
-
+# This keras Sequence object is used to fetch the training data from the ray
+# queue object and pass it to the training loop
 class CustomSequence(keras.utils.Sequence):
     def __init__(self, number_of_batches, batch_size, number_of_epochs):
         self.number_of_batches = number_of_batches
         self._batch_size = batch_size
         self._number_of_epochs = number_of_epochs
 
-        self._current_index = 0
-
-        if use_retention_of_patterns:
-            self.patterns = None
-            self.labels = None
-            self.indices = None
-
-    def __call__(self):
+    def __call__(
+        self,
+    ):  # This is necessary to be able to wrap this Sequence object in a tf.data.Dataset generator
         """Return next batch using an infinite generator model."""
 
         for i in range(self.__len__() * self._number_of_epochs):
@@ -1869,108 +1449,15 @@ class CustomSequence(keras.utils.Sequence):
             if (i + 1) % self.__len__() == 0:
                 self.on_epoch_end()
 
-        # self._current_index = (self._current_index + 1) % self.number_of_batches
-        # result = self[self._current_index]
-        # return result
-
     def __len__(self):
         return self.number_of_batches
 
-    def on_epoch_end(self):
-
-        if use_retention_of_patterns:
-
-            self.replace_patterns()
-            random.shuffle(self.indices)
-
     def __getitem__(self, idx):
-
-        if not use_retention_of_patterns:
-
-            start = time.time()
-            result = queue.get()
-            log_wait_timings.append(time.time() - start)
-            auto_garbage_collect()
-            return result
-
-        else:
-
-            log_wait_timings.append(0)
-
-            indices = self.indices[
-                idx
-                * structures_per_spg
-                * NO_corn_sizes
-                * len(spgs) : (idx + 1)
-                * structures_per_spg
-                * NO_corn_sizes
-                * len(spgs)
-            ]
-
-            return self.patterns[indices, :, :], self.labels[indices]
-
-    def pre_compute(self):
-
-        # Pre-compute a whole epoch
-
-        self.patterns = np.empty(
-            shape=(
-                self.number_of_batches * structures_per_spg * NO_corn_sizes * len(spgs),
-                N,
-                1,
-            )
-        )
-        self.labels = np.empty(
-            shape=(
-                self.number_of_batches * structures_per_spg * NO_corn_sizes * len(spgs)
-            )
-        )
-
-        for i in range(0, self.number_of_batches):
-
-            (patterns, labels) = queue.get()
-            self.patterns[
-                i
-                * structures_per_spg
-                * NO_corn_sizes
-                * len(spgs) : (i + 1)
-                * structures_per_spg
-                * NO_corn_sizes
-                * len(spgs),
-                :,
-                :,
-            ] = patterns
-            self.labels[
-                i
-                * structures_per_spg
-                * NO_corn_sizes
-                * len(spgs) : (i + 1)
-                * structures_per_spg
-                * NO_corn_sizes
-                * len(spgs)
-            ] = labels
-
-        self.indices = list(range(0, self.patterns.shape[0]))
-        random.shuffle(self.indices)
-
-    def replace_patterns(self):
-
-        for i in range(0, int(self.number_of_batches * (1 - retention_rate))):
-
-            (patterns, labels) = queue.get()
-
-            indices_to_replace = self.indices[
-                i
-                * structures_per_spg
-                * NO_corn_sizes
-                * len(spgs) : (i + 1)
-                * structures_per_spg
-                * NO_corn_sizes
-                * len(spgs)
-            ]
-
-            self.patterns[indices_to_replace, :, :] = patterns
-            self.labels[indices_to_replace] = labels
+        start = time.time()
+        result = queue.get()
+        log_wait_timings.append(time.time() - start)
+        auto_garbage_collect()
+        return result
 
 
 print(
@@ -1983,15 +1470,7 @@ if use_distributed_strategy:
 
 with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()):
 
-    if use_reduce_lr_on_plateau:
-        lr_callback = keras.callbacks.ReduceLROnPlateau(
-            monitor="loss", verbose=1, factor=0.2, patience=25, cooldown=20
-        )
-
     sequence = CustomSequence(batches_per_epoch, batch_size, NO_epochs)
-
-    if use_retention_of_patterns:
-        sequence.pre_compute()
 
     if use_distributed_strategy:
         dataset = tf.data.Dataset.from_generator(
@@ -2007,7 +1486,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_gigantic_additional_dense"
+    model_name = "model_resnet_50+additional_dense"
 
     if not use_pretrained_model:
 
@@ -2015,7 +1494,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # 7-label-version!
+        # 7-label-version
         # model = build_model_park(
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
@@ -2024,18 +1503,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # Resnet-10
-        # model = build_model_resnet_i(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
-        #    batchnorm_momentum=batchnorm_momentum,
-        #    i=10,
-        #    disable_batchnorm=False,
-        # )
+        # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
 
         # Resnet-50 + additional dense layer
         model = build_model_resnet_i(
@@ -2043,48 +1511,13 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             N,
             len(spgs),
             lr=learning_rate,
-            momentum=momentum,
-            optimizer=optimizer,
+            optimizer=optimizer,  # TODO: Remove this option
             batchnorm_momentum=batchnorm_momentum,
             i=50,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
-            add_additional_dense_layer=True,  # one more dense layer
+            add_additional_dense_layer=True,  # Add one more dense layer
         )
-
-        # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
-        # model = build_model_resnet_50(None, N, len(spgs), False, lr=learning_rate)
-
-        # model = build_model_park_huge_size(
-        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        # )
-
-        # model = build_model_transformer(None, N, len(spgs), lr=learning_rate, epochs=NO_epochs, steps_per_epoch=batches_per_epoch)
-
-        # model = build_model_park_gigantic_size(
-        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        # )
-
-        # model = build_model_park_gigantic_size_more_dense(
-        #   None,
-        #   N,
-        #   len(spgs),
-        #   use_dropout=use_dropout,
-        #   lr=learning_rate,
-        #   momentum=momentum,
-        #   optimizer=optimizer,
-        # )
-
-        # model = build_model_park_gigantic_size_more_dense_bn(
-        #    None,
-        #    N,
-        #    len(spgs),
-        #    use_dropout=use_dropout,
-        #    lr=learning_rate,
-        #    momentum=momentum,
-        #    optimizer=optimizer,
-        #    bn_momentum=batchnorm_momentum,
-        # )
 
     else:
 
@@ -2101,13 +1534,11 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         model.fit(
             x=dataset if use_distributed_strategy else sequence,
             epochs=NO_epochs,
-            callbacks=[tb_callback, CustomCallback()]
-            if not use_reduce_lr_on_plateau
-            else [tb_callback, CustomCallback(), lr_callback],
+            callbacks=[tb_callback, CustomCallback()],
             verbose=verbosity_tf,
             workers=1,
             max_queue_size=queue_size_tf,
-            use_multiprocessing=False,
+            use_multiprocessing=False,  # Set this to False, since we use `ray` for distributed computing
             steps_per_epoch=batches_per_epoch,
         )
     else:
@@ -2116,9 +1547,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             y=statistics_y_match,
             epochs=NO_epochs,
             batch_size=batch_size,
-            callbacks=[tb_callback, CustomCallback()]
-            if not use_reduce_lr_on_plateau
-            else [tb_callback, CustomCallback(), lr_callback],
+            callbacks=[tb_callback, CustomCallback()],
             verbose=verbosity_tf,
             workers=1,
             max_queue_size=queue_size_tf,
@@ -2131,6 +1560,12 @@ print(
 )
 
 model.save(out_base + "final")
+
+#####
+# We now evaluate the model on the match validation dataset and random
+# validation dataset and store the correctly / falsely classified list indices
+# in a pickle file. This way the analysis script
+# `compare_random_distribution.py` can later use them.
 
 # Get predictions for val_x_match and write rightly_indices / falsely_indices:
 prediction_match = model.predict(val_x_match, batch_size=batch_size)
@@ -2152,13 +1587,9 @@ falsely_indices_random = np.argwhere(prediction_random != val_y_random)[:, 0]
 with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
     pickle.dump((rightly_indices_random, falsely_indices_random), file)
 
-if use_rruff_validation_dataset:
-    # Get predictions for val_x_rruff:
-    prediction_rruff = model.predict(val_x_rruff, batch_size=batch_size)
-    prediction_rruff = np.argmax(prediction_rruff, axis=1)
-
-# Get predictions for val_x_randomized and write rightly_indices / falsely_indices:
+# Get predictions for val_x_randomized_coords and write rightly_indices / falsely_indices:
 if generate_randomized_validation_datasets:
+
     prediction_randomized_coords = model.predict(
         val_x_randomized_coords, batch_size=batch_size
     )
@@ -2194,17 +1625,18 @@ if generate_randomized_validation_datasets:
             (rightly_indices_randomized_ref, falsely_indices_randomized_ref), file
         )
 
-##########
+#####
 
 ray.shutdown()
 
+# The waiting times can later be used for debugging. If the waiting times are
+# too big, more cores for the generation and simulation should be added.
 with file_writer.as_default():
     for i, value in enumerate(log_wait_timings):
         tf.summary.scalar("waiting time", data=value, step=i)
 
-print("Training finished.")
-print("Output dir:")
-print(out_base)
+#####
+# Generate classification report on match validation dataset and save them to a pickle file:
 
 report = classification_report(
     [spgs[i] for i in val_y_match],
@@ -2216,6 +1648,7 @@ print(report)
 with open(out_base + "classification_report_match.pickle", "wb") as file:
     pickle.dump(report, file)
 
+# Do the same for the random validation dataset:
 report = classification_report(
     [spgs[i] for i in val_y_random],
     [spgs[i] for i in prediction_random],
@@ -2226,30 +1659,21 @@ print(report)
 with open(out_base + "classification_report_random.pickle", "wb") as file:
     pickle.dump(report, file)
 
-if use_rruff_validation_dataset:
-    report = classification_report(
-        [spgs[i] for i in val_y_rruff],
-        [spgs[i] for i in prediction_rruff],
-        output_dict=True,
-    )
-    print("Classification report on rruff dataset:")
-    print(report)
-    with open(out_base + "classification_report_rruff.pickle", "wb") as file:
-        pickle.dump(report, file)
-
-if run_analysis_after_training:
+if (
+    run_analysis_after_training
+):  # Automatically trigger the analysis script after training
 
     print("Starting analysis now...", flush=True)
 
     if analysis_per_spg:
         for i, spg in enumerate(spgs):
-
             if np.sum(val_y_match == i) > 0:
                 subprocess.call(
                     f"python compare_random_distribution.py {out_base} {date_time}_{tag} {spg}",
                     shell=True,
                 )
 
+    # Run analysis on all spgs
     spg_str = " ".join([str(spg) for spg in spgs])
     subprocess.call(
         f"python compare_random_distribution.py {out_base} {date_time}_{tag} {spg_str}",
