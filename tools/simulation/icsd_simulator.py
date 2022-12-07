@@ -9,13 +9,24 @@ import tools.matplotlib_defaults as matplotlib_defaults
 
 
 class ICSDSimulator(Simulator):
-    def __init__(self, icsd_info_file_path, icsd_cifs_dir):
+    def __init__(
+        self, icsd_info_file_path, icsd_cifs_dir, output_dir="patterns/icsd_vecsei/"
+    ):
+        """This class can be used to simulate pXRD patterns for the crystals in the ICSD
+        and also to access the results of this simulation.
+
+        Args:
+            icsd_info_file_path (str): path to the ICSD_data_from_API.csv file
+            icsd_cifs_dir (str): path to the directory containing the ICSD cif files
+            output_dir (str): In which directory to save the simulated patterns
+        """
+
         super().__init__(icsd_info_file_path, icsd_cifs_dir)
 
-        # self.output_dir = "patterns/icsd_park/"
-        self.output_dir = "patterns/icsd_vecsei/"
+        self.output_dir = output_dir
 
-    def generate_structures(self):
+    def prepare_simulation(self):
+        """Prepare the simulation of the ICSD crystals. Read the space group labels."""
 
         self.reset_simulation_status()
 
@@ -48,6 +59,12 @@ class ICSDSimulator(Simulator):
         print(f"Skipped {counter} structures due to errors or missing path.")
 
     def plot_histogram_of_spgs(self, do_show=True):
+        """Generate a histogram of the representation of the different spgs in the ICSD.
+
+        Args:
+            do_show (bool, optional): Whether or not to call plt.show(). If False,
+            the histogram will only be saved to the disk. Defaults to True.
+        """
 
         spgs = []
         for i, id in enumerate(self.icsd_ids):
@@ -87,69 +104,16 @@ if __name__ == "__main__":
 
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
-        simulation = ICSDSimulator(
-            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
-            os.path.expanduser("~/Databases/ICSD/cif/"),
-        )
-    else:  # local
-        simulation = ICSDSimulator(
-            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-        )
+        path_to_icsd_directory = os.path.expanduser("~/Databases/ICSD/")
+    else:
+        path_to_icsd_directory = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
 
-    if True:
-        indices = [
-            i
-            for i in range(len(simulation.icsd_structure_types))
-            if not isinstance(simulation.icsd_structure_types[i], str)
-        ]
+    simulator = ICSDSimulator(
+        os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
+        os.path.join(path_to_icsd_directory, "cif/"),
+    )
 
-        sum_formulas = [simulation.icsd_sumformulas[i] for i in indices]
-        formulas = [simulation.icsd_formulas[i] for i in indices]
-
-        print("Sum formulas")
-        print(len(sum_formulas))
-        print(len(np.unique(sum_formulas)))
-
-        print("Formulas")
-        print(len(formulas))
-        print(len(np.unique(formulas)))
-
-    if False:
-
-        id = 259366
-
-        path = simulation.icsd_paths[simulation.icsd_ids.index(id)]
-
-        parser = CifParser(path)
-        crystals = parser.get_structures()
-        crystal = crystals[0]
-
-        print(crystal.atomic_numbers)
-
-        data = get_xy_patterns(
-            crystal, 1.2, np.linspace(0, 90, 9000), 1, (0, 90), False, False, False
-        )[0]
-
-        plt.plot(data)
-        plt.show()
-
-        # So it turns out that this is not really a big problem and is OK to happen...
-
-        pass
-
-    if False:
-        simulation.plot_histogram_of_spgs(do_show=False)
-
-    if False:
-
-        if False:  # toggle
-            simulation.load(load_only=1)
-        else:
-            simulation.generate_structures()
-
-        if True:
-
-            simulation.simulate_all(start_from_scratch=True)
-
-        # simulation.plot(together=5)
+    # simulation.load()
+    simulator.prepare_simulation()
+    simulator.save()
+    simulator.simulate_all(start_from_scratch=True)
