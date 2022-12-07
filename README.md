@@ -32,11 +32,17 @@ The repository contains the following components:
 # Documentation
 ## Getting started
 
-Before using our provided training script, the code for the simulation of pXRDs
-and generation of synthetic crystals should be installed as a package using `pip
-install -e ./tools/`, ideally in a separate python of anaconda environment. This
-will automatically install all required dependencies. The provided utilities are
-potentially also interesting to use for other projects concerning powder XRDs.
+For convenience and because the provided utilities are potentially also
+interesting to use for other projects concerning powder XRDs, the code for the
+simulation of pXRDs and generation of synthetic crystals is provided as a
+package. Before training, this should be installed, ideally in a separate python
+of anaconda environment. Therefore, call pip in the root of the repository:
+
+```
+pip install -e .
+```
+
+This will further install all required dependencies. 
 
 To run the training script, the following additional dependencies must be
 installed:
@@ -45,8 +51,8 @@ installed:
 - `tensorflow` >= 2.0.0
 
 Also make sure that the `CUDA` and `cuDNN` dependencies of `tensorflow` (the
-correct version that is compatible with your tensorflow version) are
-installed. We refer refer to the table available on
+correct version that are compatible with your tensorflow version) are installed.
+We refer refer to the table available on
 https://www.tensorflow.org/install/source#tested_build_configurations.
 
 ## Optimized simulation of powder XRDs
