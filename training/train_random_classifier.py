@@ -1659,9 +1659,7 @@ print(report)
 with open(out_base + "classification_report_random.pickle", "wb") as file:
     pickle.dump(report, file)
 
-if (
-    run_analysis_after_training
-):  # Automatically trigger the analysis script after training
+if run_analysis_after_training:  # Automatically call the analysis script after training
 
     print("Starting analysis now...", flush=True)
 
@@ -1669,13 +1667,13 @@ if (
         for i, spg in enumerate(spgs):
             if np.sum(val_y_match == i) > 0:
                 subprocess.call(
-                    f"python compare_random_distribution.py {out_base} {date_time}_{tag} {spg}",
+                    f"python ./analysis/analyze_results.py {out_base} {date_time}_{tag} {spg}",
                     shell=True,
                 )
 
     # Run analysis on all spgs
     spg_str = " ".join([str(spg) for spg in spgs])
     subprocess.call(
-        f"python compare_random_distribution.py {out_base} {date_time}_{tag} {spg_str}",
+        f"python ./analysis/analyze_results.py {out_base} {date_time}_{tag} {spg_str}",
         shell=True,
     )

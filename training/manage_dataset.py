@@ -7,7 +7,7 @@ import time
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import numpy as np
 from pyxtal import pyxtal
-from training.utils.denseness_factor import get_denseness_factor
+from training.analysis.denseness_factor import get_denseness_factor
 import pickle
 from glob import glob
 from scipy.stats import kde

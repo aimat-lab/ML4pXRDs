@@ -10,20 +10,15 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.ase import AseAtomsAdaptor
 from ase.visualize import view
 from ase.io import write
-from training.utils.analyse_magpie import get_magpie_features
-from training.utils.denseness_factor import get_denseness_factor
+from training.analysis.analyse_magpie import get_magpie_features
+from training.analysis.denseness_factor import get_denseness_factor
 from pyxtal.symmetry import Group
-
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-
 from ml4pxrd_tools.simulation.simulation_core import get_xy_patterns
-
 from pymatgen.core.periodic_table import Species
-
-from utils.entropy import get_chemical_ordering
-from utils.entropy import get_structural_complexity
-
+from training.analysis.entropy import get_chemical_ordering
+from training.analysis.entropy import get_structural_complexity
 import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 
 figure_double_width_pub = matplotlib_defaults.pub_width

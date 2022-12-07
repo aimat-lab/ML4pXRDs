@@ -35,8 +35,9 @@ The repository contains the following components:
 For convenience and because the provided utilities are potentially also
 interesting to use for other projects concerning powder XRDs, the code for the
 simulation of pXRDs and generation of synthetic crystals is provided as a
-package. Before training, this should be installed, ideally in a separate python
-of anaconda environment. Therefore, call pip in the root of the repository:
+package. Before training, this should be installed, ideally in a separate
+virtual environment or anaconda environment. Therefore, call pip in the root of
+the repository:
 
 ```
 pip install -e .
