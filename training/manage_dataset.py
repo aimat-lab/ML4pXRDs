@@ -1037,3 +1037,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
             test_match_pure_metas,
         ),
     )
+
+
+if __name__ == "__main__":
+    prepare_training(per_element=False)
