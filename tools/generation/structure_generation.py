@@ -392,7 +392,7 @@ def __generate_structure(
     if is_verbose:
         print(f"NO_unique_elements: {NO_unique_elements}")
 
-    tries_counter = 0  # TODO: Check in which cases I increase tries_counter
+    tries_counter = 0
 
     while True:
 
@@ -457,11 +457,15 @@ def __generate_structure(
                     current_repetition_counter = current_picked_repetition  # force that loop goes to next unique element
                     break
 
-                if not use_element_repetitions_instead_of_NO_wyckoffs:
-                    if not use_icsd_statistics:
-                        chosen_elements.append(random.choice(all_elements))
-                    else:
-                        chosen_element = np.random.choice(
+                if (
+                    current_repetition_counter == current_picked_repetition
+                    or current_picked_repetition is None
+                ):
+                    # Done setting the previous unique element, continue with the next
+
+                    # Pick a new element which has not been chosen before
+                    while True:
+                        current_element = np.random.choice(
                             list(
                                 probability_per_spg_per_element[
                                     group_object.number
@@ -475,49 +479,14 @@ def __generate_structure(
                             ),
                         )[0]
 
-                        chosen_elements.append(chosen_element)
-                else:
+                        if current_element not in chosen_elements:
+                            break
 
-                    if (
-                        current_repetition_counter == current_picked_repetition
-                        or current_picked_repetition is None
-                    ):
-
-                        while True:
-
-                            current_element = np.random.choice(
-                                list(
-                                    probability_per_spg_per_element[
-                                        group_object.number
-                                    ].keys()
-                                ),
-                                1,
-                                p=list(
-                                    probability_per_spg_per_element[
-                                        group_object.number
-                                    ].values()
-                                ),
-                            )[0]
-
-                            if current_element not in chosen_elements:
-                                break
-
-                        current_picked_repetition = np.random.choice(
-                            range(
-                                1,
-                                len(
-                                    NO_repetitions_prob_per_spg_per_element[
-                                        group_object.number
-                                    ][current_element]
-                                    if per_element
-                                    else NO_repetitions_prob_per_spg_per_element[
-                                        group_object.number
-                                    ]
-                                )
-                                + 1,
-                            ),
+                    # Decide how often to repeat the element
+                    current_picked_repetition = np.random.choice(
+                        range(
                             1,
-                            p=list(
+                            len(
                                 NO_repetitions_prob_per_spg_per_element[
                                     group_object.number
                                 ][current_element]
@@ -525,54 +494,48 @@ def __generate_structure(
                                 else NO_repetitions_prob_per_spg_per_element[
                                     group_object.number
                                 ]
-                            ),
-                        )[0]
-                        current_repetition_counter = 1
-
-                        unique_elements_counter += 1
-
-                    else:
-
-                        current_repetition_counter += 1
-
-                    chosen_elements.append(current_element)
-
-                if not use_icsd_statistics:
-                    chosen_index = random.randint(0, len(number_of_atoms_per_site) - 1)
-                else:
-                    probability_per_wyckoff = (
-                        probability_per_spg_per_element_per_wyckoff[
-                            group_object.number
-                        ][current_element]
-                        if per_element
-                        else probability_per_spg_per_element_per_wyckoff[
-                            group_object.number
-                        ]
-                    )
-
-                    chosen_wyckoff = np.random.choice(
-                        list(probability_per_wyckoff.keys()),
+                            )
+                            + 1,
+                        ),
                         1,
-                        p=list(probability_per_wyckoff.values()),
+                        p=list(
+                            NO_repetitions_prob_per_spg_per_element[
+                                group_object.number
+                            ][current_element]
+                            if per_element
+                            else NO_repetitions_prob_per_spg_per_element[
+                                group_object.number
+                            ]
+                        ),
                     )[0]
-                    chosen_index = names.index(chosen_wyckoff)
+                    current_repetition_counter = 1
 
-                """
-                # always first choose the general Wyckoff site:
-                chosen_index = (
-                    random.randint(0, len(number_of_atoms) - 1) if i > 0 else 0
+                    unique_elements_counter += 1
+
+                else:
+
+                    current_repetition_counter += 1
+
+                chosen_elements.append(current_element)
+
+                probability_per_wyckoff = (
+                    probability_per_spg_per_element_per_wyckoff[group_object.number][
+                        current_element
+                    ]
+                    if per_element
+                    else probability_per_spg_per_element_per_wyckoff[
+                        group_object.number
+                    ]
                 )
-                """
 
-                """ See this from the documentation
-                PyXtal starts with the largest available WP, which is the general position of the space group.
-                If the number of atoms required is equal to or greater than the size of the general position,
-                the algorithm proceeds. If fewer atoms are needed, the next largest WP (or set of WP’s) is
-                chosen, in order of descending multiplicity. This is done to ensure that larger positions are
-                preferred over smaller ones; this reflects the greater prevalence of larger multiplicities
-                both statistically and in nature.
-                """
+                chosen_wyckoff = np.random.choice(
+                    list(probability_per_wyckoff.keys()),
+                    1,
+                    p=list(probability_per_wyckoff.values()),
+                )[0]
+                chosen_index = names.index(chosen_wyckoff)
 
+                # If the wyckoff site does not have a DOF and is already occupied:
                 if (
                     dofs[chosen_index] == 0
                     and int(number_of_atoms_per_site[chosen_index]) == 1
@@ -583,7 +546,7 @@ def __generate_structure(
                     chosen_elements.pop()
                     current_repetition_counter -= 1
 
-                    continue  # try again
+                    continue  # try placement again
 
                 number_of_atoms_per_site[chosen_index] += 1
 
@@ -603,17 +566,9 @@ def __generate_structure(
             print(f"Number of chosen wyckoff sites: {len(chosen_numbers)}")
 
         if (
-            denseness_factors_density_per_spg is None
-            or denseness_factors_density_per_spg[group_object.number] is None
-            or (
-                denseness_factors_conditional_sampler_seeds_per_spg is not None
-                and denseness_factors_conditional_sampler_seeds_per_spg[
-                    group_object.number
-                ]
-                is None
-            )
+            denseness_factors_conditional_sampler_seeds_per_spg is None
+            and denseness_factors_density_per_spg is None
         ):
-            # factor = np.random.uniform(0.7, 2.2)
             factor = np.random.uniform(0.7, 2.13)
         elif denseness_factors_conditional_sampler_seeds_per_spg is None:
             while True:
@@ -624,188 +579,48 @@ def __generate_structure(
                 if factor > 0.0:
                     break
         else:
-            factor = None
-
-        if not use_alternative_structure_generator_implementation:
-
-            if factor is None:
-                raise Exception(
-                    "Conditional kde for denseness_factor not supported in this implementation mode."
-                )
-
-            if lattice_paras_density_per_lattice_type is not None:
-                raise Exception(
-                    "KDE sampling of lattice parameters not supported in this implementation mode."
-                )
-
-            my_crystal = pyxtal()
-
-            try:
-
-                # If use_icsd_statistic is False, for now do not pass wyckoff sites into pyxtal.
-                volume_ok = my_crystal.from_random(
-                    wyckoff_indices_per_specie=chosen_wyckoff_indices
-                    if force_wyckoff_indices
-                    else None,
-                    use_given_wyckoff_sites=force_wyckoff_indices,
-                    dim=3,
-                    group=group_object,
-                    species=chosen_elements,
-                    numIons=chosen_numbers,
-                    my_seed=seed,
-                    # factor=1.1,
-                    # factor=np.random.uniform(0.7, 5.0),
-                    # factor=np.random.uniform(0.7, 3.0),
-                    # factor=np.random.uniform(0.7, 1.2),
-                    factor=factor,
-                    do_distance_checks=do_distance_checks,
-                    fixed_volume=fixed_volume,
-                    do_merge_checks=do_merge_checks,
-                    max_volume=max_volume,
-                    max_count=5,
-                )
-
-                if not volume_ok:
-                    tries_counter += 1
-
-                    if is_verbose:
-                        if (
-                            not use_element_repetitions_instead_of_NO_wyckoffs
-                            and kde_per_spg is None
-                            and all_data_per_spg is None
-                        ):
-                            print(
-                                f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
-                            )
-                        elif all_data_per_spg is None:
-                            print(
-                                f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
-                            )
-                        else:
-                            print(f"Volume too high, regenerating.")
-
-                    continue
-
-            except Exception as ex:
-                print(flush=True)
-                print(ex, flush=True)
-                print(group_object.number, flush=True)
-                print(chosen_elements, flush=True)
-                print(chosen_numbers, flush=True)
-                print(flush=True)
-
-                tries_counter += 1
-
-                continue
-
-            if not my_crystal.valid:
-                print(flush=True)
-                print(
-                    "Generated a non-valid crystal. Something went wrong.", flush=True
-                )
-                print(group_object.number, flush=True)
-                print(chosen_elements, flush=True)
-                print(chosen_numbers, flush=True)
-                print(flush=True)
-
-                tries_counter += 1
-
-                continue
-
-            # This is by no means the fastest way to implement this.
-            # But since this is just for understanding the problem / testing, it is fine.
-            if use_coordinates_directly and all_data_per_spg is not None:
-
-                # potentially useful in the future: chosen_entry["lattice_parameters"]
-
-                occupations_copy = chosen_entry["occupations"].copy()
-
-                for atom in my_crystal.atom_sites:
-
-                    wyckoff_name_atom = str(atom.wp.multiplicity) + atom.wp.letter
-                    el_atom = atom.specie
-
-                    for i, item in enumerate(occupations_copy):
-                        el = item[0]
-                        wyckoff_name = item[1]
-
-                        if el == el_atom and wyckoff_name == wyckoff_name_atom:
-
-                            atom.position = item[2]
-                            atom.update()  # important
-
-                            # Not really needed:
-                            # new_site.coords = filtered_coords(new_site.coords)
-
-                            del occupations_copy[i]
-                            break
-
-                assert len(occupations_copy) == 0
-
-            if use_lattice_paras_directly and all_data_per_spg is not None:
-
-                my_crystal.lattice.set_para(
-                    chosen_entry["lattice_parameters"], radians=True
-                )
-
-        else:
-
-            if (use_coordinates_directly and all_data_per_spg is not None) or (
-                use_lattice_paras_directly and all_data_per_spg is not None
-            ):
-                raise Exception("Mode not supported.")
-
-            try:
-                my_crystal = create_pyxtal_object(
-                    group_object=group_object,
-                    factor=factor,
-                    species=chosen_elements,
-                    chosen_wyckoff_indices=chosen_wyckoff_indices,
-                    multiplicities=chosen_numbers,
-                    max_volume=max_volume,
-                    scale_volume_min_density=True,  # TODO: Maybe change
-                    denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
-                    lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
-                    fixed_volume=fixed_volume,
-                )
-            except Exception as ex:
-                print(flush=True)
-                print(ex, flush=True)
-                print(group_object.number, flush=True)
-                print(chosen_elements, flush=True)
-                print(chosen_numbers, flush=True)
-                print(flush=True)
-
-                tries_counter += 1
-
-                continue
-
-            if not my_crystal:
-                tries_counter += 1
-
-                if is_verbose:
-                    if (
-                        not use_element_repetitions_instead_of_NO_wyckoffs
-                        and kde_per_spg is None
-                        and all_data_per_spg is None
-                    ):
-                        print(
-                            f"Volume too high, regenerating. (NO_wyckoffs: {NO_elements})"
-                        )
-                    elif all_data_per_spg is None:
-                        print(
-                            f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
-                        )
-                    else:
-                        print(f"Volume too high, regenerating.")
-
-                continue
+            factor = None  # Will pass factor=None to create_pyxtal_object function, which will result in the
+            # sampling of the denseness factor using denseness_factors_conditional_sampler_seeds_per_spg
 
         try:
 
-            # Only for comparing the debug code with the original code:
-            # for site in my_crystal.atom_sites:
-            #    site.coords = filtered_coords(site.coords)
+            my_crystal = create_pyxtal_object(
+                group_object=group_object,
+                factor=factor,
+                species=chosen_elements,
+                chosen_wyckoff_indices=chosen_wyckoff_indices,
+                multiplicities=chosen_numbers,
+                max_volume=max_volume,
+                scale_volume_min_density=True,
+                denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+                lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+                fixed_volume=fixed_volume,
+            )
+
+        except Exception as ex:
+
+            print(flush=True)
+            print(ex, flush=True)
+            print(group_object.number, flush=True)
+            print(chosen_elements, flush=True)
+            print(chosen_numbers, flush=True)
+            print(flush=True)
+
+            tries_counter += 1
+
+            continue
+
+        if not my_crystal:
+
+            tries_counter += 1
+            if is_verbose:
+                print(
+                    f"Volume too high, regenerating. (Number of unique elements: {NO_unique_elements})"
+                )
+
+            continue
+
+        try:
 
             crystal = my_crystal.to_pymatgen()
 
@@ -822,14 +637,9 @@ def __generate_structure(
                 if checked_spg != group_object.number:
 
                     if is_verbose:
-                        if not use_element_repetitions_instead_of_NO_wyckoffs:
-                            print(
-                                f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; NO_elements: {NO_elements}"
-                            )
-                        else:
-                            print(
-                                f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; Number of unique elements: {NO_unique_elements}"
-                            )
+                        print(
+                            f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; Number of unique elements: {NO_unique_elements}"
+                        )
 
                     tries_counter += 1
 
