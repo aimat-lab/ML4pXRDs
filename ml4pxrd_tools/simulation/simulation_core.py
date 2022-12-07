@@ -268,11 +268,8 @@ def get_pattern(structure, wavelength, two_theta_range=(0, 90)):
         wavelength (_type_): wavelength in angstroms
         two_theta_range (tuple, optional): (min, max) tuple that defines the range in which to find peak positions and intensities. Defaults to (0, 90).
 
-    Raises:
-        ValueError: _description_
-
     Returns:
-        _type_: _description_
+        tuple: (list of angles, list of intensities)
     """
 
     latt = structure.lattice

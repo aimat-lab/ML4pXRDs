@@ -17,14 +17,14 @@ from pyxtal.symmetry import Group
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
-from tools.simulation.simulation_core import get_xy_patterns
+from ml4pxrd_tools.simulation.simulation_core import get_xy_patterns
 
 from pymatgen.core.periodic_table import Species
 
 from utils.entropy import get_chemical_ordering
 from utils.entropy import get_structural_complexity
 
-import tools.matplotlib_defaults as matplotlib_defaults
+import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 
 figure_double_width_pub = matplotlib_defaults.pub_width
 figure_double_width = 10

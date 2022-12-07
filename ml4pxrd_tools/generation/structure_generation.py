@@ -8,8 +8,6 @@ import numpy as np
 import random
 from pyxtal.symmetry import Group
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from tools.generation.structure_generation import create_pyxtal_object
-from all_elements import all_elements
 
 
 def rejection_sampler(p, xbounds, pmax):

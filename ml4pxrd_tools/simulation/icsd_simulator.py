@@ -1,11 +1,9 @@
-from tools.simulation.simulator import Simulator
+from ml4pxrd_tools.simulation.simulator import Simulator
 import functools
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from pymatgen.io.cif import CifParser
-from tools.simulation.simulation_core import get_xy_patterns
-import tools.matplotlib_defaults as matplotlib_defaults
+import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 
 
 class ICSDSimulator(Simulator):

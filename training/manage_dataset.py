@@ -1,5 +1,5 @@
 import os
-from tools.simulation.simulator import Simulator
+from ml4pxrd_tools.simulation.simulator import Simulator
 import math
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.model_selection import train_test_split
@@ -15,7 +15,7 @@ import statsmodels.api as sm
 from pyxtal.symmetry import Group
 from sklearn.neighbors import KernelDensity
 from pyxtal.symmetry import get_pbc_and_lattice
-from tools.generation.all_elements import all_elements
+from ml4pxrd_tools.generation.all_elements import all_elements
 
 
 def get_wyckoff_info(pyxtal_crystal):

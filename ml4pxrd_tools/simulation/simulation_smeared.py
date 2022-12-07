@@ -1,8 +1,11 @@
 # Contains functions to generate patterns with smeared peaks.
-# This code uses the output of simulation_core.py
+# This code uses simulation_core.py to simulate the peak positions and intensities.
+# We also provide functions to generate a synthetic crystal and simulate it in one go.
 
-from tools.generation.random_simulation_utils import generate_structures
-from tools.generation.random_simulation_utils import load_dataset_info
+from ml4pxrd_tools.generation.structure_generation import generate_structures
+
+# TODO: Resolve this conflict
+from ml4pxrd_tools.generation.random_simulation_utils import load_dataset_info
 import numpy as np
 import time
 import numba
@@ -13,7 +16,7 @@ from multiprocessing import Pool
 from pyxtal.symmetry import Group
 from sklearn.linear_model import LinearRegression
 import random
-import tools.matplotlib_defaults as matplotlib_defaults
+import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 
 figure_double_width_pub = matplotlib_defaults.pub_width
 

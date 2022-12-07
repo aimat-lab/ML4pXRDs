@@ -1,7 +1,7 @@
 import tensorflow.keras as keras
-from tools.simulation.simulation_core import get_random_xy_patterns
-from tools.simulation.simulation_core import mix_patterns_add_background
-from tools.generation.random_simulation_utils import load_dataset_info
+from ml4pxrd_tools.simulation.simulation_core import get_random_xy_patterns
+from ml4pxrd_tools.simulation.simulation_core import mix_patterns_add_background
+from ml4pxrd_tools.generation.random_simulation_utils import load_dataset_info
 import numpy as np
 from models import (
     build_model_park,
@@ -18,7 +18,7 @@ from models import (
 from utils.distributed_utils import map_to_remote
 import os
 from sklearn.utils import shuffle
-from tools.simulation.simulator import Simulator
+from ml4pxrd_tools.simulation.simulator import Simulator
 import ray
 from ray.util.queue import Queue
 import pickle
@@ -31,8 +31,8 @@ from sklearn.metrics import classification_report
 from pyxtal.symmetry import Group
 import gc
 import psutil
-from tools.generation.structure_generation import randomize
-from tools.simulation.simulation_core import get_xy_patterns
+from ml4pxrd_tools.generation.structure_generation import randomize
+from ml4pxrd_tools.simulation.simulation_core import get_xy_patterns
 import random
 import contextlib
 from training.utils.AdamWarmup import AdamWarmup

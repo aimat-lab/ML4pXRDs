@@ -79,5 +79,8 @@ Used validation sets:
     - Pre-computed random dataset (the one from the comparison script)
     - Gap between training and val acc that matches simulation parameters
 
+- TODO: LICENSE?
+- TODO: Go through all TODOs in the whole project and fix them.
+
 # References
 [1] Ong, S. P., Richards, W. D., Jain, A., Hautier, G., Kocher, M., Cholia, S., Gunter, D., Chevrier, V. L., Persson, K. A., & Ceder, G. (2013). Python Materials Genomics (pymatgen): A robust, open-source python library for materials analysis (Version 2022.1.24) [Computer software]. https://doi.org/10.1016/j.commatsci.2012.10.028
