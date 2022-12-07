@@ -222,7 +222,7 @@ print(
 
 (
     probability_per_spg_per_element,  # To choose the elements
-    probability_per_spg_per_element_per_wyckoff,  # TODO: Rename this
+    probability_per_spg_per_element_per_wyckoff,
     NO_wyckoffs_prob_per_spg,  # TODO: Remove
     NO_unique_elements_prob_per_spg,
     NO_repetitions_prob_per_spg_per_element,

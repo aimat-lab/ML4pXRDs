@@ -1039,5 +1039,78 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
     )
 
 
+def show_dataset_statistics():
+
+    with open(
+        os.path.join(os.path.dirname(__file__), "prepared_training/meta"), "rb"
+    ) as file:
+        data = pickle.load(file)
+
+        per_element = data[6]
+
+        counter_per_spg_per_element = data[0]
+        if per_element:
+            counts_per_spg_per_element_per_wyckoff = data[1]
+        else:
+            counts_per_spg_per_wyckoff = data[1]
+        NO_wyckoffs_prob_per_spg = data[2]
+        NO_unique_elements_prob_per_spg = data[3]
+
+        if per_element:
+            NO_repetitions_prob_per_spg_per_element = data[4]
+        else:
+            NO_repetitions_prob_per_spg = data[4]
+        denseness_factors_per_spg = data[5]
+
+        statistics_metas = data[7]
+        statistics_labels = data[8]
+        statistics_match_metas = data[9]
+        statistics_match_labels = data[10]
+        test_metas = data[11]
+        test_labels = data[12]
+        corrected_labels = data[13]
+        test_match_metas = data[14]
+        test_match_pure_metas = data[15]
+
+    test_match_labels = []
+    test_metas_flat = [meta[0] for meta in test_metas]
+    for meta in test_match_metas:
+        test_match_labels.append(test_labels[test_metas_flat.index(meta[0])])
+
+    samples_per_spg_statistics = {}
+    samples_per_spg_test = {}
+
+    for label in statistics_match_labels:
+        if label[0] in samples_per_spg_statistics.keys():
+            samples_per_spg_statistics[label[0]] += 1
+        else:
+            samples_per_spg_statistics[label[0]] = 1
+
+    print(f"Size of statistics match dataset: {len(statistics_match_labels)}")
+    print(f"Size of test match dataset: {len(test_match_labels)}")
+
+    for label in test_match_labels:
+        if label[0] in samples_per_spg_test.keys():
+            samples_per_spg_test[label[0]] += 1
+        else:
+            samples_per_spg_test[label[0]] = 1
+
+    all_spgs = np.unique(
+        sorted(
+            list(samples_per_spg_statistics.keys()) + list(samples_per_spg_test.keys())
+        )
+    )
+
+    for spg in all_spgs:
+        N_test = samples_per_spg_test[spg] if spg in samples_per_spg_test.keys() else 0
+        N_statistics = (
+            samples_per_spg_statistics[spg]
+            if spg in samples_per_spg_statistics.keys()
+            else 0
+        )
+        # if N_test > N_statistics:
+        print(f"spg {spg}: statistics: {N_statistics} test: {N_test}")
+
+
 if __name__ == "__main__":
     prepare_training(per_element=False)

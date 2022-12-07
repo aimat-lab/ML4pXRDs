@@ -52,6 +52,8 @@ https://www.tensorflow.org/install/source#tested_build_configurations.
 ## Optimized simulation of powder XRDs
 
 ## Generation of synthetic crystals
+- TODO: How to use the output of the load dataset function to generate some crystals
+=> refer to the __main__ part of the script
 
 ## Training
 
