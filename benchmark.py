@@ -6,7 +6,6 @@ from training.manage_dataset import load_dataset_info
 from ml4pxrd_tools.simulation.simulation_smeared import perform_benchmark
 from pyxtal.symmetry import Group
 
-
 (
     probability_per_spg_per_element,
     probability_per_spg_per_element_per_wyckoff,
@@ -57,4 +56,4 @@ parameters = {
 
 print("per_element", per_element)
 
-perform_benchmark()
+perform_benchmark(parameters_of_simulation=parameters, volumes_to_probe=[500, 1000])

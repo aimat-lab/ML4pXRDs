@@ -445,7 +445,10 @@ def remove_outliers(timings, NO_wyckoffs):
     return timings, NO_wyckoffs, before - len(timings)
 
 
-def perform_benchmark(parameters_of_simulation, wavelength=1.5406):
+def perform_benchmark(
+    parameters_of_simulation,
+    volumes_to_probe=[500, 1000, 2000, 3000, 4000, 5000, 6000, 7000],
+):
     """Perform a benchmark that tests the speed of the simulation, smearing, and generation of synthetic patterns
     as a function of the unit cell volume.
 
@@ -455,7 +458,6 @@ def perform_benchmark(parameters_of_simulation, wavelength=1.5406):
         wavelength (float): Wavelength in angstroms
     """
 
-    volumes_to_probe = [500, 1000, 2000, 3000, 4000, 5000, 6000, 7000]
     N_per_probe = 500  # For each volume, how many structures to generate?
 
     timings_simulation_pattern_per_volume = {}

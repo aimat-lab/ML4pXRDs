@@ -39,3 +39,4 @@ train_dataset/utils/average_intensity_plots/*
 train_dataset/utils/test_unet/parameters_16-08
 *.egg-info
 *__py_cache__*
+training/prepared_training
