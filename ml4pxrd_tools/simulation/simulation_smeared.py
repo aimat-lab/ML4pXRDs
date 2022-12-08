@@ -2,9 +2,7 @@
 # This code uses simulation_core.py to simulate the peak positions and intensities.
 # We also provide functions to generate a synthetic crystal and simulate it in one go.
 
-# TODO: Go through the whole code of this script file
-# TODO: State that the implementation of the timings is a little bit hacky, but should be fine
-# TODO: Pass-in all the required parameters of the timings function from outside
+# TODO: Pass-in all the required parameters to the timings function from outside
 # TODO: Create a separate script in the root directory to run the benchmark: load the dataset and call the benchmark function
 # TODO: Actually test if the benchmark runs through! Everything correctly implemented?
 # TODO: Fix the occurring bugs, especially in manage_dataset.py
@@ -87,14 +85,6 @@ def smeared_peaks(
     return ys / np.max(ys)
 
 
-# The following lists are used when the function "run_benchmark" is called
-# It is not the nicest way of implementing the benchmark, but it is easy and works well
-timings_simulation_pattern = []
-timings_simulation_smeared = []
-timings_generation = []
-NO_wyckoffs_log = []
-
-
 def get_smeared_patterns(
     structure,
     wavelength,
@@ -105,22 +95,29 @@ def get_smeared_patterns(
     return_angles_intensities=False,
     return_max_unscaled_intensity_angle=False,
     do_benchmark=False,
+    timings_simulation_pattern=None,
+    timings_simulation_smeared=None,
 ):
     """Get a smeared (gaussian peaks) of the given structure.
+    Crystallite sizes will be uniformly chosen.
 
     Args:
         structure (pymatgen.core.structure): Crystal structure
-        wavelength (float): _description_
-        xs (_type_): _description_
-        NO_corn_sizes (int, optional): _description_. Defaults to 1.
-        two_theta_range (tuple, optional): _description_. Defaults to (0, 90).
-        return_corn_sizes (bool, optional): _description_. Defaults to False.
-        return_angles_intensities (bool, optional): _description_. Defaults to False.
-        return_max_unscaled_intensity_angle (bool, optional): _description_. Defaults to False.
-        do_benchmark (bool, optional): _description_. Defaults to False.
+        wavelength (float): wavelength in angstroms
+        xs (numpy array): Array of 2-theta points on which to evaluate the diffractogram.
+        NO_corn_sizes (int, optional): How many patterns with different crystallite sizes should be generated? Defaults to 1.
+        two_theta_range (tuple, optional): 2-theta range in which to simulate peaks. Defaults to (0, 90).
+        return_corn_sizes (bool, optional): Whether or not to return the chosen corn sizes of each pattern. Defaults to False.
+        return_angles_intensities (bool, optional): Whether or not to additionally return the angles and intensities of all peaks. Defaults to False.
+        return_max_unscaled_intensity_angle (bool, optional): Whether or not to additionally return the angle of the maximum unscaled intensity. Defaults to False.
+        do_benchmark (bool, optional): Should the time it takes to generate and simulate the patterns be recorded in `timings_simulation_pattern` and `timings_simulation_smeared`?.
+            Defaults to False.
+        timings_simulation_pattern (list, optional): List to store the timings of the simulation in. Defaults to None.
+        timings_simulation_smeared (list, optional): List to store the timings of the smearing in. Defaults to None.
 
     Returns:
-        _type_: _description_
+        tuple: (patterns, [corn_sizes], [angles], [intensities], [return_max_unscaled_intensity_angle])
+        If only patterns is returned, the output is simply the list of patterns, not a tuple.
     """
 
     if return_corn_sizes:
@@ -194,43 +191,78 @@ def get_smeared_patterns(
 
 def get_synthetic_smeared_patterns(
     spgs,
-    structures_per_spg,
+    N_structures_per_spg,
     wavelength,
-    N,
-    NO_corn_sizes=1,
     two_theta_range=(0, 90),
-    max_NO_elements=10,
-    do_print=False,
-    return_additional=False,
-    do_distance_checks=True,
+    N=8501,
+    NO_corn_sizes=1,
+    max_NO_atoms_asymmetric_unit=100,
+    max_volume=7000,
     fixed_volume=None,
-    do_merge_checks=True,
-    use_icsd_statistics=False,
     probability_per_spg_per_element=None,
     probability_per_spg_per_element_per_wyckoff=None,
-    max_volume=None,
-    NO_wyckoffs_prob_per_spg=None,
-    do_symmetry_checks=True,
-    set_NO_elements_to_max=False,
-    force_wyckoff_indices=True,
-    use_element_repetitions_instead_of_NO_wyckoffs=False,
     NO_unique_elements_prob_per_spg=None,
     NO_repetitions_prob_per_spg_per_element=None,
+    per_element=False,
+    do_symmetry_checks=True,
     denseness_factors_density_per_spg=None,
-    kde_per_spg=None,
-    all_data_per_spg=None,
-    use_coordinates_directly=False,
-    use_lattice_paras_directly=False,
-    group_object_per_spg=None,
     denseness_factors_conditional_sampler_seeds_per_spg=None,
     lattice_paras_density_per_lattice_type=None,
-    per_element=False,
-    verbosity=2,
+    seed=-1,
+    is_verbose=False,
+    return_structures_and_corn_sizes=False,
+    group_object_per_spg=None,
     probability_per_spg=None,
-    add_background_and_noise=False,
-    use_vecsei_bg_noise=False,
-    caglioti_broadening=False,
+    do_benchmark=False,
+    timings_simulation_pattern=None,
+    timings_simulation_smeared=None,
+    timings_generation=None,
+    NO_wyckoffs_log=None,
 ):
+    """Return smeared patterns based on randomly generated synthetic crystals.
+
+    Args:
+        spgs (list of int): List of spgs to process. If probability_per_spg is not None,
+            this list will be overwritten by randomly sampled spg labels.
+        N_structures_per_spg (int): How many structures per spg to generate?
+        wavelength (float): angstroms
+        two_theta_range (tuple, optional): 2-theta range to use for simulation. Defaults to (0, 90).
+        N (int, optional): Number of datapoints in the 2-theta range. Defaults to 8501.
+        NO_corn_sizes (int, optional): How many different crystallite sizes should be used
+            to generate smeared patterns for each generated synthetic crystal? Defaults to 1.
+        max_NO_atoms_asymmetric_unit (int, optional): Maximum number of atoms in the asymmetric unit of the crystal. Defaults to 100.
+        max_volume (float, optional): Maximum volume of the conventional unit cell of the crystal. Defaults to 7000.
+        fixed_volume (float, optional): If not None, the volume of all crystals will be set to `fixed_volume`. Defaults to None.
+        probability_per_spg_per_element (optional): Indexed using [spg][element]. Returns the probability that an element of the given space group
+            occurrs in a crystal. Defaults to None.
+        probability_per_spg_per_element_per_wyckoff (optional): Indexed using [spg][element][wyckoff_index]. Returns the probability
+            for the given spg that the given element is placed on the given wyckoff position. Defaults to None.
+        NO_unique_elements_prob_per_spg (optional): Indexed using [spg]. For the given spg, return a list of probabilities
+            that the number of unique elements in a crystal is equal to the list index + 1. Defaults to None.
+        NO_repetitions_prob_per_spg_per_element (optional): Indexed using [spg][element]. For the given spg and element, return a list of probabilities
+            that the number of appearances of the element on wyckoff sites in a crystal is equal to the list index + 1. Defaults to None.
+        per_element (bool, optional): If this setting is True, NO_repetitions_prob_per_spg_per_element and probability_per_spg_per_element_per_wyckoff
+            are indexed using the element. If False, they are independent of the element. Defaults to False.
+        do_symmetry_checks (bool, optional): Whether or not to check the spg of the resulting crystals using `spglib`. Defaults to True.
+        denseness_factors_density_per_spg (dict of scipy.stats.kde.gaussian_kde, optional): Dictionary of KDEs to generate the denseness factor for each spg. Defaults to None.
+        denseness_factors_conditional_sampler_seeds_per_spg (dict of tuple, optional): dictionary containing tuple for each spg:
+        lattice_paras_density_per_lattice_type (dict of scipy.stats.kde.gaussian_kde): Dictionary yielding the KDE for each lattice type.
+        seed (int, optional): Seed to initialize the random generators. If -1, no seed is used. Defaults to -1.
+        is_verbose (bool, optional): Whether or not to print additional info. Defaults to False.
+        return_structures_and_corn_sizes (bool, optional): Wether or not to additionally return the generated structures and corn sizes. Defaults to False.
+        group_object_per_spg (dict of pyxtal.symmetry.Group, optional): Pass in a group object for each spg to speed up the generation. Defaults to None.
+        probability_per_spg (dict of floats, optional): If this is not None, spgs will be sampled using this categorical distribution.
+            The dictionary returns for each spg index the probability to be chosen. Defaults to None.
+        do_benchmark (bool, optional): Should the time it takes to generate and simulate the patterns be recorded in `timings_simulation_pattern` and `timings_simulation_smeared`?.
+            Defaults to False.
+        timings_simulation_pattern (list, optional): List to store the timings of the simulation in. Defaults to None.
+        timings_simulation_smeared (list, optional): List to store the timings of the smearing in. Defaults to None.
+        timings_generation (list, optional): List to store the timings of the generation in. Defaults to None.
+        NO_wyckoffs_log (list, optional): List to store the number of atoms in the asymmetric for each of the generated crystals in. Defaults to None.
+
+    Returns:
+        tuple: (list of patterns, list of labels, [list of structures], [list of corn sizes])
+    """
 
     result_patterns_y = []
     labels = []
@@ -241,12 +273,12 @@ def get_synthetic_smeared_patterns(
 
     for spg in spgs:
 
-        if do_print:
-            start = time.time()
-
         structures = []
         current_spgs = []
-        for _ in range(structures_per_spg):
+        for _ in range(N_structures_per_spg):
+
+            if do_benchmark:
+                start = time.time()
 
             if probability_per_spg is not None:
                 spg = np.random.choice(
@@ -263,66 +295,53 @@ def get_synthetic_smeared_patterns(
                 group_object = None
 
             generated_structures = generate_structures(
-                spg,
-                1,
-                max_NO_elements,
-                do_distance_checks=do_distance_checks,
+                spacegroup_number=spg,
+                group_object=group_object,
+                N=1,  # only generate one structure
+                max_NO_atoms_asymmetric_unit=max_NO_atoms_asymmetric_unit,
+                max_volume=max_volume,
                 fixed_volume=fixed_volume,
-                do_merge_checks=do_merge_checks,
-                use_icsd_statistics=use_icsd_statistics,
                 probability_per_spg_per_element=probability_per_spg_per_element,
                 probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
-                max_volume=max_volume,
-                NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
-                do_symmetry_checks=do_symmetry_checks,
-                set_NO_elements_to_max=set_NO_elements_to_max,
-                force_wyckoff_indices=force_wyckoff_indices,
-                use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions_instead_of_NO_wyckoffs,
                 NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+                per_element=per_element,
+                return_original_pyxtal_object=do_benchmark,
+                do_symmetry_checks=do_symmetry_checks,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
-                kde_per_spg=kde_per_spg,
-                all_data_per_spg=all_data_per_spg,
-                use_coordinates_directly=use_coordinates_directly,
-                use_lattice_paras_directly=use_lattice_paras_directly,
-                group_object=group_object,
                 denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                 lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
-                per_element=per_element,
-                verbosity=verbosity,
-                return_original_pyxtal_object=do_print,
+                seed=seed,
+                is_verbose=is_verbose,
             )
-            if do_print:
+
+            if do_benchmark:
                 NO_wyckoffs_log.append(len(generated_structures[0][1].atom_sites))
                 generated_structures = [item[0] for item in generated_structures]
 
             structures.extend(generated_structures)
 
-        if do_print:
-            timings_generation.append(time.time() - start)
+            if do_benchmark:
+                timings_generation.append(time.time() - start)
 
         for i, structure in enumerate(structures):
-
             current_spg = current_spgs[i]
-
-            # print(structure.volume)
 
             try:
 
                 patterns_ys = get_smeared_patterns(
-                    structure,
-                    wavelength,
-                    xs,
-                    NO_corn_sizes,
-                    two_theta_range,
-                    do_benchmark=do_print,
-                    return_corn_sizes=return_additional,
-                    add_background_and_noise=add_background_and_noise,
-                    use_vecsei_bg_noise=use_vecsei_bg_noise,
-                    caglioti_broadening=caglioti_broadening,
+                    structure=structure,
+                    wavelength=wavelength,
+                    xs=xs,
+                    NO_corn_sizes=NO_corn_sizes,
+                    two_theta_range=two_theta_range,
+                    return_corn_sizes=return_structures_and_corn_sizes,
+                    do_benchmark=do_benchmark,
+                    timings_simulation_pattern=timings_simulation_pattern,
+                    timings_simulation_smeared=timings_simulation_smeared,
                 )
 
-                if return_additional:
+                if return_structures_and_corn_sizes:
                     patterns_ys, corn_sizes = patterns_ys
 
             except Exception as ex:
@@ -331,20 +350,17 @@ def get_synthetic_smeared_patterns(
                 print(ex)
                 print("".join(traceback.format_exception(None, ex, ex.__traceback__)))
 
-                if "list index" in str(ex):
-                    print(structure)
-
             else:
 
                 labels.extend([current_spg] * NO_corn_sizes)
                 result_patterns_y.extend(patterns_ys)
 
-                if return_additional:
+                if return_structures_and_corn_sizes:
                     all_corn_sizes.extend(corn_sizes)
 
                 all_structures.extend(structures)
 
-    if not return_additional:
+    if not return_structures_and_corn_sizes:
         return result_patterns_y, labels
     else:
         return result_patterns_y, labels, all_structures, all_corn_sizes
@@ -353,6 +369,15 @@ def get_synthetic_smeared_patterns(
 def plot_timings(
     timings_per_volume, NO_wyckoffs_per_volume, label, show_legend=True, make_fit=True
 ):
+    """Plot the timings of a benchmark run.
+
+    Args:
+        timings_per_volume (dict of list): For each volume, this dictionary provides a list of timings.
+        NO_wyckoffs_per_volume (dict of list): For each volume, this dictionary provides a list of number of atoms in the asymmetric unit for the generated structure.
+        label (str): Label used for the name of the output file.
+        show_legend (bool, optional): Whether or not to show the legend. Defaults to True.
+        make_fit (bool, optional): Whether or not to make a linear fit for each volume. Defaults to True.
+    """
 
     figure_double_width_pub = matplotlib_defaults.pub_width
     plt.figure(
@@ -396,6 +421,15 @@ def plot_timings(
 
 
 def remove_outliers(timings, NO_wyckoffs):
+    """Remove entries from both lists when the item in timings is an outlier.
+
+    Args:
+        timings (list of float): List of timings
+        NO_wyckoffs (list of int): List of numbers of atoms in the asymmetric unit
+
+    Returns:
+        tuple: (timings, NO_wyckoffs, number of removed entries)
+    """
 
     timings = np.array(timings)
     NO_wyckoffs = np.array(NO_wyckoffs)
@@ -404,64 +438,25 @@ def remove_outliers(timings, NO_wyckoffs):
     distance_from_mean = abs(timings - np.mean(timings))
     selector = distance_from_mean < 4 * np.std(timings)
 
+    # Only keep the timings and NO_wyckoffs, where the criterion is fulfilled
     timings = timings[selector]
     NO_wyckoffs = NO_wyckoffs[selector]
 
     return timings, NO_wyckoffs, before - len(timings)
 
 
-def time_swipe_with_fixed_volume():
+def perform_benchmark(parameters_of_simulation, wavelength=1.5406):
+    """Perform a benchmark that tests the speed of the simulation, smearing, and generation of synthetic patterns
+    as a function of the unit cell volume.
 
-    global timings_simulation_pattern
-    global timings_simulation_smeared
-    global timings_generation
-    global NO_wyckoffs_log
+    Args:
+        parameters_of_simulation (dict): Parameters to pass to `get_synthetic_smeared_patterns` in a key-value format
+        (except for `spgs`, `structures_per_spg`, and fixed_volume)
+        wavelength (float): Wavelength in angstroms
+    """
 
     volumes_to_probe = [500, 1000, 2000, 3000, 4000, 5000, 6000, 7000]
-    N_per_probe = 500
-
-    (
-        probability_per_spg_per_element,
-        probability_per_spg_per_element_per_wyckoff,
-        NO_wyckoffs_prob_per_spg,
-        NO_unique_elements_prob_per_spg,
-        NO_repetitions_prob_per_spg_per_element,
-        denseness_factors_density_per_spg,
-        kde_per_spg,
-        all_data_per_spg_tmp,
-        denseness_factors_conditional_sampler_seeds_per_spg,
-        lattice_paras_density_per_lattice_type,
-        per_element,
-        represented_spgs,
-        (
-            statistics_metas,
-            statistics_labels,
-            statistics_crystals,
-            statistics_match_metas,
-            statistics_match_labels,
-            test_metas,
-            test_labels,
-            test_crystals,
-            corrected_labels,
-            test_match_metas,
-            test_match_pure_metas,
-        ),
-    ) = load_dataset_info()
-
-    group_object_per_spg = {}
-    for spg in represented_spgs:
-        group_object_per_spg[spg] = Group(spg, dim=3)
-
-    probability_per_spg = {}
-    for i, label in enumerate(statistics_match_labels):
-        if label[0] in represented_spgs:
-            if label[0] in probability_per_spg.keys():
-                probability_per_spg[label[0]] += 1
-            else:
-                probability_per_spg[label[0]] = 1
-    total = np.sum(list(probability_per_spg.values()))
-    for key in probability_per_spg.keys():
-        probability_per_spg[key] /= total
+    N_per_probe = 500  # For each volume, how many structures to generate?
 
     timings_simulation_pattern_per_volume = {}
     timings_simulation_smeared_per_volume = {}
@@ -482,39 +477,8 @@ def time_swipe_with_fixed_volume():
         patterns, labels = get_synthetic_smeared_patterns(
             spgs=[0] * N_per_probe,
             structures_per_spg=1,
-            wavelength=1.5406,  # Cu-K line
-            # wavelength=1.207930,  # until ICSD has not been re-simulated with Cu-K line
-            N=8501,
-            NO_corn_sizes=1,
-            two_theta_range=(5, 90),
-            max_NO_elements=100,
-            do_print=True,  # get timings
-            do_distance_checks=False,
-            do_merge_checks=False,
-            use_icsd_statistics=True,
-            probability_per_spg_per_element=probability_per_spg_per_element,
-            probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
-            max_volume=7001,
-            NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
-            do_symmetry_checks=True,
-            force_wyckoff_indices=True,
-            use_element_repetitions_instead_of_NO_wyckoffs=True,
-            NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
-            NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
-            denseness_factors_density_per_spg=denseness_factors_density_per_spg,
-            kde_per_spg=None,
-            all_data_per_spg=None,
-            use_coordinates_directly=False,
-            use_lattice_paras_directly=False,
-            group_object_per_spg=group_object_per_spg,
-            denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
-            lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
-            per_element=per_element,
-            verbosity=2,
-            probability_per_spg=probability_per_spg,
-            add_background_and_noise=False,
-            use_vecsei_bg_noise=False,
             fixed_volume=current_volume,
+            **parameters_of_simulation,
         )
 
         timings_simulation_both = [
@@ -577,7 +541,7 @@ def time_swipe_with_fixed_volume():
         "both",
     )
 
-    # For the generation, the volume really doesn't matter at all
+    # For the generation timings, the volume really doesn't matter at all
     # So, concatenate all results:
     flattened_generation_timings = []
     flattened_generation_NO_wyckoffs = []
@@ -591,7 +555,3 @@ def time_swipe_with_fixed_volume():
         show_legend=False,
         make_fit=False,
     )
-
-
-if __name__ == "__main__":
-    time_swipe_with_fixed_volume()
