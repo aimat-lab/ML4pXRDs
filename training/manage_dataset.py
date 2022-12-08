@@ -1000,6 +1000,17 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
 
         lattice_paras_density_per_lattice_type[lattice_type] = density
 
+    probability_per_spg = {}
+    for i, label in enumerate(statistics_match_labels):
+        if label[0] in represented_spgs:
+            if label[0] in probability_per_spg.keys():
+                probability_per_spg[label[0]] += 1
+            else:
+                probability_per_spg[label[0]] = 1
+    total = np.sum(list(probability_per_spg.values()))
+    for key in probability_per_spg.keys():
+        probability_per_spg[key] /= total
+
     return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn.
         # The only correlation considered is having multiple elements of the same type (less spread in number of unique elements).
         # This is the main assumption of my work.
@@ -1036,6 +1047,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
             test_match_metas,
             test_match_pure_metas,
         ),
+        probability_per_spg,
     )
 
 

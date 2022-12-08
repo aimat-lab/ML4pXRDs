@@ -451,7 +451,7 @@ def perform_benchmark(parameters_of_simulation, wavelength=1.5406):
 
     Args:
         parameters_of_simulation (dict): Parameters to pass to `get_synthetic_smeared_patterns` in a key-value format
-        (except for `spgs`, `structures_per_spg`, and fixed_volume)
+        (except for `spgs`, `N_structures_per_spg`, and fixed_volume)
         wavelength (float): Wavelength in angstroms
     """
 
@@ -476,9 +476,14 @@ def perform_benchmark(parameters_of_simulation, wavelength=1.5406):
 
         patterns, labels = get_synthetic_smeared_patterns(
             spgs=[0] * N_per_probe,
-            structures_per_spg=1,
+            N_structures_per_spg=1,
             fixed_volume=current_volume,
             **parameters_of_simulation,
+            do_benchmark=True,
+            timings_simulation_pattern=timings_simulation_pattern,
+            timings_simulation_smeared=timings_simulation_smeared,
+            timings_generation=timings_generation,
+            NO_wyckoffs_log=NO_wyckoffs_log,
         )
 
         timings_simulation_both = [
