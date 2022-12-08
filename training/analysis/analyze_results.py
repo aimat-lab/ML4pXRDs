@@ -1,3 +1,10 @@
+"""This script can be used to analyze the results of a training run.
+Since this script was built during the incremental work on this project,
+it contains the analysis of a lot of different features, of which 
+only a few are relevant. Feel free to use your own analysis script 
+for a more lightweight analysis of the results.
+"""
+
 import sys
 import os
 from sympy import comp

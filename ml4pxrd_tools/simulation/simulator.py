@@ -19,9 +19,7 @@ import re
 num_files = 127
 num_processes = 127
 
-simulation_software = (
-    "pymatgen_numba"  # possible: pymatgen, xrayutilities and pymatgen_numba
-)
+simulation_software = "pymatgen_numba"  # possible: pymatgen, xrayutilities and pymatgen_numba  # TODO: Remove this option
 
 # Same as Vecsei et al. 2019:
 angle_min = 5

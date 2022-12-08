@@ -57,6 +57,7 @@ We refer refer to the table available on
 https://www.tensorflow.org/install/source#tested_build_configurations.
 
 ## Optimized simulation of powder XRDs
+- TODO: Change crystallite size range (random sampling)
 
 ## Generation of synthetic crystals
 - TODO: How to use the output of the load dataset function to generate some crystals
