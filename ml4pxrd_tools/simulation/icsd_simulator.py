@@ -50,6 +50,8 @@ class ICSDSimulator:
         print("Protocol started: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 
     def reset_simulation_status(self):
+        """Reset all lists containing simulation data."""
+
         self.sim_crystals = []
         self.sim_labels = []  # space group, etc.
         self.sim_metas = []  # meta data: icsd id, ... of the crystal
@@ -63,9 +65,20 @@ class ICSDSimulator:
         self.crystal_files = []
         self.crystal_files_Ns = []
 
-    def simulate_all(self, test_crystallite_sizes=False, start_from_scratch=False):
+    def simulate_all(self, start_from_scratch=False):
+        """Simulate all crystals placed in self.sim_crystals.
+        This will spawn several worker processes working on batches of the
+        total amount of simulations to perform.
 
-        batch_size = ceil(len(self.sim_crystals) / num_files)
+        Args:
+            start_from_scratch (bool, optional): If some of the structures
+                have already been simulated, this determines if the simulation
+                should start from scratch. Defaults to False.
+        """
+
+        batch_size = ceil(
+            len(self.sim_crystals) / num_files
+        )  # How many crystals / patterns placed in each file?
 
         os.system(f"mkdir -p {self.output_dir}")
 
@@ -87,6 +100,7 @@ class ICSDSimulator:
 
         print(flush=True)
 
+        # Spawn the processes
         for i in range(0, num_processes):
 
             if (i + 1) * N_files_per_process < N_files_to_process:
@@ -122,7 +136,7 @@ class ICSDSimulator:
                     "True" if start_from_scratch else "False",
                     *files_of_process,
                 ],
-                stdout=open(log_file, "a"),
+                stdout=open(log_file, "a"),  # Pass stdout and stderr to the log_file
                 stderr=subprocess.STDOUT,
             )
             handles.append(p)
@@ -159,6 +173,7 @@ class ICSDSimulator:
 
             print(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
             total = 0
+            # Print the status of each worker:
             for i, status_file in enumerate(status_files):
                 try:
                     with open(status_file, "r") as file:
@@ -176,8 +191,14 @@ class ICSDSimulator:
             print(flush=True)
 
     def read_icsd(self):
+        """Process all entries in the ICSD_data_from_API.csv and match them with their corresponding
+        cif file. When running this function for the first time, it will take a while.
+        However, the results will be saved in the file "icsd_meta" in the cif directory
+        for later reuse.
+        """
 
         pickle_file = os.path.join(self.icsd_cifs_dir, "icsd_meta")
+
         if not os.path.exists(pickle_file):
 
             print("Rebuilding icsd meta information...", flush=True)
@@ -245,6 +266,7 @@ class ICSDSimulator:
                 ) = pickle.load(file)
 
     def __match_icsd_cif_paths(self):
+        """Match the cif files with the entries of the ICSD_data_from_API.csv file."""
 
         # from dir
         all_paths = glob(os.path.join(self.icsd_cifs_dir, "*.cif"))
@@ -281,7 +303,13 @@ class ICSDSimulator:
         print(f"{counter_2} cif files skipped")
         print()
 
-    def save(self, i=None):  # i specifies which batch to save
+    def save(self, i=None):
+        """Save the current simulation state.
+
+        Args:
+            i (int, optional): Index of the batch so save. If None, all batches will be saved to
+            their corresponding data files. Defaults to None.
+        """
 
         data_dir = os.path.join(self.output_dir, "data")
         os.system("mkdir -p " + data_dir)
@@ -358,6 +386,21 @@ class ICSDSimulator:
         metas_to_load=None,
         load_only_angles_intensities=False,
     ):
+        """Load the current simulation status from the data files of each batch.
+
+        Args:
+            start (int, optional): Index of first batch to load. Defaults to None.
+            stop (int, optional): Index of last batch to load (exclusive). Defaults to None.
+            load_patterns_angles_intensities (bool, optional): Whether or not to load the
+                patterns, angles, and intensities. Setting this to False can save a lot of
+                memory if the data is not needed. Defaults to True.
+            load_only_N_patterns_each (int, optional): How many patterns to load for each crystal.
+                If None, all patterns (crystallite sizes) are loaded. Defaults to None.
+            metas_to_load (list of int, optional): List of ICSD ids to load. All others will be
+                skipped. Defaults to None, meaning that all ids will be loaded.
+            load_only_angles_intensities (bool, optional): If True, this will skip the loading
+                of patterns. This can save memory, if the patterns are not needed. Defaults to False.
+        """
 
         self.reset_simulation_status()
 
@@ -485,6 +528,15 @@ class ICSDSimulator:
                         del self.sim_intensities[i]
 
     def get_space_group_number(self, id):
+        """Read the space group number of the specified ICSD id
+        directly from the cif file.
+
+        Args:
+            id (int): ICSD id
+
+        Returns:
+            int: Space group number. Returns None if the processing was not successful.
+        """
 
         cif_path = self.icsd_paths[self.icsd_ids.index(id)]
 
@@ -498,11 +550,11 @@ class ICSDSimulator:
                     space_group_number = int(
                         line.replace("_space_group_IT_number ", "").strip()
                     )
-                    # print(space_group_number)
                     return space_group_number
 
         return None
 
+    # TODO: Continue here
     def __get_wyckoff_info(cif_path):
         # return: is_pure_occupancy, number_of_placements, wyckoff_str
 
