@@ -63,6 +63,7 @@ https://www.tensorflow.org/install/source#tested_build_configurations.
 ## Generation of synthetic crystals
 - TODO: How to use the output of the load dataset function to generate some crystals
 => refer to the __main__ part of the script
+- TODO: Mention that the preparation script of the next section needs to be run first for a lot of the functions
 
 ## Training
 
@@ -71,6 +72,7 @@ based on the structures from the ICSD dataset. Thus, a license to the ICSD
 database is needed.
 
 - TODO: How to simulate the dataset
+- TODO: Describe the benchmark and how to run it
 
 In the beginning of the training script (`train_random_classifier.py`), you can
 find options of the training including detailed explanations. While you should look

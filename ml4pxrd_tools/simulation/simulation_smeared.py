@@ -2,11 +2,6 @@
 # This code uses simulation_core.py to simulate the peak positions and intensities.
 # We also provide functions to generate a synthetic crystal and simulate it in one go.
 
-# TODO: Pass-in all the required parameters to the timings function from outside
-# TODO: Create a separate script in the root directory to run the benchmark: load the dataset and call the benchmark function
-# TODO: Actually test if the benchmark runs through! Everything correctly implemented?
-# TODO: Fix the occurring bugs, especially in manage_dataset.py
-
 from ml4pxrd_tools.generation.structure_generation import generate_structures
 from ml4pxrd_tools.simulation.simulation_core import get_pattern_optimized
 import numpy as np
@@ -14,7 +9,6 @@ import time
 import numba
 import matplotlib.pyplot as plt
 import traceback
-from pyxtal.symmetry import Group
 from sklearn.linear_model import LinearRegression
 import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 

@@ -19,8 +19,6 @@ import re
 num_files = 127
 num_processes = 127
 
-simulation_software = "pymatgen_numba"  # possible: pymatgen, xrayutilities and pymatgen_numba  # TODO: Remove this option
-
 # Same as Vecsei et al. 2019:
 angle_min = 5
 angle_max = 90
@@ -112,8 +110,6 @@ class Simulator:
                     "simulation_worker.py",
                     status_file_of_process,
                     "True" if start_from_scratch else "False",
-                    "True" if test_crystallite_sizes else "False",
-                    simulation_software,
                     *files_of_process,
                 ],
                 stdout=open(log_file, "a"),
@@ -730,13 +726,9 @@ class Simulator:
     def add_path_to_be_simulated(self, path_to_crystal, labels, metas):
 
         try:
-
-            if simulation_software == "xrayutilities":
-                crystal = xu.materials.Crystal.fromCIF(path_to_crystal)
-            else:
-                parser = CifParser(path_to_crystal)
-                crystals = parser.get_structures()
-                crystal = crystals[0]
+            parser = CifParser(path_to_crystal)
+            crystals = parser.get_structures()
+            crystal = crystals[0]
 
         except Exception as error:
 
