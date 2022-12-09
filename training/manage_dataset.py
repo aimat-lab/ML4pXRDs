@@ -1,5 +1,5 @@
 import os
-from ml4pxrd_tools.simulation.simulator import Simulator
+from ml4pxrd_tools.simulation.icsd_simulator import ICSDSimulator
 import math
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.model_selection import train_test_split
@@ -44,14 +44,14 @@ def prepare_training(
     path_to_patterns = "./patterns/icsd_vecsei/"
 
     if jobid is not None and jobid != "":
-        sim = Simulator(
+        sim = ICSDSimulator(
             os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
             os.path.expanduser("~/Databases/ICSD/cif/"),
         )
         sim.output_dir = path_to_patterns
 
     else:  # local
-        sim = Simulator(
+        sim = ICSDSimulator(
             "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
             "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
         )
@@ -595,13 +595,13 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         path_to_patterns = "./patterns/icsd_vecsei/"
         jobid = os.getenv("SLURM_JOB_ID")
         if jobid is not None and jobid != "":
-            sim = Simulator(
+            sim = ICSDSimulator(
                 os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
                 os.path.expanduser("~/Databases/ICSD/cif/"),
             )
             sim.output_dir = path_to_patterns
         else:  # local
-            sim = Simulator(
+            sim = ICSDSimulator(
                 "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
                 "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
             )

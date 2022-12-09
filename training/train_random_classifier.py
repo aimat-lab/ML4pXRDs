@@ -18,7 +18,7 @@ from models import (
 from utils.distributed_utils import map_to_remote
 import os
 from sklearn.utils import shuffle
-from ml4pxrd_tools.simulation.simulator import Simulator
+from ml4pxrd_tools.simulation.icsd_simulator import ICSDSimulator
 import ray
 from ray.util.queue import Queue
 import pickle
@@ -299,7 +299,7 @@ if jobid is not None and jobid != "":
 else:
     path_to_icsd_directory = path_to_icsd_directory_local
 
-icsd_sim_test = Simulator(
+icsd_sim_test = ICSDSimulator(
     os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
     os.path.join(path_to_icsd_directory, "cif/"),
 )
@@ -1019,7 +1019,7 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     else:  # local
         path_to_icsd_directory = path_to_icsd_directory_local
 
-    icsd_sim_statistics = Simulator(
+    icsd_sim_statistics = ICSDSimulator(
         os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
         os.path.join(path_to_icsd_directory, "cif/"),
     )
