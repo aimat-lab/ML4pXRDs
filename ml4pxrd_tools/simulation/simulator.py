@@ -5,19 +5,19 @@ import os
 import pandas as pd
 from glob import glob
 import pickle
-import random
 from datetime import datetime
 from subprocess import Popen
 from math import ceil
 import subprocess
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
-import xrayutilities as xu
 from pymatgen.io.cif import CifParser
 import re
 
-num_files = 127
-num_processes = 127
+num_files = (
+    127  # Into how many files should the simulation of all patterns be saved / split?
+)
+num_processes = 127  # How many processes to use in parallel
 
 # Same as Vecsei et al. 2019:
 angle_min = 5
@@ -26,8 +26,14 @@ angle_n = 8501
 
 
 class Simulator:
-    def __init__(self, icsd_info_file_path, icsd_cifs_dir):
-        random.seed(1234)
+    def __init__(self, icsd_info_file_path, icsd_cifs_dir, output_dir):
+        """Main simulator class to simulate pXRD patterns.
+
+        Args:
+            icsd_info_file_path (str): path to the ICSD_data_from_API.csv file
+            icsd_cifs_dir (str): path to the directory containing the ICSD cif files
+            output_dir (str): In which directory to save the simulated patterns
+        """
 
         self.reset_simulation_status()
 
@@ -35,7 +41,7 @@ class Simulator:
         self.icsd_cifs_dir = icsd_cifs_dir
         self.read_icsd()
 
-        self.output_dir = "patterns/default/"  # should be overwritten by child class
+        self.output_dir = output_dir
 
         print("Protocol started: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 
@@ -476,104 +482,6 @@ class Simulator:
 
     def get_space_group_number(self, id):
 
-        # TODO: Check if symmetry information is correct using https://spglib.github.io/spglib/python-spglib.html
-        # TODO: Pymatgen seems to be doing this already!
-        # TODO: Bring them both together!
-
-        # Important: We don't really care about the bravais lattice type, here!
-
-        """
-        try:
-
-            parser = CifParser(cif_path)
-            structures = parser.get_structures()
-
-        except Exception as error:
-
-            return None
-
-        if len(structures) == 0:
-
-            return None
-
-        else:
-
-            structure = structures[0]
-
-        # determine space group:
-
-        try:
-
-            analyzer = SpacegroupAnalyzer(structure)
-
-            group_number = analyzer.get_space_group_number()
-            crystal_system = analyzer.get_crystal_system()
-            space_group_symbol = analyzer.get_space_group_symbol()[0]
-
-        except Exception as error:
-
-            return None
-
-        crystal_system_letter = ""
-
-        if crystal_system == "anortic" or crystal_system == "triclinic":
-            crystal_system_letter = "a"
-        elif crystal_system == "monoclinic":
-            crystal_system_letter = "m"
-        elif crystal_system == "orthorhombic":
-            crystal_system_letter = "o"
-        elif crystal_system == "tetragonal":
-            crystal_system_letter = "t"
-        elif crystal_system == "cubic":
-            crystal_system_letter = "c"
-        elif crystal_system == "hexagonal" or crystal_system == "trigonal":
-            crystal_system_letter = "h"
-        else:
-            return None
-
-        if space_group_symbol in "ABC":
-            space_group_symbol = "S"  # side centered
-
-        bravais = crystal_system_letter + space_group_symbol
-
-        if bravais not in [
-            "aP",
-            "mP",
-            "mS",
-            "oP",
-            "oS",
-            "oI",
-            "oF",
-            "tP",
-            "tI",
-            "cP",
-            "cI",
-            "cF",
-            "hP",
-            "hR",
-        ]:
-            print(
-                "Bravais lattice {} not recognized. Skipping structure.".format(bravais)
-            )
-            return None
-
-        # alternative way of determining bravais lattice from space group numer:
-        # (for safety)
-
-        return [bravais, group_number]
-        """
-
-        """
-        space_group_symbol = self.icsd_space_group_symbols[self.icsd_ids.index(id)]
-
-        sg = gemmi.find_spacegroup_by_name(space_group_symbol)
-
-        space_group_number = sg.number
-
-        return space_group_number
-
-        """
-
         cif_path = self.icsd_paths[self.icsd_ids.index(id)]
 
         if cif_path is None:
@@ -797,15 +705,3 @@ class Simulator:
         theoretical = theoretical[~np.isnan(theoretical)]
 
         return exp_inorganic, exp_metalorganic, theoretical
-
-
-if __name__ == "__main__":
-
-    simulation = Simulator(
-        "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-        "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-    )
-
-    simulation.output_dir = "./patterns/icsd_vecsei/"
-
-    simulation.load(0, 2, True, 2)

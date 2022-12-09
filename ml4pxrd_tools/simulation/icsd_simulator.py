@@ -10,7 +10,7 @@ class ICSDSimulator(Simulator):
     def __init__(
         self, icsd_info_file_path, icsd_cifs_dir, output_dir="patterns/icsd_vecsei/"
     ):
-        """This class can be used to simulate pXRD patterns for the crystals in the ICSD
+        """This class can be used to simulate pXRD patterns for all crystals in the ICSD
         and also to access the results of this simulation.
 
         Args:
@@ -19,9 +19,7 @@ class ICSDSimulator(Simulator):
             output_dir (str): In which directory to save the simulated patterns
         """
 
-        super().__init__(icsd_info_file_path, icsd_cifs_dir)
-
-        self.output_dir = output_dir
+        super().__init__(icsd_info_file_path, icsd_cifs_dir, output_dir)
 
     def prepare_simulation(self):
         """Prepare the simulation of the ICSD crystals. Read the space group labels."""
