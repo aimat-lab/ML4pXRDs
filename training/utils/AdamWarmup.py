@@ -1,4 +1,6 @@
 # Source: https://github.com/CyberZHG/keras-bert
+# This is a modified version of the Adam optimizer that uses a warmup phase for the learning rate.
+# It should be used when training ViT models, which are, at the moment, not included in this repository.
 
 import tensorflow as tf
 from tensorflow.keras.optimizers import Optimizer

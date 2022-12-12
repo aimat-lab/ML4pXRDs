@@ -2,9 +2,20 @@ import ray
 
 
 def map_to_remote(scheduler_fn, inputs, NO_workers):
-    """Input is mapped in batches of NO_workers, to avoid memory issues"""
+    """Can be used to map the items of `inputs` to the `scheduler_fn` using
+    `NO_workers` worker processes. This mapping will first process `NO_workers`
+    items of the `inputs` list and waits for the results until it processes the
+    next batch. This is done to fix some memory issues.
 
-    # print(f"Map_to_remote with {len(inputs)} input values", flush=True)
+    Args:
+        scheduler_fn (Callable): function that takes an element of `inputs` and
+        calls some ray remote function and returns the handle. inputs (_type_):
+        List of inputs to map. NO_workers (_type_): Number of worker processes
+        to use.
+
+    Returns:
+        list: List of returns of the remote function.
+    """
 
     results = []
 
@@ -17,8 +28,6 @@ def map_to_remote(scheduler_fn, inputs, NO_workers):
 
         for i in range(NO_workers):
 
-            # print(f"Scheduling {current_index}", flush=True)
-
             if current_index == len(inputs):
                 finished = True
                 break
@@ -28,15 +37,11 @@ def map_to_remote(scheduler_fn, inputs, NO_workers):
 
             current_index += 1
 
-        # print("Waiting for results of this batch...", flush=True)
-
         results.extend(
             ray.get(object_refs)
         )  # wait for everything to finish before starting the next batch
 
         if finished:
             break
-
-    # print("Finished.", flush=True)
 
     return results
