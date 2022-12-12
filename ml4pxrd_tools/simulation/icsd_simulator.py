@@ -554,9 +554,21 @@ class ICSDSimulator:
 
         return None
 
-    # TODO: Continue here
     def __get_wyckoff_info(cif_path):
-        # return: is_pure_occupancy, number_of_placements, wyckoff_str
+        """Return information about the asymmetric unit of the crystal.
+        This is read directly from the cif file.
+
+        Args:
+            cif_path (str): path to the cif file of the crystal
+
+        Returns:
+            tuple: (No partial occupancies?, number of atoms in asymmetric unit,
+            elements of the atoms in the asymmetric unit, occupancies of the atoms
+            in the asymmetric unit, how often the same wyckoff position is repeated,
+            how many unique wyckoff positions are occupied?, How many different wyckoff
+            positions are occupied summed over the unique elements?, Unique list of
+            occupied wyckoff positions)
+        """
 
         if cif_path is None:
             return None
@@ -613,7 +625,8 @@ class ICSDSimulator:
                         counter += 1
                         wyckoff_str += line.strip() + "\n"
 
-                    else:
+                    else:  # done
+
                         wyckoff_repetitions = []
 
                         all_wyckoffs = []
@@ -647,11 +660,31 @@ class ICSDSimulator:
                     counting = True
 
     def get_wyckoff_info(self, id):
-        # return: is_pure_occupancy, number_of_placements, wyckoff_str
+        """Return information about the asymmetric unit of the crystal.
+        This is read directly from the cif file, using the specified ICSD `id`.
+
+        Args:
+            id (int): ICSD id of the crystal
+
+        Returns:
+            tuple: (No partial occupancies?, number of atoms in asymmetric unit,
+            elements of the atoms in the asymmetric unit, occupancies of the atoms
+            in the asymmetric unit, how often the same wyckoff position is repeated,
+            how many unique wyckoff positions are occupied?, How many different wyckoff
+            positions are occupied summed over the unique elements?, Unique list of
+            occupied wyckoff positions)
+        """
+
         cif_path = self.icsd_paths[self.icsd_ids.index(id)]
         return ICSDSimulator.__get_wyckoff_info(cif_path)
 
     def plot(self, together=1):
+        """Plot the loaded patterns one after the other.
+
+        Args:
+            together (int, optional): How many patterns should
+            be plotted together in one figure?. Defaults to 1.
+        """
 
         xs = np.linspace(angle_min, angle_max, angle_n)
 
@@ -662,7 +695,6 @@ class ICSDSimulator:
             for j, variation in enumerate(pattern):
                 if variation[0] is not np.nan:
 
-                    # plt.plot(xs, variation, label=repr(self.sim_variations[i][j]))
                     plt.plot(
                         xs,
                         variation,
@@ -679,8 +711,6 @@ class ICSDSimulator:
                         lw=0.15,
                     )
 
-                    # plt.xlim((0, 90))
-
                     counter += 1
 
                     if (counter % together) == 0:
@@ -688,6 +718,16 @@ class ICSDSimulator:
                         plt.show()
 
     def add_path_to_be_simulated(self, path_to_crystal, labels, metas):
+        """Add a crystal to the list of crystals to be simulated.
+
+        Args:
+            path_to_crystal (str): Path to cif file of the crystal
+            labels (list of int): Spg label of the crystal in the format [label]
+            metas (list of int): ICSD id of the crystal to be simulated in the format [id]
+
+        Returns:
+            int|None: 1 if successful else None
+        """
 
         try:
             parser = CifParser(path_to_crystal)
@@ -715,36 +755,12 @@ class ICSDSimulator:
 
         return 1
 
-    def add_crystal_to_be_simulated(self, crystal, labels, metas):
-
-        self.sim_crystals.append(crystal)
-        self.sim_labels.append(labels)
-        self.sim_metas.append(metas)
-
-        self.sim_patterns.append(None)
-        self.sim_variations.append(None)
-        self.sim_angles.append(None)
-        self.sim_intensities.append(None)
-
-    def plot_most_complicated_diffractogram(self):
-
-        indices = []
-        counts = []
-
-        for i, pattern in enumerate(self.sim_patterns):
-            if pattern is not None:
-                for j, variation in enumerate(pattern):
-                    if variation[0] is not np.nan:
-                        counts.append(len(self.sim_angles[i]))
-                        indices.append(i)
-
-        max_index = indices[int(np.argmax(counts))]
-        print(counts[int(np.argmax(counts))])
-
-        plt.plot(np.linspace(0, 90, 9018), self.sim_patterns[max_index][0])
-        plt.show()
-
     def get_content_types(self):
+        """Get the content types of the ICSD ids.
+
+        Returns:
+            tuple: (list of exp inorganic ids, list of exp metalorganic ids, list of theoretical ids)
+        """
 
         path = os.path.join(
             os.path.dirname(self.icsd_info_file_path), "ICSD_content_type.csv"
