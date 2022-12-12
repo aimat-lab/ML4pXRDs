@@ -17,6 +17,8 @@ from sklearn.neighbors import KernelDensity
 from pyxtal.symmetry import get_pbc_and_lattice
 from ml4pxrd_tools.generation.all_elements import all_elements
 
+# TODO: Move this to the package
+
 
 def get_wyckoff_info(pyxtal_crystal):
     # returns: Number of set wyckoffs, elements
