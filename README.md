@@ -64,6 +64,8 @@ https://www.tensorflow.org/install/source#tested_build_configurations.
 - TODO: How to use the output of the load dataset function to generate some crystals
 => refer to the __main__ part of the script
 - TODO: Mention that the preparation script of the next section needs to be run first for a lot of the functions
+- TODO: Make it possible to use the generator functions with statistical data provided by us 
+- TODO: -> leave out the crystals etc. when loading the data; remove the unnecessary stuff.
 
 ## Training
 

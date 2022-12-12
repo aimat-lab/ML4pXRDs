@@ -36,7 +36,8 @@ class ICSDSimulator:
         Args:
             icsd_info_file_path (str): path to the ICSD_data_from_API.csv file
             icsd_cifs_dir (str): path to the directory containing the ICSD cif files
-            output_dir (str): In which directory to save the simulated patterns
+            output_dir (str): In which directory to save the simulated patterns.
+            This should be relative to the main directory of the repository.
         """
 
         self.reset_simulation_status()
@@ -45,7 +46,12 @@ class ICSDSimulator:
         self.icsd_cifs_dir = icsd_cifs_dir
         self.read_icsd()
 
-        self.output_dir = output_dir
+        self.output_dir = os.path.join(
+            os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+            ),
+            output_dir,
+        )
 
         print("Protocol started: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 
@@ -131,7 +137,10 @@ class ICSDSimulator:
             p = Popen(
                 [
                     "python",
-                    "simulation_worker.py",
+                    os.path.join(
+                        os.path.dirname(os.path.realpath(__file__)),
+                        "simulation_worker.py",
+                    ),
                     status_file_of_process,
                     "True" if start_from_scratch else "False",
                     *files_of_process,
