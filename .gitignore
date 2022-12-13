@@ -41,3 +41,4 @@ train_dataset/utils/test_unet/parameters_16-08
 *__py_cache__*
 training/prepared_training
 patterns/icsd_vecsei
+prepared_dataset

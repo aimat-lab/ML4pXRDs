@@ -231,7 +231,7 @@ print(
     all_data_per_spg_tmp,  # TODO: Remove
     denseness_factors_conditional_sampler_seeds_per_spg,
     lattice_paras_density_per_lattice_type,
-    per_element,  # TODO: Remove
+    per_element,
     represented_spgs,  # spgs that are well-represented (>= 50 crystals in statistics dataset)
     (
         statistics_metas,  # IDs in ICSD database

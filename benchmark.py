@@ -2,7 +2,7 @@
 (see the benchmark figure in the paper).
 """
 
-from training.manage_dataset import load_dataset_info
+from ml4pxrd_tools.manage_dataset import load_dataset_info
 from ml4pxrd_tools.simulation.simulation_smeared import perform_benchmark
 from pyxtal.symmetry import Group
 

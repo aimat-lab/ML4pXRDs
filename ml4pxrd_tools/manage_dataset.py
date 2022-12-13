@@ -17,11 +17,17 @@ from sklearn.neighbors import KernelDensity
 from pyxtal.symmetry import get_pbc_and_lattice
 from ml4pxrd_tools.generation.all_elements import all_elements
 
-# TODO: Move this to the package
-
 
 def get_wyckoff_info(pyxtal_crystal):
-    # returns: Number of set wyckoffs, elements
+    """Returns number of atoms in asymmetric unit and list of
+    elements in asymmetric unit.
+
+    Args:
+        pyxtal_crystal (pyxtal.pyxtal): Pyxtal crystal structure object
+
+    Returns:
+        tuple: (number of atoms in asymmetric unit, list of elements in asymmetric unit)
+    """
 
     elements = []
 
@@ -32,13 +38,24 @@ def get_wyckoff_info(pyxtal_crystal):
     return len(pyxtal_crystal.atom_sites), elements
 
 
-def prepare_training(
-    per_element=False, validation_max_volume=7000, validation_max_NO_wyckoffs=100
-):
+def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
+    """Prepare a dataset for training on patterns from synthetic crystals and
+    testing on ICSD patterns. This includes both the generation of statistical data extracted from
+    the ICSD, as well as the training dataset split. In order to run this
+    function, simulation data from the ICSD is needed. Please refer to
+    ml4pxrd_tools.simulation.icsd_simulator.py to simulate the ICSD patterns.
+
+    Args:
+        per_element (bool, optional): If this setting is True, NO_repetitions_prob_per_spg_per_element and probability_per_spg_per_element_per_wyckoff
+            are indexed using the element. If False, they are independent of the element. Defaults to False.
+        test_max_volume (int, optional): Maximum volume in statistics and test dataset. Defaults to 7000.
+        test_max_NO_wyckoffs (int, optional): Maximum number of atoms in asymmetric unit in statistics and test dataset. Defaults to 100.
+    """
+    # TODO: Talk about the split in the function description
 
     if os.path.exists("prepared_training"):
         print("Please remove existing prepared_training folder first.")
-        exit()
+        return
 
     spgs = range(1, 231)
 
@@ -61,10 +78,9 @@ def prepare_training(
 
     sim.load(load_patterns_angles_intensities=False)
 
-    ########## Train (statistics) / test splitting:
+    ##### Train (statistics) / test splitting:
 
-    ### Four strategies: random, structure type full, main structure type, sum formula
-    strategy = "structure type full"
+    strategy = "structure type full"  # TODO: Remove this as an option, use structure type full always
 
     if strategy != "random":
 
@@ -260,8 +276,7 @@ def prepare_training(
                 continue
 
             if (
-                NO_wyckoffs > validation_max_NO_wyckoffs
-                or crystal.volume > validation_max_volume
+                NO_wyckoffs > max_NO_wyckoffs or crystal.volume > max_volume
             ):  # only consider matching structures for statistics, too
                 continue
 
@@ -454,14 +469,8 @@ def prepare_training(
             crystal = conv
 
             if not (
-                (
-                    validation_max_volume is not None
-                    and test_crystals[i].volume > validation_max_volume
-                )
-                or (
-                    validation_max_NO_wyckoffs is not None
-                    and NO_wyckoffs > validation_max_NO_wyckoffs
-                )
+                (max_volume is not None and test_crystals[i].volume > max_volume)
+                or (max_NO_wyckoffs is not None and NO_wyckoffs > max_NO_wyckoffs)
             ) and not np.any(np.isnan(test_variations[i][0])):
 
                 test_match_metas.append(test_metas[i])
@@ -514,16 +523,21 @@ def prepare_training(
     print(f"Nan-counter test dataset: {nan_counter_test}")
     print(f"Nan-counter statistics dataset: {nan_counter_statistics}")
 
-    os.system("mkdir -p prepared_training")
+    os.system("mkdir -p prepared_dataset")
 
-    with open("prepared_training/meta", "wb") as file:
+    output_dir = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        "prepared_dataset",
+    )
+
+    with open(f"{output_dir}/meta", "wb") as file:
         pickle.dump(
             (
                 counter_per_spg_per_element,
                 counts_per_spg_per_element_per_wyckoff
                 if per_element
                 else counts_per_spg_per_wyckoff,
-                NO_wyckoffs_prob_per_spg,
+                NO_wyckoffs_prob_per_spg,  # TODO: Remove
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element
                 if per_element
@@ -546,49 +560,93 @@ def prepare_training(
     # Split array in parts to lower memory requirements:
 
     for i in range(0, int(len(test_crystals) / 1000) + 1):
-        with open(f"prepared_training/test_crystals_{i}", "wb") as file:
+        with open(f"{output_dir}/test_crystals_{i}", "wb") as file:
             pickle.dump(test_crystals[i * 1000 : (i + 1) * 1000], file)
 
     for i in range(0, int(len(statistics_crystals) / 1000) + 1):
-        with open(f"prepared_training/statistics_crystals_{i}", "wb") as file:
+        with open(f"{output_dir}/statistics_crystals_{i}", "wb") as file:
             pickle.dump(statistics_crystals[i * 1000 : (i + 1) * 1000], file)
 
-    with open("prepared_training/all_data_per_spg", "wb") as file:
+    with open(f"{output_dir}/all_data_per_spg", "wb") as file:
         pickle.dump(all_data_per_spg, file)
 
 
-def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
+# TODO: Remove again later
+def convert_old_to_new():
+
+    meta_file_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "prepared_dataset/meta"
+    )
+
+    meta_file_path_new = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "prepared_dataset/meta_new"
+    )
 
     with open(
-        os.path.join(os.path.dirname(__file__), "prepared_training/meta"), "rb"
+        meta_file_path,
+        "rb",
     ) as file:
         data = pickle.load(file)
 
-        per_element = data[6]
+    with open(meta_file_path_new, "wb") as file:
+        pickle.dump(
+            (
+                data[0],
+                data[1],
+                data[3],
+                data[4],
+                data[5],
+                data[6],
+                data[7],
+                data[8],
+                data[9],
+                data[10],
+                data[11],
+                data[12],
+                data[13],
+                data[14],
+                data[15],
+            ),
+            file,
+        )
+
+
+def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
+    # TODO: Add option "load_public_statistics_only"
+    # TODO: Add option "generate_public_statistics"
+
+    with open(
+        os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "prepared_dataset/meta"
+        ),
+        "rb",
+    ) as file:
+        data = pickle.load(file)
+
+        per_element = data[5]
 
         counter_per_spg_per_element = data[0]
         if per_element:
             counts_per_spg_per_element_per_wyckoff = data[1]
         else:
             counts_per_spg_per_wyckoff = data[1]
-        NO_wyckoffs_prob_per_spg = data[2]
-        NO_unique_elements_prob_per_spg = data[3]
+        NO_unique_elements_prob_per_spg = data[2]
 
         if per_element:
-            NO_repetitions_prob_per_spg_per_element = data[4]
+            NO_repetitions_prob_per_spg_per_element = data[3]
         else:
-            NO_repetitions_prob_per_spg = data[4]
-        denseness_factors_per_spg = data[5]
+            NO_repetitions_prob_per_spg = data[3]
+        denseness_factors_per_spg = data[4]
 
-        statistics_metas = data[7]
-        statistics_labels = data[8]
-        statistics_match_metas = data[9]
-        statistics_match_labels = data[10]
-        test_metas = data[11]
-        test_labels = data[12]
-        corrected_labels = data[13]
-        test_match_metas = data[14]
-        test_match_pure_metas = data[15]
+        statistics_metas = data[6]
+        statistics_labels = data[7]
+        statistics_match_metas = data[8]
+        statistics_match_labels = data[9]
+        test_metas = data[10]
+        test_labels = data[11]
+        corrected_labels = data[12]
+        test_match_metas = data[13]
+        test_match_pure_metas = data[14]
 
     if check_for_sum_formula_overlap:
         # Check for overlap in sum formulas between
@@ -663,6 +721,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         )
         exit()
 
+    # TODO: Fix the paths
     with open(
         os.path.join(os.path.dirname(__file__), "prepared_training/all_data_per_spg"),
         "rb",
@@ -1030,8 +1089,8 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         if per_element
         else NO_repetitions_prob_per_spg,
         denseness_factors_density_per_spg,
-        kde_per_spg,
-        all_data_per_spg,
+        kde_per_spg,  # TODO: Remove
+        all_data_per_spg,  # TODO: Remove
         denseness_factors_conditional_sampler_seeds_per_spg,
         lattice_paras_density_per_lattice_type,
         per_element,
@@ -1127,4 +1186,5 @@ def show_dataset_statistics():
 
 
 if __name__ == "__main__":
-    prepare_training(per_element=False)
+    # prepare_dataset(per_element=False)
+    convert_old_to_new()
