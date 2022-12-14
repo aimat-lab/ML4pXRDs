@@ -1060,7 +1060,8 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
 
     for i in range(len(icsd_sim_statistics.sim_crystals)):
         if (
-            icsd_sim_statistics.sim_metas[i][0] in statistics_match_metas_flat
+            icsd_sim_statistics.sim_metas[i][0]
+            in statistics_match_metas_flat  # This avoids nan simulation data
             and icsd_sim_statistics.sim_labels[i][0] in spgs
         ):
 

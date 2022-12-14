@@ -2,7 +2,6 @@ import os
 from ml4pxrd_tools.simulation.icsd_simulator import ICSDSimulator
 import math
 from sklearn.model_selection import GroupShuffleSplit
-from sklearn.model_selection import train_test_split
 import time
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import numpy as np
@@ -154,8 +153,6 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     if overlap_counter > 0:
         raise Exception("Something went wrong while splitting train / test.")
 
-    ##########
-
     statistics_crystals = []
     statistics_metas = []
     statistics_variations = []
@@ -201,12 +198,9 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
     all_data_per_spg = {}
 
-    # pre-process the symmetry groups:
+    # Pre-process the symmetry groups:
 
     for spg_number in spgs:
-
-        # group = Group(spg_number, dim=3)
-        # names = [(str(x.multiplicity) + x.letter) for x in group]
 
         if per_element:
             counts_per_spg_per_element_per_wyckoff[spg_number] = {}
@@ -227,7 +221,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
         all_data_per_spg[spg_number] = []
 
-    # Analyse the statistics:
+    # Analyze the statistics:
 
     start = time.time()
     nan_counter_statistics = 0
@@ -242,18 +236,6 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
             print(f"{i / len(statistics_crystals) * 100} % processed.")
 
         try:
-
-            # spg_number = sim_statistics.sim_labels[i][0]
-
-            # for site in crystal.sites:
-            #    if site.species_string == "D-" or site.species_string == "D+":
-            #        print("Oh")
-            #
-            #        calc = XRDCalculator(1.5)
-            #        calc.get_pattern(crystal)
-            #
-            # This error also manifests itself in the comparison script when trying to get the covalent
-            # radius of D (which is unknown element).
 
             # Get conventional structure
             analyzer = SpacegroupAnalyzer(crystal)
@@ -271,7 +253,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
             if (
                 NO_wyckoffs > max_NO_wyckoffs or crystal.volume > max_volume
-            ):  # only consider matching structures for statistics, too
+            ):  # only consider matching structures for statistics
                 continue
 
             statistics_match_metas.append(statistics_metas[i])
@@ -281,7 +263,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
             struc.from_seed(crystal)
             spg_number = (
                 struc.group.number
-            )  # use the group as calculated by pyxtal for statistics; this should be fine.
+            )  # use the group as calculated by pyxtal for statistics
 
             NO_wyckoffs, elements = get_wyckoff_info(struc)
 
@@ -298,7 +280,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
             for el in elements_unique:
                 if "+" in el or "-" in el or "." in el or "," in el:
-                    print("Ohoh")
+                    print("Non-clean element string detected.")
 
             NO_unique_elements_per_spg[spg_number].append(len(elements_unique))
 
@@ -322,6 +304,8 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
         specie_strs = []
 
+        # We store the full wyckoff position occupations in a convenient format in all_data_entry
+        # to later be able to reuse this without rerunning the whole pre-processing again
         all_data_entry = {}
         all_data_entry["occupations"] = []
         all_data_entry["lattice_parameters"] = struc.lattice.get_para()
@@ -335,7 +319,9 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
             all_data_entry["occupations"].append((specie_str, name, site.position))
 
+            # Store the wyckoff occupations => to later calculate the wyckoff occupation probabilities
             if per_element:
+
                 if (
                     specie_str
                     in counts_per_spg_per_element_per_wyckoff[spg_number].keys()
@@ -366,6 +352,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
                 else:
                     counts_per_spg_per_wyckoff[spg_number][name] = 1
 
+        # Store the frequency of which elements are present
         for specie_str in np.unique(specie_strs):
             if specie_str in counter_per_spg_per_element[spg_number].keys():
                 counter_per_spg_per_element[spg_number][specie_str] += 1
@@ -373,8 +360,6 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
                 counter_per_spg_per_element[spg_number][specie_str] = 1
 
         all_data_per_spg[spg_number].append(all_data_entry)
-
-    NO_wyckoffs_prob_per_spg = {}
 
     NO_unique_elements_prob_per_spg = {}
     if per_element:
@@ -385,12 +370,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     for spg in NO_wyckoffs_per_spg.keys():
         if len(NO_wyckoffs_per_spg[spg]) > 0:
 
-            bincounted_NO_wyckoffs = np.bincount(NO_wyckoffs_per_spg[spg])
             bincounted_NO_unique_elements = np.bincount(NO_unique_elements_per_spg[spg])
-
-            NO_wyckoffs_prob_per_spg[spg] = bincounted_NO_wyckoffs[1:] / np.sum(
-                bincounted_NO_wyckoffs[1:]
-            )
             NO_unique_elements_prob_per_spg[spg] = bincounted_NO_unique_elements[
                 1:
             ] / np.sum(bincounted_NO_unique_elements[1:])
@@ -420,7 +400,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
                 ] / np.sum(bincounted_NO_repetitions[1:])
 
         else:
-            NO_wyckoffs_prob_per_spg[spg] = []
+
             NO_unique_elements_prob_per_spg[spg] = []
 
             if per_element:
@@ -430,17 +410,20 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
     print(f"Took {time.time() - start} s to calculate the statistics.", flush=True)
 
-    ##########
+    #####
 
-    # Find the meta ids of the two test datasets:
+    # Find the meta ids of the match and match_pure test datasets
+    # match: volume and number of atoms in asymmetric unit not too high
+    # match_pure: same as match, but only crystals without partial occupancies
+
     test_match_metas = []
     test_match_pure_metas = []
 
     print("Processing test dataset...", flush=True)
     start = time.time()
 
-    corrected_labels = []
-    count_mismatches = 0
+    corrected_labels = []  # Labels as given by SpacegroupAnalyzer
+    count_mismatches = 0  # Count mismatches between the space group determined by SpacegroupAnalyzer and given by ICSD
 
     nan_counter_test = 0
 
@@ -471,7 +454,9 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
                 if is_pure:
                     test_match_pure_metas.append(test_metas[i])
 
-            if np.any(np.isnan(test_variations[i][0])):
+            if np.any(
+                np.isnan(test_variations[i][0])
+            ):  # If the simulation of the pattern was unsuccessful
                 del test_crystals[i]
                 del test_metas[i]
                 del test_variations[i]
@@ -502,7 +487,9 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
             corrected_labels.append(None)
 
-    print(f"{count_mismatches/len(test_crystals)*100}% mismatches in test set.")
+    print(
+        f"{count_mismatches/len(test_crystals)*100}% mismatches between spgs provided by ICSD and analyzed by SpacegroupAnalyzer in test set."
+    )
 
     print(f"Took {time.time() - start} s to process the test dataset.")
 
@@ -965,7 +952,6 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         probability_per_spg_per_element_per_wyckoff
         if per_element
         else probability_per_spg_per_wyckoff,
-        NO_wyckoffs_prob_per_spg,
         NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element
         if per_element
@@ -996,36 +982,37 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
 
 def show_dataset_statistics():
 
-    with open(
-        os.path.join(os.path.dirname(__file__), "prepared_training/meta"), "rb"
-    ) as file:
+    prepared_dataset_dir = os.path.dirname(os.path.dirname(__file__))
+
+    with open(os.path.join(prepared_dataset_dir, "meta"), "rb") as file:
+
         data = pickle.load(file)
 
-        per_element = data[6]
+        per_element = data[5]
 
         counter_per_spg_per_element = data[0]
         if per_element:
             counts_per_spg_per_element_per_wyckoff = data[1]
         else:
             counts_per_spg_per_wyckoff = data[1]
-        NO_wyckoffs_prob_per_spg = data[2]
-        NO_unique_elements_prob_per_spg = data[3]
+
+        NO_unique_elements_prob_per_spg = data[2]
 
         if per_element:
-            NO_repetitions_prob_per_spg_per_element = data[4]
+            NO_repetitions_prob_per_spg_per_element = data[3]
         else:
-            NO_repetitions_prob_per_spg = data[4]
-        denseness_factors_per_spg = data[5]
+            NO_repetitions_prob_per_spg = data[3]
+        denseness_factors_per_spg = data[4]
 
-        statistics_metas = data[7]
-        statistics_labels = data[8]
-        statistics_match_metas = data[9]
-        statistics_match_labels = data[10]
-        test_metas = data[11]
-        test_labels = data[12]
-        corrected_labels = data[13]
-        test_match_metas = data[14]
-        test_match_pure_metas = data[15]
+        statistics_metas = data[6]
+        statistics_labels = data[7]
+        statistics_match_metas = data[8]
+        statistics_match_labels = data[9]
+        test_metas = data[10]
+        test_labels = data[11]
+        corrected_labels = data[12]
+        test_match_metas = data[13]
+        test_match_pure_metas = data[14]
 
     test_match_labels = []
     test_metas_flat = [meta[0] for meta in test_metas]
