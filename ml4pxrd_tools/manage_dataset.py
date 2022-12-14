@@ -548,7 +548,27 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     return True
 
 
-def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
+# TODO: Continue here
+def load_dataset_info(
+    minimum_NO_statistics_crystals_per_spg=50,
+    check_for_sum_formula_overlap=False,
+    load_public_statistics_only=False,
+    generate_public_statistics=False,
+):
+    """Load prepared dataset from the prepared_dataset directory. This includes
+    statistics data and information about the statistics / test split.
+
+    Args:
+        minimum_NO_statistics_crystals_per_spg (int, optional): Minimum number of crystals in the statistics dataset per space group.
+            Space groups where this is not fulfilled are skipped. Defaults to 50.
+        check_for_sum_formula_overlap (bool, optional): Analyze the overlap of sum formulas between the statistics and test dataset. Defaults to False.
+        load_public_statistics_only (bool, optional): Whether or not to load only the publically available statistics data (non-licensed). Defaults to False.
+        generate_public_statistics (bool, optional): Whether or not to generate the publically available statistics data from the full prepared_dataset directory. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
+
     # TODO: Add option "load_public_statistics_only"
     # TODO: Add option "generate_public_statistics"
 
@@ -694,13 +714,15 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         )
         if (
             len([item for item in denseness_factors_per_spg[spg] if item is not None])
-            < X
+            < minimum_NO_statistics_crystals_per_spg
         ):
             total_below_X += 1
         else:
             represented_spgs.append(spg)
     print(f"{total} total entries.")
-    print(f"{total_below_X} spgs below {X} entries.")
+    print(
+        f"{total_below_X} spgs below {minimum_NO_statistics_crystals_per_spg} entries."
+    )
 
     denseness_factors_density_per_spg = {}
     denseness_factors_conditional_sampler_seeds_per_spg = {}
@@ -716,7 +738,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
 
         ########## 1D densities:
 
-        if len(denseness_factors) >= X:
+        if len(denseness_factors) >= minimum_NO_statistics_crystals_per_spg:
             denseness_factors_density = kde.gaussian_kde(denseness_factors)
         else:
             denseness_factors_density = None
@@ -725,7 +747,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
 
         ########## 2D densities (p(factor | volume)) (conditioned on the volume):
 
-        if len(denseness_factors) < X:
+        if len(denseness_factors) < minimum_NO_statistics_crystals_per_spg:
             denseness_factors_conditional_sampler_seeds_per_spg[spg] = None
             continue
 
@@ -808,7 +830,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
 
     for spg in all_data_per_spg.keys():
 
-        if len(all_data_per_spg[spg]) < X:
+        if len(all_data_per_spg[spg]) < minimum_NO_statistics_crystals_per_spg:
             kde_per_spg[spg] = None
             continue
 
