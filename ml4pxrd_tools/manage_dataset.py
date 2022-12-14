@@ -17,6 +17,9 @@ from sklearn.neighbors import KernelDensity
 from pyxtal.symmetry import get_pbc_and_lattice
 from ml4pxrd_tools.generation.all_elements import all_elements
 
+path_to_icsd_directory_local = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
+path_to_icsd_directory_cluster = os.path.expanduser("~/Databases/ICSD/")
+
 
 def get_wyckoff_info(pyxtal_crystal):
     """Returns number of atoms in asymmetric unit and list of
@@ -40,98 +43,88 @@ def get_wyckoff_info(pyxtal_crystal):
 
 def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     """Prepare a dataset for training on patterns from synthetic crystals and
-    testing on ICSD patterns. This includes both the generation of statistical data extracted from
-    the ICSD, as well as the training dataset split. In order to run this
-    function, simulation data from the ICSD is needed. Please refer to
-    ml4pxrd_tools.simulation.icsd_simulator.py to simulate the ICSD patterns.
+    testing on ICSD patterns. This includes both the generation of statistical
+    data extracted from the ICSD, as well as the training dataset split. We use
+    a 70:30 split while we ensure that the same structure type is only either in
+    the statistics dataset or the test dataset (see description in our
+    publication). In order to run this function, simulation data from the ICSD
+    is needed. Please refer to ml4pxrd_tools.simulation.icsd_simulator.py to
+    simulate the ICSD patterns.
 
     Args:
-        per_element (bool, optional): If this setting is True, NO_repetitions_prob_per_spg_per_element and probability_per_spg_per_element_per_wyckoff
-            are indexed using the element. If False, they are independent of the element. Defaults to False.
-        test_max_volume (int, optional): Maximum volume in statistics and test dataset. Defaults to 7000.
-        test_max_NO_wyckoffs (int, optional): Maximum number of atoms in asymmetric unit in statistics and test dataset. Defaults to 100.
+        per_element (bool, optional): If this setting is True,
+        NO_repetitions_prob_per_spg_per_element and
+        probability_per_spg_per_element_per_wyckoff
+            are indexed using the element. If False, they are independent of the
+            element. Defaults to False.
+        test_max_volume (int, optional): Maximum volume in statistics and test
+        dataset. Defaults to 7000. test_max_NO_wyckoffs (int, optional): Maximum
+        number of atoms in asymmetric unit in statistics and test dataset.
+        Defaults to 100.
+
+    Returns:
+        bool|None: True if successful, else None.
     """
-    # TODO: Talk about the split in the function description
 
-    if os.path.exists("prepared_training"):
-        print("Please remove existing prepared_training folder first.")
-        return
+    output_dir = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        "prepared_dataset",
+    )
 
-    spgs = range(1, 231)
+    if os.path.exists(output_dir):
+        print("Please remove existing prepared_dataset directory first.")
+        return None
 
+    spgs = range(1, 231)  # all spgs
+
+    path_to_patterns = "patterns/icsd_vecsei/"
     jobid = os.getenv("SLURM_JOB_ID")
-    path_to_patterns = "./patterns/icsd_vecsei/"
-
     if jobid is not None and jobid != "":
-        sim = ICSDSimulator(
-            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
-            os.path.expanduser("~/Databases/ICSD/cif/"),
-        )
-        sim.output_dir = path_to_patterns
+        path_to_icsd_directory = path_to_icsd_directory_cluster
+    else:
+        path_to_icsd_directory = path_to_icsd_directory_local
 
-    else:  # local
-        sim = ICSDSimulator(
-            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-        )
-        sim.output_dir = path_to_patterns
+    sim = ICSDSimulator(
+        os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
+        os.path.join(path_to_icsd_directory, "cif/"),
+    )
+    sim.output_dir = path_to_patterns
 
     sim.load(load_patterns_angles_intensities=False)
 
-    ##### Train (statistics) / test splitting:
+    ##### Statistics / test split:
 
-    strategy = "structure type full"  # TODO: Remove this as an option, use structure type full always
+    group_labels = []
 
-    if strategy != "random":
+    counter = 0
 
-        group_labels = []
+    for i, meta in enumerate(sim.sim_metas):
 
-        counter = 0
+        print(f"{i/len(sim.sim_metas)*100}%")
 
-        for i, meta in enumerate(sim.sim_metas):
+        index = sim.icsd_ids.index(meta[0])
 
-            print(f"{i/len(sim.sim_metas)*100}%")
+        group_label = sim.icsd_structure_types[index]
 
-            index = sim.icsd_ids.index(meta[0])
-
-            if strategy == "structure type full":
-                group_label = sim.icsd_structure_types[index]
-            elif strategy == "main structure type":
-                group_label = sim.icsd_structure_types[index].split("#")[
-                    0
-                ]  # only use the main part of the structure type
-            elif strategy == "sum formula":
-                group_label = sim.icsd_sumformulas[index]
+        if not isinstance(group_label, str):
+            if math.isnan(group_label):
+                group_label = f"alone_{counter}"
+                counter += 1
             else:
-                raise Exception("Grouping strategy not supported.")
+                raise Exception("Something went wrong.")
 
-            if not isinstance(group_label, str):
-                if math.isnan(group_label):
-                    group_label = f"alone_{counter}"
-                    counter += 1
-                else:
-                    raise Exception("Something went wrong.")
+        group_labels.append(group_label)
 
-            group_labels.append(group_label)
+    gss = GroupShuffleSplit(1, test_size=0.3, train_size=0.7)
 
-        gss = GroupShuffleSplit(1, test_size=0.3, train_size=0.7)
+    train_metas_splitted_indices, test_metas_splitted_indices = list(
+        gss.split(X=[item[0] for item in sim.sim_metas], groups=group_labels)
+    )[0]
 
-        train_metas_splitted_indices, test_metas_splitted_indices = list(
-            gss.split(X=[item[0] for item in sim.sim_metas], groups=group_labels)
-        )[0]
+    train_metas_splitted = [sim.sim_metas[i][0] for i in train_metas_splitted_indices]
+    test_metas_splitted = [sim.sim_metas[i][0] for i in test_metas_splitted_indices]
 
-        train_metas_splitted = [
-            sim.sim_metas[i][0] for i in train_metas_splitted_indices
-        ]
-        test_metas_splitted = [sim.sim_metas[i][0] for i in test_metas_splitted_indices]
-
-    else:
-
-        (train_metas_splitted, test_metas_splitted) = train_test_split(  # statistics
-            sim.sim_metas, test_size=0.3
-        )
-
-    # Check if they are distinct
+    # Check if they are distinct (regarding the structure types)
 
     prototypes_test = [
         sim.icsd_structure_types[sim.icsd_ids.index(meta)]
@@ -147,7 +140,10 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
             and prototype_statistics in prototypes_test
         ):
             overlap_counter += 1
-    print(f"{overlap_counter} of {len(train_metas_splitted)} overlapped.", flush=True)
+    print(
+        f"{overlap_counter} of {len(train_metas_splitted)} samples in statistics dataset have a prototype that also exists in the test dataset.",
+        flush=True,
+    )  # This should be zero, otherwise something went wrong!
 
     # Check if train_metas_splitted and test_metas_splitted together yield sim.sim_metas
 
@@ -184,9 +180,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
         else:
             raise Exception("Something went wrong while splitting train / test.")
 
-    ##########
-
-    # Calculate the statistics from the sim_statistics part of the simulation:
+    ##### Calculate the statistics from the sim_statistics part of the simulation:
 
     if per_element:
         counts_per_spg_per_element_per_wyckoff = {}
@@ -525,11 +519,6 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
     os.system("mkdir -p prepared_dataset")
 
-    output_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        "prepared_dataset",
-    )
-
     with open(f"{output_dir}/meta", "wb") as file:
         pickle.dump(
             (
@@ -537,7 +526,6 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
                 counts_per_spg_per_element_per_wyckoff
                 if per_element
                 else counts_per_spg_per_wyckoff,
-                NO_wyckoffs_prob_per_spg,  # TODO: Remove
                 NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element
                 if per_element
@@ -570,55 +558,17 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     with open(f"{output_dir}/all_data_per_spg", "wb") as file:
         pickle.dump(all_data_per_spg, file)
 
-
-# TODO: Remove again later
-def convert_old_to_new():
-
-    meta_file_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "prepared_dataset/meta"
-    )
-
-    meta_file_path_new = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "prepared_dataset/meta_new"
-    )
-
-    with open(
-        meta_file_path,
-        "rb",
-    ) as file:
-        data = pickle.load(file)
-
-    with open(meta_file_path_new, "wb") as file:
-        pickle.dump(
-            (
-                data[0],
-                data[1],
-                data[3],
-                data[4],
-                data[5],
-                data[6],
-                data[7],
-                data[8],
-                data[9],
-                data[10],
-                data[11],
-                data[12],
-                data[13],
-                data[14],
-                data[15],
-            ),
-            file,
-        )
+    return True
 
 
 def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
     # TODO: Add option "load_public_statistics_only"
     # TODO: Add option "generate_public_statistics"
 
+    prepared_dataset_dir = os.path.dirname(os.path.dirname(__file__))
+
     with open(
-        os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "prepared_dataset/meta"
-        ),
+        os.path.join(prepared_dataset_dir, "prepared_dataset/meta"),
         "rb",
     ) as file:
         data = pickle.load(file)
@@ -721,26 +671,19 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
         )
         exit()
 
-    # TODO: Fix the paths
     with open(
-        os.path.join(os.path.dirname(__file__), "prepared_training/all_data_per_spg"),
+        os.path.join(prepared_dataset_dir, "all_data_per_spg"),
         "rb",
     ) as file:
         all_data_per_spg = pickle.load(file)
 
     # Split array in parts to lower memory requirements:
     test_crystals_files = sorted(
-        glob(
-            os.path.join(os.path.dirname(__file__), "prepared_training/test_crystals_*")
-        ),
+        glob(os.path.join(prepared_dataset_dir, "test_crystals_*")),
         key=lambda x: int(os.path.basename(x).replace("test_crystals_", "")),
     )
     statistics_crystals_files = sorted(
-        glob(
-            os.path.join(
-                os.path.dirname(__file__), "prepared_training/statistics_crystals_*"
-            )
-        ),
+        glob(os.path.join(prepared_dataset_dir, "statistics_crystals_*")),
         key=lambda x: int(os.path.basename(x).replace("statistics_crystals_", "")),
     )
 
@@ -793,22 +736,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
 
         denseness_factors_density_per_spg[spg] = denseness_factors_density
 
-        if (
-            False
-            and spg in list(range(1, 231, 3))
-            and denseness_factors_density is not None
-        ):
-            grid = np.linspace(
-                min(denseness_factors_per_spg[spg]),
-                max(denseness_factors_per_spg[spg]),
-                300,
-            )
-            plt.figure()
-            plt.plot(grid, denseness_factors_density(grid))
-            plt.hist(denseness_factors_per_spg[spg], density=True, bins=60)
-            plt.savefig(f"denseness_factors_fit_{spg}.png")
-
-        ########## 2D densities (p(factor | volume)):
+        ########## 2D densities (p(factor | volume)) (conditioned on the volume):
 
         if len(denseness_factors) < X:
             denseness_factors_conditional_sampler_seeds_per_spg[spg] = None
@@ -825,7 +753,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
             dep_type="c",
             indep_type="c",
             bw=[0.0530715103, 104.043070],  # TODO: Maybe change bandwidth in the future
-        )
+        )  # TODO: Just add a comment, here; what method was used previously?
 
         # print(conditional_density.bw)
 
@@ -836,49 +764,6 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
             max(sums_cov_volumes),
         )
         denseness_factors_conditional_sampler_seeds_per_spg[spg] = sampler_seed
-
-        if False:
-            start = time.time()
-            sample(2000)
-            stop = time.time()
-            print(f"Sampling once took {stop-start}s")
-
-    if False:
-        for spg in [2, 15]:
-
-            denseness_factors = [
-                item[0] for item in denseness_factors_per_spg[spg] if item is not None
-            ]
-            sums_cov_volumes = [
-                item[1] for item in denseness_factors_per_spg[spg] if item is not None
-            ]
-            entries = [
-                entry for entry in denseness_factors_per_spg[spg] if entry is not None
-            ]
-            entries = np.array(entries)
-
-            seed = denseness_factors_conditional_sampler_seeds_per_spg[spg]
-
-            start = time.time()
-            samples = [
-                [sample_denseness_factor(volume, seed), volume]
-                for volume in sums_cov_volumes[0:1000]
-            ]
-            stop = time.time()
-            print(f"Sampling took {stop-start}s")
-
-            plt.scatter(
-                [item[1] for item in entries[0:1000]],
-                [item[0] for item in entries[0:1000]],
-                label="Original",
-            )
-            plt.scatter(
-                [item[1] for item in samples],
-                [item[0] for item in samples],
-                label="Resampled",
-            )
-            plt.legend()
-            plt.show()
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -956,10 +841,7 @@ def load_dataset_info(X=50, check_for_sum_formula_overlap=False):
 
         kde_per_spg[spg] = kd
 
-        # for sample in kd.sample(15):
-        #    print([int(item) if item >= 0 else 0 for item in np.round(sample)])
-
-    ########## Calculate lattice parameter kdes:
+    ########## Calculate lattice parameter KDEs:
 
     scaled_paras_per_lattice_type = {}
 
@@ -1186,5 +1068,4 @@ def show_dataset_statistics():
 
 
 if __name__ == "__main__":
-    # prepare_dataset(per_element=False)
-    convert_old_to_new()
+    prepare_dataset(per_element=False)
