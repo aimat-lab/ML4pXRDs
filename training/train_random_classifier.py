@@ -4,14 +4,14 @@ from ml4pxrd_tools.simulation.simulation_core import mix_patterns_add_background
 from ml4pxrd_tools.generation.random_simulation_utils import load_dataset_info
 import numpy as np
 from models import (
-    build_model_park,
+    build_model_park_small,
     build_model_park_2_layer_CNN,
     build_model_park_gigantic_size,
-    build_model_park_gigantic_size_more_dense,
+    build_model_park_extended,
     build_model_park_gigantic_size_more_dense_bn,
-    build_model_park_medium_size,
+    build_model_park_medium,
     build_model_park_huge_size,
-    build_model_park_original_spg,
+    build_model_park_big,
     build_model_park_tiny_size,
     build_model_resnet_i,
 )
@@ -1491,28 +1491,26 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
 
     if not use_pretrained_model:
 
-        # model = build_model_park_2_layer_CNN(
-        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        # )
-
         # 7-label-version
-        # model = build_model_park(
-        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # model = build_model_park_small(
+        #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_park_medium_size(
-        #    None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # 101-label-version
+        # model = build_model_park_medium(
+        #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # model = build_model_park_tiny_size(None, N, len(spgs), use_dropout=use_dropout, lr=learning_rate)
+        # 230-label-version
+        # model = build_model_park_big(
+        #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
 
         # Resnet-50 + additional dense layer
         model = build_model_resnet_i(
-            None,
             N,
             len(spgs),
             lr=learning_rate,
-            optimizer=optimizer,  # TODO: Remove this option
             batchnorm_momentum=batchnorm_momentum,
             i=50,
             disable_batchnorm=False,
