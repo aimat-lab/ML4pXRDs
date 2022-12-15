@@ -1000,6 +1000,9 @@ def load_dataset_info(
 
 
 def show_dataset_statistics():
+    """Loads the prepared dataset and prints the size of the statistics and test dataset.
+    Additionally, for each spg the number of samples in the statistics and test dataset are printed.
+    """
 
     prepared_dataset_dir = os.path.dirname(os.path.dirname(__file__))
 
