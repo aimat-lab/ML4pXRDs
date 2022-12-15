@@ -26,4 +26,4 @@ srun --nodes=1 --ntasks=1 ray start --head --node-ip-address="$head_node_ip" --p
 
 cd ..
 
-python train_random_classifier.py $date_time head_only
+python train_classifier.py $date_time head_only

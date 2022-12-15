@@ -17,9 +17,9 @@ import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 import functools
 
 num_files = (
-    127  # Into how many files should the simulation of all patterns be saved / split?
+    8  # Into how many files should the simulation of all patterns be saved / split?
 )
-num_processes = 127  # How many processes to use in parallel
+num_processes = 8  # How many processes to use in parallel
 
 # Same as Vecsei et al. 2019:
 angle_min = 5
@@ -787,14 +787,24 @@ class ICSDSimulator:
 
         return exp_inorganic, exp_metalorganic, theoretical
 
-    def prepare_simulation(self):
-        """Prepare the simulation of the ICSD crystals. Read the space group labels."""
+    def prepare_simulation(self, use_only_N_crystals=None):
+        """Prepare the simulation of the ICSD crystals. Read the space group labels.
+
+        Args:
+            use_only_N_crystals (int|None): If not None, use only that many crystals and skip the rest.
+        """
 
         self.reset_simulation_status()
 
         counter = 0
 
-        for i, path in enumerate(self.icsd_paths):
+        for i, path in enumerate(
+            (
+                self.icsd_paths
+                if use_only_N_crystals is None
+                else self.icsd_paths[0:use_only_N_crystals]
+            )
+        ):
 
             print(f"Generated {i} structures.", flush=True)
 
@@ -876,6 +886,6 @@ if __name__ == "__main__":
     )
 
     # simulation.load()
-    simulator.prepare_simulation()
+    simulator.prepare_simulation(use_only_N_crystals=10000)
     simulator.save()
     simulator.simulate_all(start_from_scratch=True)

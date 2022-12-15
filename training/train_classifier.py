@@ -1,18 +1,12 @@
 import tensorflow.keras as keras
-from ml4pxrd_tools.simulation.simulation_core import get_random_xy_patterns
-from ml4pxrd_tools.simulation.simulation_core import mix_patterns_add_background
-from ml4pxrd_tools.generation.random_simulation_utils import load_dataset_info
+from ml4pxrd_tools.simulation.simulation_smeared import get_synthetic_smeared_patterns
+from ml4pxrd_tools.manage_dataset import load_dataset_info
 import numpy as np
 from models import (
     build_model_park_small,
-    build_model_park_2_layer_CNN,
-    build_model_park_gigantic_size,
-    build_model_park_extended,
-    build_model_park_gigantic_size_more_dense_bn,
     build_model_park_medium,
-    build_model_park_huge_size,
     build_model_park_big,
-    build_model_park_tiny_size,
+    build_model_park_extended,
     build_model_resnet_i,
 )
 from utils.distributed_utils import map_to_remote
@@ -156,7 +150,7 @@ local = False
 spgs = list(range(1, 231))
 
 # Path to the presimulated patterns used for testing
-path_to_patterns = "../dataset_simulations/patterns/icsd_vecsei/"  # TODO: Update
+path_to_patterns = "patterns/icsd_vecsei/"
 
 # Path to the ICSD directory that contains the "ICSD_data_from_API.csv" file
 # and the "cif" directory (which contains all the ICSD cif files)

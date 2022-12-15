@@ -38,4 +38,4 @@ done
 
 cd ..
 
-python train_random_classifier.py $1
+python train_classifier.py $1
