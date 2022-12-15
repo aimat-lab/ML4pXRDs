@@ -97,7 +97,8 @@ to `pymatgen_crystallite_size_gauss_max=100`. You can change the default range a
 ## Generation of synthetic crystals
 - TODO: How to use the output of the load dataset function to generate some crystals
 - TODO: Mention that the preparation script of the next section needs to be run first for a lot of the functions
-- TODO: Make it possible to use the generator functions with statistical data provided by us 
+- TODO: Make it possible to use the generator functions with statistical data provided by us
+- TODO: Mention what pickle interface is needed to load this one
 - TODO: -> leave out the crystals etc. when loading the data; remove the unnecessary stuff.
 
 ## Training

@@ -548,12 +548,11 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     return True
 
 
-# TODO: Continue here
 def load_dataset_info(
     minimum_NO_statistics_crystals_per_spg=50,
     check_for_sum_formula_overlap=False,
     load_public_statistics_only=False,
-    generate_public_statistics=False,
+    save_public_statistics=False,
 ):
     """Load prepared dataset from the prepared_dataset directory. This includes
     statistics data and information about the statistics / test split.
@@ -563,21 +562,29 @@ def load_dataset_info(
             Space groups where this is not fulfilled are skipped. Defaults to 50.
         check_for_sum_formula_overlap (bool, optional): Analyze the overlap of sum formulas between the statistics and test dataset. Defaults to False.
         load_public_statistics_only (bool, optional): Whether or not to load only the publically available statistics data (non-licensed). Defaults to False.
-        generate_public_statistics (bool, optional): Whether or not to generate the publically available statistics data from the full prepared_dataset directory. Defaults to False.
+        save_public_statistics (bool, optional): Whether or not to save the publically available statistics data separately. Defaults to False.
 
     Returns:
-        _type_: _description_
+        tuple: (public_statistics, dataset with statistics and test split)
     """
 
-    # TODO: Add option "load_public_statistics_only"
-    # TODO: Add option "generate_public_statistics"
+    repository_dir = os.path.dirname(os.path.dirname(__file__))
 
-    prepared_dataset_dir = os.path.dirname(os.path.dirname(__file__))
+    if load_public_statistics_only:
+
+        with open(
+            os.path.join(repository_dir, "public_statistics"),
+            "rb",
+        ) as file:
+
+            public_statistics = pickle.load(file)
+            return public_statistics
 
     with open(
-        os.path.join(prepared_dataset_dir, "prepared_dataset/meta"),
+        os.path.join(repository_dir, "prepared_dataset/meta"),
         "rb",
     ) as file:
+
         data = pickle.load(file)
 
         per_element = data[5]
@@ -606,26 +613,22 @@ def load_dataset_info(
         test_match_pure_metas = data[14]
 
     if check_for_sum_formula_overlap:
+
         # Check for overlap in sum formulas between
         # test_metas and statistics_metas
 
-        path_to_patterns = "./patterns/icsd_vecsei/"
+        path_to_patterns = "patterns/icsd_vecsei/"
         jobid = os.getenv("SLURM_JOB_ID")
         if jobid is not None and jobid != "":
-            sim = ICSDSimulator(
-                os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
-                os.path.expanduser("~/Databases/ICSD/cif/"),
-            )
-            sim.output_dir = path_to_patterns
-        else:  # local
-            sim = ICSDSimulator(
-                "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-                "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-            )
-            sim.output_dir = path_to_patterns
+            path_to_icsd_directory = path_to_icsd_directory_cluster
+        else:
+            path_to_icsd_directory = path_to_icsd_directory_local
 
-        # statistics_metas = statistics_metas[0:1000]
-        # test_metas = test_metas[0:1000]
+        sim = ICSDSimulator(
+            os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
+            os.path.join(path_to_icsd_directory, "cif/"),
+        )
+        sim.output_dir = path_to_patterns
 
         statistics_sum_formulas = [
             sim.icsd_sumformulas[sim.icsd_ids.index(meta[0])]
@@ -635,11 +638,14 @@ def load_dataset_info(
 
         overlap_counter = 0
         overlap_matching_spgs_counter = 0
+
         for meta in test_metas:
+
             test_index = sim.icsd_ids.index(meta[0])
             test_sum_formula = sim.icsd_sumformulas[test_index]
 
             if test_sum_formula in statistics_sum_formulas_set:
+
                 overlap_counter += 1
 
                 # test_prototype = sim.icsd_structure_types[test_index]
@@ -679,18 +685,19 @@ def load_dataset_info(
         exit()
 
     with open(
-        os.path.join(prepared_dataset_dir, "all_data_per_spg"),
+        os.path.join(repository_dir, "prepared_dataset/all_data_per_spg"),
         "rb",
     ) as file:
         all_data_per_spg = pickle.load(file)
 
-    # Split array in parts to lower memory requirements:
+    ##### Load crystals
+
     test_crystals_files = sorted(
-        glob(os.path.join(prepared_dataset_dir, "test_crystals_*")),
+        glob(os.path.join(repository_dir, "prepared_dataset/test_crystals_*")),
         key=lambda x: int(os.path.basename(x).replace("test_crystals_", "")),
     )
     statistics_crystals_files = sorted(
-        glob(os.path.join(prepared_dataset_dir, "statistics_crystals_*")),
+        glob(os.path.join(repository_dir, "prepared_dataset/statistics_crystals_*")),
         key=lambda x: int(os.path.basename(x).replace("statistics_crystals_", "")),
     )
 
@@ -703,6 +710,8 @@ def load_dataset_info(
     for file in statistics_crystals_files:
         with open(file, "rb") as file:
             statistics_crystals.extend(pickle.load(file))
+
+    ##### Determine well-represented spgs and print some information about the dataset
 
     print("Info about statistics (prepared) dataset:")
     total = 0
@@ -722,7 +731,9 @@ def load_dataset_info(
     print(f"{total} total entries.")
     print(
         f"{total_below_X} spgs below {minimum_NO_statistics_crystals_per_spg} entries."
-    )
+    )  # => these spgs will be excluded when training etc.
+
+    ##### Determine the KDE for the denseness factor (either non-conditional (1D) or conditioned on the sum of atomic volumes)
 
     denseness_factors_density_per_spg = {}
     denseness_factors_conditional_sampler_seeds_per_spg = {}
@@ -736,7 +747,7 @@ def load_dataset_info(
             item[1] for item in denseness_factors_per_spg[spg] if item is not None
         ]
 
-        ########## 1D densities:
+        ########## 1D densities: (non-conditional)
 
         if len(denseness_factors) >= minimum_NO_statistics_crystals_per_spg:
             denseness_factors_density = kde.gaussian_kde(denseness_factors)
@@ -745,7 +756,7 @@ def load_dataset_info(
 
         denseness_factors_density_per_spg[spg] = denseness_factors_density
 
-        ########## 2D densities (p(factor | volume)) (conditioned on the volume):
+        ########## 2D densities (p(factor | volume)) (conditioned on the sum of atomic volumes):
 
         if len(denseness_factors) < minimum_NO_statistics_crystals_per_spg:
             denseness_factors_conditional_sampler_seeds_per_spg[spg] = None
@@ -761,11 +772,14 @@ def load_dataset_info(
             exog=[sums_cov_volumes],
             dep_type="c",
             indep_type="c",
-            bw=[0.0530715103, 104.043070],  # TODO: Maybe change bandwidth in the future
-        )  # TODO: Just add a comment, here; what method was used previously?
+            bw=[
+                0.0530715103,
+                104.043070,
+            ],  # bw pre-computed for performance reasons using normal reference method
+        )
 
-        # print(conditional_density.bw)
-
+        # Store information that will later be needed to sample from this conditional
+        # distribution.
         sampler_seed = (
             conditional_density,
             min(denseness_factors),
@@ -773,6 +787,8 @@ def load_dataset_info(
             max(sums_cov_volumes),
         )
         denseness_factors_conditional_sampler_seeds_per_spg[spg] = sampler_seed
+
+    ##### Convert counts to probabilities
 
     for spg in counter_per_spg_per_element.keys():
         for element in counter_per_spg_per_element[spg].keys():
@@ -826,31 +842,7 @@ def load_dataset_info(
                     counts_per_spg_per_wyckoff[spg][wyckoff_site] = 0
         probability_per_spg_per_wyckoff = counts_per_spg_per_wyckoff
 
-    kde_per_spg = {}
-
-    for spg in all_data_per_spg.keys():
-
-        if len(all_data_per_spg[spg]) < minimum_NO_statistics_crystals_per_spg:
-            kde_per_spg[spg] = None
-            continue
-
-        group = Group(spg, dim=3)
-        names = [(str(x.multiplicity) + x.letter) for x in group]
-
-        data = np.zeros(shape=(len(all_data_per_spg[spg]), len(names)))
-
-        for i, entry in enumerate(all_data_per_spg[spg]):
-            for subentry in entry["occupations"]:
-                index = names.index(subentry[1])
-                data[i, index] += 1
-
-        kd = KernelDensity(bandwidth=0.5, kernel="gaussian")
-
-        kd.fit(data)
-
-        kde_per_spg[spg] = kd
-
-    ########## Calculate lattice parameter KDEs:
+    ##### Calculate lattice parameter KDEs
 
     scaled_paras_per_lattice_type = {}
 
@@ -952,6 +944,9 @@ def load_dataset_info(
 
         lattice_paras_density_per_lattice_type[lattice_type] = density
 
+    ##### Calculate the probability distribution of how spgs are represented in ICSD
+    # This uses only the well-represented spgs in `represented_spgs`
+
     probability_per_spg = {}
     for i, label in enumerate(statistics_match_labels):
         if label[0] in represented_spgs:
@@ -963,13 +958,7 @@ def load_dataset_info(
     for key in probability_per_spg.keys():
         probability_per_spg[key] /= total
 
-    return (  # We reproduce all the probabilities from the ICSD, but all are independently drawn.
-        # The only correlation considered is having multiple elements of the same type (less spread in number of unique elements).
-        # This is the main assumption of my work.
-        # There are no correlations in coordinate space.
-        # P(wyckoff, element) = P(wyckoff|element)P(element)
-        # We just want to resemble the occupation of wyckoff sites realistically in the most straightforward way.
-        # More than that is not needed for merely extracting symmetry information.
+    public_statistics = (
         probability_per_spg_per_element,
         probability_per_spg_per_element_per_wyckoff
         if per_element
@@ -979,27 +968,35 @@ def load_dataset_info(
         if per_element
         else NO_repetitions_prob_per_spg,
         denseness_factors_density_per_spg,
-        kde_per_spg,  # TODO: Remove
-        all_data_per_spg,  # TODO: Remove
         denseness_factors_conditional_sampler_seeds_per_spg,
         lattice_paras_density_per_lattice_type,
         per_element,
         represented_spgs,
-        (
-            statistics_metas,
-            statistics_labels,
-            statistics_crystals,
-            statistics_match_metas,
-            statistics_match_labels,
-            test_metas,
-            test_labels,
-            test_crystals,
-            corrected_labels,
-            test_match_metas,
-            test_match_pure_metas,
-        ),
         probability_per_spg,
     )
+
+    split_dataset = (
+        statistics_metas,
+        statistics_labels,
+        statistics_crystals,
+        statistics_match_metas,
+        statistics_match_labels,
+        test_metas,
+        test_labels,
+        test_crystals,
+        corrected_labels,
+        test_match_metas,
+        test_match_pure_metas,
+    )
+
+    if save_public_statistics:
+        with open(
+            os.path.join(repository_dir, "public_statistics"),
+            "wb",
+        ) as file:
+            pickle.dump(public_statistics, file)
+
+    return (public_statistics, split_dataset)
 
 
 def show_dataset_statistics():
