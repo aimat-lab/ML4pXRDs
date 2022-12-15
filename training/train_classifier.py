@@ -34,7 +34,7 @@ from training.utils.AdamWarmup import AdamWarmup
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "name_of_current_run"
+tag = "direct_training_original"
 description = "Description of current run"
 
 run_analysis_after_training = (
@@ -203,6 +203,8 @@ if local:
 git_revision_hash = (
     subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
 )
+
+print("Git hash:", git_revision_hash)
 
 # 2-theta-range and length patterns (same as used by Vecsei et al. 2019)
 start_angle, end_angle, N = 5, 90, 8501
@@ -1449,7 +1451,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "model_resnet_50+additional_dense"
+    model_name = "park_big"
 
     if not use_pretrained_model:
 
@@ -1464,21 +1466,21 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # 230-label-version
-        # model = build_model_park_big(
-        #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        # )
+        model = build_model_park_big(
+            N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        )
 
         # Resnet-50 + additional dense layer
-        model = build_model_resnet_i(
-            N,
-            len(spgs),
-            lr=learning_rate,
-            batchnorm_momentum=batchnorm_momentum,
-            i=50,
-            disable_batchnorm=False,
-            use_group_norm=use_group_norm,
-            add_additional_dense_layer=True,  # Add one more dense layer
-        )
+        # model = build_model_resnet_i(
+        #    N,
+        #    len(spgs),
+        #    lr=learning_rate,
+        #    batchnorm_momentum=batchnorm_momentum,
+        #    i=50,
+        #    disable_batchnorm=False,
+        #    use_group_norm=use_group_norm,
+        #    add_additional_dense_layer=True,  # Add one more dense layer
+        # )
 
     else:
 
