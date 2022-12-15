@@ -34,8 +34,8 @@ from training.utils.AdamWarmup import AdamWarmup
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "direct_training_original"
-description = "Description of current run"
+tag = "direct_training_park_big"
+description = ""  # description of current run
 
 run_analysis_after_training = (
     True  # run analysis script "compare_random_distribution.py" after training
@@ -47,7 +47,7 @@ analysis_per_spg = False  # run the analysis script separately for each spg (and
 # and no on-the-fly simulation will take place. It is advised to use this
 # setting in combination with head_only, since much less computing ressources
 # are required.
-use_icsd_structures_directly = False
+use_icsd_structures_directly = True  # TODO: Change back
 
 test_every_X_epochs = 1  # compute validation accuracies every X epochs
 # Maximum number of samples to test on for each of the constructed validation
@@ -59,7 +59,7 @@ batches_per_epoch = 150 * 6
 NO_epochs = 1000
 
 # How many structures to generate per spg. Only applies for training using synthetic crystals.
-structures_per_spg = 1
+structures_per_spg = 6  # TODO: Change back to 1
 # How many different crystallite sizes to use for each generated crystal. Only applies for training using synthetic crystals.
 NO_corn_sizes = 1
 
@@ -98,8 +98,8 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 # This only applies only to the models that support dropout, especially those
 # originating from Park et al. (2020)
-use_dropout = False
-learning_rate = 0.0001
+use_dropout = True
+learning_rate = 0.001  # TODO: Change back to 0.0001
 
 optimizer = "Adam"
 # Use group normalization instead of batch normalization. This setting only
@@ -119,7 +119,9 @@ sample_lattice_paras_from_kde = True
 # dataset. This setting controls how many of them should be used / loaded for
 # training and testing. If the setting is "None", all patterns are used.
 load_only_N_patterns_each_test = 1
-load_only_N_patterns_each_statistics = 1
+load_only_N_patterns_each_statistics = (
+    2  # TODO: Turn back to 1 when using it for evaluating accuracy and not for training
+)
 
 preprocess_patterns_sqrt = False  # Apply the sqrt function to the patterns as a preprocessing step (see Zaloga et al. 2020).
 
@@ -128,7 +130,7 @@ verbosity_tf = 2
 generator_verbose = False
 
 # Use more than one GPU on the head node
-use_distributed_strategy = True
+use_distributed_strategy = False  # TODO: Change back
 
 # Instead of following the distribution of spg labels found in the ICSD, uniformly distribute them
 uniformly_distributed = False

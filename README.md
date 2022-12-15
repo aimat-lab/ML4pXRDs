@@ -103,6 +103,8 @@ to `pymatgen_crystallite_size_gauss_max=100`. You can change the default range a
 
 ## Training
 
+- TODO: Change environment name in slurm scripts
+
 In order to perform the training, you first need to generate a dataset. This is
 based on the structures from the ICSD dataset. Thus, a license to the ICSD
 database is needed.
