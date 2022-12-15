@@ -128,13 +128,10 @@ def get_pattern_optimized(
     This is the optimized version using numba.
 
     Args:
-        structure (_type_): pymatgen structure
-        wavelength (_type_): wavelength in angstroms
+        structure (pymatgen.core.structure): Crystal structure
+        wavelength (float): wavelength in angstroms
         two_theta_range (tuple, optional): (min, max) tuple that defines the range in which to find peak positions and intensities. Defaults to (0, 90).
         return_max_unscaled_intensity_angle (bool, optional): Whether or not to output the maximum unscaled intensity and its angle.
-
-    Raises:
-        ValueError: _description_
 
     Returns:
         tuple: (np array of angles, np array of scaled intensities, (angle of maximum unscaled intensity, maximum unscaled intensity) if return_max_unscaled_intensity_angle)

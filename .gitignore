@@ -42,3 +42,4 @@ train_dataset/utils/test_unet/parameters_16-08
 training/prepared_training
 patterns/icsd_vecsei
 prepared_dataset
+prepared_dataset_bak

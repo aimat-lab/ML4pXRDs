@@ -70,9 +70,9 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
         "prepared_dataset",
     )
 
-    if os.path.exists(output_dir):
-        print("Please remove existing prepared_dataset directory first.")
-        return None
+    # if os.path.exists(output_dir):
+    #    print("Please remove existing prepared_dataset directory first.")
+    #    return None
 
     spgs = range(1, 231)  # all spgs
 
@@ -144,12 +144,6 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
         flush=True,
     )  # This should be zero, otherwise something went wrong!
 
-    # Check if train_metas_splitted and test_metas_splitted together yield sim.sim_metas
-
-    all_metas = train_metas_splitted + test_metas_splitted
-    if sorted(all_metas) != sorted([item[0] for item in sim.sim_metas]):
-        raise Exception("Something went wrong while splitting train / test.")
-
     if overlap_counter > 0:
         raise Exception("Something went wrong while splitting train / test.")
 
@@ -174,8 +168,6 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
             test_metas.append(sim.sim_metas[i])
             test_variations.append(sim.sim_variations[i])
             test_labels.append(sim.sim_labels[i])
-        else:
-            raise Exception("Something went wrong while splitting train / test.")
 
     ##### Calculate the statistics from the sim_statistics part of the simulation:
 
@@ -1077,4 +1069,5 @@ def show_dataset_statistics():
 
 
 if __name__ == "__main__":
+
     prepare_dataset(per_element=False)
