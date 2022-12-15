@@ -26,7 +26,7 @@ from pyxtal.symmetry import Group
 import gc
 import psutil
 from ml4pxrd_tools.generation.structure_generation import randomize
-from ml4pxrd_tools.simulation.simulation_core import get_xy_patterns
+from ml4pxrd_tools.simulation.simulation_smeared import get_smeared_patterns
 import random
 import contextlib
 from training.utils.AdamWarmup import AdamWarmup
@@ -215,20 +215,20 @@ print(
 )
 
 (
-    probability_per_spg_per_element,  # To choose the elements
-    probability_per_spg_per_element_per_wyckoff,
-    NO_wyckoffs_prob_per_spg,  # TODO: Remove
-    NO_unique_elements_prob_per_spg,
-    NO_repetitions_prob_per_spg_per_element,
-    denseness_factors_density_per_spg,
-    kde_per_spg,  # TODO: Remove
-    all_data_per_spg_tmp,  # TODO: Remove
-    denseness_factors_conditional_sampler_seeds_per_spg,
-    lattice_paras_density_per_lattice_type,
-    per_element,
-    represented_spgs,  # spgs that are well-represented (>= 50 crystals in statistics dataset)
     (
-        statistics_metas,  # IDs in ICSD database
+        probability_per_spg_per_element,
+        probability_per_spg_per_element_per_wyckoff,
+        NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element,
+        denseness_factors_density_per_spg,
+        denseness_factors_conditional_sampler_seeds_per_spg,
+        lattice_paras_density_per_lattice_type,
+        per_element,
+        represented_spgs,
+        probability_per_spg,
+    ),
+    (
+        statistics_metas,
         statistics_labels,
         statistics_crystals,
         statistics_match_metas,
@@ -432,17 +432,18 @@ def get_xy_pattern_wrapper(
     crystal,
 ):
     xs = np.linspace(start_angle, end_angle, N)
-    patterns, corn_sizes = get_xy_patterns(
-        crystal,
+
+    patterns, corn_sizes = get_smeared_patterns(
+        structure=crystal,
         wavelength=1.5406,
         xs=xs,
         NO_corn_sizes=1,
         two_theta_range=(start_angle, end_angle),
-        do_print=False,
         return_corn_sizes=True,
         return_angles_intensities=False,
         return_max_unscaled_intensity_angle=False,
     )
+
     return patterns[0], corn_sizes[0]
 
 
@@ -762,44 +763,27 @@ def batch_generator_with_additional(
     NO_corn_sizes,
 ):
 
-    patterns, labels, structures, corn_sizes = get_random_xy_patterns(
+    patterns, labels, structures, corn_sizes = get_synthetic_smeared_patterns(
         spgs=spgs,
-        structures_per_spg=structures_per_spg,
-        wavelength=1.5406,  # Cu-Ka line
+        N_structures_per_spg=structures_per_spg,
+        wavelength=1.5406,
         N=N,
         NO_corn_sizes=NO_corn_sizes,
         two_theta_range=(start_angle, end_angle),
-        max_NO_elements=max_NO_elements,
-        do_print=False,
-        return_additional=True,
-        do_distance_checks=do_distance_checks,
-        do_merge_checks=do_merge_checks,
-        use_icsd_statistics=use_icsd_statistics,
+        max_NO_atoms_asymmetric_unit=max_NO_elements,
+        return_structures_and_corn_sizes=True,
         probability_per_spg_per_element=probability_per_spg_per_element,
         probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
         max_volume=generation_max_volume,
-        NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
         do_symmetry_checks=do_symmetry_checks,
-        force_wyckoff_indices=True,
-        use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions,
         NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_density_per_spg=denseness_factors_density_per_spg,
-        kde_per_spg=kde_per_spg,
-        # all_data_per_spg=all_data_per_spg_worker,
-        all_data_per_spg=all_data_per_spg,
-        use_coordinates_directly=use_coordinates_directly,
-        use_lattice_paras_directly=use_lattice_paras_directly,
         denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
         per_element=per_element,
-        verbosity=1,  # Show everything here
+        is_verbose=False,
         probability_per_spg=probability_per_spg,
-        add_background_and_noise=add_background_and_noise
-        if not mix_impurities
-        else False,
-        use_vecsei_bg_noise=use_vecsei_bg_noise if not mix_impurities else False,
-        caglioti_broadening=caglioti_broadening,
     )
 
     # Set the label to the right index:
@@ -834,45 +818,29 @@ def batch_generator_queue(
 
     while True:
         try:
-            patterns, labels = get_random_xy_patterns(
+
+            patterns, labels = get_synthetic_smeared_patterns(
                 spgs=spgs,
-                structures_per_spg=structures_per_spg,
-                wavelength=1.5406,  # Cu-K line
+                N_structures_per_spg=structures_per_spg,
+                wavelength=1.5406,
                 N=N,
                 NO_corn_sizes=NO_corn_sizes,
                 two_theta_range=(start_angle, end_angle),
-                max_NO_elements=max_NO_elements,
-                do_print=False,
-                do_distance_checks=do_distance_checks,
-                do_merge_checks=do_merge_checks,
-                use_icsd_statistics=use_icsd_statistics,
+                max_NO_atoms_asymmetric_unit=max_NO_elements,
+                return_structures_and_corn_sizes=False,
                 probability_per_spg_per_element=probability_per_spg_per_element,
                 probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
                 max_volume=generation_max_volume,
-                NO_wyckoffs_prob_per_spg=NO_wyckoffs_prob_per_spg,
                 do_symmetry_checks=do_symmetry_checks,
-                force_wyckoff_indices=True,
-                use_element_repetitions_instead_of_NO_wyckoffs=use_element_repetitions,
                 NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
                 NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
                 denseness_factors_density_per_spg=denseness_factors_density_per_spg,
-                kde_per_spg=kde_per_spg,
-                all_data_per_spg=all_data_per_spg,
-                use_coordinates_directly=use_coordinates_directly,
-                use_lattice_paras_directly=use_lattice_paras_directly,
                 group_object_per_spg=group_object_per_spg,
                 denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
                 lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
                 per_element=per_element,
-                verbosity=verbosity_generator,
+                is_verbose=False,
                 probability_per_spg=probability_per_spg,
-                add_background_and_noise=add_background_and_noise
-                if not mix_impurities
-                else False,
-                use_vecsei_bg_noise=use_vecsei_bg_noise
-                if not mix_impurities
-                else False,
-                caglioti_broadening=caglioti_broadening,
             )
 
             patterns, labels = shuffle(patterns, labels)

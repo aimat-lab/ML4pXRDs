@@ -241,8 +241,8 @@ def get_synthetic_smeared_patterns(
         denseness_factors_density_per_spg (dict of scipy.stats.kde.gaussian_kde, optional): Dictionary of KDEs to generate the denseness factor for each spg. Defaults to None.
         denseness_factors_conditional_sampler_seeds_per_spg (dict of tuple, optional): dictionary containing tuple for each spg:
         lattice_paras_density_per_lattice_type (dict of scipy.stats.kde.gaussian_kde): Dictionary yielding the KDE for each lattice type.
-        seed (int, optional): Seed to initialize the random generators. If -1, no seed is used. Defaults to -1.
-        is_verbose (bool, optional): Whether or not to print additional info. Defaults to False.
+            seed (int, optional): Seed to initialize the random generators. If -1, no seed is used. Defaults to -1.
+            is_verbose (bool, optional): Whether or not to print additional info. Defaults to False.
         return_structures_and_corn_sizes (bool, optional): Wether or not to additionally return the generated structures and corn sizes. Defaults to False.
         group_object_per_spg (dict of pyxtal.symmetry.Group, optional): Pass in a group object for each spg to speed up the generation. Defaults to None.
         probability_per_spg (dict of floats, optional): If this is not None, spgs will be sampled using this categorical distribution.
