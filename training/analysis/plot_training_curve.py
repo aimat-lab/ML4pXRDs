@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_training_curve(files, labels, colors, linestyles, x_log=True, y_log=False):
+def plot_training_curve(files, labels, colors, linestyles, x_log=True, y_log=True):
 
     for i, file in enumerate(files):
 
