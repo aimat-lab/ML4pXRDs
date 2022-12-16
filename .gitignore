@@ -43,3 +43,4 @@ training/prepared_training
 patterns/icsd_vecsei
 prepared_dataset
 prepared_dataset_bak
+training/analysis/training_curves
