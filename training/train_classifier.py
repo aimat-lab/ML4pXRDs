@@ -300,8 +300,8 @@ else:
 icsd_sim_test = ICSDSimulator(
     os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
     os.path.join(path_to_icsd_directory, "cif/"),
+    output_dir=path_to_patterns,
 )
-icsd_sim_test.output_dir = path_to_patterns
 
 ##### Prepare test datasets
 
@@ -988,8 +988,8 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     icsd_sim_statistics = ICSDSimulator(
         os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
         os.path.join(path_to_icsd_directory, "cif/"),
+        output_dir=path_to_patterns,
     )
-    icsd_sim_statistics.output_dir = path_to_patterns
 
     statistics_match_metas_flat = [item[0] for item in statistics_match_metas]
 
