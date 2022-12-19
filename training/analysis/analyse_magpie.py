@@ -1,4 +1,4 @@
-from ml4pxrd_tools.generation.random_simulation_utils import generate_structures
+from ml4pxrd_tools.generation.structure_generation import generate_structures
 
 from magpie_python.vassal.data.Cell import Cell
 from magpie_python.vassal.data.Atom import Atom

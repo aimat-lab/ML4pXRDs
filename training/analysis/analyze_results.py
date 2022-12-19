@@ -22,7 +22,7 @@ from training.analysis.denseness_factor import get_denseness_factor
 from pyxtal.symmetry import Group
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-from ml4pxrd_tools.simulation.simulation_core import get_xy_patterns
+from ml4pxrd_tools.simulation.simulation_smeared import get_smeared_patterns
 from pymatgen.core.periodic_table import Species
 from training.analysis.entropy import get_chemical_ordering
 from training.analysis.entropy import get_structural_complexity
@@ -644,22 +644,22 @@ if __name__ == "__main__":
                 and counter_xrds_icsd_falsely < total_xrds_icsd_falsely
                 and index not in falsely_icsd_already_processed
             ):
+
                 (
                     patterns,
                     angles,
                     intensities,
                     max_unscaled_intensity_angle,
-                ) = get_xy_patterns(
+                ) = get_smeared_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
                     1,
                     (5, 90),
-                    False,
-                    False,
-                    True,  # return angles and intensities
-                    True,  # return max_unscaled_intensity_angle
+                    return_angles_intensities=True,
+                    return_max_unscaled_intensity_angle=True,
                 )
+
                 pattern = patterns[0]
                 icsd_falsely_volumes_sum_of_intensities.append(
                     (structure.volume, np.sum(intensities))
@@ -882,17 +882,16 @@ if __name__ == "__main__":
                     angles,
                     intensities,
                     max_unscaled_intensity_angle,
-                ) = get_xy_patterns(
+                ) = get_smeared_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
                     1,
                     (5, 90),
-                    False,
-                    False,
-                    True,  # return angles and intensities
-                    True,
+                    return_angles_intensities=True,
+                    return_max_unscaled_intensity_angle=True,
                 )
+
                 pattern = patterns[0]
                 icsd_rightly_volumes_sum_of_intensities.append(
                     (structure.volume, np.sum(intensities))
@@ -1106,17 +1105,16 @@ if __name__ == "__main__":
                     angles,
                     intensities,
                     max_unscaled_intensity_angle,
-                ) = get_xy_patterns(
+                ) = get_smeared_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
                     1,
                     (5, 90),
-                    False,
-                    False,
-                    True,  # return angles and intensities
-                    True,
+                    return_angles_intensities=True,
+                    return_max_unscaled_intensity_angle=True,
                 )
+
                 pattern = patterns[0]
                 random_falsely_volumes_sum_of_intensities.append(
                     (structure.volume, np.sum(intensities))
@@ -1329,17 +1327,16 @@ if __name__ == "__main__":
                     angles,
                     intensities,
                     max_unscaled_intensity_angle,
-                ) = get_xy_patterns(
+                ) = get_smeared_patterns(
                     structure,
                     1.5406,
                     np.linspace(5, 90, 8501),
                     1,
                     (5, 90),
-                    False,
-                    False,
-                    True,  # return angles and intensities
-                    True,
+                    return_angles_intensities=True,
+                    return_max_unscaled_intensity_angle=True,
                 )
+
                 pattern = patterns[0]
                 random_rightly_volumes_sum_of_intensities.append(
                     (structure.volume, np.sum(intensities))
