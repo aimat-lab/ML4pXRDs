@@ -10,33 +10,26 @@ import numpy as np
 
 if __name__ == "__main__":
 
-    include_NO_wyckoffs = False
+    include_NO_samples = True
+    do_plot_random = False
 
     if True:
-
-        # report = classification_report(
-        #    [1, 2, 3, 4, 5, 6, 10, 2, 5, 6, 3, 6, 7, 1, 2, 1, 3, 6, 4],
-        #    [1, 2, 3, 4, 3, 5, 10, 3, 5, 6, 2, 4, 2, 1, 2, 3, 1, 6, 4],
-        #    output_dict=True,
-        # )
-
-        # path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-04-2022_14-55-52"  # 1-230
-        # path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_12-27-30"  # 100-230
-        path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41"  # 50-230
-
+        # path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/21-08-2022_12-40-17"  # 2k epochs random resnet-50
+        path = "/home/henrik/Dokumente/Promotion/xrd_paper/ML4pXRDs/training/classifier_spgs/16-12-2022_08-37-44"  # direct training, big park model
     else:
-
         path = sys.argv[1]
+
+    tag = "direct"
 
     with open(os.path.join(path, "classification_report_match.pickle"), "rb") as file:
         report_match = pickle.load(file)
-    print("Classification report match:")
-    print(report_match)
+    # print("Classification report match:")
+    # print(report_match)
 
     with open(os.path.join(path, "classification_report_random.pickle"), "rb") as file:
         report_random = pickle.load(file)
-    print("Classification report random:")
-    print(report_random)
+    # print("Classification report random:")
+    # print(report_random)
 
     def process_report(report):
 
@@ -70,6 +63,7 @@ if __name__ == "__main__":
         f1_scores_match,
         supports_match,
     ) = process_report(report_match)
+
     (
         spgs_random,
         precisions_random,
@@ -81,80 +75,103 @@ if __name__ == "__main__":
     assert spgs_match == spgs_random
 
     # Switch between possible metrics:
-    metrics_random = f1_scores_random
-    metrics_match = f1_scores_match
-    metric_name = "f1_scores"
+    metrics_random = recalls_random
+    metrics_match = recalls_match
+    metric_name = "recall"
 
-    if include_NO_wyckoffs:
+    if include_NO_samples:
+
         (
-            probability_per_spg_per_element,
-            probability_per_spg_per_element_per_wyckoff,
-            NO_wyckoffs_prob_per_spg,
-            corrected_labels,
-            files_to_use_for_test_set,
-            represented_spgs,
-            NO_unique_elements_prob_per_spg,
-            NO_repetitions_prob_per_spg_per_element,
-            denseness_factors_density_per_spg,
-            kde_per_spg,
-            all_data_per_spg_tmp,
+            (
+                probability_per_spg_per_element,
+                probability_per_spg_per_element_per_wyckoff,
+                NO_unique_elements_prob_per_spg,
+                NO_repetitions_prob_per_spg_per_element,
+                denseness_factors_density_per_spg,
+                denseness_factors_conditional_sampler_seeds_per_spg,
+                lattice_paras_density_per_lattice_type,
+                per_element,
+                represented_spgs,
+                probability_per_spg,
+            ),
+            (
+                statistics_metas,
+                statistics_labels,
+                statistics_crystals,
+                statistics_match_metas,
+                statistics_match_labels,
+                test_metas,
+                test_labels,
+                test_crystals,
+                corrected_labels,
+                test_match_metas,
+                test_match_pure_metas,
+            ),
         ) = load_dataset_info()
 
-        average_NO_wyckoffs = []
+        NO_samples = []
 
-        for spg in spgs_match:
-            NO_wyckoffs_prob = NO_wyckoffs_prob_per_spg[spg]
+        statistics_match_labels_flat = np.array(
+            [item[0] for item in statistics_match_labels]
+        )
+        for spg in spgs_random:
+            NO_samples.append(np.sum(statistics_match_labels_flat == spg))
 
-            average = 0
-
-            for i, NO_wyckoff in enumerate(range(1, len(NO_wyckoffs_prob) + 1)):
-                average += NO_wyckoff * NO_wyckoffs_prob[i]
-
-            average_NO_wyckoffs.append(average)
+    # Plot absolute values:
 
     plt.figure()
-    hd0 = plt.plot(spgs_match, metrics_match, label="Match")
-    hd1 = plt.plot(spgs_random, metrics_random, label="Random")
+    hd0 = plt.scatter(spgs_match, metrics_match, label="Match")
+    if do_plot_random:
+        hd1 = plt.scatter(spgs_random, metrics_random, label="Random")
     hd2 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
-    for x in [1, 3, 16, 75, 143, 168, 195]:
-        plt.axvline(x, color="r")
+    # for x in [1, 3, 16, 75, 143, 168, 195]:
+    #    plt.axvline(x, color="r")
     plt.xlabel("spg")
     plt.ylabel(metric_name)
 
-    if include_NO_wyckoffs:
+    if include_NO_samples:
         ax2 = plt.gca().twinx()
-        hd3 = ax2.plot(
-            spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs", color="r"
-        )
-        ax2.set_ylabel("average NO_wyckoffs")
-        plt.legend(handles=hd0 + hd1 + hd3)
+        hd3 = ax2.plot(spgs_match, NO_samples, label="NO samples", color="r")
+        ax2.set_ylabel("NO samples")
+
+        if do_plot_random:
+            plt.legend(handles=[hd0, hd1] + hd3)
+        else:
+            plt.legend(handles=[hd0] + hd3)
+
     else:
         plt.legend()
+
+    plt.savefig(f"{tag}.pdf")
     plt.show()
 
+    # Plot difference between training (random) and match:
+
     plt.figure()
-    hd0 = plt.plot(
+    hd0 = plt.scatter(
         spgs_match,
         np.array(metrics_random) - np.array(metrics_match),
         label="random - match",
     )
     hd1 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
-    for x in [1, 3, 16, 75, 143, 168, 195]:
-        plt.axvline(x, color="r")
+    # for x in [1, 3, 16, 75, 143, 168, 195]:
+    #    plt.axvline(x, color="r")
     plt.xlabel("spg")
     plt.ylabel("delta " + metric_name)
 
-    if include_NO_wyckoffs:
+    if include_NO_samples:
         ax2 = plt.gca().twinx()
-        hd2 = ax2.plot(
-            spgs_match, average_NO_wyckoffs, label="Average NO_wyckoffs", color="r"
-        )
-        ax2.set_ylabel("average NO_wyckoffs")
-        plt.legend(handles=hd0 + hd2)
+        hd3 = ax2.plot(spgs_match, NO_samples, label="NO samples", color="r")
+        ax2.set_ylabel("NO samples")
+
+        plt.legend(handles=[hd0] + hd3)
     else:
         plt.legend()
+
+    plt.savefig(f"{tag}_diff.pdf")
     plt.show()
 
+    """
     metrics_per_crystal_system = {
         "triclinic": 0,
         "monoclinic": 0,
@@ -200,4 +217,4 @@ if __name__ == "__main__":
 
     print(metrics_per_crystal_system)
 
-    # TODO: Maybe weight by number of samples
+    """
