@@ -34,7 +34,7 @@ from training.utils.AdamWarmup import AdamWarmup
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "direct_training_park_big"
+tag = "direct_training_shuffled_park_medium"
 description = ""  # description of current run
 
 run_analysis_after_training = (
@@ -138,7 +138,7 @@ uniformly_distributed = False
 # Shuffle the statistics (train) dataset with the test dataset. This option can
 # be used to judge the impact that the structure type based split has on the
 # test performance.
-shuffle_test_match_train_match = False
+shuffle_test_match_train_match = True  # TODO: Change this back
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/path/to/model"
@@ -1453,7 +1453,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "park_big"
+    model_name = "park_medium"
 
     if not use_pretrained_model:
 
@@ -1463,14 +1463,14 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # 101-label-version
-        # model = build_model_park_medium(
-        #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        # )
-
-        # 230-label-version
-        model = build_model_park_big(
+        model = build_model_park_medium(
             N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         )
+
+        # 230-label-version
+        # model = build_model_park_big(
+        #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
 
         # Resnet-50 + additional dense layer
         # model = build_model_resnet_i(
