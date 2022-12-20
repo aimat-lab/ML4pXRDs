@@ -63,6 +63,7 @@ def plot_training_curve(files, labels, colors, linestyles, x_log=False, y_log=Fa
 
 if __name__ == "__main__":
 
+    """
     plot_training_curve(
         [
             "training_curves/resnet_50_random.csv",
@@ -84,8 +85,8 @@ if __name__ == "__main__":
         ["r", "g", "b"],
         [(0, (1, 5)), (0, (1, 5)), (0, (1, 5))],
     )
-
     """
+
     plot_training_curve(
         [
             [
@@ -109,7 +110,6 @@ if __name__ == "__main__":
         ["r", "g", "b"],
         [(0, (1, 10)), (0, (1, 10)), (0, (1, 10))],
     )
-    """
 
     plt.vlines([160, 1000], 0, 1, colors=["k", "k"])
     plt.savefig("training_curves_no_log.pdf")

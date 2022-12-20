@@ -204,11 +204,9 @@ print("Match")
 print(accs)
 
 plt.figure()
-plt.plot(list(range(1, 21)), accs)
+plt.plot(list(range(1, 21)), accs, legend="ICSD match")
 plt.xlabel("k")
 plt.ylabel("Accuracy")
-
-plt.savefig("top_k_match.pdf")
 
 #####
 
@@ -219,9 +217,7 @@ accs = get_top_k_accuracies(val_y_random, prediction_random, range(1, 21))
 print("Random")
 print(accs)
 
-plt.figure()
-plt.plot(list(range(1, 21)), accs)
-plt.xlabel("k")
-plt.ylabel("Accuracy")
+plt.plot(list(range(1, 21)), accs, legend="training")
 
-plt.savefig("top_k_match.pdf")
+plt.legend()
+plt.savefig("top_k.pdf")
