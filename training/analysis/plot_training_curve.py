@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_training_curve(files, labels, colors, linestyles, x_log=True, y_log=True):
+def plot_training_curve(files, labels, colors, linestyles, x_log=False, y_log=False):
 
     for i, file in enumerate(files):
 
@@ -82,9 +82,10 @@ if __name__ == "__main__":
         ],
         ["ResNet-101 training", "ResNet-101 ICSD", "ResNet-101 ICSD top-5"],
         ["r", "g", "b"],
-        ["dashed", "dashed", "dashed"],
+        [(0, (1, 5)), (0, (1, 5)), (0, (1, 5))],
     )
 
+    """
     plot_training_curve(
         [
             [
@@ -108,6 +109,8 @@ if __name__ == "__main__":
         ["r", "g", "b"],
         [(0, (1, 10)), (0, (1, 10)), (0, (1, 10))],
     )
+    """
 
-    plt.vlines([160, 1000, 2000], 0, 1, colors=["k", "k", "k"])
+    plt.vlines([160, 1000], 0, 1, colors=["k", "k"])
+    plt.savefig("training_curves_no_log.pdf")
     plt.show()
