@@ -7,19 +7,20 @@ import sys
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import ml4pxrd_tools.matplotlib_defaults
 
 if __name__ == "__main__":
 
     include_NO_samples = True
-    do_plot_random = False
+    do_plot_random = True
 
     if True:
-        # path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/21-08-2022_12-40-17"  # 2k epochs random resnet-50
-        path = "/home/henrik/Dokumente/Promotion/xrd_paper/ML4pXRDs/training/classifier_spgs/16-12-2022_08-37-44"  # direct training, big park model
+        path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/21-08-2022_12-40-17"  # 2k epochs random resnet-50
+        # path = "/home/henrik/Dokumente/Promotion/xrd_paper/ML4pXRDs/training/classifier_spgs/16-12-2022_08-37-44"  # direct training, big park model
     else:
         path = sys.argv[1]
 
-    tag = "direct"
+    tag = "synthetic"
 
     with open(os.path.join(path, "classification_report_match.pickle"), "rb") as file:
         report_match = pickle.load(file)
@@ -139,6 +140,16 @@ if __name__ == "__main__":
         else:
             plt.legend(handles=[hd0] + hd3)
 
+        print(
+            "Correlation between match metric and NO_samples in the spg:",
+            np.corrcoef(metrics_match, NO_samples),
+        )
+
+        print(
+            "Correlation between random metric and NO_samples in the spg:",
+            np.corrcoef(metrics_random, NO_samples),
+        )
+
     else:
         plt.legend()
 
@@ -147,10 +158,12 @@ if __name__ == "__main__":
 
     # Plot difference between training (random) and match:
 
+    diff = np.array(metrics_random) - np.array(metrics_match)
+
     plt.figure()
     hd0 = plt.scatter(
         spgs_match,
-        np.array(metrics_random) - np.array(metrics_match),
+        diff,
         label="random - match",
     )
     hd1 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
@@ -165,6 +178,12 @@ if __name__ == "__main__":
         ax2.set_ylabel("NO samples")
 
         plt.legend(handles=[hd0] + hd3)
+
+        print(
+            "Correlation between (random metric - match metric) and NO_samples in the spg:",
+            np.corrcoef(diff, NO_samples),
+        )
+
     else:
         plt.legend()
 

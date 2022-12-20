@@ -9,8 +9,10 @@ import ray
 from ml4pxrd_tools.simulation.simulation_smeared import get_synthetic_smeared_patterns
 import numpy as np
 import tensorflow as tf
+import ml4pxrd_tools.matplotlib_defaults
+import matplotlib.pyplot as plt
 
-model_path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/21-08-2022_12-40-17/final"
+model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/21-08-2022_12-40-17/final"  # ResNet-50 sqrt-scaling
 preprocess_patterns_sqrt = True
 
 (
@@ -162,7 +164,7 @@ scheduler_fn = lambda input: batch_generator_with_additional.remote(
 results = map_to_remote(
     scheduler_fn=scheduler_fn,
     inputs=range(100),
-    NO_workers=8,
+    NO_workers=16,
 )
 
 val_x_random = []
@@ -181,18 +183,45 @@ val_x_random = np.expand_dims(val_x_random, axis=2)
 
 # Calculate top-k accuracy
 
-prediction_match = model.predict(val_x_match, batch_size=145)
-true_onehot_match = tf.one_hot(val_y_match, depth=len(spgs))
 
-m = tf.keras.metrics.TopKCategoricalAccuracy(k=1)
-m.update_state(true_onehot_match, prediction_match)
-print("match", m.result().numpy())
+def get_top_k_accuracies(true_labels, predictions, ks):
+
+    top_k_accuracies = []
+
+    for k in ks:
+        m = tf.keras.metrics.TopKCategoricalAccuracy(k=k)
+        m.update_state(tf.one_hot(true_labels, depth=len(spgs)), predictions)
+        top_k_accuracies.append(m.result().numpy())
+
+    return top_k_accuracies
+
+
+prediction_match = model.predict(val_x_match, batch_size=145)
+
+accs = get_top_k_accuracies(val_y_match, prediction_match, range(1, 21))
+
+print("Match")
+print(accs)
+
+plt.figure()
+plt.plot(list(range(1, 21)), accs)
+plt.xlabel("k")
+plt.ylabel("Accuracy")
+
+plt.savefig("top_k_match.pdf")
 
 #####
 
 prediction_random = model.predict(val_x_random, batch_size=145)
-true_onehot_random = tf.one_hot(val_y_random, depth=len(spgs))
 
-m = tf.keras.metrics.TopKCategoricalAccuracy(k=1)
-m.update_state(true_onehot_random, prediction_random)
-print("random", m.result().numpy())
+accs = get_top_k_accuracies(val_y_random, prediction_random, range(1, 21))
+
+print("Random")
+print(accs)
+
+plt.figure()
+plt.plot(list(range(1, 21)), accs)
+plt.xlabel("k")
+plt.ylabel("Accuracy")
+
+plt.savefig("top_k_match.pdf")
