@@ -30,6 +30,7 @@ from ml4pxrd_tools.simulation.simulation_smeared import get_smeared_patterns
 import random
 import contextlib
 from training.utils.AdamWarmup import AdamWarmup
+import math
 
 #######################################################################################################################
 ##### Configuration of the training script
@@ -100,6 +101,9 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 # originating from Park et al. (2020)
 use_dropout = True
 learning_rate = 0.001  # TODO: Change back to 0.0001
+
+# Half lr after every 500 epochs:
+use_lr_scheduler = True  # TODO: Change back
 
 optimizer = "Adam"
 # Use group normalization instead of batch normalization. This setting only
@@ -1448,6 +1452,19 @@ if use_distributed_strategy:
 
 with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()):
 
+    if use_lr_scheduler:
+
+        def step_decay(epoch, _):
+            initial_lrate = learning_rate
+            drop = 0.5
+            epochs_drop = 500.0
+            lrate = initial_lrate * math.pow(
+                drop, math.floor((1 + epoch) / epochs_drop)
+            )
+            return lrate
+
+        lr_scheduler_callback = keras.callbacks.LearningRateScheduler(step_decay)
+
     sequence = CustomSequence(batches_per_epoch, batch_size, NO_epochs)
 
     if use_distributed_strategy:
@@ -1510,7 +1527,9 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         model.fit(
             x=dataset if use_distributed_strategy else sequence,
             epochs=NO_epochs,
-            callbacks=[tb_callback, CustomCallback()],
+            callbacks=[tb_callback, CustomCallback()]
+            if not use_lr_scheduler
+            else [tb_callback, CustomCallback(), lr_scheduler_callback],
             verbose=verbosity_tf,
             workers=1,
             max_queue_size=queue_size_tf,
@@ -1523,7 +1542,9 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             y=statistics_y_match,
             epochs=NO_epochs,
             batch_size=batch_size,
-            callbacks=[tb_callback, CustomCallback()],
+            callbacks=[tb_callback, CustomCallback()]
+            if not use_lr_scheduler
+            else [tb_callback, CustomCallback(), lr_scheduler_callback],
             verbose=verbosity_tf,
             workers=1,
             max_queue_size=queue_size_tf,
