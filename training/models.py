@@ -409,3 +409,16 @@ def build_model_resnet_i(
     model.summary()
 
     return model
+
+
+if __name__ == "__main__":
+
+    model = build_model_resnet_i(
+        8501, 145, 0.001, i=10, use_group_norm=True, add_additional_dense_layer=True
+    )
+    model = build_model_resnet_i(
+        8501, 145, 0.001, i=50, use_group_norm=True, add_additional_dense_layer=True
+    )
+    model = build_model_resnet_i(
+        8501, 145, 0.001, i=101, use_group_norm=True, add_additional_dense_layer=True
+    )

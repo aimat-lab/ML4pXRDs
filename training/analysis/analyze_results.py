@@ -178,7 +178,7 @@ if __name__ == "__main__":
         rightly_indices_random, falsely_indices_random = pickle.load(file)
 
     # limit the range:
-    if False:  # TODO: Change back
+    if False:
         to_process = 300
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]

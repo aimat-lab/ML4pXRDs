@@ -35,7 +35,7 @@ import math
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "direct_training_shuffled_park_medium"
+tag = "synthetic_training_ResNet-10"
 description = ""  # description of current run
 
 run_analysis_after_training = (
@@ -48,7 +48,7 @@ analysis_per_spg = False  # run the analysis script separately for each spg (and
 # and no on-the-fly simulation will take place. It is advised to use this
 # setting in combination with head_only, since much less computing ressources
 # are required.
-use_icsd_structures_directly = True  # TODO: Change back
+use_icsd_structures_directly = False
 
 test_every_X_epochs = 1  # compute validation accuracies every X epochs
 # Maximum number of samples to test on for each of the constructed validation
@@ -57,10 +57,10 @@ max_NO_samples_to_test_on = 10000
 # The following setting only applies for training on synthetic crystals. When
 # training on ICSD crystals directly, the whole dataset is used for each epoch.
 batches_per_epoch = 150 * 6
-NO_epochs = 1000
+NO_epochs = 2000
 
 # How many structures to generate per spg. Only applies for training using synthetic crystals.
-structures_per_spg = 6  # TODO: Change back to 1
+structures_per_spg = 1
 # How many different crystallite sizes to use for each generated crystal. Only applies for training using synthetic crystals.
 NO_corn_sizes = 1
 
@@ -99,8 +99,8 @@ randomization_step = 3  # Only use every n'th sample for the randomization proce
 
 # This only applies only to the models that support dropout, especially those
 # originating from Park et al. (2020)
-use_dropout = True
-learning_rate = 0.001  # TODO: Change back to 0.0001
+use_dropout = False
+learning_rate = 0.0001
 
 # Half lr after every 500 epochs:
 use_lr_scheduler = True  # TODO: Change back
@@ -123,18 +123,16 @@ sample_lattice_paras_from_kde = True
 # dataset. This setting controls how many of them should be used / loaded for
 # training and testing. If the setting is "None", all patterns are used.
 load_only_N_patterns_each_test = 1
-load_only_N_patterns_each_statistics = (
-    2  # TODO: Turn back to 1 when using it for evaluating accuracy and not for training
-)
+load_only_N_patterns_each_statistics = 1
 
-preprocess_patterns_sqrt = False  # Apply the sqrt function to the patterns as a preprocessing step (see Zaloga et al. 2020).
+preprocess_patterns_sqrt = True  # Apply the sqrt function to the patterns as a preprocessing step (see Zaloga et al. 2020).
 
 # Verbosity setting as passed to fit function of tf
 verbosity_tf = 2
 generator_verbose = False
 
 # Use more than one GPU on the head node
-use_distributed_strategy = False  # TODO: Change back
+use_distributed_strategy = True
 
 # Instead of following the distribution of spg labels found in the ICSD, uniformly distribute them
 uniformly_distributed = False
@@ -142,7 +140,7 @@ uniformly_distributed = False
 # Shuffle the statistics (train) dataset with the test dataset. This option can
 # be used to judge the impact that the structure type based split has on the
 # test performance.
-shuffle_test_match_train_match = True  # TODO: Change this back
+shuffle_test_match_train_match = False
 
 use_pretrained_model = False  # Make it possible to resume from a previous training run
 pretrained_model_path = "/path/to/model"
@@ -1481,7 +1479,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "park_medium"
+    model_name = "ResNet-10"
 
     if not use_pretrained_model:
 
@@ -1491,26 +1489,26 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         # )
 
         # 101-label-version
-        model = build_model_park_medium(
-            N, len(spgs), use_dropout=use_dropout, lr=learning_rate
-        )
+        # model = build_model_park_medium(
+        #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
+        # )
 
         # 230-label-version
         # model = build_model_park_big(
         #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # Resnet-50 + additional dense layer
-        # model = build_model_resnet_i(
-        #    N,
-        #    len(spgs),
-        #    lr=learning_rate,
-        #    batchnorm_momentum=batchnorm_momentum,
-        #    i=50,
-        #    disable_batchnorm=False,
-        #    use_group_norm=use_group_norm,
-        #    add_additional_dense_layer=True,  # Add one more dense layer
-        # )
+        # Resnet-10 + additional dense layer
+        model = build_model_resnet_i(
+            N,
+            len(spgs),
+            lr=learning_rate,
+            batchnorm_momentum=batchnorm_momentum,
+            i=10,
+            disable_batchnorm=False,
+            use_group_norm=use_group_norm,
+            add_additional_dense_layer=True,  # Add one more dense layer
+        )
 
     else:
 
