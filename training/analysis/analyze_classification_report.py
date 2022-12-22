@@ -12,6 +12,7 @@ import ml4pxrd_tools.matplotlib_defaults
 if __name__ == "__main__":
 
     include_NO_samples = True
+    sort_by_NO_samples = True
     do_plot_random = True
 
     if True:
@@ -160,8 +161,15 @@ if __name__ == "__main__":
 
     diff = np.array(metrics_random) - np.array(metrics_match)
 
+    if sort_by_NO_samples:
+        NO_samples = np.array(NO_samples)
+        sorting_indices = np.argsort(NO_samples)
+        NO_samples = NO_samples[sorting_indices]
+        diff = diff[sorting_indices]
+        spgs_match = list(range(len(diff)))
+
     plt.figure()
-    hd0 = plt.scatter(
+    hd0 = plt.bar(
         spgs_match,
         diff,
         label="random - match",
@@ -169,7 +177,12 @@ if __name__ == "__main__":
     hd1 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
     # for x in [1, 3, 16, 75, 143, 168, 195]:
     #    plt.axvline(x, color="r")
-    plt.xlabel("spg")
+
+    if not sort_by_NO_samples:
+        plt.xlabel("spg")
+    else:
+        plt.xlabel("index")
+
     plt.ylabel("delta " + metric_name)
 
     if include_NO_samples:
