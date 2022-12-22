@@ -429,6 +429,17 @@ for i in range(len(icsd_sim_test.sim_crystals)):
 with open(out_base + "spgs.pickle", "wb") as file:
     pickle.dump(spgs, file)
 
+with open(out_base + "icsd_data.pickle", "wb") as file:
+    pickle.dump(
+        (
+            icsd_crystals_match,
+            icsd_labels_match,
+            [item[:, 0] for item in icsd_variations_match],
+            icsd_metas_match,
+        ),
+        file,
+    )
+
 # This (remote) function is later only used to simulate the patterns of the randomized ICSD crystals
 # (with replaced coordinates of lattice parameters)
 @ray.remote(num_cpus=1, num_gpus=0)
