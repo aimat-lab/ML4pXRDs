@@ -105,6 +105,8 @@ learning_rate = 0.0001
 # Half lr after every 500 epochs:
 use_lr_scheduler = True  # TODO: Change back
 
+save_periodic_checkpoints = True  # Saves a checkpoint every 100 epochs
+
 optimizer = "Adam"
 # Use group normalization instead of batch normalization. This setting only
 # applies for the ResNet models, where batch normalization was observed to
@@ -1450,6 +1452,8 @@ if use_distributed_strategy:
 
 with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()):
 
+    additional_callbacks = []
+
     if use_lr_scheduler:
 
         def step_decay(epoch, _):
@@ -1462,6 +1466,20 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             return lrate
 
         lr_scheduler_callback = keras.callbacks.LearningRateScheduler(step_decay)
+
+        additional_callbacks.append(lr_scheduler_callback)
+
+    if save_periodic_checkpoints:
+
+        os.system("mkdir -p " + out_base + "checkpoints")
+        checkpoint_callback = keras.callbacks.ModelCheckpoint(
+            out_base + "checkpoints/model_{epoch}",
+            save_freq=batches_per_epoch * 100
+            if not use_icsd_structures_directly
+            else int(len(statistics_x_match) / batch_size) * 100,
+        )
+
+        additional_callbacks.append(checkpoint_callback)
 
     sequence = CustomSequence(batches_per_epoch, batch_size, NO_epochs)
 
@@ -1525,9 +1543,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         model.fit(
             x=dataset if use_distributed_strategy else sequence,
             epochs=NO_epochs,
-            callbacks=[tb_callback, CustomCallback()]
-            if not use_lr_scheduler
-            else [tb_callback, CustomCallback(), lr_scheduler_callback],
+            callbacks=[tb_callback, CustomCallback()] + additional_callbacks,
             verbose=verbosity_tf,
             workers=1,
             max_queue_size=queue_size_tf,
@@ -1540,9 +1556,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             y=statistics_y_match,
             epochs=NO_epochs,
             batch_size=batch_size,
-            callbacks=[tb_callback, CustomCallback()]
-            if not use_lr_scheduler
-            else [tb_callback, CustomCallback(), lr_scheduler_callback],
+            callbacks=[tb_callback, CustomCallback()] + additional_callbacks,
             verbose=verbosity_tf,
             workers=1,
             max_queue_size=queue_size_tf,
