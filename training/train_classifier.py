@@ -35,7 +35,7 @@ import math
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "synthetic_training_ResNet-101"
+tag = "synthetic_training_ResNet-50"
 description = ""  # description of current run
 
 run_analysis_after_training = (
@@ -1497,7 +1497,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "ResNet-101"
+    model_name = "ResNet-50"
 
     if not use_pretrained_model:
 
@@ -1516,13 +1516,13 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # Resnet-101 + additional dense layer
+        # Resnet-50 + additional dense layer
         model = build_model_resnet_i(
             N,
             len(spgs),
             lr=learning_rate,
             batchnorm_momentum=batchnorm_momentum,
-            i=101,
+            i=50,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
             add_additional_dense_layer=True,  # Add one more dense layer
