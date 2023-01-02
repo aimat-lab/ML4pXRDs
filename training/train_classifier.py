@@ -103,7 +103,7 @@ use_dropout = False
 learning_rate = 0.0001
 
 # Half lr after every 500 epochs:
-use_lr_scheduler = True  # TODO: Change back
+use_lr_scheduler = True
 
 save_periodic_checkpoints = True  # Saves a checkpoint every 100 epochs
 

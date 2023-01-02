@@ -66,11 +66,10 @@ data can be loaded by using the function `load_dataset_info` with parameter
 `load_public_statistics_only=True`. The returned objects can then be passed to
 the respective functions to generate crystals and simulate pXRDs (see below).
 
-- TODO: Mention what pickle interface is needed to load this one
-- TODO: Full code to load statistics
+- TODO: Full code example to load statistics
 
 ## Generating synthetic crystals
-- TODO: Make one example to call the function
+- TODO: Make one example to call the function (using loaded statistics from above)
 
 ## Simulating pXRDs
 This repository provides various functions of simulating powder XRDs:
@@ -86,7 +85,7 @@ for a given structure object.
 to generate synthetic crystals and simulate pXRDs based on them. The synthetic crystal generation
 is based on statistics extracted from the ICSD. 
     
-- TODO: Similar to above for the generation of crystals, make one example function call
+- TODO: Similar to above for the generation of crystals, make one example function call; using the statistics loaded above
 
 The functions `get_smeared_patterns` and `get_synthetic_smeared_patterns`
 calculate the FWHM of the gaussian peak profiles using a random crystallite size
@@ -132,11 +131,20 @@ The easiest way to track the progress and results of the training runs is to use
 `TensorBoard`. Simly XXX
 
 - TODO: Go through all TODOs in the whole project and fix them.
-- TODO: LICENSE?
+- TODO: Submit scripts
+
+### Analyzing results
+After finishing a training run, you can use the script `training/analysis/analyze_results.py` to analyze 
+the trained model. This will compare the performance of the model on patterns from synthetic crystals 
+and patterns from ICSD crystals considering different metrics, e.g. the unit cell volume, number of atoms 
+in the asymmetric unit etc.
+
+- TODO: How to call the script?
+- TODO: Where do the analysis results end up?
 
 # Citing
 To cite this repository, please refer to our publication:
-XXX
+- TODO: Add reference to arxiv paper
 
 # References
 [1] Ong, S. P., Richards, W. D., Jain, A., Hautier, G., Kocher, M., Cholia, S., Gunter, D., Chevrier, V. L., Persson, K. A., & Ceder, G. (2013). Python Materials Genomics (pymatgen): A robust, open-source python library for materials analysis (Version 2022.1.24) [Computer software]. https://doi.org/10.1016/j.commatsci.2012.10.028

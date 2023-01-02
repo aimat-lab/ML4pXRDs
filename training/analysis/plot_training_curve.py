@@ -29,16 +29,6 @@ def plot_training_curve(files, labels, colors, linestyles, x_log=False, y_log=Fa
         else:
             all_data = np.genfromtxt(file, skip_header=1, delimiter=",")[:, 1:3]
 
-        """
-        seaborn.lineplot(
-            all_data[:, 0],
-            all_data[:, 1],
-            label=labels[i],
-            color=colors[i],
-            linestyle=linestyles[i],
-        )
-        """
-
         plt.plot(
             all_data[:, 0],
             all_data[:, 1],
@@ -57,8 +47,6 @@ def plot_training_curve(files, labels, colors, linestyles, x_log=False, y_log=Fa
     plt.ylabel("Accuracy")
 
     plt.legend()
-
-    # plt.grid()
 
 
 if __name__ == "__main__":

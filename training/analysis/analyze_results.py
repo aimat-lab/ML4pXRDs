@@ -7,15 +7,13 @@ for a more lightweight analysis of the results.
 
 import sys
 import os
-from sympy import comp
-from dataset_simulations.random_simulation import Simulation
+from ml4pxrd_tools.simulation.icsd_simulator import ICSDSimulator
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 from pyxtal import pyxtal
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.ase import AseAtomsAdaptor
-from ase.visualize import view
 from ase.io import write
 from training.analysis.analyse_magpie import get_magpie_features
 from training.analysis.denseness_factor import get_denseness_factor
