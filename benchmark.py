@@ -7,18 +7,18 @@ from ml4pxrd_tools.simulation.simulation_smeared import perform_benchmark
 from pyxtal.symmetry import Group
 
 (
-    probability_per_spg_per_element,
-    probability_per_spg_per_element_per_wyckoff,
-    NO_wyckoffs_prob_per_spg,
-    NO_unique_elements_prob_per_spg,
-    NO_repetitions_prob_per_spg_per_element,
-    denseness_factors_density_per_spg,
-    kde_per_spg,
-    all_data_per_spg_tmp,
-    denseness_factors_conditional_sampler_seeds_per_spg,
-    lattice_paras_density_per_lattice_type,
-    per_element,
-    represented_spgs,
+    (
+        probability_per_spg_per_element,
+        probability_per_spg_per_element_per_wyckoff,
+        NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element,
+        denseness_factors_density_per_spg,
+        denseness_factors_conditional_sampler_seeds_per_spg,
+        lattice_paras_density_per_lattice_type,
+        per_element,
+        represented_spgs,
+        probability_per_spg,
+    ),
     (
         statistics_metas,
         statistics_labels,
@@ -32,7 +32,6 @@ from pyxtal.symmetry import Group
         test_match_metas,
         test_match_pure_metas,
     ),
-    probability_per_spg,
 ) = load_dataset_info()
 
 group_object_per_spg = {}
