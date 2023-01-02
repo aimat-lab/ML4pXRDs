@@ -61,15 +61,43 @@ In order to be able to generate synthetic crystals, some general statistics
 about the occupation of the wyckoff positions for each space group need to be
 extracted from the ICSD. If you only want to generate synthetic crystals (and
 simulate pXRDs based on them) without running your own training experiments, you
-can use the statistical data contained in "./public_statistics". The required
-data can be loaded by using the function `load_dataset_info` with parameter
-`load_public_statistics_only=True`. The returned objects can then be passed to
-the respective functions to generate crystals and simulate pXRDs (see below).
+can use the statistical data contained in "./public_statistics". 
 
-- TODO: Full code example to load statistics
+The required data can be loaded by using the function `load_dataset_info` with
+parameter `load_public_statistics_only=True`. The returned objects can then be
+passed to the respective functions to generate crystals and simulate pXRDs (see
+below).
+
+```
+(
+    probability_per_spg_per_element,
+    probability_per_spg_per_element_per_wyckoff,
+    NO_unique_elements_prob_per_spg,
+    NO_repetitions_prob_per_spg_per_element,
+    denseness_factors_density_per_spg,
+    denseness_factors_conditional_sampler_seeds_per_spg,
+    lattice_paras_density_per_lattice_type,
+    per_element,
+    represented_spgs,
+    probability_per_spg,
+) = load_dataset_info(load_public_statistics_only=True)
+```
 
 ## Generating synthetic crystals
-- TODO: Make one example to call the function (using loaded statistics from above)
+
+Example for space group 125:
+```
+structures = generate_structures(
+    125,
+    N=1,
+    probability_per_spg_per_element=probability_per_spg_per_element,
+    probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+    NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+    NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+    denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+    lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+)
+```
 
 ## Simulating pXRDs
 This repository provides various functions of simulating powder XRDs:
@@ -84,8 +112,26 @@ for a given structure object.
 - Use function `from ml4pxrd_tools.simulation.simulation_smeared import get_synthetic_smeared_patterns`
 to generate synthetic crystals and simulate pXRDs based on them. The synthetic crystal generation
 is based on statistics extracted from the ICSD. 
-    
-- TODO: Similar to above for the generation of crystals, make one example function call; using the statistics loaded above
+
+Here is an example of how to call `get_synthetic_smeared_patterns` using the loaded statistics as explained above
+(here for space group 125):
+
+```
+patterns, labels = get_synthetic_smeared_patterns(
+    [125],
+    N_structures_per_spg=5,
+    wavelength=1.5406,
+    two_theta_range=(5, 90),
+    N=8501,
+    NO_corn_sizes=1,
+    probability_per_spg_per_element=probability_per_spg_per_element,
+    probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+    NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+    NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+    denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+    lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+)
+```    
 
 The functions `get_smeared_patterns` and `get_synthetic_smeared_patterns`
 calculate the FWHM of the gaussian peak profiles using a random crystallite size

@@ -8,6 +8,7 @@ import numpy as np
 import random
 from pyxtal.symmetry import Group
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from ml4pxrd_tools.manage_dataset import load_dataset_info
 
 
 def rejection_sampler(p, xbounds, pmax):
@@ -751,3 +752,29 @@ def generate_structures(
     ]
 
     return result
+
+
+if __name__ == "__main__":
+    (
+        probability_per_spg_per_element,
+        probability_per_spg_per_element_per_wyckoff,
+        NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element,
+        denseness_factors_density_per_spg,
+        denseness_factors_conditional_sampler_seeds_per_spg,
+        lattice_paras_density_per_lattice_type,
+        per_element,
+        represented_spgs,
+        probability_per_spg,
+    ) = load_dataset_info(load_public_statistics_only=True)
+
+    structures = generate_structures(
+        125,
+        N=1,
+        probability_per_spg_per_element=probability_per_spg_per_element,
+        probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+        NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+        NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+        denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+    )
