@@ -9,8 +9,11 @@ import ray
 from ml4pxrd_tools.simulation.simulation_smeared import get_synthetic_smeared_patterns
 import numpy as np
 import tensorflow as tf
-import ml4pxrd_tools.matplotlib_defaults
 import matplotlib.pyplot as plt
+import ml4pxrd_tools.matplotlib_defaults
+
+# This script can be used to generate a top-k plot (see our paper) of the specified model.
+# Please change `model_path` to point to the directory of your run.
 
 model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/21-08-2022_12-40-17/final"  # ResNet-50 sqrt-scaling
 preprocess_patterns_sqrt = True

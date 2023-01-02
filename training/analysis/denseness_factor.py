@@ -4,6 +4,15 @@ import numpy as np
 
 
 def get_denseness_factor(structure):
+    """Obtain the denseness factor (unit cell volume divided by sum of atomic volumes)
+    of the given pymatgen structure.
+
+    Args:
+        structure (pymatgen.core.structure): Structure object
+
+    Returns:
+        float|None: Denseness factor. Returns None if an error occurs.
+    """
 
     try:
 
@@ -33,17 +42,8 @@ def get_denseness_factor(structure):
                     )
 
                 if len(splitted) > 1:
-
                     occupancy = float(splitted[1])
-
                 else:
-                    # occupancy = atom.species.element_composition.to_reduced_dict[
-                    #    specie
-                    # ]
-
-                    # if occupancy != 1.0:
-                    #    print("Occupancy not 1.0.")
-
                     occupancy = 1.0
 
                 r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
