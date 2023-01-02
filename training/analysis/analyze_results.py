@@ -15,15 +15,12 @@ from pyxtal import pyxtal
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.ase import AseAtomsAdaptor
 from ase.io import write
-from training.analysis.analyse_magpie import get_magpie_features
 from training.analysis.denseness_factor import get_denseness_factor
 from pyxtal.symmetry import Group
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from ml4pxrd_tools.simulation.simulation_smeared import get_smeared_patterns
 from pymatgen.core.periodic_table import Species
-from training.analysis.entropy import get_chemical_ordering
-from training.analysis.entropy import get_structural_complexity
 import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 
 figure_double_width_pub = matplotlib_defaults.pub_width
@@ -79,7 +76,6 @@ if __name__ == "__main__":
         in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/19-06-2022_10-15-26/"
 
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
-        # tag = "magpie_10-03-2022_14-34-51"
         # tag = "volumes_densenesses_4-spg"
         # tag = "look_at_structures"
         # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/20-03-2022_02-06-52/"
@@ -101,10 +97,6 @@ if __name__ == "__main__":
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
     calculate_conventionals = False
-
-    compute_magpie_features = False
-
-    analyse_complexity_ordering = False
 
     show_sample_structures = False
     samples_to_show_icsd = 50
@@ -449,7 +441,6 @@ if __name__ == "__main__":
     icsd_falsely_element_repetitions = []
     icsd_falsely_NO_atoms = []
     icsd_falsely_wyckoff_repetitions = []
-    icsd_falsely_magpie_features = []
     icsd_falsely_density = []
     icsd_falsely_sum_cov_vols = []
     icsd_falsely_NO_unique_wyckoffs = []
@@ -457,8 +448,6 @@ if __name__ == "__main__":
     icsd_falsely_max_Zs = []
     icsd_falsely_set_wyckoffs_indices = []
     icsd_falsely_set_wyckoffs_max_indices = []
-    icsd_falsely_structural_complexity = []
-    icsd_falsely_chemical_ordering = []
     icsd_falsely_volumes_sum_of_intensities = []
     icsd_falsely_COM = []
     icsd_falsely_max_unscaled_intensity = []
@@ -479,7 +468,6 @@ if __name__ == "__main__":
     icsd_rightly_element_repetitions = []
     icsd_rightly_NO_atoms = []
     icsd_rightly_wyckoff_repetitions = []
-    icsd_rightly_magpie_features = []
     icsd_rightly_density = []
     icsd_rightly_sum_cov_vols = []
     icsd_rightly_NO_unique_wyckoffs = []
@@ -487,8 +475,6 @@ if __name__ == "__main__":
     icsd_rightly_max_Zs = []
     icsd_rightly_set_wyckoffs_indices = []
     icsd_rightly_set_wyckoffs_max_indices = []
-    icsd_rightly_structural_complexity = []
-    icsd_rightly_chemical_ordering = []
     icsd_rightly_volumes_sum_of_intensities = []
     icsd_rightly_COM = []
     icsd_rightly_max_unscaled_intensity = []
@@ -506,7 +492,6 @@ if __name__ == "__main__":
     random_rightly_element_repetitions = []
     random_rightly_NO_atoms = []
     random_rightly_wyckoff_repetitions = []
-    random_rightly_magpie_features = []
     random_rightly_density = []
     random_rightly_sum_cov_vols = []
     random_rightly_NO_unique_wyckoffs = []
@@ -514,8 +499,6 @@ if __name__ == "__main__":
     random_rightly_max_Zs = []
     random_rightly_set_wyckoffs_indices = []
     random_rightly_set_wyckoffs_max_indices = []
-    random_rightly_structural_complexity = []
-    random_rightly_chemical_ordering = []
     random_rightly_volumes_sum_of_intensities = []
     random_rightly_COM = []
     random_rightly_max_unscaled_intensity = []
@@ -533,7 +516,6 @@ if __name__ == "__main__":
     random_falsely_element_repetitions = []
     random_falsely_NO_atoms = []
     random_falsely_wyckoff_repetitions = []
-    random_falsely_magpie_features = []
     random_falsely_density = []
     random_falsely_sum_cov_vols = []
     random_falsely_NO_unique_wyckoffs = []
@@ -541,8 +523,6 @@ if __name__ == "__main__":
     random_falsely_max_Zs = []
     random_falsely_set_wyckoffs_indices = []
     random_falsely_set_wyckoffs_max_indices = []
-    random_falsely_structural_complexity = []
-    random_falsely_chemical_ordering = []
     random_falsely_volumes_sum_of_intensities = []
     random_falsely_COM = []
     random_falsely_max_unscaled_intensity = []
@@ -558,28 +538,6 @@ if __name__ == "__main__":
     wrong_wyckoff_name_counter = 0
 
     print("Started processing falsely_indices_icsd")
-
-    total_samples_magpie = 500
-    samples_magpie_icsd_falsely = (
-        total_samples_magpie
-        * len(falsely_indices_icsd)
-        / (len(falsely_indices_icsd) + len(rightly_indices_icsd))
-    )
-    samples_magpie_icsd_rightly = (
-        total_samples_magpie
-        * len(rightly_indices_icsd)
-        / (len(falsely_indices_icsd) + len(rightly_indices_icsd))
-    )
-    samples_magpie_random_falsely = (
-        total_samples_magpie
-        * len(falsely_indices_random)
-        / (len(falsely_indices_random) + len(rightly_indices_random))
-    )
-    samples_magpie_random_rightly = (
-        total_samples_magpie
-        * len(rightly_indices_random)
-        / (len(falsely_indices_random) + len(rightly_indices_random))
-    )
 
     # make this scale with the rightly / falsely proportion
     total_xrds_icsd_falsely = (
@@ -768,27 +726,6 @@ if __name__ == "__main__":
 
             icsd_falsely_max_Zs.append(icsd_max_Zs[index])
 
-            if analyse_complexity_ordering:
-                try:
-                    if structure.is_ordered:
-                        icsd_falsely_chemical_ordering.append(
-                            get_chemical_ordering(structure)
-                        )
-                    else:
-                        icsd_falsely_chemical_ordering.append(None)
-                except Exception as ex:
-                    print("Error calculating chemical ordering:")
-                    print(ex)
-                    icsd_falsely_chemical_ordering.append(None)
-                try:
-                    icsd_falsely_structural_complexity.append(
-                        get_structural_complexity(structure)
-                    )
-                except Exception as ex:
-                    print("Error calculating structural complexity:")
-                    print(ex)
-                    icsd_falsely_structural_complexity.append(None)
-
             skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
                 indices = []
@@ -809,33 +746,6 @@ if __name__ == "__main__":
                     icsd_falsely_set_wyckoffs_indices.append(None)
                     icsd_falsely_set_wyckoffs_max_indices.append(None)
                     skip = False
-
-            if compute_magpie_features:
-                if not np.any(np.array(icsd_occupancies[index]) != 1.0):
-                    try:
-                        # Make sure that the proportions are kept correct:
-                        if (
-                            len(icsd_falsely_magpie_features)
-                            < samples_magpie_icsd_falsely
-                        ):
-                            magpie_features = get_magpie_features(structure)
-
-                            if (
-                                magpie_features is not None
-                            ):  # limit the amount of computations
-                                icsd_falsely_magpie_features.append(magpie_features)
-
-                                print(
-                                    f"{len(icsd_falsely_magpie_features)} of {samples_magpie_icsd_falsely}"
-                                )
-
-                    except Exception as ex:
-                        print("Error calculating magpie features.")
-                        print(ex)
-
-    if compute_magpie_features:
-        if len(icsd_falsely_magpie_features) != (int(samples_magpie_icsd_falsely) + 1):
-            raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing rightly_indices_icsd")
 
@@ -1000,27 +910,6 @@ if __name__ == "__main__":
 
             icsd_rightly_max_Zs.append(icsd_max_Zs[index])
 
-            if analyse_complexity_ordering:
-                try:
-                    if structure.is_ordered:
-                        icsd_rightly_chemical_ordering.append(
-                            get_chemical_ordering(structure)
-                        )
-                    else:
-                        icsd_rightly_chemical_ordering.append(None)
-                except Exception as ex:
-                    print("Error calculating chemical ordering:")
-                    print(ex)
-                    icsd_rightly_chemical_ordering.append(None)
-                try:
-                    icsd_rightly_structural_complexity.append(
-                        get_structural_complexity(structure)
-                    )
-                except Exception as ex:
-                    print("Error calculating structural complexity:")
-                    print(ex)
-                    icsd_rightly_structural_complexity.append(None)
-
             skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
                 indices = []
@@ -1041,30 +930,6 @@ if __name__ == "__main__":
                     skip = False
                     icsd_rightly_set_wyckoffs_max_indices.append(None)
                     icsd_rightly_set_wyckoffs_indices.append(None)
-
-            if compute_magpie_features:
-                if not np.any(np.array(icsd_occupancies[index]) != 1.0):
-                    try:
-                        if (
-                            len(icsd_rightly_magpie_features)
-                            < samples_magpie_icsd_rightly
-                        ):
-                            magpie_features = get_magpie_features(structure)
-                            if (
-                                magpie_features is not None
-                            ):  # limit the amount of computations
-                                icsd_rightly_magpie_features.append(magpie_features)
-
-                                print(
-                                    f"{len(icsd_rightly_magpie_features)} of {samples_magpie_icsd_rightly}"
-                                )
-                    except Exception as ex:
-                        print("Error calculating magpie features.")
-                        print(ex)
-
-    if compute_magpie_features:
-        if len(icsd_rightly_magpie_features) != (int(samples_magpie_icsd_rightly) + 1):
-            raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing falsely_indices_random")
 
@@ -1220,27 +1085,6 @@ if __name__ == "__main__":
 
             random_falsely_max_Zs.append(random_max_Zs[index])
 
-            if analyse_complexity_ordering:
-                try:
-                    if structure.is_ordered:
-                        random_falsely_chemical_ordering.append(
-                            get_chemical_ordering(structure)
-                        )
-                    else:
-                        random_falsely_chemical_ordering.append(None)
-                except Exception as ex:
-                    print("Error calculating chemical ordering:")
-                    print(ex)
-                    random_falsely_chemical_ordering.append(None)
-                try:
-                    random_falsely_structural_complexity.append(
-                        get_structural_complexity(structure)
-                    )
-                except Exception as ex:
-                    print("Error calculating structural complexity:")
-                    print(ex)
-                    random_falsely_structural_complexity.append(None)
-
             skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
                 indices = []
@@ -1261,32 +1105,6 @@ if __name__ == "__main__":
                     skip = False
                     random_falsely_set_wyckoffs_indices.append(None)
                     random_falsely_set_wyckoffs_max_indices.append(None)
-
-            if compute_magpie_features:
-                try:
-                    if (
-                        len(random_falsely_magpie_features)
-                        < samples_magpie_random_falsely
-                    ):  # limit the amount of computations
-
-                        magpie_features = get_magpie_features(structure)
-
-                        if magpie_features is not None:
-                            random_falsely_magpie_features.append(magpie_features)
-
-                            print(
-                                f"{len(random_falsely_magpie_features)} of {samples_magpie_random_falsely}"
-                            )
-
-                except Exception as ex:
-                    print("Error calculating magpie features.")
-                    print(ex)
-
-    if compute_magpie_features:
-        if len(random_falsely_magpie_features) != (
-            int(samples_magpie_random_falsely) + 1
-        ):
-            raise Exception("total_samples_magpie was set too high.")
 
     print("Started processing rightly_indices_random")
 
@@ -1442,27 +1260,6 @@ if __name__ == "__main__":
 
             random_rightly_max_Zs.append(random_max_Zs[index])
 
-            if analyse_complexity_ordering:
-                try:
-                    if structure.is_ordered:
-                        random_rightly_chemical_ordering.append(
-                            get_chemical_ordering(structure)
-                        )
-                    else:
-                        random_rightly_chemical_ordering.append(None)
-                except Exception as ex:
-                    print("Error calculating chemical ordering:")
-                    print(ex)
-                    random_rightly_chemical_ordering.append(None)
-                try:
-                    random_rightly_structural_complexity.append(
-                        get_structural_complexity(structure)
-                    )
-                except Exception as ex:
-                    print("Error calculating structural complexity:")
-                    print(ex)
-                    random_rightly_structural_complexity.append(None)
-
             skip = False
             if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
                 indices = []
@@ -1483,32 +1280,6 @@ if __name__ == "__main__":
                     skip = False
                     random_rightly_set_wyckoffs_indices.append(None)
                     random_rightly_set_wyckoffs_max_indices.append(None)
-
-            if compute_magpie_features:
-                try:
-                    if (
-                        len(random_rightly_magpie_features)
-                        < samples_magpie_random_rightly
-                    ):  # limit the amount of computations
-
-                        magpie_features = get_magpie_features(structure)
-
-                        if magpie_features is not None:
-                            random_rightly_magpie_features.append(magpie_features)
-
-                        print(
-                            f"{len(random_rightly_magpie_features)} of {samples_magpie_random_rightly}"
-                        )
-
-                except Exception as ex:
-                    print("Error calculating magpie features.")
-                    print(ex)
-
-    if compute_magpie_features:
-        if len(random_rightly_magpie_features) != (
-            int(samples_magpie_random_rightly) + 1
-        ):
-            raise Exception("total_samples_magpie was set too high.")
 
     if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
         print(f"{wrong_wyckoff_name_counter} wyckoff names mismatched.")
@@ -2320,132 +2091,6 @@ if __name__ == "__main__":
         f"{out_base}2D_NO_wyckoffs_set_wyckoffs_max_indices_random.pdf",
         bbox_inches="tight",
     )
-
-    # structural_complexity over volume (shannon entropy of occupations)
-
-    if analyse_complexity_ordering:
-
-        plt.figure(
-            figsize=(
-                figure_double_width_pub * 0.95 * 0.5,
-                figure_double_width_pub * 0.7 * 0.5,
-            )
-        )
-        plt.scatter(
-            icsd_rightly_volumes, icsd_rightly_structural_complexity, color="g", s=0.5
-        )
-        plt.scatter(
-            icsd_falsely_volumes, icsd_falsely_structural_complexity, color="r", s=0.5
-        )
-        plt.xlim(0, 7000)
-        plt.tight_layout()
-        plt.savefig(
-            f"{out_base}2D_volumes_structural_complexity_icsd_pub.pdf",
-            bbox_inches="tight",
-        )
-
-        plt.gcf().set_size_inches(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
-        )
-        plt.savefig(
-            f"{out_base}2D_volumes_structural_complexity_icsd.pdf",
-            bbox_inches="tight",
-        )
-
-        plt.figure(
-            figsize=(
-                figure_double_width_pub * 0.95 * 0.5,
-                figure_double_width_pub * 0.7 * 0.5,
-            )
-        )
-        plt.scatter(
-            random_rightly_volumes,
-            random_rightly_structural_complexity,
-            color="g",
-            s=0.5,
-        )
-        plt.scatter(
-            random_falsely_volumes,
-            random_falsely_structural_complexity,
-            color="r",
-            s=0.5,
-        )
-        plt.xlim(0, 7000)
-        plt.tight_layout()
-        plt.savefig(
-            f"{out_base}2D_volumes_structural_complexity_random_pub.pdf",
-            bbox_inches="tight",
-        )
-
-        plt.gcf().set_size_inches(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
-        )
-        plt.savefig(
-            f"{out_base}2D_volumes_structural_complexity_random.pdf",
-            bbox_inches="tight",
-        )
-
-    # chemical_ordering over volume (shannon entropy of occupations)
-
-    if analyse_complexity_ordering:
-
-        plt.figure(
-            figsize=(
-                figure_double_width_pub * 0.95 * 0.5,
-                figure_double_width_pub * 0.7 * 0.5,
-            )
-        )
-        plt.scatter(
-            icsd_rightly_volumes, icsd_rightly_chemical_ordering, color="g", s=0.5
-        )
-        plt.scatter(
-            icsd_falsely_volumes, icsd_falsely_chemical_ordering, color="r", s=0.5
-        )
-        plt.xlim(0, 7000)
-        plt.tight_layout()
-        plt.savefig(
-            f"{out_base}2D_volumes_chemical_ordering_icsd_pub.pdf",
-            bbox_inches="tight",
-        )
-
-        plt.gcf().set_size_inches(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
-        )
-        plt.savefig(
-            f"{out_base}2D_volumes_chemical_ordering_icsd.pdf",
-            bbox_inches="tight",
-        )
-
-        plt.figure(
-            figsize=(
-                figure_double_width_pub * 0.95 * 0.5,
-                figure_double_width_pub * 0.7 * 0.5,
-            )
-        )
-        plt.scatter(
-            random_rightly_volumes, random_rightly_chemical_ordering, color="g", s=0.5
-        )
-        plt.scatter(
-            random_falsely_volumes, random_falsely_chemical_ordering, color="r", s=0.5
-        )
-        plt.xlim(0, 7000)
-        plt.tight_layout()
-        plt.savefig(
-            f"{out_base}2D_volumes_chemical_ordering_random_pub.pdf",
-            bbox_inches="tight",
-        )
-
-        plt.gcf().set_size_inches(
-            figure_double_width * 0.95 * 0.5,
-            figure_double_width * 0.7 * 0.5,
-        )
-        plt.savefig(
-            f"{out_base}2D_volumes_chemical_ordering_random.pdf",
-            bbox_inches="tight",
-        )
 
     # number of unique elements over the volume
 
@@ -3762,239 +3407,4 @@ if __name__ == "__main__":
                 is_int=True,
                 only_proportions=flag,
                 min_is_zero=True,
-            )
-
-    if analyse_complexity_ordering:
-
-        for flag in [True, False]:
-            create_histogram(
-                "structural_complexity",
-                [
-                    [
-                        item
-                        for item in icsd_rightly_structural_complexity
-                        if item is not None
-                    ],
-                    [
-                        item
-                        for item in icsd_falsely_structural_complexity
-                        if item is not None
-                    ],
-                ],
-                [
-                    [
-                        item
-                        for item in random_rightly_structural_complexity
-                        if item is not None
-                    ],
-                    [
-                        item
-                        for item in random_falsely_structural_complexity
-                        if item is not None
-                    ],
-                ],
-                r"structural complexity",
-                [
-                    "ICSD correctly",
-                    "ICSD incorrectly",
-                    "Synthetic correctly",
-                    "Synthetic incorrectly",
-                ],
-                is_int=False,
-                only_proportions=flag,
-                min_is_zero=True,
-            )
-
-        for flag in [True, False]:
-            create_histogram(
-                "chemical ordering",
-                [
-                    [
-                        item
-                        for item in icsd_rightly_chemical_ordering
-                        if item is not None
-                    ],
-                    [
-                        item
-                        for item in icsd_falsely_chemical_ordering
-                        if item is not None
-                    ],
-                ],
-                [
-                    [
-                        item
-                        for item in random_rightly_chemical_ordering
-                        if item is not None
-                    ],
-                    [
-                        item
-                        for item in random_falsely_chemical_ordering
-                        if item is not None
-                    ],
-                ],
-                r"chemical ordering",
-                [
-                    "ICSD correctly",
-                    "ICSD incorrectly",
-                    "Synthetic correctly",
-                    "Synthetic incorrectly",
-                ],
-                is_int=False,
-                only_proportions=flag,
-                min_is_zero=True,
-            )
-
-    # Info about wyckoff positions in cif file format:
-    # => where in the cif file is written what kind of wyckoff site we are dealing with?
-    # The general wyckoff site is always written in the cif file!
-    # This is because the special ones are only special cases of the general wyckoff position!
-    # Only the general wyckoff position is needed to generate all the coordinates.
-
-    ################# Analysing additional structural features (Magpie) ################
-
-    # mean_effective_coord_number,
-    # mean_coord_number,
-    # L2_norm,
-    # L3_norm,
-    # max_packing_efficiency,
-    # mean_bond_length_variation,
-
-    if compute_magpie_features:
-
-        for flag in [True, False]:
-            create_histogram(
-                "mean_effective_coord_number",
-                [
-                    [item[0] for item in icsd_rightly_magpie_features],
-                    [item[0] for item in icsd_falsely_magpie_features],
-                ],
-                [
-                    [item[0] for item in random_rightly_magpie_features],
-                    [item[0] for item in random_falsely_magpie_features],
-                ],
-                r"mean effective coordination number",
-                [
-                    "ICSD correctly",
-                    "ICSD incorrectly",
-                    "Synthetic correctly",
-                    "Synthetic incorrectly",
-                ],
-                is_int=False,
-                only_proportions=flag,
-                N_bins_continuous=12,
-            )
-
-        for flag in [True, False]:
-            create_histogram(
-                "mean_coord_number",
-                [
-                    [item[1] for item in icsd_rightly_magpie_features],
-                    [item[1] for item in icsd_falsely_magpie_features],
-                ],
-                [
-                    [item[1] for item in random_rightly_magpie_features],
-                    [item[1] for item in random_falsely_magpie_features],
-                ],
-                r"mean coordination number",
-                [
-                    "ICSD correctly",
-                    "ICSD incorrectly",
-                    "Synthetic correctly",
-                    "Synthetic incorrectly",
-                ],
-                is_int=False,
-                only_proportions=flag,
-                N_bins_continuous=12,
-            )
-
-        for flag in [True, False]:
-            create_histogram(
-                "stoichometry_L2_norm",
-                [
-                    [item[2] for item in icsd_rightly_magpie_features],
-                    [item[2] for item in icsd_falsely_magpie_features],
-                ],
-                [
-                    [item[2] for item in random_rightly_magpie_features],
-                    [item[2] for item in random_falsely_magpie_features],
-                ],
-                r"stoichometry L2 norm",
-                [
-                    "ICSD correctly",
-                    "ICSD incorrectly",
-                    "Synthetic correctly",
-                    "Synthetic incorrectly",
-                ],
-                is_int=False,
-                only_proportions=flag,
-                N_bins_continuous=12,
-            )
-
-        for flag in [True, False]:
-            create_histogram(
-                "stoichometry_L3_norm",
-                [
-                    [item[3] for item in icsd_rightly_magpie_features],
-                    [item[3] for item in icsd_falsely_magpie_features],
-                ],
-                [
-                    [item[3] for item in random_rightly_magpie_features],
-                    [item[3] for item in random_falsely_magpie_features],
-                ],
-                r"stoichometry L3 norm",
-                [
-                    "ICSD correctly",
-                    "ICSD incorrectly",
-                    "Synthetic correctly",
-                    "Synthetic incorrectly",
-                ],
-                is_int=False,
-                only_proportions=flag,
-                N_bins_continuous=12,
-            )
-
-        for flag in [True, False]:
-            create_histogram(
-                "max_packing_efficiency",
-                [
-                    [item[4] for item in icsd_rightly_magpie_features],
-                    [item[4] for item in icsd_falsely_magpie_features],
-                ],
-                [
-                    [item[4] for item in random_rightly_magpie_features],
-                    [item[4] for item in random_falsely_magpie_features],
-                ],
-                r"max packing efficiency",
-                [
-                    "ICSD correctly",
-                    "ICSD incorrectly",
-                    "Synthetic correctly",
-                    "Synthetic incorrectly",
-                ],
-                is_int=False,
-                only_proportions=flag,
-                N_bins_continuous=12,
-            )
-
-        for flag in [True, False]:
-            create_histogram(
-                "mean_bond_length_variation",
-                [
-                    [item[5] for item in icsd_rightly_magpie_features],
-                    [item[5] for item in icsd_falsely_magpie_features],
-                ],
-                [
-                    [item[5] for item in random_rightly_magpie_features],
-                    [item[5] for item in random_falsely_magpie_features],
-                ],
-                r"mean bond length variation",
-                [
-                    "ICSD correctly",
-                    "ICSD incorrectly",
-                    "Synthetic correctly",
-                    "Synthetic incorrectly",
-                ],
-                is_int=False,
-                only_proportions=flag,
-                N_bins_continuous=12,
             )
