@@ -1,6 +1,18 @@
-from concurrent.futures import process
-from xml.etree.ElementInclude import include
-from sklearn.metrics import classification_report
+""" 
+This script can be used to analyze the classification reports generated and saved by 
+the training script. It will plot the metric specified in `metric_name` (see below in the script)
+over the space groups for both the synthetic and ICSD (match) test dataset.
+A second plot will contain the gap between the synthetic and ICSD (match) test dataset.
+
+You can call the script like this:
+
+```
+python analyze_classification_report.py <path_to_run_directory> <tag>
+```
+
+The tag will be included in the filename of the saved figures.
+"""
+
 from ml4pxrd_tools.manage_dataset import load_dataset_info
 import pickle
 import sys
@@ -11,17 +23,23 @@ import ml4pxrd_tools.matplotlib_defaults
 
 if __name__ == "__main__":
 
-    include_NO_samples = True
-    sort_by_NO_samples = True
-    do_plot_random = True
+    include_NO_samples = False  # Whether or not to include the number of samples in the statistics dataset of the given space group in the plots.
+    sort_by_NO_samples = False  # Whether or not to sort the plot containing the gap between synthetic and match by NO_samples.
+    do_plot_random = (
+        True  # Whether or not to include the synthetic dataset in the first plot.
+    )
+    metric_name = "recall"  # "precision", "recall", or "f1"
 
-    if True:
+    if False:
         path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/21-08-2022_12-40-17"  # 2k epochs random resnet-50
         # path = "/home/henrik/Dokumente/Promotion/xrd_paper/ML4pXRDs/training/classifier_spgs/16-12-2022_08-37-44"  # direct training, big park model
     else:
         path = sys.argv[1]
 
-    tag = "synthetic"
+    if len(sys.argv) > 2:
+        tag = sys.argv[2]
+    else:
+        tag = "synthetic"
 
     with open(os.path.join(path, "classification_report_match.pickle"), "rb") as file:
         report_match = pickle.load(file)
@@ -34,6 +52,15 @@ if __name__ == "__main__":
     # print(report_random)
 
     def process_report(report):
+        """Process a classification report as returned by
+        sklearn.metrics.classification_report with output_dict=True.
+
+        Args:
+            report: Classification report (dict)
+
+        Returns:
+            tuple: (spgs, precisions, recalls, f1_scores, supports)
+        """
 
         spgs = []
         precisions = []
@@ -76,13 +103,19 @@ if __name__ == "__main__":
 
     assert spgs_match == spgs_random
 
-    # Switch between possible metrics:
-    metrics_random = recalls_random
-    metrics_match = recalls_match
-    metric_name = "recall"
+    if metric_name == "recall":
+        metrics_random = recalls_random
+        metrics_match = recalls_match
+    elif metric_name == "precision":
+        metrics_random = precisions_random
+        metrics_match = precisions_match
+    elif metric_name == "f1":
+        metrics_random = f1_scores_random
+        metrics_match = f1_scores_match
+    else:
+        raise Exception(f"Metric name {metric_name} not recognized.")
 
     if include_NO_samples:
-
         (
             (
                 probability_per_spg_per_element,
@@ -126,8 +159,10 @@ if __name__ == "__main__":
     if do_plot_random:
         hd1 = plt.scatter(spgs_random, metrics_random, label="Random")
     hd2 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
+
     # for x in [1, 3, 16, 75, 143, 168, 195]:
     #    plt.axvline(x, color="r")
+
     plt.xlabel("spg")
     plt.ylabel(metric_name)
 
@@ -248,5 +283,4 @@ if __name__ == "__main__":
         metrics_per_crystal_system[key] /= total_per_crystal_system[key]
 
     print(metrics_per_crystal_system)
-
     """
