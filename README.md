@@ -156,32 +156,34 @@ uniformly sampled in the range `pymatgen_crystallite_size_gauss_min=20` to
 the top of `simulation_smeared.py`.
 
 ## Training
-### Preparing the dataset
+### Pre-simulate patterns for testing
 If you want to run your own ML experiments, you need to generate your own
 dataset from the ICSD that also contains the required simulated diffractograms
 and crystals. They are needed to test the accuracy of the ML models.
 
-In order to generate a dataset, a license for the ICSD database is needed.
-If you have the license and downloaded the database, you need to XXX.
+In order to generate a dataset, a license for the ICSD database is needed. If
+you have the license and downloaded the database, you need to first simulate
+pXRD patterns based on the ICSD crystals. This can be accomplished by running
+the script `ml4pxrd_tools/simulation/icsd_simulator.py`. Before running this
+script, make sure that you change the variables at the top of this script file,
+of the file `simulation_worker.py`, and of `simulation_smeared.py`.
 
-- TODO: icsd_simulator.py:
-This script can be used to simulate pXRD patterns of the ICSD database. Before
-running this script, make sure that you change the variables on top of this
-script file, the file `simulation_worker.py`, and `simulation_smeared.py`.
-
-- TODO: submit_icsd_simulation_slurm.slr
+Instead of running the script file directly, you can also use the provided slurm
+script `submit_icsd_simulation_slurm.slr` to run it on a cluster. Make sure to
+adapt it to your cluster first.
 - TODO: Change in the submit script how the conda env is loaded!
-- Write here that this needs to be changed, first (in the script file)
 
+### Extract statistics and generate dataset
 To generate a new dataset with prototype-based split, you first have to change
 `path_to_icsd_directory_cluster` or `path_to_icsd_directory_local` (depends on
 if you run this script on a cluster using slurm or not) in this script. It
 should point to your directory containing the ICSD database. Furthermore, you
 first need to run the simulation of the ICSD data (see README.md) and point
-`path_to_patterns` (see below) to the directory containing your simulated 
-patterns.
-Then, you can run this file to generate the dataset: `python manage_dataset.py`
+`path_to_patterns` (see below) to the directory containing your simulated
+patterns. Then, you can run this file to generate the dataset: `python
+manage_dataset.py`
 
+### Run experiments
 In the beginning of the training script (`train_random_classifier.py`), you can
 find options of the training including detailed explanations. While you should
 look through all options, the following options need to be changed regardless:
