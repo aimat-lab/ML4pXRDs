@@ -1,4 +1,6 @@
-# This script can be used to plot a training curve as downloaded from Tensorboard.
+"""
+This script can be used to plot a training curve as downloaded from Tensorboard.
+"""
 
 import ml4pxrd_tools.matplotlib_defaults
 import numpy as np
@@ -6,6 +8,17 @@ import matplotlib.pyplot as plt
 
 
 def plot_training_curve(files, labels, colors, linestyles, x_log=False, y_log=False):
+    """Plot training curve from csv files (as downloaded from tensorboard).
+
+    Args:
+        files (list): List of csv files. This can also be a list of lists,
+            where each sublist contains multiple csv files that belong to one run (concatenated)
+        labels (list): Legend label for each item of `files`.
+        colors (list): Color for each item of `files`.
+        linestyles (list): Linestyle for each item of `files`.
+        x_log (bool, optional): Use log scale for x axis. Defaults to False.
+        y_log (bool, optional): Use log scale for y axis. Defaults to False.
+    """
 
     for i, file in enumerate(files):
 

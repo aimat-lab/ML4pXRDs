@@ -157,6 +157,8 @@ running this script, make sure that you change the variables on top of this
 script file, the file `simulation_worker.py`, and `simulation_smeared.py`.
 
 - TODO: submit_icsd_simulation_slurm.slr
+- TODO: Change in the submit script how the conda env is loaded!
+- Write here that this needs to be changed, first (in the script file)
 
 To generate a new dataset with prototype-based split, you first have to change
 `path_to_icsd_directory_cluster` or `path_to_icsd_directory_local` (depends on
@@ -176,6 +178,9 @@ look through all options, the following options need to be changed regardless:
 
 - TODO: Talk about submit scripts in general
 - TODO: Change environment name in slurm scripts
+- Change method in script of how environment is activated
+- Fixed paths?
+- submit_head_only.slr
 
 - TODO: How to change configuration of computing nodes in the training script
 - TODO: Command line options of the training script; alternatively, run it using

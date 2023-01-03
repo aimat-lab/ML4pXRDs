@@ -1,3 +1,7 @@
+"""
+This is the original 2D resnet code from the tensorflow model repository.
+"""
+
 # Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -114,39 +118,42 @@ def make_divisible(
         new_value += divisor
     return int(new_value)
 
+
 class StochasticDepth(tf.keras.layers.Layer):
-  """Creates a stochastic depth layer."""
+    """Creates a stochastic depth layer."""
 
-  def __init__(self, stochastic_depth_drop_rate, **kwargs):
-    """Initializes a stochastic depth layer.
-    Args:
-      stochastic_depth_drop_rate: A `float` of drop rate.
-      **kwargs: Additional keyword arguments to be passed.
-    Returns:
-      A output `tf.Tensor` of which should have the same shape as input.
-    """
-    super(StochasticDepth, self).__init__(**kwargs)
-    self._drop_rate = stochastic_depth_drop_rate
+    def __init__(self, stochastic_depth_drop_rate, **kwargs):
+        """Initializes a stochastic depth layer.
+        Args:
+          stochastic_depth_drop_rate: A `float` of drop rate.
+          **kwargs: Additional keyword arguments to be passed.
+        Returns:
+          A output `tf.Tensor` of which should have the same shape as input.
+        """
+        super(StochasticDepth, self).__init__(**kwargs)
+        self._drop_rate = stochastic_depth_drop_rate
 
-  def get_config(self):
-    config = {'drop_rate': self._drop_rate}
-    base_config = super(StochasticDepth, self).get_config()
-    return dict(list(base_config.items()) + list(config.items()))
+    def get_config(self):
+        config = {"drop_rate": self._drop_rate}
+        base_config = super(StochasticDepth, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
 
-  def call(self, inputs, training=None):
-    if training is None:
-      training = tf.keras.backend.learning_phase()
-    if not training or self._drop_rate is None or self._drop_rate == 0:
-      return inputs
+    def call(self, inputs, training=None):
+        if training is None:
+            training = tf.keras.backend.learning_phase()
+        if not training or self._drop_rate is None or self._drop_rate == 0:
+            return inputs
 
-    keep_prob = 1.0 - self._drop_rate
-    batch_size = tf.shape(inputs)[0]
-    random_tensor = keep_prob
-    random_tensor += tf.random.uniform(
-        [batch_size] + [1] * (inputs.shape.rank - 1), dtype=inputs.dtype)
-    binary_tensor = tf.floor(random_tensor)
-    output = tf.math.divide(inputs, keep_prob) * binary_tensor
-    return output
+        keep_prob = 1.0 - self._drop_rate
+        batch_size = tf.shape(inputs)[0]
+        random_tensor = keep_prob
+        random_tensor += tf.random.uniform(
+            [batch_size] + [1] * (inputs.shape.rank - 1), dtype=inputs.dtype
+        )
+        binary_tensor = tf.floor(random_tensor)
+        output = tf.math.divide(inputs, keep_prob) * binary_tensor
+        return output
+
 
 class SqueezeExcitation(tf.keras.layers.Layer):
     """Creates a squeeze and excitation layer."""
@@ -422,9 +429,7 @@ class ResidualBlock(tf.keras.layers.Layer):
             self._squeeze_excitation = None
 
         if self._stochastic_depth_drop_rate:
-            self._stochastic_depth = StochasticDepth(
-                self._stochastic_depth_drop_rate
-            )
+            self._stochastic_depth = StochasticDepth(self._stochastic_depth_drop_rate)
         else:
             self._stochastic_depth = None
 
@@ -652,9 +657,7 @@ class BottleneckBlock(tf.keras.layers.Layer):
             self._squeeze_excitation = None
 
         if self._stochastic_depth_drop_rate:
-            self._stochastic_depth = StochasticDepth(
-                self._stochastic_depth_drop_rate
-            )
+            self._stochastic_depth = StochasticDepth(self._stochastic_depth_drop_rate)
         else:
             self._stochastic_depth = None
         self._add = tf.keras.layers.Add()
@@ -1038,9 +1041,10 @@ class ResNet(tf.keras.Model):
         """A dict of {level: TensorShape} pairs for the model output."""
         return self._output_specs
 
+
 if __name__ == "__main__":
 
-    resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None,299,299,3)))
+    resnet_model = ResNet(10, keras.layers.InputSpec(shape=(None, 299, 299, 3)))
 
     predictions = keras.layers.Flatten()(resnet_model.layers[-1].output)
     predictions = keras.layers.Dense(100)(predictions)

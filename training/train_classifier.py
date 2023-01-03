@@ -1,3 +1,7 @@
+"""
+Main training script. Change configuration variables on top of this script before running it.
+"""
+
 import tensorflow.keras as keras
 from ml4pxrd_tools.simulation.simulation_smeared import get_synthetic_smeared_patterns
 from ml4pxrd_tools.manage_dataset import load_dataset_info

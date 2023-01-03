@@ -1,9 +1,11 @@
+"""
+All models that were used in our publication.
+See the publication for a detailed description and illustrations.
+"""
+
 import tensorflow.keras as keras
 import tensorflow as tf
 from training.utils.resnet_keras_1D import ResNet
-
-# All models that were used in out publication.
-# See the publication for a detailed description and illustrations.
 
 
 def build_model_park_small(

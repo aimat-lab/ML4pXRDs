@@ -1,3 +1,8 @@
+"""
+Contains code to generate synthetic crystal structures based
+on the symmetry operations of the specified space group.
+"""
+
 import numpy as np
 from pyxtal.database.element import Element
 from pyxtal import pyxtal

@@ -1,3 +1,8 @@
+"""
+This is the original resnet code from the tensorflow model repository, modified to
+work with 1D data and use group normalization instead of batch normalization.
+"""
+
 # Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,9 +16,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# This is the original resnet code from the tensorflow repository, modified to
-# work with 1D data and use group normalization instead of batch normalization.
 
 """Contains definitions of ResNet and ResNet-RS models."""
 
