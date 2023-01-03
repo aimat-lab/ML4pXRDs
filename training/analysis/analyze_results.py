@@ -1,8 +1,26 @@
-"""This script can be used to analyze the results of a training run.
-Since this script was built during the incremental work on this project,
-it contains the analysis of a lot of different features, of which 
-only a few are relevant. Feel free to use your own analysis script 
-for a more lightweight analysis of the results.
+"""
+This script can be used to analyze the results of a training run. This will
+compare the performance of the model on patterns from synthetic crystals and
+patterns from ICSD crystals considering different metrics, e.g. the unit cell
+volume, number of atoms in the asymmetric unit, and many more. Since this script
+was built during the incremental work on this project, it contains the analysis
+of a lot of different features, of which only a few are relevant. Feel free to
+use your own analysis script for a more lightweight analysis of the results.
+
+To use this script, simply run it from the command line:
+
+``` 
+python analyze_results.py <path to run directory> <tag> [<list of spgs>] 
+```
+
+Example to run analysis for space groups 2 and 15:
+
+``` 
+python analyze_results.py ./my_run my_analysis 2 15 
+```
+
+The script will create a directory "./comparison_plots/{tag}/" that will contain
+all plots of the analysis.
 """
 
 import sys
@@ -23,30 +41,24 @@ from ml4pxrd_tools.simulation.simulation_smeared import get_smeared_patterns
 from pymatgen.core.periodic_table import Species
 import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 
-figure_double_width_pub = matplotlib_defaults.pub_width
-figure_double_width = 10
+figure_double_width_pub = (
+    matplotlib_defaults.pub_width
+)  # Width of figures for the publication
+figure_double_width = 10  # Width of figures for analysis
 
+# Path to the ICSD directory that contains the "ICSD_data_from_API.csv" file
+# and the "cif" directory (which contains all the ICSD cif files)
+path_to_icsd_directory_local = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
+path_to_icsd_directory_cluster = os.path.expanduser("~/Databases/ICSD/")
+
+# Fix range of volume to (0,7000), number of atoms in asymmetric unit to (0,100),
+# denseness factor to (0, 4.0), and lattice parameters to (0, 55.0)
 fix_important_ranges = True
-zoom = False  # Add zoomed-in subplots inside the main plot
+zoom = False  # Add zoomed-in subplots inside the main plot of volume and number of atoms in asymmetric unit
 
 if __name__ == "__main__":
 
-    if False:
-        plt.figure(
-            figsize=(
-                figure_double_width_pub * 0.95 * 0.5,
-                figure_double_width_pub * 0.7 * 0.5,
-            )
-        )
-        plt.ticklabel_format(axis="both", style="sci", scilimits=(0, 0))
-        plt.plot([0.0001, 0.0002, 0.0003], [3, 2, 1])
-        plt.xlabel("hello world")
-        plt.ylabel("hello world")
-        plt.tight_layout()
-        plt.savefig("test.pdf")
-        exit()
-
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 2:  # Run from command line
 
         # Probably running directly from the training script, so take arguments
         in_base = sys.argv[1]
@@ -67,32 +79,10 @@ if __name__ == "__main__":
 
     else:
 
-        # in_base = "classifier_spgs/runs_from_cluster/initial_tests/10-03-2022_14-34-51/"
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/17-03-2022_10-11-11/"
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/02-05-2022_11-22-37/"
-
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/05-06-2022_12-32-24/randomized_coords/"
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/07-06-2022_09-43-41/"
+        # Path to the run directory
         in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/19-06-2022_10-15-26/"
-
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/09-04-2022_22-56-44/"
-        # tag = "volumes_densenesses_4-spg"
-        # tag = "look_at_structures"
-        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/initial_tests/20-03-2022_02-06-52/"
-
-        # tag = "4-spg-2D-scatters"
-        # tag = "volumes_densenesses_2-spg_test/15"
-
-        # tag = "runs_from_cluster/continued_tests/09-04-2022_22-56-44_spgs-50-230_huge_size"
-        # tag = "07-06-2022_09-43-41"
         tag = "19-06-2022_10-15-26"
-
-        # spgs_to_analyze = [14, 104, 176, 129]
-        spgs_to_analyze = None
-        # spgs_to_analyze = [15]
-        # spgs_to_analyze = None  # analyse all space groups; alternative: list of spgs
-
-        # spgs_to_analyze = None
+        spgs_to_analyze = None  # all
 
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
@@ -231,18 +221,16 @@ if __name__ == "__main__":
     icsd_max_Zs = []
     icsd_set_wyckoffs = []
 
-    # Just for the icsd meta-data (ids):
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
-        sim = Simulation(
-            os.path.expanduser("~/Databases/ICSD/ICSD_data_from_API.csv"),
-            os.path.expanduser("~/Databases/ICSD/cif/"),
-        )
+        path_to_icsd_directory = path_to_icsd_directory_cluster
     else:
-        sim = Simulation(
-            "/home/henrik/Dokumente/Big_Files/ICSD/ICSD_data_from_API.csv",
-            "/home/henrik/Dokumente/Big_Files/ICSD/cif/",
-        )
+        path_to_icsd_directory = path_to_icsd_directory_local
+
+    sim = ICSDSimulator(
+        os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
+        os.path.join(path_to_icsd_directory, "cif/"),
+    )
 
     print(f"Processing ICSD: {len(icsd_crystals)} in total.")
 
