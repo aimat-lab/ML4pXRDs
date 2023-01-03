@@ -1,3 +1,9 @@
+"""
+This script can be used to simulate pXRD patterns of the ICSD database. Before
+running this script, make sure that you change the variables on top of this
+script file, the file `simulation_worker.py`, and `simulation_smeared.py`.
+"""
+
 import numpy as np
 import time
 import math
@@ -19,12 +25,22 @@ import functools
 num_files = (
     8  # Into how many files should the simulation of all patterns be saved / split?
 )
-num_processes = 8  # How many processes to use in parallel
+num_processes = 8  # How many processes to use in parallel?
 
 # Same as Vecsei et al. 2019:
-angle_min = 5
-angle_max = 90
-angle_n = 8501
+angle_min = 5  # minimum 2 theta
+angle_max = 90  # maximum 2 theta
+angle_n = 8501  # How many steps in the angle range?
+
+# Where to save the simulated patterns?
+path_to_patterns = (
+    "patterns/icsd_vecsei/"  # relative to the main directory of this repository
+)
+
+# Path to the ICSD directory that contains the "ICSD_data_from_API.csv" file
+# and the "cif" directory (which contains all the ICSD cif files)
+path_to_icsd_directory_local = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
+path_to_icsd_directory_cluster = os.path.expanduser("~/Databases/ICSD/")
 
 
 class ICSDSimulator:
@@ -37,7 +53,7 @@ class ICSDSimulator:
             icsd_info_file_path (str): path to the ICSD_data_from_API.csv file
             icsd_cifs_dir (str): path to the directory containing the ICSD cif files
             output_dir (str): In which directory to save the simulated patterns.
-            This should be relative to the main directory of the repository.
+                This should be relative to the main directory of the repository.
         """
 
         self.reset_simulation_status()
@@ -876,16 +892,17 @@ if __name__ == "__main__":
 
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
-        path_to_icsd_directory = os.path.expanduser("~/Databases/ICSD/")
+        path_to_icsd_directory = path_to_icsd_directory_cluster
     else:
-        path_to_icsd_directory = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
+        path_to_icsd_directory = path_to_icsd_directory_local
 
     simulator = ICSDSimulator(
         os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
         os.path.join(path_to_icsd_directory, "cif/"),
+        output_dir=path_to_patterns,
     )
 
     # simulation.load()
-    simulator.prepare_simulation(use_only_N_crystals=10000)
+    simulator.prepare_simulation()
     simulator.save()
     simulator.simulate_all(start_from_scratch=True)

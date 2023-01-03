@@ -1,4 +1,4 @@
-"""The simulator class uses this script to simulate pXRD patterns.
+"""The ICSDSimulator class uses this script to simulate pXRD patterns.
 It spawns multiple processes of this script in parallel. We have been using a
 different simulation code in the past which did not work well with python's
 multiprocessing.
@@ -13,6 +13,7 @@ import pickle
 import time
 from ml4pxrd_tools.simulation.simulation_smeared import get_smeared_patterns
 
+# Wavelength in angstroms:
 wavelength = 1.5406  # Cu-K line
 
 # same as Vecsei et al.:

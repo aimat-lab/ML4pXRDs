@@ -151,9 +151,12 @@ and crystals. They are needed to test the accuracy of the ML models.
 In order to generate a dataset, a license for the ICSD database is needed.
 If you have the license and downloaded the database, you need to XXX.
 
-- TODO: How to simulate the ICSD
-- TODO: How to generate statistics and dataset split (will take a while)
-- TODO: Talk about created run directory
+- TODO: icsd_simulator.py:
+This script can be used to simulate pXRD patterns of the ICSD database. Before
+running this script, make sure that you change the variables on top of this
+script file, the file `simulation_worker.py`, and `simulation_smeared.py`.
+
+- TODO: submit_icsd_simulation_slurm.slr
 
 To generate a new dataset with prototype-based split, you first have to change
 `path_to_icsd_directory_cluster` or `path_to_icsd_directory_local` (depends on
@@ -177,6 +180,8 @@ look through all options, the following options need to be changed regardless:
 - TODO: How to change configuration of computing nodes in the training script
 - TODO: Command line options of the training script; alternatively, run it using
   the provided slurm scripts
+
+- TODO: Talk about created run directory
 
 - TODO: List the datasets that are used for validation
 Used validation sets (TODO: Also, how are they named in the code? How are they named in TensorBoard?):

@@ -26,14 +26,17 @@ import pickle
 from glob import glob
 from scipy.stats import kde
 import statsmodels.api as sm
-from pyxtal.symmetry import Group
-from sklearn.neighbors import KernelDensity
 from pyxtal.symmetry import get_pbc_and_lattice
 from ml4pxrd_tools.generation.all_elements import all_elements
 
+# Path to the ICSD directory that contains the "ICSD_data_from_API.csv" file
+# and the "cif" directory (which contains all the ICSD cif files)
 path_to_icsd_directory_local = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
 path_to_icsd_directory_cluster = os.path.expanduser("~/Databases/ICSD/")
-path_to_patterns = "patterns/icsd_vecsei/"
+
+path_to_patterns = (
+    "patterns/icsd_vecsei/"  # relative to the main directory of this repository
+)
 
 
 def get_wyckoff_info(pyxtal_crystal):
