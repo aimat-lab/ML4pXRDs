@@ -15,7 +15,7 @@ python analyze_results.py <path to run directory> <tag> [<list of spgs>]
 
 Example to run analysis for space groups 2 and 15:
 
-``` 
+```
 python analyze_results.py ./my_run my_analysis 2 15 
 ```
 
@@ -86,23 +86,30 @@ if __name__ == "__main__":
 
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
 
-    calculate_conventionals = False
+    calculate_conventionals = (
+        False  # Convert to conventional unit cell before running analysis
+    )
+    # This should not be necessary, as this already happened during the preparation of the dataset.
 
-    show_sample_structures = False
-    samples_to_show_icsd = 50
+    show_sample_structures = False  # Save some png images of some of the structures
+    samples_to_show = 50  # How many images to generate for each category?
     counter_shown_icsd_rightly = 0
     counter_shown_icsd_falsely = 0
     counter_shown_random_rightly = 0
     counter_shown_random_falsely = 0
 
-    show_sample_xrds = False
-    xrds_to_show = 2000
-    # xrds_to_show = 10**9  # show them all
-    show_individual = False
+    show_sample_xrds = False  # Save some example xrd patterns.
+    xrds_to_show = 2000  # How many patterns to save for each category?
+    show_individual = False  # If this is False, the script will only calculate some overall statistics
+    # about the peak intensities in the patterns (such as average pattern).
+    # If True, each pattern will be saved to a png file.
     counter_xrds_icsd_rightly = 0
     counter_xrds_icsd_falsely = 0
     counter_xrds_random_rightly = 0
     counter_xrds_random_falsely = 0
+
+    #######################################################################################################################
+    #######################################################################################################################
 
     xrds_icsd_rightly_average = None
     xrds_icsd_falsely_average = None
@@ -566,7 +573,7 @@ if __name__ == "__main__":
 
             if (
                 show_sample_structures
-                and counter_shown_icsd_falsely < samples_to_show_icsd
+                and counter_shown_icsd_falsely < samples_to_show
                 and structure.is_ordered
                 and index not in falsely_icsd_already_processed
             ):
@@ -749,7 +756,7 @@ if __name__ == "__main__":
 
             if (
                 show_sample_structures
-                and counter_shown_icsd_rightly < samples_to_show_icsd
+                and counter_shown_icsd_rightly < samples_to_show
                 and structure.is_ordered
                 and index not in rightly_icsd_already_processed
             ):
@@ -930,7 +937,7 @@ if __name__ == "__main__":
 
             if (
                 show_sample_structures
-                and counter_shown_random_falsely < samples_to_show_icsd
+                and counter_shown_random_falsely < samples_to_show
             ):
                 try:
                     counter_shown_random_falsely += 1
@@ -1105,7 +1112,7 @@ if __name__ == "__main__":
 
             if (
                 show_sample_structures
-                and counter_shown_random_rightly < samples_to_show_icsd
+                and counter_shown_random_rightly < samples_to_show
             ):
                 try:
                     counter_shown_random_rightly += 1
