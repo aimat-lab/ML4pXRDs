@@ -155,6 +155,15 @@ If you have the license and downloaded the database, you need to XXX.
 - TODO: How to generate statistics and dataset split (will take a while)
 - TODO: Talk about created run directory
 
+To generate a new dataset with prototype-based split, you first have to change
+`path_to_icsd_directory_cluster` or `path_to_icsd_directory_local` (depends on
+if you run this script on a cluster using slurm or not) in this script. It
+should point to your directory containing the ICSD database. Furthermore, you
+first need to run the simulation of the ICSD data (see README.md) and point
+`path_to_patterns` (see below) to the directory containing your simulated 
+patterns.
+Then, you can run this file to generate the dataset: `python manage_dataset.py`
+
 In the beginning of the training script (`train_random_classifier.py`), you can
 find options of the training including detailed explanations. While you should
 look through all options, the following options need to be changed regardless:

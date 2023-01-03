@@ -1,3 +1,18 @@
+"""
+This module contains functions to handle the generation and usage of the dataset
+and extracted statistics.
+
+To generate a new dataset with prototype-based split, you first have to change
+`path_to_icsd_directory_cluster` or `path_to_icsd_directory_local` (depends on
+if you run this script on a cluster using slurm or not) in this script. It
+should point to your directory containing the ICSD database. Furthermore, you
+first need to run the simulation of the ICSD data (see README.md) and point
+`path_to_patterns` (see below) to the directory containing your simulated 
+patterns.
+
+Then, you can run this file to generate the dataset: `python manage_dataset.py`
+"""
+
 import os
 from ml4pxrd_tools.simulation.icsd_simulator import ICSDSimulator
 import math
@@ -18,6 +33,7 @@ from ml4pxrd_tools.generation.all_elements import all_elements
 
 path_to_icsd_directory_local = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
 path_to_icsd_directory_cluster = os.path.expanduser("~/Databases/ICSD/")
+path_to_patterns = "patterns/icsd_vecsei/"
 
 
 def get_wyckoff_info(pyxtal_crystal):
@@ -76,7 +92,6 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
 
     spgs = range(1, 231)  # all spgs
 
-    path_to_patterns = "patterns/icsd_vecsei/"
     jobid = os.getenv("SLURM_JOB_ID")
     if jobid is not None and jobid != "":
         path_to_icsd_directory = path_to_icsd_directory_cluster
@@ -609,7 +624,6 @@ def load_dataset_info(
         # Check for overlap in sum formulas between
         # test_metas and statistics_metas
 
-        path_to_patterns = "patterns/icsd_vecsei/"
         jobid = os.getenv("SLURM_JOB_ID")
         if jobid is not None and jobid != "":
             path_to_icsd_directory = path_to_icsd_directory_cluster
