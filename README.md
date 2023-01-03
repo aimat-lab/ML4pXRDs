@@ -61,14 +61,15 @@ In order to be able to generate synthetic crystals, some general statistics
 about the occupation of the wyckoff positions for each space group need to be
 extracted from the ICSD. If you only want to generate synthetic crystals (and
 simulate pXRDs based on them) without running your own training experiments, you
-can use the statistical data contained in "./public_statistics". 
+can use the statistical data provided by us in "./public_statistics". 
 
 The required data can be loaded by using the function `load_dataset_info` with
 parameter `load_public_statistics_only=True`. The returned objects can then be
 passed to the respective functions to generate crystals and simulate pXRDs (see
-below).
+below). We refer to section `Training` if you want to create your own dataset 
+and extract your own statistics from the ICSD.
 
-```
+```python
 (
     probability_per_spg_per_element,
     probability_per_spg_per_element_per_wyckoff,
@@ -85,8 +86,10 @@ below).
 
 ## Generating synthetic crystals
 
-Example for space group 125:
-```
+After loading the statistics, you can use the statistics to generate synthetic structures
+of a given space group:
+
+```python
 structures = generate_structures(
     125,
     N=1,
@@ -113,10 +116,10 @@ for a given structure object.
 to generate synthetic crystals and simulate pXRDs based on them. The synthetic crystal generation
 is based on statistics extracted from the ICSD. 
 
-Here is an example of how to call `get_synthetic_smeared_patterns` using the loaded statistics as explained above
-(here for space group 125):
+Here is an example of how to call `get_synthetic_smeared_patterns` using the
+statistics loaded using `load_dataset_info` (here for space group 125):
 
-```
+```python
 patterns, labels = get_synthetic_smeared_patterns(
     [125],
     N_structures_per_spg=5,
@@ -150,6 +153,7 @@ If you have the license and downloaded the database, you need to XXX.
 
 - TODO: How to simulate the ICSD
 - TODO: How to generate statistics and dataset split (will take a while)
+- TODO: Talk about created run directory
 
 In the beginning of the training script (`train_random_classifier.py`), you can
 find options of the training including detailed explanations. While you should
@@ -158,9 +162,8 @@ look through all options, the following options need to be changed regardless:
 - "path_to_patterns"
 - "path_to_icsd_directory_local" or "path_to_icsd_directory_cluster"
 
+- TODO: Talk about submit scripts in general
 - TODO: Change environment name in slurm scripts
-
-- TODO: How to simulate the dataset
 
 - TODO: How to change configuration of computing nodes in the training script
 - TODO: Command line options of the training script; alternatively, run it using
@@ -174,19 +177,8 @@ Used validation sets (TODO: Also, how are they named in the code? How are they n
     - Gap between training and val acc that matches simulation parameters
 
 The easiest way to track the progress and results of the training runs is to use
-`TensorBoard`. Simly XXX
-
-- TODO: Go through all TODOs in the whole project and fix them.
-- TODO: Submit scripts
-
-### Analyzing results
-After finishing a training run, you can use the script `training/analysis/analyze_results.py` to analyze 
-the trained model. This will compare the performance of the model on patterns from synthetic crystals 
-and patterns from ICSD crystals considering different metrics, e.g. the unit cell volume, number of atoms 
-in the asymmetric unit etc.
-
-- TODO: How to call the script?
-- TODO: Where do the analysis results end up?
+`TensorBoard`. Simply navigate to the run directory in your terminal and execute
+`tensorboard --logdir .`.
 
 # Citing
 To cite this repository, please refer to our publication:
