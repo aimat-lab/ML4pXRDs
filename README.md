@@ -31,13 +31,13 @@ The repository contains the following components:
 
 # Documentation
 ## Getting started
-
 For convenience and because the provided utilities are potentially also
 interesting to use for other projects concerning powder XRDs, the code for the
 simulation of pXRDs and generation of synthetic crystals is provided as a
 package. Before training, this should be installed, ideally in a separate
 virtual environment or anaconda environment. We tested the package for python
-3.8.0, but it should also work for other python versions.
+3.8.0 on Ubuntu, but it should also work for other python versions and operating
+systems.
 
 Call pip in the root of the repository:
 
@@ -47,16 +47,27 @@ pip install -e .
 
 This will further install all required dependencies. 
 
-To run the training script and some of the analysis scripts in
-`./training/analysis`, the following additional dependencies must be installed:
+To further run the training script and some of the analysis scripts in
+`./training/analysis`, the following additional dependencies can be installed
+using pip:
 
-- `ray` >= 1.9.1
-- `tensorflow` >= 2.0.0
+- `ray`
+- `psutil`
+- `ase`
+- `tensorflow`
 
-Also make sure that the `CUDA` and `cuDNN` dependencies of `tensorflow` (the
-correct version that are compatible with your tensorflow version) are installed.
-We refer to the table available on
-https://www.tensorflow.org/install/source#tested_build_configurations.
+We tested and recommend tensorflow version 2.10.0. Also, make sure that the
+`CUDA` and `cuDNN` dependencies of `tensorflow` (the correct version that are
+compatible with your tensorflow version) are installed. We refer to the table
+available on
+https://www.tensorflow.org/install/source#tested_build_configurations. For
+tensorflow 2.10.0, you can simply install the required `CUDA` and `cuDNN`
+dependencies using conda:
+
+```
+conda install -c conda-forge cudatoolkit==11.2.0
+conda install -c conda-forge cudnn==8.1.0.77
+```
 
 ## Loading statistics of the ICSD
 In order to be able to generate synthetic crystals, some general statistics

@@ -21,12 +21,14 @@ setup(
     ],
 )
 
-# Additional for training scripts:
-# cudatoolkit conda-forge 11.2.0
-# cudnn conda-forge 8.1.0.77
-# tensorflow>2.5.0???
-# ray
-# keras; automatically installed?
-# tensorflow_addons; also possible from pip? Currently locally installed.
-# psutil
-# ase
+# Additionally needed for training scripts:
+
+# pip: ray
+# pip: tensorflow_addons
+# pip: psutil
+# pip: ase
+
+# Our recommendation:
+# conda: cudatoolkit conda-forge 11.2.0
+# conda: cudnn conda-forge 8.1.0.77
+# pip: tensorflow 2.10.0
