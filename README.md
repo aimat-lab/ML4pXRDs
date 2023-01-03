@@ -36,8 +36,10 @@ For convenience and because the provided utilities are potentially also
 interesting to use for other projects concerning powder XRDs, the code for the
 simulation of pXRDs and generation of synthetic crystals is provided as a
 package. Before training, this should be installed, ideally in a separate
-virtual environment or anaconda environment. Therefore, call pip in the root of
-the repository:
+virtual environment or anaconda environment. We tested the package for python
+3.8.0, but it should also work for other python versions.
+
+Call pip in the root of the repository:
 
 ```
 pip install -e .
@@ -45,8 +47,8 @@ pip install -e .
 
 This will further install all required dependencies. 
 
-To run the training script, the following additional dependencies must be
-installed:
+To run the training script and some of the analysis scripts in
+`./training/analysis`, the following additional dependencies must be installed:
 
 - `ray` >= 1.9.1
 - `tensorflow` >= 2.0.0
