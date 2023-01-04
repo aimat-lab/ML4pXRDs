@@ -104,8 +104,8 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     sim = ICSDSimulator(
         os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
         os.path.join(path_to_icsd_directory, "cif/"),
+        output_dir=path_to_patterns,
     )
-    sim.output_dir = path_to_patterns
 
     sim.load(load_patterns_angles_intensities=False)
 
@@ -1086,5 +1086,4 @@ def show_dataset_statistics():
 
 
 if __name__ == "__main__":
-
     prepare_dataset(per_element=False)
