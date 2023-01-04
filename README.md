@@ -185,37 +185,36 @@ dataset: `python manage_dataset.py`
 ### Run experiments
 In the beginning of the training script (`train_random_classifier.py`), you can
 find options of the training including detailed explanations. While you should
-look through all options, the following options need to be changed regardless:
-
+look through all options, the following options always need to be changed:
 - "path_to_patterns"
 - "path_to_icsd_directory_local" or "path_to_icsd_directory_cluster"
 
-- TODO: Talk about submit scripts in general
 - TODO: Change environment name in slurm scripts
 - Change method in script of how environment is activated
 - Fixed paths?
 - submit_head_only.slr
 
-- TODO: How to change configuration of computing nodes in the training script
 - TODO: Command line options of the training script; alternatively, run it using
   the provided slurm scripts
 
-- TODO: Talk about created run directory
+Each training experiment will put its data (TensorBoard data, logs, checkpoint files)
+in a separate run directory. The current run directory will be printed in the beginning
+of the training script.
 
-- TODO: List the datasets that are used for validation
-Used validation sets (TODO: Also, how are they named in the code? How are they named in TensorBoard?):
-    - All ICSD entries
-    - ICSD entries that match simulation parameters
-    - Pre-computed random dataset (the one from the comparison script)
-    - Gap between training and val acc that matches simulation parameters
-
-The easiest way to track the progress and results of the training runs is to use
+The easiest way to track the progress and results of your training runs is to use
 `TensorBoard`. Simply navigate to the run directory in your terminal and execute
 `tensorboard --logdir .`.
 
+There are several metrics that are logged to TensorBoard during a run:
+- TODO: List the datasets that are used for validation; including name in TensorBoard
+- All ICSD entries
+- ICSD entries that match simulation parameters
+- Pre-computed random dataset (the one from the comparison script)
+- Gap between training and val acc that matches simulation parameters
+
 # Citing
 To cite this repository, please refer to our publication:
-- TODO: Add reference to arxiv paper
+- TODO: Add reference to arXiv paper
 
 # References
 [1] Ong, S. P., Richards, W. D., Jain, A., Hautier, G., Kocher, M., Cholia, S., Gunter, D., Chevrier, V. L., Persson, K. A., & Ceder, G. (2013). Python Materials Genomics (pymatgen): A robust, open-source python library for materials analysis (Version 2022.1.24) [Computer software]. https://doi.org/10.1016/j.commatsci.2012.10.028
