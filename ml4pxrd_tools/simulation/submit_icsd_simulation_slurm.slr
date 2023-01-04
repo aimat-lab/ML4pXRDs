@@ -8,7 +8,7 @@
 export PARNODES="$SLURM_CPUS_PER_TASK"
 export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 
-source /home/ws/uvgnh/mambaforge/etc/profile.d/conda.sh
+source /home/${USER}/.bashrc
+conda activate pxrd
 
-conda activate pyxtal_debug
-stdbuf -o0 -e0 python icsd_simulation.py
+stdbuf -o0 -e0 python icsd_simulator.py

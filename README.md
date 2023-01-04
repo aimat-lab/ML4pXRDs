@@ -1,4 +1,4 @@
-# ML of pXRDs using synthetic crystals
+# ML for pXRDs using synthetic crystals
 This repository contains the code of the publication "Neural networks trained on
 randomly generated crystals can classify space-groups of ICSD X-ray
 diffractograms". It can be used to train machine learning models (e.g. for the
@@ -119,15 +119,14 @@ This repository provides various functions to simulate powder XRD patterns:
 - Use function `ml4pxrd_tools.simulation.simulation_core.get_pattern_optimized`
 for fast simulation of the angles and intensities of all peaks in a given
 $2\theta$ range. This uses a optimized version of the pymatgen implementation.
-- Use function `from ml4pxrd_tools.simulation.simulation_smeared import get_smeared_patterns`
+- Use function `ml4pxrd_tools.simulation.simulation_smeared.get_smeared_patterns`
 to simulate one or more smeared patterns (peaks convoluted with a Gaussian preak profile)
 for a given structure object.
-- Use function `from ml4pxrd_tools.simulation.simulation_smeared import get_synthetic_smeared_patterns`
-to generate synthetic crystals and simulate pXRDs based on them. The synthetic crystal generation
-is based on statistics extracted from the ICSD. 
+- Use function `ml4pxrd_tools.simulation.simulation_smeared.get_synthetic_smeared_patterns`
+to generate synthetic crystals and simulate pXRDs based on them.
 
 Here is an example of how to call `get_synthetic_smeared_patterns` using the
-statistics loaded using `load_dataset_info` (here for space group 125):
+statistics loaded using `load_dataset_info` (see above):
 
 ```python
 patterns, labels = get_synthetic_smeared_patterns(
@@ -149,13 +148,14 @@ patterns, labels = get_synthetic_smeared_patterns(
 The functions `get_smeared_patterns` and `get_synthetic_smeared_patterns`
 calculate the FWHM of the gaussian peak profiles using a random crystallite size
 uniformly sampled in the range `pymatgen_crystallite_size_gauss_min=20` to
-`pymatgen_crystallite_size_gauss_max=100`. You can change the default range at
-the top of `simulation_smeared.py`.
+`pymatgen_crystallite_size_gauss_max=100` (in nm). You can change the default
+range at the top of script file
+`ml4pxrd_tools/simulation/simulation_smeared.py`.
 
 ## Training
 ### Pre-simulate patterns for testing
 If you want to run your own ML experiments, you need to generate your own
-dataset from the ICSD that also contains the required simulated diffractograms
+dataset from the ICSD that contains the required simulated diffractograms
 and crystals. They are needed to test the accuracy of the ML models.
 
 In order to generate a dataset, a license for the ICSD database is needed. If
@@ -165,20 +165,22 @@ the script `ml4pxrd_tools/simulation/icsd_simulator.py`. Before running this
 script, make sure that you change the variables at the top of this script file,
 of the file `simulation_worker.py`, and of `simulation_smeared.py`.
 
-Instead of running the script file directly, you can also use the provided slurm
+Instead of running the script directly, you can also use the provided slurm
 script `submit_icsd_simulation_slurm.slr` to run it on a cluster. Make sure to
-adapt it to your cluster first.
-- TODO: Change in the submit script how the conda env is loaded!
+adapt it to your cluster first and potentially change the path to your `.bashrc`
+file and the name of your anaconda environment.
 
-### Extract statistics and generate dataset
-To generate a new dataset with prototype-based split, you first have to change
-`path_to_icsd_directory_cluster` or `path_to_icsd_directory_local` (depends on
-if you run this script on a cluster using slurm or not) in this script. It
-should point to your directory containing the ICSD database. Furthermore, you
-first need to run the simulation of the ICSD data (see README.md) and point
-`path_to_patterns` (see below) to the directory containing your simulated
-patterns. Then, you can run this file to generate the dataset: `python
-manage_dataset.py`
+As a point of reference, it takes ~14 hours to simulate the full ICSD on 8 cores.
+
+### Extract statistics and generate dataset split
+To generate a new dataset with prototype-based split using the just simulated
+patterns, you first have to change `path_to_icsd_directory_cluster` or
+`path_to_icsd_directory_local` (depends on if you run this script on a cluster
+using slurm or not) in this script. It should point to your directory containing
+the ICSD database. Furthermore, you first need to run the simulation of the ICSD
+data (see README.md) and point `path_to_patterns` (see below) to the directory
+containing your simulated patterns. Then, you can run this file to generate the
+dataset: `python manage_dataset.py`
 
 ### Run experiments
 In the beginning of the training script (`train_random_classifier.py`), you can
