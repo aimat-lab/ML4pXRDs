@@ -6,22 +6,22 @@ classification of space groups) on powder XRD patterns simulated on-the-fly from
 synthetically generated random crystal structures.
 
 If you have any problems using the provided software, if documentation is
-missing, or if you find any bugs, feel free to contact us or add a new issue in
-the Github repository.
+missing, or if you find any bugs, feel free to contact us or add a new issue on
+GitHub.
 
 The repository contains the following components:
 
 1. Optimized simulation
 
     The code of the optimized simulation of powder XRDs (using numba LLVM
-    just-in-time compilation) can be found in `./tools/simulation/`. This code
+    just-in-time compilation) can be found in `./ml4pxrd_tools/simulation/`. This code
     is based on the implementation found in the
     [`pymatgen`](https://github.com/materialsproject/pymatgen) [1] library.
 
 2. Generation of synthetic crystals
 
     The code of the generation of synthetic crystals can be found in
-    `./tools/generation/`.
+    `./ml4pxrd_tools/generation/`.
 
 3. Distributed training
 
@@ -31,15 +31,13 @@ The repository contains the following components:
 
 # Documentation
 ## Getting started
-For convenience and because the provided utilities are potentially also
-interesting to use for other projects concerning powder XRDs, the code for the
-simulation of pXRDs and generation of synthetic crystals is provided as a
-package. Before training, this should be installed, ideally in a separate
-virtual environment or anaconda environment. We tested the package for python
-3.8.0 on Ubuntu, but it should also work for other python versions and operating
-systems.
+For convenience, the code for the optimized simulation of pXRDs and generation
+of synthetic crystals is provided as a package called `ml4pxrd_tools`. Before
+training, this should be installed, ideally in a separate virtual environment or
+anaconda environment. We tested the package with python 3.8.0 on Ubuntu, but it
+should also work for other python versions and operating systems.
 
-Call pip in the root of the repository:
+To install the package, call pip in the root of the repository:
 
 ```
 pip install -e .
@@ -56,11 +54,10 @@ using pip:
 - `ase`
 - `tensorflow`
 
-We tested and recommend tensorflow version 2.10.0. Also, make sure that the
-`CUDA` and `cuDNN` dependencies of `tensorflow` (the correct version that are
-compatible with your tensorflow version) are installed. We refer to the table
-available on
-https://www.tensorflow.org/install/source#tested_build_configurations. For
+We tested and recommend TensorFlow version 2.10.0. Also, make sure that the
+`CUDA` and `cuDNN` dependencies of `tensorflow` are installed and that the
+versions are compatible (we refer to the table available on
+https://www.tensorflow.org/install/source#tested_build_configurations). For
 tensorflow 2.10.0, you can simply install the required `CUDA` and `cuDNN`
 dependencies using conda:
 
@@ -76,11 +73,12 @@ extracted from the ICSD. If you only want to generate synthetic crystals (and
 simulate pXRDs based on them) without running your own training experiments, you
 can use the statistical data provided by us in "./public_statistics". 
 
-The required data can be loaded by using the function `load_dataset_info` with
-parameter `load_public_statistics_only=True`. The returned objects can then be
-passed to the respective functions to generate crystals and simulate pXRDs (see
-below). We refer to section `Training` if you want to create your own dataset 
-and extract your own statistics from the ICSD.
+The required data can be loaded by using the function
+`ml4pxrd_tools.manage_dataset.load_dataset_info` with parameter
+`load_public_statistics_only=True`. The returned objects can then be passed to
+the respective functions to generate synthetic crystals and simulate pXRDs (see
+below). We refer to section `Training` of the README if you want to create your
+own dataset and extract your own statistics from the ICSD.
 
 ```python
 (
@@ -99,8 +97,8 @@ and extract your own statistics from the ICSD.
 
 ## Generating synthetic crystals
 
-After loading the statistics, you can use the statistics to generate synthetic structures
-of a given space group:
+After loading the statistics, you can use the statistics to generate synthetic
+structures of a given space group (here space group 125):
 
 ```python
 structures = generate_structures(
@@ -116,12 +114,11 @@ structures = generate_structures(
 ```
 
 ## Simulating pXRDs
-This repository provides various functions of simulating powder XRDs:
+This repository provides various functions to simulate powder XRD patterns:
 
-- Use function `from ml4pxrd_tools.simulation.simulation_core import
-get_pattern_optimized` for fast simulation of the angles and intensities of all
-peaks in a given range. This uses a optimized version of the pymatgen
-implementation.
+- Use function `ml4pxrd_tools.simulation.simulation_core.get_pattern_optimized`
+for fast simulation of the angles and intensities of all peaks in a given
+$2\theta$ range. This uses a optimized version of the pymatgen implementation.
 - Use function `from ml4pxrd_tools.simulation.simulation_smeared import get_smeared_patterns`
 to simulate one or more smeared patterns (peaks convoluted with a Gaussian preak profile)
 for a given structure object.
