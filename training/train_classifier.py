@@ -39,7 +39,7 @@ import math
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "synthetic_training_ResNet-50"
+tag = "synthetic_training_ResNet-101-continue"
 description = ""  # description of current run
 
 run_analysis_after_training = (
@@ -61,7 +61,8 @@ max_NO_samples_to_test_on = 10000
 # The following setting only applies for training on synthetic crystals. When
 # training on ICSD crystals directly, the whole dataset is used for each epoch.
 batches_per_epoch = 150 * 6
-NO_epochs = 2000
+NO_epochs = 700  # TODO: Change back
+start_epoch = 1300  # TODO: Change back
 
 # How many structures to generate per spg. Only applies for training using synthetic crystals.
 structures_per_spg = 1
@@ -101,7 +102,7 @@ use_statistics_dataset_as_validation = False
 generate_randomized_validation_datasets = False
 randomization_step = 3  # Only use every n'th sample for the randomization process
 
-# This only applies only to the models that support dropout, especially those
+# This only applies to the models that support dropout, especially those
 # originating from Park et al. (2020)
 use_dropout = False
 learning_rate = 0.0001
@@ -148,8 +149,10 @@ uniformly_distributed = False
 # test performance.
 shuffle_test_match_train_match = False
 
-use_pretrained_model = False  # Make it possible to resume from a previous training run
-pretrained_model_path = "/path/to/model"
+use_pretrained_model = (
+    True  # Make it possible to resume from a previous training run # TODO: Change back
+)
+pretrained_model_path = "/home/ws/uvgnh/MSc/ML4pXRDs/training/classifier_spgs/23-12-2022_14-49-23/checkpoints/model_1300"
 
 # This option can be used to run training locally (with restricted computing resources)
 # If True, only 8 cores are used.
@@ -1501,7 +1504,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "ResNet-50"
+    model_name = "ResNet-101"
 
     if not use_pretrained_model:
 
@@ -1520,13 +1523,13 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # Resnet-50 + additional dense layer
+        # Resnet-101 + additional dense layer
         model = build_model_resnet_i(
             N,
             len(spgs),
             lr=learning_rate,
             batchnorm_momentum=batchnorm_momentum,
-            i=50,
+            i=101,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
             add_additional_dense_layer=True,  # Add one more dense layer
@@ -1537,7 +1540,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         model = keras.models.load_model(
             pretrained_model_path, custom_objects={"AdamWarmup": AdamWarmup}
         )
-        model.optimizer.learning_rate.assign(learning_rate)
+        # model.optimizer.learning_rate.assign(learning_rate)
 
     params_txt += "\n \n" + f"model_name: {model_name}"
     with file_writer.as_default():
@@ -1553,6 +1556,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             max_queue_size=queue_size_tf,
             use_multiprocessing=False,  # Set this to False, since we use `ray` for distributed computing
             steps_per_epoch=batches_per_epoch,
+            initial_epoch=start_epoch,
         )
     else:
         model.fit(
@@ -1565,6 +1569,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             workers=1,
             max_queue_size=queue_size_tf,
             use_multiprocessing=False,
+            initial_epoch=start_epoch,
         )
 
 print(

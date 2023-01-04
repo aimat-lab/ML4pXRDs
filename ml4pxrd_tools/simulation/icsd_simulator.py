@@ -903,6 +903,6 @@ if __name__ == "__main__":
     )
 
     # simulation.load()
-    simulator.prepare_simulation()
+    simulator.prepare_simulation(use_only_N_crystals=30000)  # TODO: Change back
     simulator.save()
     simulator.simulate_all(start_from_scratch=True)
