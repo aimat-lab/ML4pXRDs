@@ -56,9 +56,9 @@ using pip:
 
 We tested and recommend TensorFlow version 2.10.0. Also, make sure that the
 `CUDA` and `cuDNN` dependencies of `tensorflow` are installed and that the
-versions are compatible (we refer to the table available on
+versions are compatible (we refer to the table available at
 https://www.tensorflow.org/install/source#tested_build_configurations). For
-tensorflow 2.10.0, you can simply install the required `CUDA` and `cuDNN`
+TensorFlow 2.10.0, you can simply install the required `CUDA` and `cuDNN`
 dependencies using conda:
 
 ```
@@ -68,19 +68,22 @@ conda install -c conda-forge cudnn==8.1.0.77
 
 ## Loading statistics of the ICSD
 In order to be able to generate synthetic crystals, some general statistics
-about the occupation of the wyckoff positions for each space group need to be
-extracted from the ICSD. If you only want to generate synthetic crystals (and
-simulate pXRDs based on them) without running your own training experiments, you
-can use the statistical data provided by us in "./public_statistics". 
+(e.g. about the occupation of the wyckoff positions for each space group) need
+to be extracted from the ICSD. If you only want to generate synthetic crystals
+(and simulate pXRDs based on them) without running your own training
+experiments, you can use the statistical data provided by us in
+`./public_statistics`. We refer to section `Training` of this README if you want
+to create your own dataset and extract your own statistics from the ICSD.
 
-The required data can be loaded by using the function
+The required data can be loaded using the function
 `ml4pxrd_tools.manage_dataset.load_dataset_info` with parameter
 `load_public_statistics_only=True`. The returned objects can then be passed to
 the respective functions to generate synthetic crystals and simulate pXRDs (see
-below). We refer to section "Training" of the README if you want to create your
-own dataset and extract your own statistics from the ICSD.
+below). 
 
 ```python
+from ml4pxrd_tools.manage_dataset import load_dataset_info
+
 (
     probability_per_spg_per_element,
     probability_per_spg_per_element_per_wyckoff,
@@ -195,8 +198,8 @@ can find options of the training including detailed explanations. While you
 should look through all options, the following options always need to be
 changed:
 
-- "path_to_patterns"
-- "path_to_icsd_directory_local" or "path_to_icsd_directory_cluster"
+- `path_to_patterns`
+- `path_to_icsd_directory_local` or `path_to_icsd_directory_cluster`
 
 Furthermore, you might want to change the used model (see line `model =
 build_model_XX(...)`).
