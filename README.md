@@ -174,20 +174,48 @@ As a point of reference, it takes ~14 hours to simulate the full ICSD on 8 cores
 
 ### Extract statistics and generate dataset split
 To generate a new dataset with prototype-based split using the just simulated
-patterns, you first have to change `path_to_icsd_directory_cluster` or
+patterns, you can run the script `ml4pxrd_tools/manage_dataset.py`. You first
+have to change `path_to_icsd_directory_cluster` or
 `path_to_icsd_directory_local` (depends on if you run this script on a cluster
 using slurm or not) in this script. It should point to your directory containing
-the ICSD database. Furthermore, you first need to run the simulation of the ICSD
-data (see README.md) and point `path_to_patterns` (see below) to the directory
-containing your simulated patterns. Then, you can run this file to generate the
-dataset: `python manage_dataset.py`
+the ICSD database. Furthermore, you first need to point `path_to_patterns` to
+the directory containing your simulated patterns (used in section above). Then,
+you can generate the dataset and extract the statistics: 
+
+```python
+python manage_dataset.py
+```
+
+This will take a while (~5 hours). Finally, you can find the prepared dataset
+including statistics information in the directory `prepared_dataset` of the main
+directory of this repository.
 
 ### Run experiments
-In the beginning of the training script (`train_random_classifier.py`), you can
-find options of the training including detailed explanations. While you should
-look through all options, the following options always need to be changed:
+At the top of the training script (`trainig/train_random_classifier.py`), you
+can find options of the training including detailed explanations. While you
+should look through all options, the following options always need to be
+changed:
 - "path_to_patterns"
 - "path_to_icsd_directory_local" or "path_to_icsd_directory_cluster"
+
+Furthermore, you might want to change the used model (see line `model =
+build_model_XX(...)`).
+
+You can use the script files contained in `training/submit_scripts_slurm/` to
+perform the training runs. You can use `submit_head_only.sh` to run an
+experiment on a single node containing one or more GPUs.
+
+However, to obtain reasonable training times, we recommend using additional
+compute nodes to generate synthetic crystals and simulate their powder XRD
+patterns. Depending on the model size, the number of needed cores to not
+throttle the training process changes (bigger models train slower and need less
+compute cores). You can use the script `submit.sh` to automatically spawn three
+slurm jobs: one head job and two compute worker jobs. The three jobs will wait
+until all jobs are started and then initiate the training experiment. If your
+cluster supports heterogeneous jobs, feel free to adapt the scripts accordingly.
+
+- TODO: Change pyxtal to pxrd in those submit scripts
+- TODO: Change the path to the bashrc in those scripts
 
 - TODO: Change environment name in slurm scripts
 - Change method in script of how environment is activated

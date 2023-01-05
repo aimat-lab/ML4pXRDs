@@ -8,7 +8,7 @@
 #SBATCH --job-name=random_head
 #SBATCH --time=10-48:00:00
 
-source ~/mambaforge/etc/profile.d/conda.sh
+source ~/.bashrc
 conda activate pyxtal
 
 port=6379

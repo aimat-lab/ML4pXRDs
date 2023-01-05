@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ~/mambaforge/etc/profile.d/conda.sh
+source ~/.bashrc
 conda activate pyxtal
 
 rm -f ./worker_1_ready

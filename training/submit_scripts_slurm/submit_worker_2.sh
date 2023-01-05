@@ -6,7 +6,7 @@
 #SBATCH --job-name=random_worker
 #SBATCH --time=10-48:00:00
 
-source ~/mambaforge/etc/profile.d/conda.sh
+source ~/.bashrc
 conda activate pyxtal
 
 # wait until head is ready
