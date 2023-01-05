@@ -182,7 +182,7 @@ the ICSD database. Furthermore, you first need to point `path_to_patterns` to
 the directory containing your simulated patterns (used in section above). Then,
 you can generate the dataset and extract the statistics: 
 
-```python
+```bash
 python manage_dataset.py
 ```
 
@@ -195,35 +195,39 @@ At the top of the training script (`trainig/train_random_classifier.py`), you
 can find options of the training including detailed explanations. While you
 should look through all options, the following options always need to be
 changed:
+
 - "path_to_patterns"
 - "path_to_icsd_directory_local" or "path_to_icsd_directory_cluster"
 
 Furthermore, you might want to change the used model (see line `model =
 build_model_XX(...)`).
 
-You can use the script files contained in `training/submit_scripts_slurm/` to
-perform the training runs. You can use `submit_head_only.sh` to run an
-experiment on a single node containing one or more GPUs.
+You can call the training script like this:
+
+```bash
+python train_classifier.py <Unique name / ID of experiment> head-only <number of ray workers>
+```
+
+Instead of calling the script directly, you can also use the slurm script files
+contained in `training/submit_scripts_slurm/` to perform the training runs. You
+can use `submit_head_only.sh` to run an experiment on a single node containing
+one or more GPUs.
 
 However, to obtain reasonable training times, we recommend using additional
 compute nodes to generate synthetic crystals and simulate their powder XRD
 patterns. Depending on the model size, the number of needed cores to not
 throttle the training process changes (bigger models train slower and need less
-compute cores). You can use the script `submit.sh` to automatically spawn three
-slurm jobs: one head job and two compute worker jobs. The three jobs will wait
-until all jobs are started and then initiate the training experiment. If your
-cluster supports heterogeneous jobs, feel free to adapt the scripts accordingly.
+compute cores). You can use the script `submit.sh` (execute with `bash`, not
+`sbatch`) to automatically spawn three slurm jobs: one head job and two compute
+worker jobs. The three jobs will wait until all jobs are started and then
+initiate the training experiment. If your cluster supports heterogeneous jobs,
+feel free to adapt the scripts accordingly.
+
+Make sure to adapt all submit scripts to the exact specifications of your
+cluster and change the name of the anaconda environment and potentially the path
+to your `.bashrc` file in all submit scripts.
 
 - TODO: Change pyxtal to pxrd in those submit scripts
-- TODO: Change the path to the bashrc in those scripts
-
-- TODO: Change environment name in slurm scripts
-- Change method in script of how environment is activated
-- Fixed paths?
-- submit_head_only.slr
-
-- TODO: Command line options of the training script; alternatively, run it using
-  the provided slurm scripts
 
 Each training experiment will put its data (TensorBoard data, logs, checkpoint files)
 in a separate run directory. The current run directory will be printed in the beginning
@@ -234,11 +238,22 @@ The easiest way to track the progress and results of your training runs is to us
 `tensorboard --logdir .`.
 
 There are several metrics that are logged to TensorBoard during a run:
-- TODO: List the datasets that are used for validation; including name in TensorBoard
-- All ICSD entries
-- ICSD entries that match simulation parameters
-- Pre-computed random dataset (the one from the comparison script)
-- Gap between training and val acc that matches simulation parameters
+- `accuracy/loss all`: Performance on ICSD test dataset
+- `accuracy/loss match`: Performance on ICSD test dataset, only using structures that match
+the simulation parameters (volume < 7000 angstroms, less than 100 atoms in asymmetric unit)
+- `accuracy/loss random`: Performance on pXRDs from synthetically generated crystals
+(same distribution as training data)
+- `accuracy/loss match_correct_spgs`: Performance on ICSD test dataset, only using structures
+that match the simulation parameters. Furthermore, the space group label obtained using 
+`spglib` is used instead of that provided by the ICSD.
+- `accuracy/loss match_correct_spgs_pure`: Performance on ICSD test dataset, only using structures
+that match the simulation parameters. Furthermore, the space group label obtained using 
+`spglib` is used instead of that provided by the ICSD. Also, only structures without partial
+occupancies are used.
+- `accuracy gap`: `accuracy random` - `accuracy match`
+
+Additionally to those metrics, after each epoch, the current learning rate and the current
+size of the `ray` queue object (indicating if enough workers are used) are logged.
 
 # Citing
 To cite this repository, please refer to our publication:
