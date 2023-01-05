@@ -191,19 +191,20 @@ python manage_dataset.py
 ```
 
 This will take a while (~5 hours). Finally, you can find the prepared dataset
-including statistics information in the directory `./prepared_dataset`.
+including the statistics in the directory `./prepared_dataset`.
 
 ### Run experiments
 At the top of the training script (`./trainig/train_random_classifier.py`), you
-can find options of the training including detailed explanations. While you
-should look through all options, the following options always need to be
-changed:
+can find some variables / options of the training experiment including detailed
+explanations. While you should look through all options, the following options
+always need to be changed:
 
 - `path_to_patterns`
 - `path_to_icsd_directory_local` or `path_to_icsd_directory_cluster`
 
 Furthermore, you might want to change the used model (see line `model =
-build_model_XX(...)`).
+build_model_XX(...)`). You can find the models implemented by us in
+the file `./training/models.py`.
 
 You can call the training script like this:
 
@@ -221,10 +222,10 @@ compute nodes to generate synthetic crystals and simulate their powder XRD
 patterns. Depending on the model size, the number of needed cores to not
 throttle the training process changes (bigger models train slower and need less
 compute cores). You can use the script `submit.sh` (execute with `bash`, not
-`sbatch`) to automatically spawn three slurm jobs: one head job and two compute
-worker jobs. The three jobs will wait until all jobs are started and then
-initiate the training experiment. If your cluster supports heterogeneous jobs,
-feel free to adapt the scripts accordingly.
+`sbatch`) to automatically spawn three slurm jobs on different compute nodes:
+one head job and two compute worker jobs. The three jobs will wait until all
+jobs are started and then initiate the training experiment. If your cluster
+supports heterogeneous jobs, feel free to adapt the scripts accordingly.
 
 Make sure to adapt all submit scripts to the exact specifications of your
 cluster and change the name of the anaconda environment and potentially the path
@@ -245,11 +246,11 @@ the simulation parameters (volume < 7000 angstroms, less than 100 atoms in asymm
 - `accuracy/loss random`: Performance on pXRDs from synthetically generated crystals
 (same distribution as training data)
 - `accuracy/loss match_correct_spgs`: Performance on ICSD test dataset, only using structures
-that match the simulation parameters. Furthermore, the space group label obtained using 
-`spglib` is used instead of that provided by the ICSD.
+that match the simulation parameters. Furthermore, the space group labels obtained using 
+`spglib` are used instead of those provided by the ICSD.
 - `accuracy/loss match_correct_spgs_pure`: Performance on ICSD test dataset, only using structures
-that match the simulation parameters. Furthermore, the space group label obtained using 
-`spglib` is used instead of that provided by the ICSD. Also, only structures without partial
+that match the simulation parameters. Furthermore, the space group labels obtained using 
+`spglib` are used instead of those provided by the ICSD. Also, only structures without partial
 occupancies are used.
 - `accuracy gap`: `accuracy random` - `accuracy match`
 
