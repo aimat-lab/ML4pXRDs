@@ -104,6 +104,8 @@ After loading the statistics, you can use the statistics to generate synthetic
 structures of a given space group (here space group 125):
 
 ```python
+from ml4pxrd_tools.generation.structure_generation import generate_structures
+
 structures = generate_structures(
     125,
     N=1,
@@ -121,7 +123,7 @@ This repository provides various functions to simulate powder XRD patterns:
 
 - Use function `ml4pxrd_tools.simulation.simulation_core.get_pattern_optimized`
 for fast simulation of the angles and intensities of all peaks in a given
-$2\theta$ range. This uses a optimized version of the pymatgen implementation.
+$2\theta$ range. This uses an optimized version of the pymatgen implementation.
 - Use function `ml4pxrd_tools.simulation.simulation_smeared.get_smeared_patterns`
 to simulate one or more smeared patterns (peaks convoluted with a Gaussian preak profile)
 for a given structure object.
@@ -132,6 +134,8 @@ Here is an example of how to call `get_synthetic_smeared_patterns` using the
 statistics loaded using `load_dataset_info` (see above):
 
 ```python
+from ml4pxrd_tools.simulation.simulation_smeared import get_synthetic_smeared_patterns
+
 patterns, labels = get_synthetic_smeared_patterns(
     [125],
     N_structures_per_spg=5,
@@ -149,8 +153,9 @@ patterns, labels = get_synthetic_smeared_patterns(
 ```    
 
 The functions `get_smeared_patterns` and `get_synthetic_smeared_patterns`
-calculate the FWHM of the gaussian peak profiles using a random crystallite size
-uniformly sampled in the range `pymatgen_crystallite_size_gauss_min=20` to
+calculate the FWHM of the gaussian peak profiles using the Scherrer equation
+with a random crystallite size uniformly sampled in the range
+`pymatgen_crystallite_size_gauss_min=20` to
 `pymatgen_crystallite_size_gauss_max=100` (in nm). You can change the default
 range at the top of script file
 `./ml4pxrd_tools/simulation/simulation_smeared.py`.
