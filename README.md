@@ -164,7 +164,7 @@ range at the top of script file
 ### Pre-simulate patterns for testing
 If you want to run your own ML experiments, you need to generate your own
 dataset from the ICSD that contains the required simulated diffractograms
-and crystals. They are needed to test the accuracy of the ML models.
+and crystals. This is needed to test the accuracy of the ML models.
 
 In order to generate a dataset, a license for the ICSD database is needed. If
 you have the license and downloaded the database, you need to first simulate
@@ -182,13 +182,9 @@ As a point of reference, it takes ~14 hours to simulate the full ICSD on 8 cores
 
 ### Extract statistics and generate dataset split
 To generate a new dataset with prototype-based split using the just simulated
-patterns, you can run the script `./ml4pxrd_tools/manage_dataset.py`. You first
-have to change `path_to_icsd_directory_cluster` or
-`path_to_icsd_directory_local` (depends on if you run this script on a cluster
-using slurm or not) in this script. It should point to your directory containing
-the ICSD database. Furthermore, you first need to point `path_to_patterns` to
-the directory containing your simulated patterns (used in section above). Then,
-you can generate the dataset and extract the statistics: 
+patterns, you can use the script `./ml4pxrd_tools/manage_dataset.py`. Please
+first change the variables at the top of this script file. Then, you can
+generate the dataset and extract the statistics: 
 
 ```bash
 python manage_dataset.py

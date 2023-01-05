@@ -39,6 +39,8 @@ path_to_patterns = (
 
 # Path to the ICSD directory that contains the "ICSD_data_from_API.csv" file
 # and the "cif" directory (which contains all the ICSD cif files)
+# We provide two separate variables for local execution and execution on
+# a cluster using slurm.
 path_to_icsd_directory_local = os.path.expanduser("~/Dokumente/Big_Files/ICSD/")
 path_to_icsd_directory_cluster = os.path.expanduser("~/Databases/ICSD/")
 
