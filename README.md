@@ -77,7 +77,7 @@ The required data can be loaded by using the function
 `ml4pxrd_tools.manage_dataset.load_dataset_info` with parameter
 `load_public_statistics_only=True`. The returned objects can then be passed to
 the respective functions to generate synthetic crystals and simulate pXRDs (see
-below). We refer to section `Training` of the README if you want to create your
+below). We refer to section "Training" of the README if you want to create your
 own dataset and extract your own statistics from the ICSD.
 
 ```python
@@ -150,7 +150,7 @@ calculate the FWHM of the gaussian peak profiles using a random crystallite size
 uniformly sampled in the range `pymatgen_crystallite_size_gauss_min=20` to
 `pymatgen_crystallite_size_gauss_max=100` (in nm). You can change the default
 range at the top of script file
-`ml4pxrd_tools/simulation/simulation_smeared.py`.
+`./ml4pxrd_tools/simulation/simulation_smeared.py`.
 
 ## Training
 ### Pre-simulate patterns for testing
@@ -161,7 +161,7 @@ and crystals. They are needed to test the accuracy of the ML models.
 In order to generate a dataset, a license for the ICSD database is needed. If
 you have the license and downloaded the database, you need to first simulate
 pXRD patterns based on the ICSD crystals. This can be accomplished by running
-the script `ml4pxrd_tools/simulation/icsd_simulator.py`. Before running this
+the script `./ml4pxrd_tools/simulation/icsd_simulator.py`. Before running this
 script, make sure that you change the variables at the top of this script file,
 of the file `simulation_worker.py`, and of `simulation_smeared.py`.
 
@@ -174,7 +174,7 @@ As a point of reference, it takes ~14 hours to simulate the full ICSD on 8 cores
 
 ### Extract statistics and generate dataset split
 To generate a new dataset with prototype-based split using the just simulated
-patterns, you can run the script `ml4pxrd_tools/manage_dataset.py`. You first
+patterns, you can run the script `./ml4pxrd_tools/manage_dataset.py`. You first
 have to change `path_to_icsd_directory_cluster` or
 `path_to_icsd_directory_local` (depends on if you run this script on a cluster
 using slurm or not) in this script. It should point to your directory containing
@@ -187,11 +187,10 @@ python manage_dataset.py
 ```
 
 This will take a while (~5 hours). Finally, you can find the prepared dataset
-including statistics information in the directory `prepared_dataset` of the main
-directory of this repository.
+including statistics information in the directory `./prepared_dataset`.
 
 ### Run experiments
-At the top of the training script (`trainig/train_random_classifier.py`), you
+At the top of the training script (`./trainig/train_random_classifier.py`), you
 can find options of the training including detailed explanations. While you
 should look through all options, the following options always need to be
 changed:
@@ -209,7 +208,7 @@ python train_classifier.py <Unique name / ID of experiment> head-only <number of
 ```
 
 Instead of calling the script directly, you can also use the slurm script files
-contained in `training/submit_scripts_slurm/` to perform the training runs. You
+contained in `./training/submit_scripts_slurm/` to perform the training runs. You
 can use `submit_head_only.sh` to run an experiment on a single node containing
 one or more GPUs.
 
@@ -226,8 +225,6 @@ feel free to adapt the scripts accordingly.
 Make sure to adapt all submit scripts to the exact specifications of your
 cluster and change the name of the anaconda environment and potentially the path
 to your `.bashrc` file in all submit scripts.
-
-- TODO: Change pyxtal to pxrd in those submit scripts
 
 Each training experiment will put its data (TensorBoard data, logs, checkpoint files)
 in a separate run directory. The current run directory will be printed in the beginning
