@@ -16,7 +16,7 @@ The repository contains the following components:
     The code of the optimized simulation of powder XRDs (using numba LLVM
     just-in-time compilation) can be found in `./ml4pxrd_tools/simulation/`. This code
     is based on the implementation found in the
-    [`pymatgen`](https://github.com/materialsproject/pymatgen) [1] library.
+    [`pymatgen`](https://github.com/materialsproject/pymatgen) library.
 
 2. Generation of synthetic crystals
 
@@ -260,6 +260,3 @@ size of the `ray` queue object (indicating if enough workers are used) are logge
 # Citing
 To cite this repository, please refer to our publication:
 - TODO: Add reference to arXiv paper
-
-# References
-[1] Ong, S. P., Richards, W. D., Jain, A., Hautier, G., Kocher, M., Cholia, S., Gunter, D., Chevrier, V. L., Persson, K. A., & Ceder, G. (2013). Python Materials Genomics (pymatgen): A robust, open-source python library for materials analysis (Version 2022.1.24) [Computer software]. https://doi.org/10.1016/j.commatsci.2012.10.028
