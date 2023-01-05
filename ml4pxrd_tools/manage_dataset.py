@@ -67,7 +67,9 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     the statistics dataset or the test dataset (see description in our
     publication). In order to run this function, simulation data from the ICSD
     is needed. Please refer to ml4pxrd_tools.simulation.icsd_simulator.py to
-    simulate the ICSD patterns.
+    simulate the ICSD patterns. The final dataset split including statistics
+    information will be saved in the directory `prepared_dataset` in the
+    main directory of the repository.
 
     Args:
         per_element (bool, optional): If this setting is True,
@@ -89,9 +91,9 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
         "prepared_dataset",
     )
 
-    # if os.path.exists(output_dir):
-    #    print("Please remove existing prepared_dataset directory first.")
-    #    return None
+    if os.path.exists(output_dir):
+        print("Please remove existing prepared_dataset directory first.")
+        return None
 
     spgs = range(1, 231)  # all spgs
 
@@ -441,7 +443,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
         crystal = test_crystals[i]
 
         if (i % 100) == 0:
-            print(f"{i / len(test_crystals) * 100} % processed.")
+            print(f"{(len(test_crystals) - i) / len(test_crystals) * 100} % processed.")
 
         try:
 
@@ -514,7 +516,7 @@ def prepare_dataset(per_element=False, max_volume=7000, max_NO_wyckoffs=100):
     print(f"Nan-counter test dataset: {nan_counter_test}")
     print(f"Nan-counter statistics dataset: {nan_counter_statistics}")
 
-    os.system("mkdir -p prepared_dataset")
+    os.system("mkdir -p " + output_dir)
 
     with open(f"{output_dir}/meta", "wb") as file:
         pickle.dump(
@@ -1013,7 +1015,9 @@ def show_dataset_statistics():
     Additionally, for each spg the number of samples in the statistics and test dataset are printed.
     """
 
-    prepared_dataset_dir = os.path.dirname(os.path.dirname(__file__))
+    prepared_dataset_dir = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "prepared_dataset"
+    )
 
     with open(os.path.join(prepared_dataset_dir, "meta"), "rb") as file:
 
