@@ -61,7 +61,7 @@ max_NO_samples_to_test_on = 10000
 # The following setting only applies for training on synthetic crystals. When
 # training on ICSD crystals directly, the whole dataset is used for each epoch.
 batches_per_epoch = 150 * 6
-NO_epochs = 700  # TODO: Change back
+NO_epochs = 2000
 start_epoch = 1300  # TODO: Change back
 
 # How many structures to generate per spg. Only applies for training using synthetic crystals.
