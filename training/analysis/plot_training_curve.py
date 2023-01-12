@@ -7,7 +7,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_training_curve(files, labels, colors, linestyles, x_log=False, y_log=False):
+def plot_training_curve(
+    files,
+    labels,
+    colors,
+    linestyles,
+    x_log=True,
+    y_log=True,
+):
     """Plot training curve from csv files (as downloaded from tensorboard).
 
     Args:
@@ -50,11 +57,13 @@ def plot_training_curve(files, labels, colors, linestyles, x_log=False, y_log=Fa
             linestyle=linestyles[i],
         )
 
-        if x_log:
-            plt.gca().set_xscale("log")
+    if x_log:
+        plt.gca().set_xscale("log")
 
-        if y_log:
-            plt.gca().set_yscale("log")
+    if y_log:
+        plt.gca().set_yscale("log")
+
+    plt.ylim((0.0, 1.0))
 
     plt.xlabel("steps")
     plt.ylabel("Accuracy")
@@ -88,6 +97,7 @@ if __name__ == "__main__":
     )
     """
 
+    """
     plot_training_curve(
         [
             [
@@ -114,4 +124,19 @@ if __name__ == "__main__":
 
     plt.vlines([160, 1000], 0, 1, colors=["k", "k"])
     plt.savefig("training_curves_no_log.pdf")
+    plt.show()
+    """
+
+    plot_training_curve(
+        [
+            "training_curves/resnet_10_random.csv",
+            "training_curves/resnet_10_match.csv",
+            "training_curves/resnet_10_top5.csv",
+        ],
+        ["ResNet-10 training", "ResNet-10 ICSD", "ResNet-10 ICSD top-5"],
+        ["r", "g", "b"],
+        ["solid", "solid", "solid"],
+    )
+
+    plt.savefig("training_curve_main.pdf")
     plt.show()
