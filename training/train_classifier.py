@@ -39,7 +39,7 @@ import math
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "synthetic_training_ResNet-101-continue"
+tag = "synthetic_training_ResNet-50-continue"
 description = ""  # description of current run
 
 run_analysis_after_training = (
@@ -62,7 +62,7 @@ max_NO_samples_to_test_on = 10000
 # training on ICSD crystals directly, the whole dataset is used for each epoch.
 batches_per_epoch = 150 * 6
 NO_epochs = 2000
-start_epoch = 1300  # TODO: Change back
+start_epoch = 1500  # TODO: Change back
 
 # How many structures to generate per spg. Only applies for training using synthetic crystals.
 structures_per_spg = 1
@@ -152,7 +152,7 @@ shuffle_test_match_train_match = False
 use_pretrained_model = (
     True  # Make it possible to resume from a previous training run # TODO: Change back
 )
-pretrained_model_path = "/home/ws/uvgnh/MSc/ML4pXRDs/training/classifier_spgs/23-12-2022_14-49-23/checkpoints/model_1300"
+pretrained_model_path = "/home/ws/uvgnh/MSc/ML4pXRDs/training/classifier_spgs/27-12-2022_10-34-28/checkpoints/model_1500"
 
 # This option can be used to run training locally (with restricted computing resources)
 # If True, only 8 cores are used.
@@ -1504,7 +1504,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "ResNet-101"
+    model_name = "ResNet-50"
 
     if not use_pretrained_model:
 
@@ -1523,13 +1523,13 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # Resnet-101 + additional dense layer
+        # Resnet-50 + additional dense layer
         model = build_model_resnet_i(
             N,
             len(spgs),
             lr=learning_rate,
             batchnorm_momentum=batchnorm_momentum,
-            i=101,
+            i=50,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
             add_additional_dense_layer=True,  # Add one more dense layer
