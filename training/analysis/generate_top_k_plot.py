@@ -81,7 +81,7 @@ for i, meta in enumerate(test_metas_flat):
         metas_to_load_test.append(meta)
 
 icsd_sim_test.load(
-    load_only_N_patterns_each=1,
+    load_only_N_patterns_each=10,
     metas_to_load=metas_to_load_test,  # Only load the patterns with the ICSD ids from the test dataset
 )
 
@@ -207,6 +207,9 @@ prediction_match = model.predict(val_x_match, batch_size=145)
 
 accs = get_top_k_accuracies(val_y_match, prediction_match, range(1, 21))
 
+# TODO: When using this figure in paper, increase load_only_N above!
+# TODO: When using for the paper, run on cluster on full dataset!
+
 print("Match")
 print(accs)
 
@@ -228,3 +231,24 @@ plt.plot(list(range(1, 21)), accs, legend="training")
 
 plt.legend()
 plt.savefig("top_k.pdf")
+
+# Where do the wrongly classified patterns land?
+
+prediction_match = np.array(prediction_match)
+val_y_match = np.array(val_y_match)
+
+wrongs_indices_match = np.argwhere(prediction_match != val_y_match)
+wrongly_predicted_as_match = prediction_match[wrongs_indices_match]
+
+prediction_random = np.array(prediction_random)
+val_y_random = np.array(val_y_random)
+
+wrongs_indices_random = np.argwhere(prediction_random != val_y_random)
+wrongly_predicted_as_random = prediction_random[wrongs_indices_random]
+
+plt.hist(wrongly_predicted_as_match, alpha=0.5, label="ICSD")
+plt.hist(wrongly_predicted_as_random, alpha=0.5, label="Synthetic")
+plt.xlabel("Space group")
+plt.ylabel("Count")
+plt.legend()
+plt.savefig("wrongly_predicted_as.pdf")
