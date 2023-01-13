@@ -81,7 +81,7 @@ for i, meta in enumerate(test_metas_flat):
         metas_to_load_test.append(meta)
 
 icsd_sim_test.load(
-    load_only_N_patterns_each=10,
+    load_only_N_patterns_each=1,
     metas_to_load=metas_to_load_test,  # Only load the patterns with the ICSD ids from the test dataset
 )
 
@@ -206,9 +206,6 @@ def get_top_k_accuracies(true_labels, predictions, ks):
 prediction_match = model.predict(val_x_match, batch_size=145)
 
 accs = get_top_k_accuracies(val_y_match, prediction_match, range(1, 21))
-
-# TODO: When using this figure in paper, increase load_only_N above!
-# TODO: When using for the paper, run on cluster on full dataset!
 
 print("Match")
 print(accs)
