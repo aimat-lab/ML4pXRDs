@@ -913,11 +913,9 @@ if __name__ == "__main__":
         output_dir=path_to_patterns,
     )
 
-    # simulation.load()
-    # simulator.prepare_simulation()
-    # simulator.save()
-    # simulator.simulate_all(start_from_scratch=True)
+    # simulator.load()
+    simulator.prepare_simulation()
+    simulator.save()
+    simulator.simulate_all(start_from_scratch=True)
 
-    # TODO: Change back
-
-    simulator.plot_histogram_of_spgs(do_show=False, do_sort=True)
+    # simulator.plot_histogram_of_spgs(do_show=False, do_sort=True)
