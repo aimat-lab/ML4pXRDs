@@ -83,6 +83,7 @@ for i, meta in enumerate(test_metas_flat):
 icsd_sim_test.load(
     load_only_N_patterns_each=1,
     metas_to_load=metas_to_load_test,  # Only load the patterns with the ICSD ids from the test dataset
+    stop=1,  # TODO: Change back
 )
 
 icsd_patterns_match = []
@@ -207,6 +208,8 @@ prediction_match = model.predict(val_x_match, batch_size=145)
 
 accs = get_top_k_accuracies(val_y_match, prediction_match, range(1, 21))
 
+prediction_match = np.argmax(prediction_match, axis=1)
+
 print("Match")
 print(accs)
 
@@ -220,6 +223,8 @@ plt.ylabel("Accuracy")
 prediction_random = model.predict(val_x_random, batch_size=145)
 
 accs = get_top_k_accuracies(val_y_random, prediction_random, range(1, 21))
+
+prediction_random = np.argmax(prediction_random, axis=1)
 
 print("Random")
 print(accs)
@@ -235,13 +240,13 @@ prediction_match = np.array(prediction_match)
 val_y_match = np.array(val_y_match)
 
 wrongs_indices_match = np.argwhere(prediction_match != val_y_match)
-wrongly_predicted_as_match = prediction_match[wrongs_indices_match][:,0]
+wrongly_predicted_as_match = prediction_match[wrongs_indices_match][:, 0]
 
 prediction_random = np.array(prediction_random)
 val_y_random = np.array(val_y_random)
 
 wrongs_indices_random = np.argwhere(prediction_random != val_y_random)
-wrongly_predicted_as_random = prediction_random[wrongs_indices_random][:,0]
+wrongly_predicted_as_random = prediction_random[wrongs_indices_random][:, 0]
 
 plt.hist(wrongly_predicted_as_match, alpha=0.5, label="ICSD")
 plt.hist(wrongly_predicted_as_random, alpha=0.5, label="Synthetic")

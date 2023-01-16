@@ -848,16 +848,19 @@ class ICSDSimulator:
 
         print(f"Skipped {counter} structures due to errors or missing path.")
 
-    def plot_histogram_of_spgs(self, do_show=True):
+    def plot_histogram_of_spgs(self, do_show=True, process_only_N=None, do_sort=False):
         """Generate a histogram of the representation of the different spgs in the ICSD.
 
         Args:
             do_show (bool, optional): Whether or not to call plt.show(). If False,
-            the histogram will only be saved to the disk. Defaults to True.
+                the histogram will only be saved to the disk. Defaults to True.
+            process_only_N (int|None, optional): Process only N icsd entries instead of
+                all. Defaults to None.
+            do_sort (bool, optional): Whether or not to sort by count. Default to False.
         """
 
         spgs = []
-        for i, id in enumerate(self.icsd_ids):
+        for i, id in enumerate(self.icsd_ids[0:process_only_N]):
             if (i % 100) == 0:
                 print(f"{i/len(self.icsd_ids)*100}%")
 
@@ -873,9 +876,15 @@ class ICSDSimulator:
                 matplotlib_defaults.pub_width * 0.40,
             )
         )
-        plt.hist(spgs, bins=np.arange(1, 231) + 0.5)
 
-        plt.xlabel("International space group number")
+        if not do_sort:
+            plt.hist(spgs, bins=np.arange(0, 231) + 0.5)
+            plt.xlabel("International space group number")
+        else:
+            hist, bin_edges = np.histogram(spgs, bins=np.arange(0, 231) + 0.5)
+            plt.bar(np.arange(1, 231), np.sort(hist), width=1.0)
+            plt.xlabel("Space groups (sorted by count)")
+
         plt.ylabel("count")
 
         plt.tight_layout()
@@ -905,6 +914,10 @@ if __name__ == "__main__":
     )
 
     # simulation.load()
-    simulator.prepare_simulation(use_only_N_crystals=30000)  # TODO: Change back
-    simulator.save()
-    simulator.simulate_all(start_from_scratch=True)
+    # simulator.prepare_simulation()
+    # simulator.save()
+    # simulator.simulate_all(start_from_scratch=True)
+
+    # TODO: Change back
+
+    simulator.plot_histogram_of_spgs(do_show=False, do_sort=True)
