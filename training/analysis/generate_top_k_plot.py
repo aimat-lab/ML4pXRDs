@@ -235,13 +235,13 @@ prediction_match = np.array(prediction_match)
 val_y_match = np.array(val_y_match)
 
 wrongs_indices_match = np.argwhere(prediction_match != val_y_match)
-wrongly_predicted_as_match = prediction_match[wrongs_indices_match]
+wrongly_predicted_as_match = prediction_match[wrongs_indices_match][:,0]
 
 prediction_random = np.array(prediction_random)
 val_y_random = np.array(val_y_random)
 
 wrongs_indices_random = np.argwhere(prediction_random != val_y_random)
-wrongly_predicted_as_random = prediction_random[wrongs_indices_random]
+wrongly_predicted_as_random = prediction_random[wrongs_indices_random][:,0]
 
 plt.hist(wrongly_predicted_as_match, alpha=0.5, label="ICSD")
 plt.hist(wrongly_predicted_as_random, alpha=0.5, label="Synthetic")
