@@ -250,6 +250,7 @@ wrongs_indices_random = np.argwhere(prediction_random != val_y_random)
 wrongly_predicted_as_random = prediction_random[wrongs_indices_random][:, 0]
 wrongly_predicted_as_random = [spgs[index] for index in wrongly_predicted_as_random]
 
+plt.figure()
 plt.hist(
     wrongly_predicted_as_match, alpha=0.5, bins=np.arange(0, 231) + 0.5, label="ICSD"
 )
