@@ -5,6 +5,13 @@ This script can be used to plot a training curve as downloaded from Tensorboard.
 import ml4pxrd_tools.matplotlib_defaults
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib
+import random
+
+figure_double_width_pub = ml4pxrd_tools.matplotlib_defaults.pub_width
+
+matplotlib.rcParams["lines.linewidth"] = 1
 
 
 def plot_training_curve(
@@ -15,6 +22,7 @@ def plot_training_curve(
     x_log=True,
     y_log=True,
     do_fix_step_continuity=False,
+    start_epoch=0,
 ):
     """Plot training curve from csv files (as downloaded from tensorboard).
 
@@ -37,9 +45,27 @@ def plot_training_curve(
             all_data = None
 
             current_step = 0
-            for subfile in file:
+            for _subfile in file:
+
+                if isinstance(_subfile, list):
+                    subfile = _subfile[0]
+                    prob = _subfile[1]
+                else:
+                    subfile = _subfile
 
                 data = np.genfromtxt(subfile, skip_header=1, delimiter=",")[:, 1:3]
+
+                if start_epoch != 0:
+                    index = np.argmax(data[:, 0] >= start_epoch)
+                    data = data[index:]
+
+                # subsample with prob
+                if isinstance(_subfile, list):
+                    indices = []
+                    for k in range(data.shape[0]):
+                        if random.random() < prob:
+                            indices.append(k)
+                    data = data[indices, :]
 
                 if do_fix_step_continuity:
                     data[:, 0] += current_step
@@ -72,7 +98,7 @@ def plot_training_curve(
 
     plt.ylim((0.0, 1.0))
 
-    plt.xlabel("steps")
+    plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
 
     plt.legend()
@@ -134,6 +160,13 @@ if __name__ == "__main__":
     plt.show()
     """
 
+    plt.figure(
+        figsize=(
+            figure_double_width_pub * 0.7,
+            figure_double_width_pub * 0.5,
+        )
+    )
+
     plot_training_curve(
         [
             "training_curves/resnet_10_training.csv",
@@ -145,23 +178,25 @@ if __name__ == "__main__":
             "ResNet-10 ICSD",
             "ResNet-10 ICSD top-5",
         ],
-        ["r", "g", "b"],
+        ["r", "r", "r"],
+        # ["solid", "--", (0, (1, 10))],
         ["solid", "solid", "solid"],
+        start_epoch=5,
     )
 
     plot_training_curve(
         [
             [
                 "training_curves/resnet_50_training_0.csv",
-                "training_curves/resnet_50_training_1.csv",
+                ["training_curves/resnet_50_training_1.csv", 0.65263861055],
             ],
             [
                 "training_curves/resnet_50_match_0.csv",
-                "training_curves/resnet_50_match_1.csv",
+                ["training_curves/resnet_50_match_1.csv", 0.65263861055],
             ],
             [
                 "training_curves/resnet_50_top5_0.csv",
-                "training_curves/resnet_50_top5_1.csv",
+                ["training_curves/resnet_50_top5_1.csv", 0.65263861055],
             ],
         ],
         [
@@ -169,23 +204,25 @@ if __name__ == "__main__":
             "ResNet-50 ICSD",
             "ResNet-50 ICSD top-5",
         ],
-        ["r", "g", "b"],
-        [(0, (1, 5)), (0, (1, 5)), (0, (1, 5))],
+        ["g", "g", "g"],
+        # ["solid", "--", (0, (1, 10))],
+        ["solid", "solid", "solid"],
+        start_epoch=5,
     )
 
     plot_training_curve(
         [
             [
                 "training_curves/resnet_101_training_0.csv",
-                "training_curves/resnet_101_training_1.csv",
+                ["training_curves/resnet_101_training_1.csv", 0.71439568899],
             ],
             [
                 "training_curves/resnet_101_match_0.csv",
-                "training_curves/resnet_101_match_1.csv",
+                ["training_curves/resnet_101_match_1.csv", 0.71439568899],
             ],
             [
                 "training_curves/resnet_101_top5_0.csv",
-                "training_curves/resnet_101_top5_1.csv",
+                ["training_curves/resnet_101_top5_1.csv", 0.71439568899],
             ],
         ],
         [
@@ -193,12 +230,21 @@ if __name__ == "__main__":
             "ResNet-101 ICSD",
             "ResNet-101 ICSD top-5",
         ],
-        ["r", "g", "b"],
-        [(0, (1, 10)), (0, (1, 10)), (0, (1, 10))],
+        ["b", "b", "b"],
+        # ["solid", "--", (0, (1, 10))],
+        ["solid", "solid", "solid"],
+        start_epoch=5,
     )
 
-    plt.savefig("training_curve_main.pdf")
-    plt.show()
+    plt.gca().get_legend().remove()
 
-    # TODO: Switch color and line style
-    # TODO: Fix the inconsistent spacing between datapoints somehow
+    patches = [
+        mpatches.Patch(color="b", label="ResNet-101"),
+        mpatches.Patch(color="g", label="ResNet-50"),
+        mpatches.Patch(color="r", label="ResNet-10"),
+    ]
+    plt.legend(handles=patches)
+
+    plt.tight_layout()
+    plt.savefig("training_curve_main.pdf", bbox_inches="tight")
+    plt.show()
