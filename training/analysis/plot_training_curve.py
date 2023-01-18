@@ -166,6 +166,7 @@ if __name__ == "__main__":
             figure_double_width_pub * 0.5,
         )
     )
+    # plt.xlim([2, 2000])
 
     plot_training_curve(
         [

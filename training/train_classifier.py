@@ -39,7 +39,7 @@ import math
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "synthetic_training_ResNet-50-continue"
+tag = "ResNet-101 randomized + statistics dataset + analysis"
 description = ""  # description of current run
 
 run_analysis_after_training = (
@@ -61,8 +61,8 @@ max_NO_samples_to_test_on = 10000
 # The following setting only applies for training on synthetic crystals. When
 # training on ICSD crystals directly, the whole dataset is used for each epoch.
 batches_per_epoch = 150 * 6
-NO_epochs = 2000
-start_epoch = 1500  # TODO: Change back
+NO_epochs = 0
+start_epoch = 0  # TODO: Change back
 
 # How many structures to generate per spg. Only applies for training using synthetic crystals.
 structures_per_spg = 1
@@ -99,8 +99,8 @@ use_statistics_dataset_as_validation = False
 # crystals). In the second one, the lattice parameters are replaced (lattice
 # parameters are sampled using the KDE as described in the paper). In the third
 # one, both coordinates and the lattice parameters are replaced / resampled.
-generate_randomized_validation_datasets = False
-randomization_step = 3  # Only use every n'th sample for the randomization process
+generate_randomized_validation_datasets = True  # TODO: Change back
+randomization_step = 1  # Only use every n'th sample for the randomization process
 
 # This only applies to the models that support dropout, especially those
 # originating from Park et al. (2020)
@@ -152,7 +152,9 @@ shuffle_test_match_train_match = False
 use_pretrained_model = (
     True  # Make it possible to resume from a previous training run # TODO: Change back
 )
-pretrained_model_path = "/home/ws/uvgnh/MSc/ML4pXRDs/training/classifier_spgs/27-12-2022_10-34-28/checkpoints/model_1500"
+pretrained_model_path = (
+    "/home/ws/uvgnh/MSc/ML4pXRDs/training/classifier_spgs/07-01-2023_18-31-34/final"
+)
 
 # This option can be used to run training locally (with restricted computing resources)
 # If True, only 8 cores are used.
@@ -1504,7 +1506,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             ),
         )
 
-    model_name = "ResNet-50"
+    model_name = "ResNet-101"
 
     if not use_pretrained_model:
 
@@ -1529,7 +1531,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
             len(spgs),
             lr=learning_rate,
             batchnorm_momentum=batchnorm_momentum,
-            i=50,
+            i=101,
             disable_batchnorm=False,
             use_group_norm=use_group_norm,
             add_additional_dense_layer=True,  # Add one more dense layer
@@ -1643,6 +1645,16 @@ if generate_randomized_validation_datasets:
             (rightly_indices_randomized_ref, falsely_indices_randomized_ref), file
         )
 
+    prediction_randomized_lattice = model.predict(
+        val_x_randomized_lattice, batch_size=batch_size
+    )
+    prediction_randomized_lattice = np.argmax(prediction_randomized_lattice, axis=1)
+
+    prediction_randomized_both = model.predict(
+        val_x_randomized_both, batch_size=batch_size
+    )
+    prediction_randomized_both = np.argmax(prediction_randomized_both, axis=1)
+
 #####
 
 ray.shutdown()
@@ -1676,6 +1688,42 @@ print("Classification report on random dataset:")
 print(report)
 with open(out_base + "classification_report_random.pickle", "wb") as file:
     pickle.dump(report, file)
+
+if generate_randomized_validation_datasets:
+
+    report = classification_report(
+        [spgs[i] for i in val_y_randomized_coords],
+        [spgs[i] for i in prediction_randomized_coords],
+        output_dict=True,
+    )
+    print("Classification report on randomized coords dataset:")
+    print(report)
+    with open(
+        out_base + "classification_report_randomized_coords.pickle", "wb"
+    ) as file:
+        pickle.dump(report, file)
+
+    report = classification_report(
+        [spgs[i] for i in val_y_randomized_lattice],
+        [spgs[i] for i in prediction_randomized_lattice],
+        output_dict=True,
+    )
+    print("Classification report on randomized lattice dataset:")
+    print(report)
+    with open(
+        out_base + "classification_report_randomized_lattice.pickle", "wb"
+    ) as file:
+        pickle.dump(report, file)
+
+    report = classification_report(
+        [spgs[i] for i in val_y_randomized_both],
+        [spgs[i] for i in prediction_randomized_both],
+        output_dict=True,
+    )
+    print("Classification report on randomized both dataset:")
+    print(report)
+    with open(out_base + "classification_report_randomized_both.pickle", "wb") as file:
+        pickle.dump(report, file)
 
 if run_analysis_after_training:  # Automatically call the analysis script after training
 

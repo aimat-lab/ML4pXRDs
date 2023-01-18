@@ -54,7 +54,7 @@ path_to_icsd_directory_cluster = os.path.expanduser("~/Databases/ICSD/")
 # Fix range of volume to (0,7000), number of atoms in asymmetric unit to (0,100),
 # denseness factor to (0, 4.0), and lattice parameters to (0, 55.0)
 fix_important_ranges = True
-zoom = False  # Add zoomed-in subplots inside the main plot of volume and number of atoms in asymmetric unit
+zoom = True  # Add zoomed-in subplots inside the main plot of volume and number of atoms in asymmetric unit
 
 if __name__ == "__main__":
 
