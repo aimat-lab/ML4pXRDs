@@ -88,7 +88,7 @@ do_symmetry_checks = True
 # dataset. This setting cannot be used together with
 # `use_icsd_structures_directly`, since here the statistics dataset is already
 # used for training.
-use_statistics_dataset_as_validation = False
+use_statistics_dataset_as_validation = True
 
 # The following setting can be used to analyze the difference in accuracy
 # between training (using synthetic crystals) and patterns simulated from the
