@@ -100,7 +100,7 @@ use_statistics_dataset_as_validation = True
 # parameters are sampled using the KDE as described in the paper). In the third
 # one, both coordinates and the lattice parameters are replaced / resampled.
 generate_randomized_validation_datasets = True  # TODO: Change back
-randomization_step = 1  # Only use every n'th sample for the randomization process
+randomization_step = 3  # Only use every n'th sample for the randomization process
 
 # This only applies to the models that support dropout, especially those
 # originating from Park et al. (2020)
