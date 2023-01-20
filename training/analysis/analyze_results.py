@@ -2728,7 +2728,7 @@ if __name__ == "__main__":
             min_is_zero=True,
             force_int_bins=True,
             fixed_x_min=0 if fix_important_ranges else None,
-            fixed_y_max=100 if fix_important_ranges else None,
+            fixed_y_max=30 if fix_important_ranges else None,
             zoom=zoom if not flag else False,
             x1=10,
             x2=20,
