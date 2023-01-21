@@ -39,7 +39,7 @@ import math
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "ResNet-101 randomized + statistics dataset + analysis"
+tag = "ResNet-101_randomized_+_statistics_dataset_+_analysis"
 description = ""  # description of current run
 
 run_analysis_after_training = (
@@ -1655,6 +1655,11 @@ if generate_randomized_validation_datasets:
     )
     prediction_randomized_both = np.argmax(prediction_randomized_both, axis=1)
 
+if use_statistics_dataset_as_validation:
+
+    prediction_statistics = model.predict(statistics_x_match, batch_size=batch_size)
+    prediction_statistics = np.argmax(prediction_statistics, axis=1)
+
 #####
 
 ray.shutdown()
@@ -1723,6 +1728,18 @@ if generate_randomized_validation_datasets:
     print("Classification report on randomized both dataset:")
     print(report)
     with open(out_base + "classification_report_randomized_both.pickle", "wb") as file:
+        pickle.dump(report, file)
+
+if use_statistics_dataset_as_validation:
+
+    report = classification_report(
+        [spgs[i] for i in statistics_y_match],
+        [spgs[i] for i in prediction_statistics],
+        output_dict=True,
+    )
+    print("Classification report on statistics dataset:")
+    print(report)
+    with open(out_base + "classification_report_statistics.pickle", "wb") as file:
         pickle.dump(report, file)
 
 if run_analysis_after_training:  # Automatically call the analysis script after training
