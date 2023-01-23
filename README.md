@@ -1,13 +1,12 @@
 # ML for pXRDs using synthetic crystals
 This repository contains the code of the publication "Neural networks trained on
-randomly generated crystals can classify space-groups of ICSD X-ray
-diffractograms". It can be used to train machine learning models (e.g. for the
-classification of space groups) on powder XRD patterns simulated on-the-fly from
-synthetically generated random crystal structures.
+synthetically generated crystals can extract structural information from ICSD
+powder X-ray diffractograms". It can be used to train machine learning models
+(e.g., for the classification of space groups) on powder XRD diffractograms
+simulated on-the-fly from synthetically generated random crystal structures.
 
 If you have any problems using the provided software, if documentation is
-missing, or if you find any bugs, feel free to contact us or add a new issue on
-GitHub.
+missing, or if you find any bugs, feel free to add a new issue on GitHub.
 
 The repository contains the following components:
 
@@ -68,7 +67,7 @@ conda install -c conda-forge cudnn==8.1.0.77
 
 ## Loading statistics of the ICSD
 In order to be able to generate synthetic crystals, some general statistics
-(e.g. about the occupation of the wyckoff positions for each space group) need
+(e.g., about the occupation of the Wyckoff positions for each space group) need
 to be extracted from the ICSD. If you only want to generate synthetic crystals
 (and simulate pXRDs based on them) without running your own training
 experiments, you can use the statistical data provided by us in
@@ -101,7 +100,7 @@ from ml4pxrd_tools.manage_dataset import load_dataset_info
 ## Generating synthetic crystals
 
 After loading the statistics, you can use the statistics to generate synthetic
-structures of a given space group (here space group 125):
+structures of a given space group (here for space group 125):
 
 ```python
 from ml4pxrd_tools.generation.structure_generation import generate_structures
@@ -119,7 +118,7 @@ structures = generate_structures(
 ```
 
 ## Simulating pXRDs
-This repository provides various functions to simulate powder XRD patterns:
+This repository provides various functions to simulate powder XRD diffractograms:
 
 - Use function `ml4pxrd_tools.simulation.simulation_core.get_pattern_optimized`
 for fast simulation of the angles and intensities of all peaks in a given
@@ -168,7 +167,7 @@ and crystals. This is needed to test the accuracy of the ML models.
 
 In order to generate a dataset, a license for the ICSD database is needed. If
 you have the license and downloaded the database, you need to first simulate
-pXRD patterns based on the ICSD crystals. This can be accomplished by running
+powder diffractograms based on the ICSD crystals. This can be accomplished by running
 the script `./ml4pxrd_tools/simulation/icsd_simulator.py`. Before running this
 script, make sure that you change the variables at the top of this script file,
 of the file `simulation_worker.py`, and of `simulation_smeared.py`.
@@ -218,8 +217,7 @@ can use `submit_head_only.sh` to run an experiment on a single node containing
 one or more GPUs.
 
 However, to obtain reasonable training times, we recommend using additional
-compute nodes to generate synthetic crystals and simulate their powder XRD
-patterns. Depending on the model size, the number of needed cores to not
+compute nodes to generate synthetic crystals and simulate their powder diffractogram. Depending on the model size, the number of needed cores to not
 throttle the training process changes (bigger models train slower and need less
 compute cores). You can use the script `submit.sh` (execute with `bash`, not
 `sbatch`) to automatically spawn three slurm jobs on different compute nodes:
@@ -252,7 +250,7 @@ that match the simulation parameters. Furthermore, the space group labels obtain
 that match the simulation parameters. Furthermore, the space group labels obtained using 
 `spglib` are used instead of those provided by the ICSD. Also, only structures without partial
 occupancies are used.
-- `accuracy gap`: `accuracy random` - `accuracy match`
+- `accuracy gap`: `accuracy random - accuracy match`
 
 Additionally to those metrics, after each epoch, the current learning rate and the current
 size of the `ray` queue object (indicating if enough workers are used) are logged.
