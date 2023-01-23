@@ -39,7 +39,7 @@ import math
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "ResNet-101_randomized_+_statistics_dataset_+_analysis"
+tag = "ResNet-101_synthetic_crystals"
 description = ""  # description of current run
 
 run_analysis_after_training = (
@@ -61,8 +61,8 @@ max_NO_samples_to_test_on = 10000
 # The following setting only applies for training on synthetic crystals. When
 # training on ICSD crystals directly, the whole dataset is used for each epoch.
 batches_per_epoch = 150 * 6
-NO_epochs = 0
-start_epoch = 0  # TODO: Change back
+NO_epochs = 2000
+start_epoch = 0
 
 # How many structures to generate per spg. Only applies for training using synthetic crystals.
 structures_per_spg = 1
@@ -88,7 +88,7 @@ do_symmetry_checks = True
 # dataset. This setting cannot be used together with
 # `use_icsd_structures_directly`, since here the statistics dataset is already
 # used for training.
-use_statistics_dataset_as_validation = True
+use_statistics_dataset_as_validation = False
 
 # The following setting can be used to analyze the difference in accuracy
 # between training (using synthetic crystals) and patterns simulated from the
@@ -99,7 +99,7 @@ use_statistics_dataset_as_validation = True
 # crystals). In the second one, the lattice parameters are replaced (lattice
 # parameters are sampled using the KDE as described in the paper). In the third
 # one, both coordinates and the lattice parameters are replaced / resampled.
-generate_randomized_validation_datasets = True  # TODO: Change back
+generate_randomized_validation_datasets = False
 randomization_step = 3  # Only use every n'th sample for the randomization process
 
 # This only applies to the models that support dropout, especially those
@@ -149,12 +149,8 @@ uniformly_distributed = False
 # test performance.
 shuffle_test_match_train_match = False
 
-use_pretrained_model = (
-    True  # Make it possible to resume from a previous training run # TODO: Change back
-)
-pretrained_model_path = (
-    "/home/ws/uvgnh/MSc/ML4pXRDs/training/classifier_spgs/07-01-2023_18-31-34/final"
-)
+use_pretrained_model = False  # Make it possible to resume from a previous training run
+pretrained_model_path = "XXX/final"
 
 # This option can be used to run training locally (with restricted computing resources)
 # If True, only 8 cores are used.
@@ -1525,7 +1521,7 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
         # )
 
-        # Resnet-50 + additional dense layer
+        # Resnet-101 + additional dense layer
         model = build_model_resnet_i(
             N,
             len(spgs),

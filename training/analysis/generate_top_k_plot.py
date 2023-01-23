@@ -83,7 +83,6 @@ for i, meta in enumerate(test_metas_flat):
 icsd_sim_test.load(
     load_only_N_patterns_each=1,
     metas_to_load=metas_to_load_test,  # Only load the patterns with the ICSD ids from the test dataset
-    stop=1,  # TODO: Change back
 )
 
 icsd_patterns_match = []
