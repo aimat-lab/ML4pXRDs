@@ -7,7 +7,7 @@
 #SBATCH --time=10-48:00:00
 
 source ~/.bashrc
-conda activate pyxtal
+conda activate pxrd
 
 # wait until head is ready
 until [ -f ./head_node_ip ]

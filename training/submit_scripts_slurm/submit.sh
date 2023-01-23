@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ~/.bashrc
-conda activate pyxtal
+conda activate pxrd
 
 rm -f ./worker_1_ready
 rm -f ./worker_2_ready

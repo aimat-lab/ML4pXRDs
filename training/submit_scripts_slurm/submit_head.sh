@@ -9,7 +9,7 @@
 #SBATCH --time=10-48:00:00
 
 source ~/.bashrc
-conda activate pyxtal
+conda activate pxrd
 
 port=6379
 head_node_ip=$(hostname --ip-address)
