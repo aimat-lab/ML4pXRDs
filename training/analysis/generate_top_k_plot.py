@@ -17,7 +17,9 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import ml4pxrd_tools.matplotlib_defaults
 
-model_path = "/home/ws/uvgnh/MSc/HEOs_MSc/train_dataset/classifier_spgs/21-08-2022_12-40-17/final"  # ResNet-50 sqrt-scaling
+figure_double_width_pub = ml4pxrd_tools.matplotlib_defaults.pub_width
+
+model_path = "/home/ws/uvgnh/MSc/ML4pXRDs/training/classifier_spgs/07-01-2023_18-31-34/final"  # ResNet-101 sqrt-scaling
 preprocess_patterns_sqrt = (
     True  # Whether or not the model uses the sqrt-preprocessing of the patterns
 )
@@ -212,8 +214,13 @@ prediction_match = np.argmax(prediction_match, axis=1)
 print("Match")
 print(accs)
 
-plt.figure()
-plt.plot(list(range(1, 21)), accs, label="ICSD match")
+plt.figure(
+    figsize=(
+        figure_double_width_pub * 0.95 * 0.5,
+        figure_double_width_pub * 0.7 * 0.5,
+    )
+)
+plt.plot(list(range(1, 21)), accs, label="ICSD")
 plt.xlabel("k")
 plt.ylabel("Accuracy")
 
@@ -228,11 +235,17 @@ prediction_random = np.argmax(prediction_random, axis=1)
 print("Random")
 print(accs)
 
-plt.plot(list(range(1, 21)), accs, label="synthetic")
+plt.plot(list(range(1, 21)), accs, label="Synthetic (training)")
 
 plt.legend()
-plt.savefig("top_k.pdf")
 
+plt.tight_layout()
+plt.savefig(
+    "top_k.pdf",
+    bbox_inches="tight",
+)
+
+"""
 # Where do the wrongly classified patterns land?
 
 prediction_match = np.array(prediction_match)
@@ -263,3 +276,4 @@ plt.xlabel("Space group")
 plt.ylabel("Count")
 plt.legend()
 plt.savefig("wrongly_predicted_as.pdf")
+"""
