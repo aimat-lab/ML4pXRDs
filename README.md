@@ -1,9 +1,11 @@
 # ML for pXRDs using synthetic crystals
-This repository contains the code of the publication "Neural networks trained on
+This repository contains the code of the publication ["Neural networks trained on
 synthetically generated crystals can extract structural information from ICSD
-powder X-ray diffractograms". It can be used to train machine learning models
+powder X-ray diffractograms"](https://arxiv.org/abs/2303.11699). It can be used to train machine learning models
 (e.g., for the classification of space groups) on powder XRD diffractograms
 simulated on-the-fly from synthetically generated random crystal structures.
+
+You can find details about this project in our [`paper`](https://arxiv.org/abs/2303.11699). If you want to cite our work, you can use the provided bibtex file [CITATION.bib](CITATION.bib).
 
 If you have any problems using the provided software, if documentation is
 missing, or if you find any bugs, feel free to add a new issue on GitHub.
@@ -254,7 +256,3 @@ occupancies are used.
 
 Additionally to those metrics, after each epoch, the current learning rate and the current
 size of the `ray` queue object (indicating if enough workers are used) are logged.
-
-# Citing
-To cite this repository, please refer to our publication:
-- TODO: Add reference to arXiv paper
