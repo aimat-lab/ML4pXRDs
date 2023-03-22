@@ -162,6 +162,9 @@ range at the top of script file
 `./ml4pxrd_tools/simulation/simulation_smeared.py`.
 
 ## Training
+You can find the weights of our largest model (ResNet-101) trained using
+synthetic crystals in our [latest release](https://github.com/aimat-lab/ML4pXRDs/releases/tag/v1.0).
+
 ### Pre-simulate patterns for testing
 If you want to run your own ML experiments, you need to generate your own
 dataset from the ICSD that contains the required simulated diffractograms
