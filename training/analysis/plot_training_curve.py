@@ -23,6 +23,7 @@ def plot_training_curve(
     y_log=True,
     do_fix_step_continuity=False,
     start_epoch=0,
+    plot_1_minus_acc=False,
 ):
     """Plot training curve from csv files (as downloaded from tensorboard).
 
@@ -84,7 +85,7 @@ def plot_training_curve(
         y_data = all_data[:, 1]
         plt.plot(
             x_data,
-            y_data,
+            1 - y_data if plot_1_minus_acc else y_data,
             label=labels[i],
             color=colors[i],
             linestyle=linestyles[i],
@@ -106,68 +107,15 @@ def plot_training_curve(
 
 if __name__ == "__main__":
 
-    """
-    plot_training_curve(
-        [
-            "training_curves/resnet_50_random.csv",
-            "training_curves/resnet_50_match.csv",
-            "training_curves/resnet_50_top5.csv",
-        ],
-        ["ResNet-50 training", "ResNet-50 ICSD", "ResNet-50 ICSD top-5"],
-        ["r", "g", "b"],
-        ["solid", "solid", "solid"],
-    )
-
-    plot_training_curve(
-        [
-            "training_curves/resnet_101_random.csv",
-            "training_curves/resnet_101_match.csv",
-            "training_curves/resnet_101_top5.csv",
-        ],
-        ["ResNet-101 training", "ResNet-101 ICSD", "ResNet-101 ICSD top-5"],
-        ["r", "g", "b"],
-        [(0, (1, 5)), (0, (1, 5)), (0, (1, 5))],
-    )
-    """
-
-    """
-    plot_training_curve(
-        [
-            [
-                "training_curves/resnet_50_full_random_0.csv",
-                "training_curves/resnet_50_full_random_1.csv",
-            ],
-            [
-                "training_curves/resnet_50_full_match_0.csv",
-                "training_curves/resnet_50_full_match_1.csv",
-            ],
-            [
-                "training_curves/resnet_50_full_top5_0.csv",
-                "training_curves/resnet_50_full_top5_1.csv",
-            ],
-        ],
-        [
-            "ResNet-50 with sqrt-scaling training",
-            "ResNet-50 with sqrt-scaling ICSD",
-            "ResNet-50 with sqrt-scaling ICSD top-5",
-        ],
-        ["r", "g", "b"],
-        [(0, (1, 10)), (0, (1, 10)), (0, (1, 10))],
-    )
-
-    plt.vlines([160, 1000], 0, 1, colors=["k", "k"])
-    plt.savefig("training_curves_no_log.pdf")
-    plt.show()
-    """
-
     plt.figure(
         figsize=(
             figure_double_width_pub * 0.7,
             figure_double_width_pub * 0.5,
         )
     )
-    # plt.xlim([2, 2000])
+    # plt.xlim([1, 2000])
 
+    """ Main training curve plot
     plot_training_curve(
         [
             "training_curves/resnet_10_training.csv",
@@ -248,4 +196,95 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.savefig("training_curve_main.pdf", bbox_inches="tight")
+    plt.show()
+    """
+
+    # Plots of 1-acc.
+
+    """
+    plot_training_curve(
+        [
+            "training_curves/resnet_10_training.csv",
+            "training_curves/resnet_10_match.csv",
+            "training_curves/resnet_10_top5.csv",
+        ],
+        [
+            "ResNet-10 training",
+            "ResNet-10 ICSD",
+            "ResNet-10 ICSD top-5",
+        ],
+        ["r", "r", "r"],
+        # ["solid", "--", (0, (1, 10))],
+        ["solid", "solid", "solid"],
+        start_epoch=5,
+        plot_1_minus_acc=True,
+    )
+
+    plot_training_curve(
+        [
+            [
+                "training_curves/resnet_50_training_0.csv",
+                ["training_curves/resnet_50_training_1.csv", 0.65263861055],
+            ],
+            [
+                "training_curves/resnet_50_match_0.csv",
+                ["training_curves/resnet_50_match_1.csv", 0.65263861055],
+            ],
+            [
+                "training_curves/resnet_50_top5_0.csv",
+                ["training_curves/resnet_50_top5_1.csv", 0.65263861055],
+            ],
+        ],
+        [
+            "ResNet-50 training",
+            "ResNet-50 ICSD",
+            "ResNet-50 ICSD top-5",
+        ],
+        ["g", "g", "g"],
+        # ["solid", "--", (0, (1, 10))],
+        ["solid", "solid", "solid"],
+        start_epoch=5,
+        plot_1_minus_acc=True,
+    )
+    """
+
+    plot_training_curve(
+        [
+            [
+                "training_curves/resnet_101_match_0.csv",
+                ["training_curves/resnet_101_match_1.csv", 0.71439568899],
+            ],
+            [
+                "training_curves/resnet_101_training_0.csv",
+                ["training_curves/resnet_101_training_1.csv", 0.71439568899],
+            ],
+            [
+                "training_curves/resnet_101_top5_0.csv",
+                ["training_curves/resnet_101_top5_1.csv", 0.71439568899],
+            ],
+        ],
+        [
+            "ResNet-101 ICSD",
+            "ResNet-101 Train",
+            "ResNet-101 ICSD top-5",
+        ],
+        ["r", "g", "b"],
+        # ["solid", "--", (0, (1, 10))],
+        ["solid", "solid", "solid"],
+        start_epoch=5,
+        plot_1_minus_acc=True,
+    )
+
+    # plt.gca().get_legend().remove()
+
+    # patches = [
+    #    mpatches.Patch(color="b", label="ResNet-101"),
+    #    # mpatches.Patch(color="g", label="ResNet-50"),
+    #    # mpatches.Patch(color="r", label="ResNet-10"),
+    # ]
+    # plt.legend(handles=patches)
+
+    plt.ylabel("1 - acc.")
+    plt.tight_layout()
+    plt.savefig("training_curve_main_1_minus_acc.pdf", bbox_inches="tight")
     plt.show()

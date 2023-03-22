@@ -12,6 +12,7 @@ import traceback
 from sklearn.linear_model import LinearRegression
 import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 from ml4pxrd_tools.manage_dataset import load_dataset_info
+from pyxtal import Group
 
 # Range of crystallite sizes to choose uniformly from (nm)
 pymatgen_crystallite_size_gauss_min = 20
@@ -573,6 +574,37 @@ if __name__ == "__main__":
         represented_spgs,
         probability_per_spg,
     ) = load_dataset_info(load_public_statistics_only=True)
+
+    # Count how many Wyckoff positions are excluded in total
+
+    spgs_counter = 0
+    wyckoffs_counter = 0
+    wyckoffs_counter_total = 0
+
+    for spg in probability_per_spg_per_element_per_wyckoff.keys():
+
+        pyxtal_object = Group(spg)
+
+        already_counted = False
+
+        for pos in pyxtal_object.Wyckoff_positions:
+
+            wyckoffs_counter_total += 1
+
+            probability = probability_per_spg_per_element_per_wyckoff[spg].get(
+                str(pos.multiplicity) + pos.letter
+            )
+
+            if probability is None or probability == 0:
+                if not already_counted:
+                    spgs_counter += 1
+                wyckoffs_counter += 1
+
+                already_counted = True
+
+    print("spgs_counter", spgs_counter)
+    print("wyckoffs_counter", wyckoffs_counter)
+    print("wyckoffs_counter_total", wyckoffs_counter_total)
 
     patterns, labels = get_synthetic_smeared_patterns(
         [125],

@@ -46,3 +46,4 @@ prepared_dataset_bak
 training/analysis/training_curves
 training/classifier_spgs
 training/comparison_plots
+ml4pxrd_tools/simulation/spg_list.pickle

@@ -848,7 +848,9 @@ class ICSDSimulator:
 
         print(f"Skipped {counter} structures due to errors or missing path.")
 
-    def plot_histogram_of_spgs(self, do_show=True, process_only_N=None, do_sort=False):
+    def plot_histogram_of_spgs(
+        self, do_show=True, process_only_N=None, do_sort=False, spgs_list=None
+    ):
         """Generate a histogram of the representation of the different spgs in the ICSD.
 
         Args:
@@ -857,16 +859,21 @@ class ICSDSimulator:
             process_only_N (int|None, optional): Process only N icsd entries instead of
                 all. Defaults to None.
             do_sort (bool, optional): Whether or not to sort by count. Default to False.
+            spgs_list (list of int|None, optional): If not None, use this list of spgs instead of
+                loading them from the ICSD. Defaults to None.
         """
 
-        spgs = []
-        for i, id in enumerate(self.icsd_ids[0:process_only_N]):
-            if (i % 100) == 0:
-                print(f"{i/len(self.icsd_ids)*100}%")
+        if spgs_list is None:
+            spgs = []
+            for i, id in enumerate(self.icsd_ids[0:process_only_N]):
+                if (i % 100) == 0:
+                    print(f"{i/len(self.icsd_ids)*100}%")
 
-            spg = self.get_space_group_number(id)
-            if spg is not None:
-                spgs.append(spg)
+                spg = self.get_space_group_number(id)
+                if spg is not None:
+                    spgs.append(spg)
+        else:
+            spgs = spgs_list
 
         print(f"Number of ICSD entries with available spg number: {len(spgs)}")
 
@@ -882,18 +889,41 @@ class ICSDSimulator:
             plt.xlabel("International space group number")
         else:
             hist, bin_edges = np.histogram(spgs, bins=np.arange(0, 231) + 0.5)
-            plt.bar(np.arange(1, 231), np.sort(hist), width=1.0)
+            sorted_indices = np.argsort(hist)
+            plt.bar(
+                np.arange(1, 231),
+                hist[sorted_indices],
+                width=1.0,
+                color="#1f77b4",
+            )
             plt.xlabel("Space groups (sorted by count)")
-
+        plt.yscale("log")
         plt.ylabel("count")
+
+        ax2 = plt.gca().twinx()
+        if not do_sort:
+            ax2.hist(spgs, bins=np.arange(0, 231) + 0.5)
+        else:
+            hist, bin_edges = np.histogram(spgs, bins=np.arange(0, 231) + 0.5)
+            sorted_indices = np.argsort(hist)
+            ax2.bar(
+                np.arange(1, 231),
+                hist[sorted_indices],
+                width=1.0,
+                color="red",
+            )
+        ax2.set_ylabel("count")
 
         plt.tight_layout()
         plt.savefig(f"distribution_spgs.pdf")
-        plt.yscale("log")
-        plt.savefig(f"distribution_spgs_logscale.pdf")
 
         if do_show:
             plt.show()
+
+        if do_sort:
+            return np.arange(1, 231)[sorted_indices], spgs
+        else:
+            return None, spgs
 
 
 if __name__ == "__main__":
@@ -914,8 +944,33 @@ if __name__ == "__main__":
     )
 
     # simulator.load()
-    simulator.prepare_simulation()
-    simulator.save()
-    simulator.simulate_all(start_from_scratch=True)
+    # simulator.prepare_simulation()
+    # simulator.save()
+    # simulator.simulate_all(start_from_scratch=True)
 
-    # simulator.plot_histogram_of_spgs(do_show=False, do_sort=True)
+    with open("./spg_list.pickle", "rb") as file:
+        spg_list = pickle.load(file)
+
+    order_of_spgs, spg_list = simulator.plot_histogram_of_spgs(
+        do_show=False,
+        do_sort=True,
+        spgs_list=spg_list,  # , process_only_N=10000
+    )
+
+    with open("/home/henrik/temp/spgs.pickle", "rb") as file:
+        spgs = pickle.load(file)
+
+    spgs_excluded = []
+    for spg in np.arange(1, 231):
+        if spg not in spgs:
+            spgs_excluded.append(spg)
+
+    plt.scatter(
+        [np.argwhere(order_of_spgs == spg)[0, 0] + 1 for spg in spgs_excluded],
+        [1000.0] * len(spgs_excluded),
+        color="orange",
+        s=3.0,
+    )
+    plt.tight_layout()
+    plt.savefig(f"distribution_spgs.pdf")
+    plt.show()
