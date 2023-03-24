@@ -21,6 +21,7 @@ from pymatgen.io.cif import CifParser
 import re
 import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 import functools
+import matplotlib
 
 num_files = (
     8  # Into how many files should the simulation of all patterns be saved / split?
@@ -849,7 +850,12 @@ class ICSDSimulator:
         print(f"Skipped {counter} structures due to errors or missing path.")
 
     def plot_histogram_of_spgs(
-        self, do_show=True, process_only_N=None, do_sort=False, spgs_list=None
+        self,
+        do_show=True,
+        process_only_N=None,
+        do_sort=False,
+        spgs_list=None,
+        spgs_to_stripe=None,
     ):
         """Generate a histogram of the representation of the different spgs in the ICSD.
 
@@ -861,6 +867,8 @@ class ICSDSimulator:
             do_sort (bool, optional): Whether or not to sort by count. Default to False.
             spgs_list (list of int|None, optional): If not None, use this list of spgs instead of
                 loading them from the ICSD. Defaults to None.
+            spgs_to_stripe (list of int|None, optional): If not None, plot the given spgs
+                using stripes. This currently only works if do_sort=True.
         """
 
         if spgs_list is None:
@@ -884,38 +892,70 @@ class ICSDSimulator:
             )
         )
 
-        if not do_sort:
-            plt.hist(spgs, bins=np.arange(0, 231) + 0.5)
-            plt.xlabel("International space group number")
-        else:
-            hist, bin_edges = np.histogram(spgs, bins=np.arange(0, 231) + 0.5)
-            sorted_indices = np.argsort(hist)
-            plt.bar(
-                np.arange(1, 231),
-                hist[sorted_indices],
-                width=1.0,
-                color="#1f77b4",
-            )
-            plt.xlabel("Space groups (sorted by count)")
-        plt.yscale("log")
-        plt.ylabel("count")
+        for i in range(0, 2):
 
-        ax2 = plt.gca().twinx()
-        if not do_sort:
-            ax2.hist(spgs, bins=np.arange(0, 231) + 0.5)
-        else:
-            hist, bin_edges = np.histogram(spgs, bins=np.arange(0, 231) + 0.5)
-            sorted_indices = np.argsort(hist)
-            ax2.bar(
-                np.arange(1, 231),
-                hist[sorted_indices],
-                width=1.0,
-                color="red",
-            )
-        ax2.set_ylabel("count")
+            if i == 0:
+                axis = plt.gca()
+                plt.yscale("log")
+                plt.ylabel("count")
+            else:
+                axis = plt.gca().twinx()
+                plt.ylabel("count")
+
+            if not do_sort:
+                axis.hist(spgs, bins=np.arange(0, 231) + 0.5)
+                axis.set_xlabel("International space group number")
+            else:
+
+                hist, bin_edges = np.histogram(spgs, bins=np.arange(0, 231) + 0.5)
+                sorted_indices = np.argsort(hist)
+
+                if spgs_to_stripe is None:
+
+                    axis.bar(
+                        np.arange(1, 231),
+                        hist[sorted_indices],
+                        width=1.0,
+                        color="#1f77b4" if i == 0 else "red",
+                        rasterized=True,
+                    )
+
+                else:
+
+                    spgs_sorted = np.arange(1, 231)[sorted_indices]
+
+                    stripe_positions = np.array(
+                        [
+                            np.argwhere(spgs_sorted == spg)[0][0] + 1
+                            for spg in spgs_to_stripe
+                        ]
+                    )
+
+                    # matplotlib.rcParams["hatch.linewidth"] = 0.1
+                    hist_at_stripe_pos = hist[sorted_indices][stripe_positions - 1]
+                    axis.bar(
+                        stripe_positions,
+                        hist_at_stripe_pos,
+                        width=1.0,
+                        color="#1f77b4" if i == 0 else "red",
+                        hatch="////////",
+                        rasterized=True,
+                    )
+
+                    all_spgs = np.arange(1, 231)
+                    all_hists = hist[sorted_indices]
+                    axis.bar(
+                        all_spgs[~np.isin(all_spgs, stripe_positions)],
+                        all_hists[~np.isin(all_spgs, stripe_positions)],
+                        width=1.0,
+                        color="#1f77b4" if i == 0 else "red",
+                        rasterized=True,
+                    )
+
+        plt.xlabel("Space groups (sorted by count)")
 
         plt.tight_layout()
-        plt.savefig(f"distribution_spgs.pdf")
+        plt.savefig(f"distribution_spgs.pdf", dpi=600)
 
         if do_show:
             plt.show()
@@ -951,12 +991,6 @@ if __name__ == "__main__":
     with open("./spg_list.pickle", "rb") as file:
         spg_list = pickle.load(file)
 
-    order_of_spgs, spg_list = simulator.plot_histogram_of_spgs(
-        do_show=False,
-        do_sort=True,
-        spgs_list=spg_list,  # , process_only_N=10000
-    )
-
     with open("/home/henrik/temp/spgs.pickle", "rb") as file:
         spgs = pickle.load(file)
 
@@ -965,12 +999,18 @@ if __name__ == "__main__":
         if spg not in spgs:
             spgs_excluded.append(spg)
 
-    plt.scatter(
-        [np.argwhere(order_of_spgs == spg)[0, 0] + 1 for spg in spgs_excluded],
-        [1000.0] * len(spgs_excluded),
-        color="orange",
-        s=3.0,
+    order_of_spgs, spg_list = simulator.plot_histogram_of_spgs(
+        do_show=False,
+        do_sort=True,
+        spgs_list=spg_list,  # , process_only_N=10000
+        spgs_to_stripe=spgs_excluded,
     )
-    plt.tight_layout()
-    plt.savefig(f"distribution_spgs.pdf")
+
+    # plt.scatter(
+    #    [np.argwhere(order_of_spgs == spg)[0, 0] + 1 for spg in spgs_excluded],
+    #    [1000.0] * len(spgs_excluded),
+    #    color="orange",
+    #    s=3.0,
+    # )
+
     plt.show()
