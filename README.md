@@ -54,6 +54,7 @@ using pip:
 - `psutil`
 - `ase`
 - `tensorflow`
+- `tensorflow-addons`
 
 We tested and recommend TensorFlow version 2.10.0. Also, make sure that the
 `CUDA` and `cuDNN` dependencies of `tensorflow` are installed and that the
