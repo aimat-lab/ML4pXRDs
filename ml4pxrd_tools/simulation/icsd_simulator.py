@@ -127,7 +127,6 @@ class ICSDSimulator:
 
         # Spawn the processes
         for i in range(0, num_processes):
-
             if (i + 1) * N_files_per_process < N_files_to_process:
                 files_of_process = self.crystal_files[
                     i * N_files_per_process : (i + 1) * N_files_per_process
@@ -170,13 +169,11 @@ class ICSDSimulator:
             handles.append(p)
 
         while True:
-
             time.sleep(30)
 
             polls = [p.poll() for p in handles]
 
             if not None in polls:  # all are done
-
                 if os.path.exists(os.path.join(self.output_dir, "STOP")):
                     print("Simulation stopped by user.")
 
@@ -189,7 +186,6 @@ class ICSDSimulator:
                 break
 
             if not all(poll == None or poll == 0 for poll in polls):
-
                 if os.path.exists(os.path.join(self.output_dir, "STOP")):
                     print("Simulation stopped by user.")
 
@@ -228,7 +224,6 @@ class ICSDSimulator:
         pickle_file = os.path.join(self.icsd_cifs_dir, "icsd_meta")
 
         if not os.path.exists(pickle_file):
-
             print("Rebuilding icsd meta information...", flush=True)
 
             icsd_info = pd.read_csv(self.icsd_info_file_path, sep=",", skiprows=1)
@@ -280,7 +275,6 @@ class ICSDSimulator:
                 pickle.dump(to_pickle, file)
 
         else:
-
             with open(pickle_file, "rb") as file:
                 (
                     self.icsd_ids,
@@ -306,7 +300,6 @@ class ICSDSimulator:
         counter_2 = 0
 
         for i, path in enumerate(all_paths):
-
             print(f"{i} of {len(self.icsd_paths)}", flush=True)
 
             with open(path, "r") as f:
@@ -355,7 +348,6 @@ class ICSDSimulator:
                 start = i * batch_size
                 end = len(self.sim_crystals)
         else:  # save all
-
             self.crystal_files_Ns = []
             self.crystal_files = []
 
@@ -511,9 +503,7 @@ class ICSDSimulator:
             ]
 
         if load_patterns_angles_intensities:
-
             if not load_only_angles_intensities:
-
                 for file in patterns_files[first_index:last_index]:
                     if (
                         load_only_N_patterns_each is not None
@@ -539,11 +529,8 @@ class ICSDSimulator:
                     self.sim_intensities.extend(pickle.load(pickle_file))
 
         if metas_to_load is not None:
-
             for i in reversed(range(0, len(self.sim_metas))):
-
                 if self.sim_metas[i][0] not in metas_to_load:
-
                     del self.sim_metas[i]
                     del self.sim_crystals[i]
                     del self.sim_variations[i]
@@ -654,7 +641,6 @@ class ICSDSimulator:
                         wyckoff_str += line.strip() + "\n"
 
                     else:  # done
-
                         wyckoff_repetitions = []
 
                         all_wyckoffs = []
@@ -722,7 +708,6 @@ class ICSDSimulator:
         for i, pattern in enumerate(patterns):
             for j, variation in enumerate(pattern):
                 if variation[0] is not np.nan:
-
                     plt.plot(
                         xs,
                         variation,
@@ -763,7 +748,6 @@ class ICSDSimulator:
             crystal = crystals[0]
 
         except Exception as error:
-
             print(
                 "Error encountered adding cif with id {}, skipping structure:".format(
                     metas[0]
@@ -824,7 +808,6 @@ class ICSDSimulator:
                 else self.icsd_paths[0:use_only_N_crystals]
             )
         ):
-
             print(f"Generated {i} structures.", flush=True)
 
             if path is None:
@@ -893,7 +876,6 @@ class ICSDSimulator:
         )
 
         for i in range(0, 2):
-
             if i == 0:
                 axis = plt.gca()
                 plt.yscale("log")
@@ -906,12 +888,10 @@ class ICSDSimulator:
                 axis.hist(spgs, bins=np.arange(0, 231) + 0.5)
                 axis.set_xlabel("International space group number")
             else:
-
                 hist, bin_edges = np.histogram(spgs, bins=np.arange(0, 231) + 0.5)
                 sorted_indices = np.argsort(hist)
 
                 if spgs_to_stripe is None:
-
                     axis.bar(
                         np.arange(1, 231),
                         hist[sorted_indices],
@@ -921,7 +901,6 @@ class ICSDSimulator:
                     )
 
                 else:
-
                     spgs_sorted = np.arange(1, 231)[sorted_indices]
 
                     stripe_positions = np.array(
@@ -952,10 +931,10 @@ class ICSDSimulator:
                         rasterized=True,
                     )
 
-        plt.xlabel("Space groups (sorted by count)")
+            axis.set_xlabel("Space group number (sorted by count)")
 
         plt.tight_layout()
-        plt.savefig(f"distribution_spgs.pdf", dpi=600)
+        plt.savefig(f"distribution_spgs.svg", dpi=600, bbox_inches="tight")
 
         if do_show:
             plt.show()
@@ -967,7 +946,6 @@ class ICSDSimulator:
 
 
 if __name__ == "__main__":
-
     # make print statement always flush
     print = functools.partial(print, flush=True)
 
@@ -1013,4 +991,4 @@ if __name__ == "__main__":
     #    s=3.0,
     # )
 
-    plt.show()
+    # plt.show()

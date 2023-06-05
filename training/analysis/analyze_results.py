@@ -57,9 +57,7 @@ fix_important_ranges = True
 zoom = True  # Add zoomed-in subplots inside the main plot of volume and number of atoms in asymmetric unit
 
 if __name__ == "__main__":
-
     if len(sys.argv) > 2:  # Run from command line
-
         # Probably running directly from the training script, so take arguments
         in_base = sys.argv[1]
 
@@ -78,10 +76,10 @@ if __name__ == "__main__":
             tag += "/all"
 
     else:
-
         # Path to the run directory
-        in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/19-06-2022_10-15-26/"
-        tag = "19-06-2022_10-15-26"
+        # in_base = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/19-06-2022_10-15-26/"
+        in_base = "/home/henrik/Dokumente/Promotion/xrd_paper/ML4pXRDs/training/classifier_spgs/07-01-2023_18-31-34/"
+        tag = "07-01-2023_18-31-34"
         spgs_to_analyze = None  # all
 
     print(f"Analysing {spgs_to_analyze if spgs_to_analyze is not None else 'all'} spgs")
@@ -147,7 +145,11 @@ if __name__ == "__main__":
 
     with open(in_base + "random_data.pickle", "rb") as file:
         data = pickle.load(file)
-        (random_crystals, random_labels, random_variations,) = (
+        (
+            random_crystals,
+            random_labels,
+            random_variations,
+        ) = (
             data[0],
             data[1],
             data[2],
@@ -166,7 +168,7 @@ if __name__ == "__main__":
 
     # limit the range:
     if False:
-        to_process = 300
+        to_process = 1000
         random_crystals = random_crystals[0:to_process]
         random_labels = random_labels[0:to_process]
         random_variations = random_variations[0:to_process]
@@ -178,7 +180,6 @@ if __name__ == "__main__":
     if calculate_conventionals:
         print("Calculating conventional structures...")
         for i in reversed(range(0, len(icsd_crystals))):
-
             try:
                 # percentage = i / (len(icsd_crystals) + len(random_crystals)) * 100
                 # print(f"{int(percentage)}%")
@@ -195,7 +196,6 @@ if __name__ == "__main__":
 
         # This is actually not really needed, but just in case...
         for i in reversed(range(0, len(random_crystals))):
-
             try:
                 # percentage = (
                 #    (i + len(icsd_crystals)) / (len(icsd_crystals) + len(random_crystals)) * 100
@@ -242,9 +242,7 @@ if __name__ == "__main__":
     print(f"Processing ICSD: {len(icsd_crystals)} in total.")
 
     for i in range(0, len(icsd_variations)):
-
         if spgs_to_analyze is None or icsd_labels[i][0] in spgs_to_analyze:
-
             (
                 is_pure,
                 NO_wyckoffs,
@@ -259,12 +257,10 @@ if __name__ == "__main__":
             elements_unique = np.unique(elements)
 
             try:
-
                 Zs = [Species(name).Z for name in elements_unique]
                 icsd_max_Zs.append(max(Zs))
 
             except Exception as ex:
-
                 icsd_max_Zs.append(None)
 
             icsd_NO_wyckoffs.append(NO_wyckoffs)
@@ -288,7 +284,6 @@ if __name__ == "__main__":
             icsd_set_wyckoffs.append(unique_wyckoffs)
 
         else:
-
             icsd_max_Zs.append(None)
             icsd_NO_wyckoffs.append(None)
             icsd_NO_elements.append(None)
@@ -360,7 +355,6 @@ if __name__ == "__main__":
     random_set_wyckoffs = []
 
     for i in range(0, len(random_variations)):
-
         print(f"Processing random: {i} of {len(random_variations)}")
 
         if spgs_to_analyze is None or random_labels[i] in spgs_to_analyze:
@@ -381,14 +375,12 @@ if __name__ == "__main__":
             success = False
 
         if success:
-
             elements_unique = np.unique(elements)
 
             try:
                 Zs = [Species(name).Z for name in elements_unique]
                 random_max_Zs.append(max(Zs))
             except Exception as ex:
-
                 random_max_Zs.append(None)
 
             random_NO_wyckoffs.append(NO_wyckoffs)
@@ -409,7 +401,6 @@ if __name__ == "__main__":
             random_set_wyckoffs.append(unique_wyckoffs)
 
         else:
-
             random_NO_wyckoffs.append(None)
             random_NO_elements.append(None)
             random_element_repetitions.append(None)
@@ -524,7 +515,6 @@ if __name__ == "__main__":
     random_falsely_max_unscaled_intensity_weighted = []
 
     if not spgs_to_analyze is None and len(spgs_to_analyze) == 1:
-
         spg = spgs_to_analyze[0]
 
         group = Group(spg, dim=3)
@@ -562,13 +552,11 @@ if __name__ == "__main__":
     rightly_random_already_processed = []
 
     for i in falsely_indices_icsd:
-
         index = int(i / n_patterns_per_crystal)
 
         if index < len(icsd_crystals) and (
             spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze
         ):
-
             structure = icsd_crystals[index]
 
             if (
@@ -595,7 +583,6 @@ if __name__ == "__main__":
                 and counter_xrds_icsd_falsely < total_xrds_icsd_falsely
                 and index not in falsely_icsd_already_processed
             ):
-
                 (
                     patterns,
                     angles,
@@ -745,13 +732,11 @@ if __name__ == "__main__":
     print("Started processing rightly_indices_icsd")
 
     for i in rightly_indices_icsd:
-
         index = int(i / n_patterns_per_crystal)
 
         if index < len(icsd_crystals) and (
             spgs_to_analyze is None or icsd_labels[index][0] in spgs_to_analyze
         ):
-
             structure = icsd_crystals[index]
 
             if (
@@ -779,7 +764,6 @@ if __name__ == "__main__":
                 and counter_xrds_icsd_rightly < total_xrds_icsd_rightly
                 and index not in rightly_icsd_already_processed
             ):
-
                 (
                     patterns,
                     angles,
@@ -932,7 +916,6 @@ if __name__ == "__main__":
         if index < len(random_crystals) and (
             spgs_to_analyze is None or random_labels[index] in spgs_to_analyze
         ):
-
             structure = random_crystals[index]
 
             if (
@@ -1107,7 +1090,6 @@ if __name__ == "__main__":
         if index < len(random_crystals) and (
             spgs_to_analyze is None or random_labels[index] in spgs_to_analyze
         ):
-
             structure = random_crystals[index]
 
             if (
@@ -1321,7 +1303,6 @@ if __name__ == "__main__":
         )
 
     if show_sample_xrds:
-
         xrds_icsd_falsely_average /= counter_xrds_icsd_falsely
         xrds_icsd_rightly_average /= counter_xrds_icsd_rightly
         xrds_random_rightly_average /= counter_xrds_random_rightly
@@ -2316,7 +2297,6 @@ if __name__ == "__main__":
             data_random[0] if data_random is not None else None,
             data_random[1] if data_random is not None else None,
         ]:
-
             if item is None:
                 continue
 
@@ -2371,7 +2351,6 @@ if __name__ == "__main__":
         hists = []
 
         for i, data in enumerate([data_icsd, data_random]):
-
             if data is None:
                 continue
 
@@ -2412,21 +2391,18 @@ if __name__ == "__main__":
         if not only_proportions:
             ax1.set_ylabel("Probability density")
         else:
-            ax1.set_ylabel("proportion for each bin")
+            ax1.set_ylabel("Classification error")
 
         if zoom:
             axins = zoomed_inset_axes(ax1, zoom_value, loc="upper right")
 
         counter = 0
         for i, data in enumerate([data_icsd, data_random]):
-
             if data is None:
                 continue
 
             for ax in [ax1, axins] if zoom else [ax1]:
-
                 if i == 0:
-
                     # falsely
                     h1 = ax.bar(
                         bins[:-1],
@@ -2438,19 +2414,19 @@ if __name__ == "__main__":
                         align="edge",
                     )
 
-                    # rightly
-                    h2 = ax.bar(
-                        bins[:-1],
-                        hists[counter * 2],  # height; 0,2
-                        bottom=hists[counter * 2 + 1],  # bottom; 1,3
-                        color="g",
-                        label=labels[counter * 2],  # 0,2
-                        width=bin_width,
-                        align="edge",
-                    )
+                    if not only_proportions:
+                        # rightly
+                        h2 = ax.bar(
+                            bins[:-1],
+                            hists[counter * 2],  # height; 0,2
+                            bottom=hists[counter * 2 + 1],  # bottom; 1,3
+                            color="g",
+                            label=labels[counter * 2],  # 0,2
+                            width=bin_width,
+                            align="edge",
+                        )
 
                 elif i == 1:
-
                     # middle (falsely):
                     ax.step(
                         # bins[:-1],
@@ -2464,22 +2440,25 @@ if __name__ == "__main__":
                         where="post",
                     )
 
-                    # top (rightly):
-                    ax.step(
-                        # bins[:-1],
-                        bins[:],
-                        # hists[counter * 2]
-                        # + hists[counter * 2 + 1],  # top coordinate, not height
-                        np.append(
-                            (hists[counter * 2] + hists[counter * 2 + 1]),  # 0,2 + 1,3
-                            (hists[counter * 2] + hists[counter * 2 + 1])[
-                                -1
-                            ],  # 0,2 + 1,3
-                        ),  # top coordinate, not height
-                        color="b",
-                        label=labels[counter * 2],
-                        where="post",
-                    )
+                    if not only_proportions:
+                        # top (rightly):
+                        ax.step(
+                            # bins[:-1],
+                            bins[:],
+                            # hists[counter * 2]
+                            # + hists[counter * 2 + 1],  # top coordinate, not height
+                            np.append(
+                                (
+                                    hists[counter * 2] + hists[counter * 2 + 1]
+                                ),  # 0,2 + 1,3
+                                (hists[counter * 2] + hists[counter * 2 + 1])[
+                                    -1
+                                ],  # 0,2 + 1,3
+                            ),  # top coordinate, not height
+                            color="b",
+                            label=labels[counter * 2],
+                            where="post",
+                        )
 
             counter += 1
 
@@ -2494,7 +2473,6 @@ if __name__ == "__main__":
             ax1.set_ylim(bottom=-0.1, top=1.1)
 
         if zoom:
-
             # sub region of the original plot
             axins.set_xlim(x1, x2)
             axins.set_ylim(y1, y2)
