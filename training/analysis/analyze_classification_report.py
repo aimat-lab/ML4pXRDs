@@ -19,27 +19,30 @@ import sys
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-import ml4pxrd_tools.matplotlib_defaults
+import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 
 if __name__ == "__main__":
-
-    include_NO_samples = False  # Whether or not to include the number of samples in the statistics dataset of the given space group in the plots.
-    sort_by_NO_samples = False  # Whether or not to sort the plot containing the gap between synthetic and match by NO_samples.
+    include_NO_samples = True  # Whether or not to include the number of samples in the statistics dataset of the given space group in the plots.
+    sort_by_NO_samples = (
+        True  # Whether or not to sort the spg indices in the plots by NO_samples.
+    )
     do_plot_random = (
-        True  # Whether or not to include the synthetic dataset in the first plot.
+        False  # Whether or not to include the synthetic dataset in the first plot.
     )
     metric_name = "recall"  # "precision", "recall", or "f1"
 
-    if False:
-        path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/21-08-2022_12-40-17"  # 2k epochs random resnet-50
-        # path = "/home/henrik/Dokumente/Promotion/xrd_paper/ML4pXRDs/training/classifier_spgs/16-12-2022_08-37-44"  # direct training, big park model
+    if True:
+        # path = "/home/henrik/Dokumente/Masterarbeit/HEOs_MSc/train_dataset/classifier_spgs/runs_from_cluster/continued_tests/21-08-2022_12-40-17"  # 2k epochs random resnet-50
+
+        # path = "/home/henrik/Dokumente/Promotion/xrd_paper/ML4pXRDs/training/classifier_spgs/07-01-2023_18-31-34"  # 2k epochs random resnet-101
+        path = "/home/henrik/Dokumente/Promotion/xrd_paper/ML4pXRDs/training/classifier_spgs/16-12-2022_08-37-44"  # 1k epochs direct parkCNN big
     else:
         path = sys.argv[1]
 
     if len(sys.argv) > 2:
         tag = sys.argv[2]
     else:
-        tag = "synthetic"
+        tag = "direct"
 
     with open(os.path.join(path, "classification_report_match.pickle"), "rb") as file:
         report_match = pickle.load(file)
@@ -152,24 +155,90 @@ if __name__ == "__main__":
         for spg in spgs_random:
             NO_samples.append(np.sum(statistics_match_labels_flat == spg))
 
-    # Plot absolute values:
+    ##### Plot absolute values:
 
-    plt.figure()
-    hd0 = plt.scatter(spgs_match, metrics_match, label="Match")
+    if sort_by_NO_samples and not include_NO_samples:
+        raise Exception(
+            "sort_by_NO_samples is True, but include_NO_samples is False. This is not possible."
+        )
+
+    metrics_match = np.array(metrics_match)
+    metrics_random = np.array(metrics_random)
+
+    if sort_by_NO_samples:
+        NO_samples = np.array(NO_samples)
+        sorting_indices = np.argsort(NO_samples)
+
+        NO_samples = NO_samples[sorting_indices]
+        metrics_match = metrics_match[sorting_indices]
+        metrics_random = metrics_random[sorting_indices]
+
+        spg_indices = list(range(len(metrics_match)))
+
+    plt.figure(
+        figsize=(
+            matplotlib_defaults.pub_width * 0.7,
+            matplotlib_defaults.pub_width * 0.5,
+        )
+    )
+
+    hd0 = plt.scatter(
+        spgs_match if not sort_by_NO_samples else spg_indices,
+        metrics_match,
+        label="ICSD",
+        s=10,
+        c="#1f77b4",
+    )
+    # Add a trendline:
+    z = np.polyfit(
+        spgs_match if not sort_by_NO_samples else spg_indices, metrics_match, 1
+    )
+    p = np.poly1d(z)
+    plt.plot(
+        spgs_match if not sort_by_NO_samples else spg_indices,
+        p(spgs_match if not sort_by_NO_samples else spg_indices),
+        color="#1f77b4",
+    )
+
     if do_plot_random:
-        hd1 = plt.scatter(spgs_random, metrics_random, label="Random")
-    hd2 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
+        hd1 = plt.scatter(
+            spgs_random if not sort_by_NO_samples else spg_indices,
+            metrics_random,
+            label="Synthetic",
+            s=10,
+            c="#ff7f0e",
+        )
+        # Add a trendline:
+        z = np.polyfit(
+            spgs_random if not sort_by_NO_samples else spg_indices, metrics_random, 1
+        )
+        p = np.poly1d(z)
+        plt.plot(
+            spgs_random if not sort_by_NO_samples else spg_indices,
+            p(spgs_random if not sort_by_NO_samples else spg_indices),
+            color="#ff7f0e",
+        )
+    # hd2 = plt.plot(spgs_match, np.zeros(len(spgs_match)))
 
     # for x in [1, 3, 16, 75, 143, 168, 195]:
     #    plt.axvline(x, color="r")
 
-    plt.xlabel("spg")
+    if not sort_by_NO_samples:
+        plt.xlabel("spg index")
+    else:
+        plt.xlabel("spg index (sorted by no. samples)")
+
     plt.ylabel(metric_name)
 
     if include_NO_samples:
         ax2 = plt.gca().twinx()
-        hd3 = ax2.plot(spgs_match, NO_samples, label="NO samples", color="r")
-        ax2.set_ylabel("NO samples")
+        hd3 = ax2.plot(
+            spgs_match if not sort_by_NO_samples else spg_indices,
+            NO_samples,
+            label="no. samples",
+            color="r",
+        )
+        ax2.set_ylabel("no. samples")
 
         if do_plot_random:
             plt.legend(handles=[hd0, hd1] + hd3)
@@ -189,9 +258,11 @@ if __name__ == "__main__":
     else:
         plt.legend()
 
-    plt.savefig(f"{tag}.pdf")
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(f"{tag}.pdf", bbox_inches="tight")
+    # plt.show()
 
+    """
     # Plot difference between training (random) and match:
 
     diff = np.array(metrics_random) - np.array(metrics_match)
@@ -237,6 +308,7 @@ if __name__ == "__main__":
 
     plt.savefig(f"{tag}_diff.pdf")
     plt.show()
+    """
 
     """
     metrics_per_crystal_system = {

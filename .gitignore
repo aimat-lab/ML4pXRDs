@@ -48,3 +48,4 @@ training/classifier_spgs
 training/comparison_plots
 ml4pxrd_tools/simulation/spg_list.pickle
 prepared_dataset_full
+prepared_dataset_small
