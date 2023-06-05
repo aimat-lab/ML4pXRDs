@@ -375,7 +375,6 @@ icsd_crystals_match_corrected_labels_pure = []
 icsd_metas_match_corrected_labels_pure = []
 
 for i in range(len(icsd_sim_test.sim_crystals)):
-
     if icsd_sim_test.sim_metas[i][0] in test_metas_flat:
         if icsd_sim_test.sim_labels[i][0] in spgs:
             icsd_patterns_all.append(icsd_sim_test.sim_patterns[i])
@@ -389,7 +388,6 @@ for i in range(len(icsd_sim_test.sim_crystals)):
         raise Exception("There is a mismatch somewhere.")
 
     if icsd_sim_test.sim_metas[i][0] in test_match_metas_flat:
-
         if icsd_sim_test.sim_labels[i][0] in spgs:
             icsd_patterns_match.append(icsd_sim_test.sim_patterns[i])
             icsd_labels_match.append(icsd_sim_test.sim_labels[i])
@@ -449,6 +447,7 @@ with open(out_base + "icsd_data.pickle", "wb") as file:
         file,
     )
 
+
 # This (remote) function is later only used to simulate the patterns of the randomized ICSD crystals
 # (with replaced coordinates of lattice parameters)
 @ray.remote(num_cpus=1, num_gpus=0)
@@ -471,10 +470,122 @@ def get_xy_pattern_wrapper(
     return patterns[0], corn_sizes[0]
 
 
+##### Prepare randomized datasets (if the respective flags are set)
+
+
+def prepare_randomized_dataset(
+    crystals,
+    corrected_labels,
+    randomize_coordinates,
+    randomize_lattice,
+    output_filename,
+):
+    randomized_crystals, reference_crystals, labels = randomize(
+        crystals,
+        randomize_coordinates=randomize_coordinates,
+        randomize_lattice=randomize_lattice,
+        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+    )
+    # We also get reference crystals, where nothing has been randomized.
+    # They differ slightly from the input crystals, because partial occupancies have been ignored.
+    # (pyxtal currently doesn't support partial occupancies)
+
+    errors_counter = 0
+    for i in reversed(range(len(labels))):
+        label = labels[i]
+
+        if label is not None:
+            if label != corrected_labels[i]:
+                errors_counter += 1
+
+                del labels[i]
+                del randomized_crystals[i]
+                del reference_crystals[i]
+
+    # Because `pyxtal` uses slightly different parameters for `spglib`, the
+    # obtained spg label from `pyxtal` and from our code (when obtaining the
+    # corrected labels) differ in rare cases
+    print(
+        f"{errors_counter} of {len(labels)} mismatched (different tolerances)\nwhen preparing {output_filename}"
+    )
+
+    randomized_crystals = [item for item in randomized_crystals if item is not None]
+    reference_crystals = [item for item in reference_crystals if item is not None]
+    labels = [item for item in labels if item is not None]
+
+    # Simulate patterns on ray cluster:
+    scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
+    results = map_to_remote(
+        scheduler_fn=scheduler_fn,
+        inputs=randomized_crystals,
+        NO_workers=NO_workers,
+    )
+    randomized_patterns = [result[0] for result in results]
+    randomized_corn_sizes = [result[1] for result in results]
+
+    results = map_to_remote(
+        scheduler_fn=scheduler_fn,
+        inputs=reference_crystals,
+        NO_workers=NO_workers,
+    )
+    reference_patterns = [result[0] for result in results]
+    reference_corn_sizes = [result[1] for result in results]
+
+    randomized_labels = []
+    for i in range(0, len(labels)):
+        randomized_labels.append(spgs.index(labels[i]))
+
+    # For further analysis, save the generated crystals:
+    with open(out_base + output_filename, "wb") as file:
+        pickle.dump(
+            (
+                randomized_crystals,
+                randomized_labels,
+                randomized_corn_sizes,
+                reference_crystals,
+                reference_corn_sizes,
+            ),
+            file,
+        )
+
+    # Prepare the datasets for tensorflow:
+
+    val_y_randomized = []
+    for i, label in enumerate(randomized_labels):
+        val_y_randomized.append(label)
+    val_y_randomized = np.array(val_y_randomized)
+
+    val_x_randomized = []
+    for pattern in randomized_patterns:
+        val_x_randomized.append(pattern)
+
+    val_y_randomized_ref = []
+    for i, label in enumerate(randomized_labels):
+        val_y_randomized_ref.append(label)
+    val_y_randomized_ref = np.array(val_y_randomized_ref)
+
+    val_x_randomized_ref = []
+    for pattern in reference_patterns:
+        val_x_randomized_ref.append(pattern)
+
+    if preprocess_patterns_sqrt:
+        val_x_randomized = np.sqrt(val_x_randomized)
+        val_x_randomized_ref = np.sqrt(val_x_randomized_ref)
+
+    val_x_randomized = np.expand_dims(val_x_randomized, axis=2)
+    val_x_randomized_ref = np.expand_dims(val_x_randomized_ref, axis=2)
+
+    return (
+        val_x_randomized,
+        val_y_randomized,
+        val_x_randomized_ref,
+        val_y_randomized_ref,
+    )
+
+
 ##### Generate match (corrected spgs) validation set with randomized coordinates and reference:
 
 if generate_randomized_validation_datasets:
-
     print(
         f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates).",
         flush=True,
@@ -551,7 +662,6 @@ if generate_randomized_validation_datasets:
 ##### Generate match (corrected spgs) validation set with randomized lattice parameters:
 
 if generate_randomized_validation_datasets:
-
     print(
         f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized lattice).",
         flush=True,
@@ -566,7 +676,6 @@ if generate_randomized_validation_datasets:
 
     errors_counter = 0
     for i in reversed(range(len(labels))):
-
         label = labels[i]
 
         if label is not None:
@@ -610,7 +719,6 @@ if generate_randomized_validation_datasets:
 ##### Generate match (corrected spgs) validation set with randomized lattice and coords:
 
 if generate_randomized_validation_datasets:
-
     print(
         f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates and lattice).",
         flush=True,
@@ -625,7 +733,6 @@ if generate_randomized_validation_datasets:
 
     errors_counter = 0
     for i in reversed(range(len(labels))):
-
         label = labels[i]
 
         if label is not None:
@@ -706,7 +813,6 @@ for pattern in icsd_patterns_match_corrected_labels_pure:
         val_x_match_correct_spgs_pure.append(sub_pattern)
 
 if generate_randomized_validation_datasets:
-
     val_y_randomized_coords = []
     for i, label in enumerate(randomized_coords_labels):
         val_y_randomized_coords.append(label)
@@ -786,7 +892,6 @@ def batch_generator_with_additional(
     max_NO_elements,
     NO_corn_sizes,
 ):
-
     patterns, labels, structures, corn_sizes = get_synthetic_smeared_patterns(
         spgs=spgs,
         N_structures_per_spg=structures_per_spg,
@@ -834,7 +939,6 @@ def batch_generator_queue(
     max_NO_elements,
     NO_corn_sizes,
 ):
-
     # Pass in the group object to speed up the process (do not construct it from scratch every time)
     group_object_per_spg = {}
     for spg in spgs:
@@ -842,7 +946,6 @@ def batch_generator_queue(
 
     while True:
         try:
-
             patterns, labels = get_synthetic_smeared_patterns(
                 spgs=spgs,
                 N_structures_per_spg=structures_per_spg,
@@ -887,7 +990,6 @@ def batch_generator_queue(
             queue.put((patterns, labels))  # blocks if queue is full, which is good
 
         except Exception as ex:
-
             print("Error occurred in worker:")
             print(ex)
             print(
@@ -994,7 +1096,6 @@ with open(out_base + "random_data.pickle", "wb") as file:
 # If use_statistics_dataset_as_validation, then create validation dataset
 # (both are based on the statistics dataset, it is just used for different purposes)
 if use_icsd_structures_directly or use_statistics_dataset_as_validation:
-
     if use_icsd_structures_directly and use_statistics_dataset_as_validation:
         raise Exception(
             "Cannot train and validate on statistics dataset at the same time."
@@ -1050,7 +1151,6 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
             in statistics_match_metas_flat  # This avoids nan simulation data
             and icsd_sim_statistics.sim_labels[i][0] in spgs
         ):
-
             statistics_icsd_patterns_match.append(icsd_sim_statistics.sim_patterns[i])
             statistics_icsd_labels_match.append(icsd_sim_statistics.sim_labels[i])
             statistics_icsd_variations_match.append(
@@ -1070,7 +1170,6 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     #####
 
     if not shuffle_test_match_train_match:
-
         val_y_match = []
         for i, label in enumerate(icsd_labels_match):
             val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
@@ -1092,7 +1191,6 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
                 statistics_x_match.append(sub_pattern)
 
     else:
-
         # Shuffle the statistics and test (match) dataset to make a comparison of the two possible splits possible:
         # Random vs. structure type based
 
@@ -1109,7 +1207,6 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
         probability_test = len(icsd_labels_match) * n_patterns_per_crystal_test / total
 
         for i in range(len(icsd_labels_match)):
-
             label = icsd_labels_match[i]
             pattern = icsd_patterns_match[i]
 
@@ -1157,7 +1254,6 @@ if use_icsd_structures_directly or use_statistics_dataset_as_validation:
     )
 
 else:  # if statistics dataset is not used, just construct the match test dataset
-
     val_y_match = []
     for i, label in enumerate(icsd_labels_match):
         val_y_match.extend([spgs.index(label[0])] * n_patterns_per_crystal_test)
@@ -1237,16 +1333,14 @@ params_txt = (
 )
 log_wait_timings = []
 
+
 # This callback is used to calculate all the test accuracies
 class CustomCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
-
         if ((epoch + 1) % test_every_X_epochs) == 0:
-
             start = time.time()
 
             with file_writer.as_default():
-
                 # Log the current queue size to make debugging easier
                 tf.summary.scalar("queue size", data=queue.size(), step=epoch)
 
@@ -1455,8 +1549,7 @@ print(
 if use_distributed_strategy:
     strategy = tf.distribute.MirroredStrategy()
 
-with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()):
-
+with strategy.scope() if use_distributed_strategy else contextlib.nullcontext():
     additional_callbacks = []
 
     if use_lr_scheduler:
@@ -1475,7 +1568,6 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         additional_callbacks.append(lr_scheduler_callback)
 
     if save_periodic_checkpoints:
-
         os.system("mkdir -p " + out_base + "checkpoints")
         checkpoint_callback = keras.callbacks.ModelCheckpoint(
             out_base + "checkpoints/model_{epoch}",
@@ -1505,7 +1597,6 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
     model_name = "ResNet-101"
 
     if not use_pretrained_model:
-
         # 7-label-version
         # model = build_model_park_small(
         #    N, len(spgs), use_dropout=use_dropout, lr=learning_rate
@@ -1534,7 +1625,6 @@ with (strategy.scope() if use_distributed_strategy else contextlib.nullcontext()
         )
 
     else:
-
         model = keras.models.load_model(
             pretrained_model_path, custom_objects={"AdamWarmup": AdamWarmup}
         )
@@ -1605,7 +1695,6 @@ with open(out_base + "rightly_falsely_random.pickle", "wb") as file:
 
 # Get predictions for val_x_randomized_coords and write rightly_indices / falsely_indices:
 if generate_randomized_validation_datasets:
-
     prediction_randomized_coords = model.predict(
         val_x_randomized_coords, batch_size=batch_size
     )
@@ -1652,7 +1741,6 @@ if generate_randomized_validation_datasets:
     prediction_randomized_both = np.argmax(prediction_randomized_both, axis=1)
 
 if use_statistics_dataset_as_validation:
-
     prediction_statistics = model.predict(statistics_x_match, batch_size=batch_size)
     prediction_statistics = np.argmax(prediction_statistics, axis=1)
 
@@ -1691,7 +1779,6 @@ with open(out_base + "classification_report_random.pickle", "wb") as file:
     pickle.dump(report, file)
 
 if generate_randomized_validation_datasets:
-
     report = classification_report(
         [spgs[i] for i in val_y_randomized_coords],
         [spgs[i] for i in prediction_randomized_coords],
@@ -1727,7 +1814,6 @@ if generate_randomized_validation_datasets:
         pickle.dump(report, file)
 
 if use_statistics_dataset_as_validation:
-
     report = classification_report(
         [spgs[i] for i in statistics_y_match],
         [spgs[i] for i in prediction_statistics],
@@ -1739,7 +1825,6 @@ if use_statistics_dataset_as_validation:
         pickle.dump(report, file)
 
 if run_analysis_after_training:  # Automatically call the analysis script after training
-
     print("Starting analysis now...", flush=True)
 
     if analysis_per_spg:
