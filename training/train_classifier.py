@@ -505,12 +505,12 @@ def prepare_randomized_dataset(
                     del randomized_crystals[i]
                     del reference_crystals[i]
 
-    # Because `pyxtal` uses slightly different parameters for `spglib`, the
-    # obtained spg label from `pyxtal` and from our code (when obtaining the
-    # corrected labels) differ in rare cases
-    print(
-        f"{errors_counter} of {len(labels)} mismatched (different tolerances)\nwhen preparing {output_filename}"
-    )
+        # Because `pyxtal` uses slightly different parameters for `spglib`, the
+        # obtained spg label from `pyxtal` and from our code (when obtaining the
+        # corrected labels) differ in rare cases
+        print(
+            f"{errors_counter} of {len(labels)} mismatched (different tolerances)\nwhen preparing {output_filename}"
+        )
 
     randomized_crystals = [item for item in randomized_crystals if item is not None]
     reference_crystals = [item for item in reference_crystals if item is not None]
