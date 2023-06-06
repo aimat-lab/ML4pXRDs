@@ -100,7 +100,8 @@ use_statistics_dataset_as_validation = False
 # parameters are sampled using the KDE as described in the paper). In the third
 # one, both coordinates and the lattice parameters are replaced / resampled.
 generate_randomized_validation_datasets = False
-randomization_step = 3  # Only use every n'th sample for the randomization process
+generate_randomized_statistics_datasets = False
+randomization_max_samples = 22500
 
 # This only applies to the models that support dropout, especially those
 # originating from Park et al. (2020)
@@ -208,7 +209,7 @@ if local:
     verbosity_tf = 1  # make it verbose
     generator_verbose = True
     NO_random_validation_samples_per_spg = 5
-    randomization_step = 20
+    randomization_max_samples = 1000
     use_distributed_strategy = False
 
 git_revision_hash = (
@@ -471,14 +472,13 @@ def get_xy_pattern_wrapper(
 
 
 ##### Prepare randomized datasets (if the respective flags are set)
-
-
 def prepare_randomized_dataset(
     crystals,
     corrected_labels,
     randomize_coordinates,
     randomize_lattice,
     output_filename,
+    simulate_reference=False,
 ):
     randomized_crystals, reference_crystals, labels = randomize(
         crystals,
@@ -523,13 +523,17 @@ def prepare_randomized_dataset(
     randomized_patterns = [result[0] for result in results]
     randomized_corn_sizes = [result[1] for result in results]
 
-    results = map_to_remote(
-        scheduler_fn=scheduler_fn,
-        inputs=reference_crystals,
-        NO_workers=NO_workers,
-    )
-    reference_patterns = [result[0] for result in results]
-    reference_corn_sizes = [result[1] for result in results]
+    if simulate_reference:
+        results = map_to_remote(
+            scheduler_fn=scheduler_fn,
+            inputs=reference_crystals,
+            NO_workers=NO_workers,
+        )
+        reference_patterns = [result[0] for result in results]
+        reference_corn_sizes = [result[1] for result in results]
+    else:
+        reference_patterns = None
+        reference_corn_sizes = None
 
     randomized_labels = []
     for i in range(0, len(labels)):
@@ -559,21 +563,27 @@ def prepare_randomized_dataset(
     for pattern in randomized_patterns:
         val_x_randomized.append(pattern)
 
-    val_y_randomized_ref = []
-    for i, label in enumerate(randomized_labels):
-        val_y_randomized_ref.append(label)
-    val_y_randomized_ref = np.array(val_y_randomized_ref)
+    if simulate_reference:
+        val_y_randomized_ref = []
+        for i, label in enumerate(randomized_labels):
+            val_y_randomized_ref.append(label)
+        val_y_randomized_ref = np.array(val_y_randomized_ref)
 
-    val_x_randomized_ref = []
-    for pattern in reference_patterns:
-        val_x_randomized_ref.append(pattern)
+        val_x_randomized_ref = []
+        for pattern in reference_patterns:
+            val_x_randomized_ref.append(pattern)
 
     if preprocess_patterns_sqrt:
         val_x_randomized = np.sqrt(val_x_randomized)
-        val_x_randomized_ref = np.sqrt(val_x_randomized_ref)
+        if simulate_reference:
+            val_x_randomized_ref = np.sqrt(val_x_randomized_ref)
 
     val_x_randomized = np.expand_dims(val_x_randomized, axis=2)
-    val_x_randomized_ref = np.expand_dims(val_x_randomized_ref, axis=2)
+    if simulate_reference:
+        val_x_randomized_ref = np.expand_dims(val_x_randomized_ref, axis=2)
+    else:
+        val_x_randomized_ref = None
+        val_y_randomized_ref = None
 
     return (
         val_x_randomized,
@@ -587,195 +597,50 @@ def prepare_randomized_dataset(
 
 if generate_randomized_validation_datasets:
     print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates).",
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized validation dataset.",
         flush=True,
     )
 
-    randomized_coords_crystals, reference_crystals, labels = randomize(
-        icsd_crystals_match_corrected_labels[::randomization_step],
+    (
+        val_x_randomized_coords,
+        val_y_randomized_coords,
+        val_x_randomized_ref,
+        val_y_randomized_ref,
+    ) = prepare_randomized_dataset(
+        icsd_crystals_match_corrected_labels[:randomization_max_samples],
+        icsd_labels_match_corrected_labels[:randomization_max_samples],
         randomize_coordinates=True,
         randomize_lattice=False,
-        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
-    )
-    # We also get reference crystals, where nothing has been randomized.
-    # They differ slightly from the input crystals, because partial occupancies have been ignored.
-    # (pyxtal currently doesn't support partial occupancies)
-
-    errors_counter = 0
-    for i in reversed(range(len(labels))):
-        label = labels[i]
-
-        if label is not None:
-            if label != icsd_labels_match_corrected_labels[::randomization_step][i]:
-                errors_counter += 1
-
-                del labels[i]
-                del randomized_coords_crystals[i]
-                del reference_crystals[i]
-
-    # Because `pyxtal` uses slightly different parameters for `spglib`, the
-    # obtained spg label from `pyxtal` and from our code (when obtaining the
-    # corrected labels) differ in rare cases
-    print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
-
-    randomized_coords_crystals = [
-        item for item in randomized_coords_crystals if item is not None
-    ]
-    reference_crystals = [item for item in reference_crystals if item is not None]
-    labels = [item for item in labels if item is not None]
-
-    # Simulate patterns on ray cluster:
-    scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
-    results = map_to_remote(
-        scheduler_fn=scheduler_fn,
-        inputs=randomized_coords_crystals,
-        NO_workers=NO_workers,
-    )
-    randomized_coords_patterns = [result[0] for result in results]
-    randomized_coords_corn_sizes = [result[1] for result in results]
-
-    results = map_to_remote(
-        scheduler_fn=scheduler_fn,
-        inputs=reference_crystals,
-        NO_workers=NO_workers,
-    )
-    reference_patterns = [result[0] for result in results]
-    reference_corn_sizes = [result[1] for result in results]
-
-    randomized_coords_labels = []
-    for i in range(0, len(labels)):
-        randomized_coords_labels.append(spgs.index(labels[i]))
-
-    # For further analysis, save the generated crystals:
-    with open(out_base + "randomized_coords_data.pickle", "wb") as file:
-        pickle.dump(
-            (
-                randomized_coords_crystals,
-                randomized_coords_labels,
-                randomized_coords_corn_sizes,
-                reference_crystals,
-                reference_corn_sizes,
-            ),
-            file,
-        )
-
-##### Generate match (corrected spgs) validation set with randomized lattice parameters:
-
-if generate_randomized_validation_datasets:
-    print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized lattice).",
-        flush=True,
+        output_filename="randomized_coords_validation.pickle",
+        simulate_reference=True,
     )
 
-    randomized_lattice_crystals, _, labels = randomize(
-        icsd_crystals_match_corrected_labels[::randomization_step],
+    (
+        val_x_randomized_lattice,
+        val_y_randomized_lattice,
+        _,
+        _,
+    ) = prepare_randomized_dataset(
+        icsd_crystals_match_corrected_labels[:randomization_max_samples],
+        icsd_labels_match_corrected_labels[:randomization_max_samples],
         randomize_coordinates=False,
         randomize_lattice=True,
-        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+        output_filename="randomized_lattice_validation.pickle",
+        simulate_reference=False,
     )
 
-    errors_counter = 0
-    for i in reversed(range(len(labels))):
-        label = labels[i]
-
-        if label is not None:
-            if label != icsd_labels_match_corrected_labels[::randomization_step][i]:
-                errors_counter += 1
-
-                del labels[i]
-                del randomized_lattice_crystals[i]
-
-    print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
-
-    randomized_lattice_crystals = [
-        item for item in randomized_lattice_crystals if item is not None
-    ]
-    labels = [item for item in labels if item is not None]
-
-    # Simulate on ray cluster:
-    scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
-    results = map_to_remote(
-        scheduler_fn=scheduler_fn,
-        inputs=randomized_lattice_crystals,
-        NO_workers=NO_workers,
-    )
-    randomized_lattice_patterns = [result[0] for result in results]
-    randomized_lattice_corn_sizes = [result[1] for result in results]
-
-    randomized_lattice_labels = []
-    for i in range(0, len(labels)):
-        randomized_lattice_labels.append(spgs.index(labels[i]))
-
-    with open(out_base + "randomized_lattice_data.pickle", "wb") as file:
-        pickle.dump(
-            (
-                randomized_lattice_crystals,
-                randomized_lattice_labels,
-                randomized_lattice_corn_sizes,
-            ),
-            file,
-        )
-
-##### Generate match (corrected spgs) validation set with randomized lattice and coords:
-
-if generate_randomized_validation_datasets:
-    print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized dataset (randomized coordinates and lattice).",
-        flush=True,
-    )
-
-    randomized_both_crystals, _, labels = randomize(
-        icsd_crystals_match_corrected_labels[::randomization_step],
+    (
+        val_x_randomized_both,
+        val_y_randomized_both,
+        _,
+        _,
+    ) = prepare_randomized_dataset(
+        icsd_crystals_match_corrected_labels[:randomization_max_samples],
+        icsd_labels_match_corrected_labels[:randomization_max_samples],
         randomize_coordinates=True,
         randomize_lattice=True,
-        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
-    )
-
-    errors_counter = 0
-    for i in reversed(range(len(labels))):
-        label = labels[i]
-
-        if label is not None:
-            if label != icsd_labels_match_corrected_labels[::randomization_step][i]:
-                errors_counter += 1
-
-                del labels[i]
-                del randomized_both_crystals[i]
-
-    print(f"{errors_counter} of {len(labels)} mismatched (different tolerances)")
-
-    randomized_both_crystals = [
-        item for item in randomized_both_crystals if item is not None
-    ]
-    labels = [item for item in labels if item is not None]
-
-    # Simulate on ray cluster:
-    scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
-    results = map_to_remote(
-        scheduler_fn=scheduler_fn,
-        inputs=randomized_both_crystals,
-        NO_workers=NO_workers,
-    )
-    randomized_both_patterns = [result[0] for result in results]
-    randomized_both_corn_sizes = [result[1] for result in results]
-
-    randomized_both_labels = []
-    for i in range(0, len(labels)):
-        randomized_both_labels.append(spgs.index(labels[i]))
-
-    with open(out_base + "randomized_both_data.pickle", "wb") as file:
-        pickle.dump(
-            (
-                randomized_both_crystals,
-                randomized_both_labels,
-                randomized_both_corn_sizes,
-            ),
-            file,
-        )
-
-    print(
-        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Done generating randomized datasets.",
-        flush=True,
+        output_filename="randomized_both_validation.pickle",
+        simulate_reference=False,
     )
 
 #####
@@ -811,43 +676,6 @@ val_x_match_correct_spgs_pure = []
 for pattern in icsd_patterns_match_corrected_labels_pure:
     for sub_pattern in pattern:
         val_x_match_correct_spgs_pure.append(sub_pattern)
-
-if generate_randomized_validation_datasets:
-    val_y_randomized_coords = []
-    for i, label in enumerate(randomized_coords_labels):
-        val_y_randomized_coords.append(label)
-    val_y_randomized_coords = np.array(val_y_randomized_coords)
-
-    val_x_randomized_coords = []
-    for pattern in randomized_coords_patterns:
-        val_x_randomized_coords.append(pattern)
-
-    val_y_randomized_ref = []
-    for i, label in enumerate(randomized_coords_labels):
-        val_y_randomized_ref.append(label)
-    val_y_randomized_ref = np.array(val_y_randomized_ref)
-
-    val_x_randomized_ref = []
-    for pattern in reference_patterns:
-        val_x_randomized_ref.append(pattern)
-
-    val_y_randomized_lattice = []
-    for i, label in enumerate(randomized_lattice_labels):
-        val_y_randomized_lattice.append(label)
-    val_y_randomized_lattice = np.array(val_y_randomized_lattice)
-
-    val_x_randomized_lattice = []
-    for pattern in randomized_lattice_patterns:
-        val_x_randomized_lattice.append(pattern)
-
-    val_y_randomized_both = []
-    for i, label in enumerate(randomized_both_labels):
-        val_y_randomized_both.append(label)
-    val_y_randomized_both = np.array(val_y_randomized_both)
-
-    val_x_randomized_both = []
-    for pattern in randomized_both_patterns:
-        val_x_randomized_both.append(pattern)
 
 assert not np.any(np.isnan(val_x_all))
 assert not np.any(np.isnan(val_y_all))
@@ -1062,22 +890,11 @@ if preprocess_patterns_sqrt:
     val_x_all = np.sqrt(val_x_all)
     val_x_match_correct_spgs = np.sqrt(val_x_match_correct_spgs)
     val_x_match_correct_spgs_pure = np.sqrt(val_x_match_correct_spgs_pure)
-    if generate_randomized_validation_datasets:
-        val_x_randomized_coords = np.sqrt(val_x_randomized_coords)
-        val_x_randomized_ref = np.sqrt(val_x_randomized_ref)
-        val_x_randomized_lattice = np.sqrt(val_x_randomized_lattice)
-        val_x_randomized_both = np.sqrt(val_x_randomized_both)
 
 val_x_all = np.expand_dims(val_x_all, axis=2)
 val_x_match_correct_spgs = np.expand_dims(val_x_match_correct_spgs, axis=2)
 val_x_match_correct_spgs_pure = np.expand_dims(val_x_match_correct_spgs_pure, axis=2)
 val_x_random = np.expand_dims(val_x_random, axis=2)
-
-if generate_randomized_validation_datasets:
-    val_x_randomized_coords = np.expand_dims(val_x_randomized_coords, axis=2)
-    val_x_randomized_ref = np.expand_dims(val_x_randomized_ref, axis=2)
-    val_x_randomized_lattice = np.expand_dims(val_x_randomized_lattice, axis=2)
-    val_x_randomized_both = np.expand_dims(val_x_randomized_both, axis=2)
 
 # Store them for usage in the analysis script
 with open(out_base + "random_data.pickle", "wb") as file:

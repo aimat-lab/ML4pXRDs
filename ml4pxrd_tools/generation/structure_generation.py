@@ -139,7 +139,6 @@ def sample_lattice_paras(volume, lattice_type, lattice_paras_density_per_lattice
         paras = paras_constrained
 
     else:
-
         raise Exception(f"Invalid lattice type {lattice_type}")
 
     cbrt_volume = np.cbrt(volume)
@@ -196,7 +195,6 @@ def create_pyxtal_object(
     ##### 1)
 
     if fixed_volume is None:
-
         volume = 0
         for numIon, specie in zip(multiplicities, species):
             r = (Element(specie).covalent_radius + Element(specie).vdw_radius) / 2
@@ -205,7 +203,6 @@ def create_pyxtal_object(
         if factor is not None:
             volume *= factor
         else:
-
             # Sample the denseness factor
 
             max_sum_cov_volumes = denseness_factors_conditional_sampler_seeds_per_spg[
@@ -238,7 +235,6 @@ def create_pyxtal_object(
             return False
 
     else:
-
         volume = fixed_volume
 
     pyxtal_object = pyxtal(molecular=False)
@@ -257,7 +253,6 @@ def create_pyxtal_object(
 
     # Place the given species on the given wyckoff indices
     for specie, wyckoff_index in zip(species, chosen_wyckoff_indices):
-
         wyckoff = group_object.get_wyckoff_position(wyckoff_index)
 
         # Generate a uniform coordinate
@@ -301,7 +296,6 @@ def randomize(
     labels = []
 
     for crystal in crystals:
-
         pyxtal_object = pyxtal()
 
         try:
@@ -335,7 +329,6 @@ def randomize(
 
         if randomize_coordinates:  # regenerate coordinates
             for site in pyxtal_object.atom_sites:
-
                 wyckoff = site.wp
 
                 random_coord = pyxtal_object.lattice.generate_point()
@@ -374,7 +367,6 @@ def __generate_structure(
     seed,
     is_verbose,
 ):
-
     if (
         probability_per_spg_per_element is None
         or probability_per_spg_per_element_per_wyckoff is None
@@ -399,11 +391,9 @@ def __generate_structure(
     tries_counter = 0
 
     while True:
-
         # If trying 20 times to generate a crystal with the given NO_unique_elements fails, then pick a new
         # NO_unique_elements and call this function recursively. This should always return at some point.
         if tries_counter > 20:
-
             print(
                 f"Failed generating crystal of spg {group_object.number} with {NO_unique_elements} unique elements 10 times. Choosing new NO_unique_elements now."
             )
@@ -447,7 +437,6 @@ def __generate_structure(
         current_repetition_counter = 0  # How often has the element already been placed?
 
         while True:
-
             if unique_elements_counter >= NO_unique_elements:
                 break
 
@@ -517,7 +506,6 @@ def __generate_structure(
                     unique_elements_counter += 1
 
                 else:
-
                     current_repetition_counter += 1
 
                 chosen_elements.append(current_element)
@@ -587,7 +575,6 @@ def __generate_structure(
             # sampling of the denseness factor using denseness_factors_conditional_sampler_seeds_per_spg
 
         try:
-
             my_crystal = create_pyxtal_object(
                 group_object=group_object,
                 factor=factor,
@@ -602,7 +589,6 @@ def __generate_structure(
             )
 
         except Exception as ex:
-
             print(flush=True)
             print(ex, flush=True)
             print(group_object.number, flush=True)
@@ -615,7 +601,6 @@ def __generate_structure(
             continue
 
         if not my_crystal:
-
             tries_counter += 1
             if is_verbose:
                 print(
@@ -625,11 +610,9 @@ def __generate_structure(
             continue
 
         try:
-
             crystal = my_crystal.to_pymatgen()
 
             if do_symmetry_checks:
-
                 # Make sure that the space group is actually correct / unique
                 analyzer = SpacegroupAnalyzer(
                     crystal,
@@ -639,7 +622,6 @@ def __generate_structure(
 
                 checked_spg = analyzer.get_space_group_number()
                 if checked_spg != group_object.number:
-
                     if is_verbose:
                         print(
                             f"Mismatch in space group number, skipping structure. Generated: {group_object.number} Checked: {checked_spg}; Number of unique elements: {NO_unique_elements}"
@@ -650,7 +632,6 @@ def __generate_structure(
                     continue
 
         except Exception as ex:
-
             print(flush=True)
             print(ex, flush=True)
             print(group_object.number, flush=True)
