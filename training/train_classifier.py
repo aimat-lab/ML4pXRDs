@@ -490,17 +490,18 @@ def prepare_randomized_dataset(
     # They differ slightly from the input crystals, because partial occupancies have been ignored.
     # (pyxtal currently doesn't support partial occupancies)
 
-    errors_counter = 0
-    for i in reversed(range(len(labels))):
-        label = labels[i]
+    if corrected_labels is not None:
+        errors_counter = 0
+        for i in reversed(range(len(labels))):
+            label = labels[i]
 
-        if label is not None:
-            if label != corrected_labels[i]:
-                errors_counter += 1
+            if label is not None:
+                if label != corrected_labels[i]:
+                    errors_counter += 1
 
-                del labels[i]
-                del randomized_crystals[i]
-                del reference_crystals[i]
+                    del labels[i]
+                    del randomized_crystals[i]
+                    del reference_crystals[i]
 
     # Because `pyxtal` uses slightly different parameters for `spglib`, the
     # obtained spg label from `pyxtal` and from our code (when obtaining the
@@ -608,7 +609,8 @@ if generate_randomized_validation_datasets:
         val_y_randomized_ref,
     ) = prepare_randomized_dataset(
         icsd_crystals_match_corrected_labels[:randomization_max_samples],
-        icsd_labels_match_corrected_labels[:randomization_max_samples],
+        # icsd_labels_match_corrected_labels[:randomization_max_samples],
+        None,
         randomize_coordinates=True,
         randomize_lattice=False,
         output_filename="randomized_coords_validation.pickle",
@@ -622,7 +624,8 @@ if generate_randomized_validation_datasets:
         _,
     ) = prepare_randomized_dataset(
         icsd_crystals_match_corrected_labels[:randomization_max_samples],
-        icsd_labels_match_corrected_labels[:randomization_max_samples],
+        # icsd_labels_match_corrected_labels[:randomization_max_samples],
+        None,
         randomize_coordinates=False,
         randomize_lattice=True,
         output_filename="randomized_lattice_validation.pickle",
@@ -636,7 +639,8 @@ if generate_randomized_validation_datasets:
         _,
     ) = prepare_randomized_dataset(
         icsd_crystals_match_corrected_labels[:randomization_max_samples],
-        icsd_labels_match_corrected_labels[:randomization_max_samples],
+        # icsd_labels_match_corrected_labels[:randomization_max_samples],
+        None,
         randomize_coordinates=True,
         randomize_lattice=True,
         output_filename="randomized_both_validation.pickle",
@@ -1095,6 +1099,28 @@ if preprocess_patterns_sqrt:
 val_x_match = np.expand_dims(val_x_match, axis=2)
 
 print("Size of match test dataset: ", val_x_match.shape, flush=True)
+
+##### Prepare the randomized statistics datasets
+
+if generate_randomized_statistics_datasets:
+    if not use_statistics_dataset_as_validation:
+        raise Exception(
+            "The flag `generate_randomized_statistics_datasets` can only be used together with `use_statistics_dataset_as_validation`"
+        )
+
+    (
+        statistics_x_randomized_coords,
+        statistics_y_randomized_coords,
+        statistics_x_randomized_ref,
+        statistics_y_randomized_ref,
+    ) = prepare_randomized_dataset(
+        statistics_icsd_crystals_match[:randomization_max_samples],
+        statistics_icsd_labels_match[:randomization_max_samples],
+        randomize_coordinates=True,
+        randomize_lattice=False,
+        output_filename="randomized_coords_statistics.pickle",
+        simulate_reference=True,
+    )
 
 #####
 
