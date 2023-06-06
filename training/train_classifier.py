@@ -1115,11 +1115,39 @@ if generate_randomized_statistics_datasets:
         statistics_y_randomized_ref,
     ) = prepare_randomized_dataset(
         statistics_icsd_crystals_match[:randomization_max_samples],
-        statistics_icsd_labels_match[:randomization_max_samples],
+        None,
         randomize_coordinates=True,
         randomize_lattice=False,
         output_filename="randomized_coords_statistics.pickle",
         simulate_reference=True,
+    )
+
+    (
+        statistics_x_randomized_lattice,
+        statistics_y_randomized_lattice,
+        _,
+        _,
+    ) = prepare_randomized_dataset(
+        statistics_icsd_crystals_match[:randomization_max_samples],
+        None,
+        randomize_coordinates=False,
+        randomize_lattice=True,
+        output_filename="randomized_lattice_statistics.pickle",
+        simulate_reference=False,
+    )
+
+    (
+        statistics_x_randomized_both,
+        statistics_y_randomized_both,
+        _,
+        _,
+    ) = prepare_randomized_dataset(
+        statistics_icsd_crystals_match[:randomization_max_samples],
+        None,
+        randomize_coordinates=True,
+        randomize_lattice=True,
+        output_filename="randomized_both_statistics.pickle",
+        simulate_reference=False,
     )
 
 #####
@@ -1583,6 +1611,35 @@ if generate_randomized_validation_datasets:
     )
     prediction_randomized_both = np.argmax(prediction_randomized_both, axis=1)
 
+if generate_randomized_statistics_datasets:
+    prediction_statistics_randomized_coords = model.predict(
+        statistics_x_randomized_coords, batch_size=batch_size
+    )
+    prediction_statistics_randomized_coords = np.argmax(
+        prediction_statistics_randomized_coords, axis=1
+    )
+
+    prediction_statistics_randomized_lattice = model.predict(
+        statistics_x_randomized_lattice, batch_size=batch_size
+    )
+    prediction_statistics_randomized_lattice = np.argmax(
+        prediction_statistics_randomized_lattice, axis=1
+    )
+
+    prediction_statistics_randomized_both = model.predict(
+        statistics_x_randomized_both, batch_size=batch_size
+    )
+    prediction_statistics_randomized_both = np.argmax(
+        prediction_statistics_randomized_both, axis=1
+    )
+
+    prediction_statistics_randomized_ref = model.predict(
+        statistics_x_randomized_ref, batch_size=batch_size
+    )
+    prediction_statistics_randomized_ref = np.argmax(
+        prediction_statistics_randomized_ref, axis=1
+    )
+
 if use_statistics_dataset_as_validation:
     prediction_statistics = model.predict(statistics_x_match, batch_size=batch_size)
     prediction_statistics = np.argmax(prediction_statistics, axis=1)
@@ -1666,6 +1723,55 @@ if generate_randomized_validation_datasets:
     print(report)
     with open(
         out_base + "classification_report_reference_validation.pickle", "wb"
+    ) as file:
+        pickle.dump(report, file)
+
+if generate_randomized_statistics_datasets:
+    report = classification_report(
+        [spgs[i] for i in statistics_y_randomized_coords],
+        [spgs[i] for i in prediction_statistics_randomized_coords],
+        output_dict=True,
+    )
+    print("Classification report on randomized coords statistics dataset:")
+    print(report)
+    with open(
+        out_base + "classification_report_randomized_coords_statistics.pickle", "wb"
+    ) as file:
+        pickle.dump(report, file)
+
+    report = classification_report(
+        [spgs[i] for i in statistics_y_randomized_lattice],
+        [spgs[i] for i in prediction_statistics_randomized_lattice],
+        output_dict=True,
+    )
+    print("Classification report on randomized lattice statistics dataset:")
+    print(report)
+    with open(
+        out_base + "classification_report_randomized_lattice_statistics.pickle", "wb"
+    ) as file:
+        pickle.dump(report, file)
+
+    report = classification_report(
+        [spgs[i] for i in statistics_y_randomized_both],
+        [spgs[i] for i in prediction_statistics_randomized_both],
+        output_dict=True,
+    )
+    print("Classification report on randomized both statistics dataset:")
+    print(report)
+    with open(
+        out_base + "classification_report_randomized_both_statistics.pickle", "wb"
+    ) as file:
+        pickle.dump(report, file)
+
+    report = classification_report(
+        [spgs[i] for i in statistics_y_randomized_ref],
+        [spgs[i] for i in prediction_statistics_randomized_ref],
+        output_dict=True,
+    )
+    print("Classification report on randomized reference statistics dataset:")
+    print(report)
+    with open(
+        out_base + "classification_report_randomized_reference_statistics.pickle", "wb"
     ) as file:
         pickle.dump(report, file)
 
