@@ -1571,8 +1571,7 @@ with file_writer.as_default():
     for i, value in enumerate(log_wait_timings):
         tf.summary.scalar("waiting time", data=value, step=i)
 
-#####
-# Generate classification report on match validation dataset and save them to a pickle file:
+###### Generate classification reports and save them to a pickle file:
 
 report = classification_report(
     [spgs[i] for i in val_y_match],
@@ -1601,10 +1600,10 @@ if generate_randomized_validation_datasets:
         [spgs[i] for i in prediction_randomized_coords],
         output_dict=True,
     )
-    print("Classification report on randomized coords dataset:")
+    print("Classification report on randomized coords validation dataset:")
     print(report)
     with open(
-        out_base + "classification_report_randomized_coords.pickle", "wb"
+        out_base + "classification_report_randomized_coords_validation.pickle", "wb"
     ) as file:
         pickle.dump(report, file)
 
@@ -1613,10 +1612,10 @@ if generate_randomized_validation_datasets:
         [spgs[i] for i in prediction_randomized_lattice],
         output_dict=True,
     )
-    print("Classification report on randomized lattice dataset:")
+    print("Classification report on randomized lattice validation dataset:")
     print(report)
     with open(
-        out_base + "classification_report_randomized_lattice.pickle", "wb"
+        out_base + "classification_report_randomized_lattice_validation.pickle", "wb"
     ) as file:
         pickle.dump(report, file)
 
@@ -1625,9 +1624,23 @@ if generate_randomized_validation_datasets:
         [spgs[i] for i in prediction_randomized_both],
         output_dict=True,
     )
-    print("Classification report on randomized both dataset:")
+    print("Classification report on randomized both validation dataset:")
     print(report)
-    with open(out_base + "classification_report_randomized_both.pickle", "wb") as file:
+    with open(
+        out_base + "classification_report_randomized_both_validation.pickle", "wb"
+    ) as file:
+        pickle.dump(report, file)
+
+    report = classification_report(
+        [spgs[i] for i in val_y_randomized_ref],
+        [spgs[i] for i in prediction_randomized_ref],
+        output_dict=True,
+    )
+    print("Classification report on reference validation dataset:")
+    print(report)
+    with open(
+        out_base + "classification_report_reference_validation.pickle", "wb"
+    ) as file:
         pickle.dump(report, file)
 
 if use_statistics_dataset_as_validation:
