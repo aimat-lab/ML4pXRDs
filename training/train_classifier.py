@@ -1110,6 +1110,11 @@ if generate_randomized_statistics_datasets:
             "The flag `generate_randomized_statistics_datasets` can only be used together with `use_statistics_dataset_as_validation`"
         )
 
+    print(
+        f"{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}: Start generating randomized statistics dataset.",
+        flush=True,
+    )
+
     (
         statistics_x_randomized_coords,
         statistics_y_randomized_coords,

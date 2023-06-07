@@ -152,8 +152,17 @@ if __name__ == "__main__":
         statistics_match_labels_flat = np.array(
             [item[0] for item in statistics_match_labels]
         )
+
+        # print(len(statistics_match_labels_flat))
+        # print(np.sum(statistics_match_labels_flat != None))
+
+        # total = 0
         for spg in spgs_random:
             NO_samples.append(np.sum(statistics_match_labels_flat == spg))
+            # total += NO_samples[-1]
+
+        # print(total)
+        # print(sorted(NO_samples)[:10])
 
     ##### Plot absolute values:
 
