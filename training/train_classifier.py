@@ -509,8 +509,21 @@ def prepare_randomized_dataset(
         # obtained spg label from `pyxtal` and from our code (when obtaining the
         # corrected labels) differ in rare cases
         print(
-            f"{errors_counter} of {len(labels)} mismatched (different tolerances)\nwhen preparing {output_filename}"
+            f"{errors_counter} of {len(labels)} mismatched (different tolerances)\nwhen preparing randomized dataset {output_filename}"
         )
+
+    before = len(labels)
+    for i in reversed(range(len(labels))):
+        label = labels[i]
+
+        if label not in spgs:
+            del labels[i]
+            del randomized_crystals[i]
+            del reference_crystals[i]
+
+    print(
+        f"{before - len(labels)} of {before} excluded (not in spgs)\nwhen preparing randomized dataset {output_filename}"
+    )
 
     randomized_crystals = [item for item in randomized_crystals if item is not None]
     reference_crystals = [item for item in reference_crystals if item is not None]
