@@ -13,6 +13,7 @@ from sklearn.linear_model import LinearRegression
 import ml4pxrd_tools.matplotlib_defaults as matplotlib_defaults
 from ml4pxrd_tools.manage_dataset import load_dataset_info
 from pyxtal import Group
+import os
 
 # Range of crystallite sizes to choose uniformly from (nm)
 pymatgen_crystallite_size_gauss_min = 20
@@ -69,7 +70,6 @@ def smeared_peaks(
     ys = np.zeros(len(xs))
 
     for twotheta, intensity in zip(pattern_angles, pattern_intensities):
-
         sigma = calc_std_dev(twotheta, domain_size, wavelength)
         peak = (
             intensity
@@ -140,7 +140,6 @@ def get_smeared_patterns(
     results = []
 
     for i in range(0, NO_corn_sizes):
-
         corn_size = np.random.uniform(
             pymatgen_crystallite_size_gauss_min,
             pymatgen_crystallite_size_gauss_max,
@@ -268,11 +267,9 @@ def get_synthetic_smeared_patterns(
     xs = np.linspace(two_theta_range[0], two_theta_range[1], N)
 
     for spg in spgs:
-
         structures = []
         current_spgs = []
         for _ in range(N_structures_per_spg):
-
             if do_benchmark:
                 start = time.time()
 
@@ -324,7 +321,6 @@ def get_synthetic_smeared_patterns(
             current_spg = current_spgs[i]
 
             try:
-
                 patterns_ys = get_smeared_patterns(
                     structure=structure,
                     wavelength=wavelength,
@@ -341,13 +337,11 @@ def get_synthetic_smeared_patterns(
                     patterns_ys, corn_sizes = patterns_ys
 
             except Exception as ex:
-
                 print("Error simulating pattern:")
                 print(ex)
                 print("".join(traceback.format_exception(None, ex, ex.__traceback__)))
 
             else:
-
                 labels.extend([current_spg] * NO_corn_sizes)
                 result_patterns_y.extend(patterns_ys)
 
@@ -386,7 +380,6 @@ def plot_timings(
     plt.ylabel("Time / s")
 
     for current_volume in timings_per_volume.keys():
-
         if make_fit:
             model = LinearRegression()
             model.fit(
@@ -466,7 +459,6 @@ def perform_benchmark(
     NO_wyckoffs_generation_per_volume = {}
 
     for current_volume in volumes_to_probe:
-
         timings_simulation_pattern = []
         timings_simulation_smeared = []
         timings_generation = []
@@ -561,7 +553,6 @@ def perform_benchmark(
 
 
 if __name__ == "__main__":
-
     (
         probability_per_spg_per_element,
         probability_per_spg_per_element_per_wyckoff,
@@ -582,13 +573,11 @@ if __name__ == "__main__":
     wyckoffs_counter_total = 0
 
     for spg in probability_per_spg_per_element_per_wyckoff.keys():
-
         pyxtal_object = Group(spg)
 
         already_counted = False
 
         for pos in pyxtal_object.Wyckoff_positions:
-
             wyckoffs_counter_total += 1
 
             probability = probability_per_spg_per_element_per_wyckoff[spg].get(
@@ -607,7 +596,9 @@ if __name__ == "__main__":
     print("wyckoffs_counter_total", wyckoffs_counter_total)
 
     patterns, labels = get_synthetic_smeared_patterns(
-        [125],
+        [
+            125
+        ],  # Since probability_per_spg is not None, this list will be overwritten by randomly sampled spg labels.
         N_structures_per_spg=5,
         wavelength=1.5406,
         two_theta_range=(5, 90),
@@ -619,4 +610,24 @@ if __name__ == "__main__":
         NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
         denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+        probability_per_spg=probability_per_spg,
     )
+
+    # Plot the synthetically generated patterns
+    for i, pattern in enumerate(patterns):
+        plt.figure(
+            figsize=(
+                matplotlib_defaults.pub_width * 0.7,
+                matplotlib_defaults.pub_width * 0.5,
+            )
+        )
+        plt.plot(np.linspace(5, 90, 8501), pattern)
+
+        plt.xlabel(r"$2\theta$")
+        plt.ylabel(r"Intensity / rel.")
+
+        plt.tight_layout()
+        plt.savefig(
+            f"example_diffractograms/pattern_synthetic_{i}.pdf",
+            bbox_inches="tight",
+        )

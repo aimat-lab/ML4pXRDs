@@ -946,49 +946,85 @@ class ICSDSimulator:
 
 
 if __name__ == "__main__":
-    # make print statement always flush
-    print = functools.partial(print, flush=True)
+    if False:  # Plot the space group distribution
+        # make print statement always flush
+        print = functools.partial(print, flush=True)
 
-    jobid = os.getenv("SLURM_JOB_ID")
-    if jobid is not None and jobid != "":
-        path_to_icsd_directory = path_to_icsd_directory_cluster
-    else:
-        path_to_icsd_directory = path_to_icsd_directory_local
+        jobid = os.getenv("SLURM_JOB_ID")
+        if jobid is not None and jobid != "":
+            path_to_icsd_directory = path_to_icsd_directory_cluster
+        else:
+            path_to_icsd_directory = path_to_icsd_directory_local
 
-    simulator = ICSDSimulator(
-        os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
-        os.path.join(path_to_icsd_directory, "cif/"),
-        output_dir=path_to_patterns,
-    )
+        simulator = ICSDSimulator(
+            os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
+            os.path.join(path_to_icsd_directory, "cif/"),
+            output_dir=path_to_patterns,
+        )
 
-    # simulator.load()
-    # simulator.prepare_simulation()
-    # simulator.save()
-    # simulator.simulate_all(start_from_scratch=True)
+        # simulator.load()
+        # simulator.prepare_simulation()
+        # simulator.save()
+        # simulator.simulate_all(start_from_scratch=True)
 
-    with open("./spg_list.pickle", "rb") as file:
-        spg_list = pickle.load(file)
+        with open("./spg_list.pickle", "rb") as file:
+            spg_list = pickle.load(file)
 
-    with open("/home/henrik/temp/spgs.pickle", "rb") as file:
-        spgs = pickle.load(file)
+        with open("/home/henrik/temp/spgs.pickle", "rb") as file:
+            spgs = pickle.load(file)
 
-    spgs_excluded = []
-    for spg in np.arange(1, 231):
-        if spg not in spgs:
-            spgs_excluded.append(spg)
+        spgs_excluded = []
+        for spg in np.arange(1, 231):
+            if spg not in spgs:
+                spgs_excluded.append(spg)
 
-    order_of_spgs, spg_list = simulator.plot_histogram_of_spgs(
-        do_show=False,
-        do_sort=True,
-        spgs_list=spg_list,  # , process_only_N=10000
-        spgs_to_stripe=spgs_excluded,
-    )
+        order_of_spgs, spg_list = simulator.plot_histogram_of_spgs(
+            do_show=False,
+            do_sort=True,
+            spgs_list=spg_list,  # , process_only_N=10000
+            spgs_to_stripe=spgs_excluded,
+        )
 
-    # plt.scatter(
-    #    [np.argwhere(order_of_spgs == spg)[0, 0] + 1 for spg in spgs_excluded],
-    #    [1000.0] * len(spgs_excluded),
-    #    color="orange",
-    #    s=3.0,
-    # )
+        # plt.scatter(
+        #    [np.argwhere(order_of_spgs == spg)[0, 0] + 1 for spg in spgs_excluded],
+        #    [1000.0] * len(spgs_excluded),
+        #    color="orange",
+        #    s=3.0,
+        # )
 
-    # plt.show()
+        # plt.show()
+
+    else:  # Plot some example patterns from the ICSD
+        jobid = os.getenv("SLURM_JOB_ID")
+        if jobid is not None and jobid != "":
+            path_to_icsd_directory = path_to_icsd_directory_cluster
+        else:
+            path_to_icsd_directory = path_to_icsd_directory_local
+
+        simulator = ICSDSimulator(
+            os.path.join(path_to_icsd_directory, "ICSD_data_from_API.csv"),
+            os.path.join(path_to_icsd_directory, "cif/"),
+            output_dir=path_to_patterns,
+        )
+
+        simulator.load(0, 1, load_only_N_patterns_each=1)  # Load dataset partially
+
+        for i in range(20):
+            pattern = simulator.sim_patterns[i][0, :]
+
+            plt.figure(
+                figsize=(
+                    matplotlib_defaults.pub_width * 0.7,
+                    matplotlib_defaults.pub_width * 0.5,
+                )
+            )
+            plt.plot(np.linspace(5, 90, 8501), pattern)
+
+            plt.xlabel(r"$2\theta$")
+            plt.ylabel(r"Intensity / rel.")
+
+            plt.tight_layout()
+            plt.savefig(
+                f"example_diffractograms/pattern_ICSD_{i}.pdf",
+                bbox_inches="tight",
+            )
