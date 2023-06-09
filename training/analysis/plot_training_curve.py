@@ -40,14 +40,11 @@ def plot_training_curve(
     """
 
     for i, file in enumerate(files):
-
         if isinstance(file, list):
-
             all_data = None
 
             current_step = 0
             for _subfile in file:
-
                 if isinstance(_subfile, list):
                     subfile = _subfile[0]
                     prob = _subfile[1]
@@ -106,16 +103,15 @@ def plot_training_curve(
 
 
 if __name__ == "__main__":
-
     plt.figure(
         figsize=(
             figure_double_width_pub * 0.7,
             figure_double_width_pub * 0.5,
         )
     )
-    # plt.xlim([1, 2000])
+    plt.xlim([-500, 2000])
 
-    """ Main training curve plot
+    # Main training curve plot
     plot_training_curve(
         [
             "training_curves/resnet_10_training.csv",
@@ -131,6 +127,8 @@ if __name__ == "__main__":
         # ["solid", "--", (0, (1, 10))],
         ["solid", "solid", "solid"],
         start_epoch=5,
+        x_log=False,
+        y_log=False,
     )
 
     plot_training_curve(
@@ -157,6 +155,8 @@ if __name__ == "__main__":
         # ["solid", "--", (0, (1, 10))],
         ["solid", "solid", "solid"],
         start_epoch=5,
+        x_log=False,
+        y_log=False,
     )
 
     plot_training_curve(
@@ -183,6 +183,8 @@ if __name__ == "__main__":
         # ["solid", "--", (0, (1, 10))],
         ["solid", "solid", "solid"],
         start_epoch=5,
+        x_log=False,
+        y_log=False,
     )
 
     plt.gca().get_legend().remove()
@@ -197,7 +199,6 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig("training_curve_main.pdf", bbox_inches="tight")
     plt.show()
-    """
 
     # Plots of 1-acc.
 
@@ -246,7 +247,6 @@ if __name__ == "__main__":
         start_epoch=5,
         plot_1_minus_acc=True,
     )
-    """
 
     plot_training_curve(
         [
@@ -288,3 +288,5 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig("training_curve_main_1_minus_acc.pdf", bbox_inches="tight")
     plt.show()
+
+    """

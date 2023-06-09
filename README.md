@@ -164,7 +164,8 @@ range at the top of script file
 
 ## Training
 You can find the weights of our largest model (ResNet-101) trained using
-synthetic crystals in our [latest release](https://github.com/aimat-lab/ML4pXRDs/releases/tag/v1.0).
+synthetic crystals and the weights of the ResNet-50 trained with 
+experimental imperfections in our [latest release](https://github.com/aimat-lab/ML4pXRDs/releases/tag/v1.0).
 
 ### Pre-simulate patterns for testing
 If you want to run your own ML experiments, you need to generate your own
