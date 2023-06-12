@@ -839,6 +839,7 @@ class ICSDSimulator:
         do_sort=False,
         spgs_list=None,
         spgs_to_stripe=None,
+        display_count=True,
     ):
         """Generate a histogram of the representation of the different spgs in the ICSD.
 
@@ -852,6 +853,8 @@ class ICSDSimulator:
                 loading them from the ICSD. Defaults to None.
             spgs_to_stripe (list of int|None, optional): If not None, plot the given spgs
                 using stripes. This currently only works if do_sort=True.
+                Defaults to None.
+            display_count (bool, optional): Whether or not to display the count of each spg on a separate axis.
         """
 
         if spgs_list is None:
@@ -875,7 +878,7 @@ class ICSDSimulator:
             )
         )
 
-        for i in range(0, 2):
+        for i in range(0, 2) if display_count else range(0, 1):
             if i == 0:
                 axis = plt.gca()
                 plt.yscale("log")
@@ -931,10 +934,10 @@ class ICSDSimulator:
                         rasterized=True,
                     )
 
-            axis.set_xlabel("Space group number (sorted by count)")
+                axis.set_xlabel("Space group number (sorted by count)")
 
         plt.tight_layout()
-        plt.savefig(f"distribution_spgs.svg", dpi=600, bbox_inches="tight")
+        plt.savefig(f"distribution_spgs.pdf", dpi=600, bbox_inches="tight")
 
         if do_show:
             plt.show()
@@ -946,7 +949,7 @@ class ICSDSimulator:
 
 
 if __name__ == "__main__":
-    if False:  # Plot the space group distribution
+    if True:  # Plot the space group distribution
         # make print statement always flush
         print = functools.partial(print, flush=True)
 
@@ -980,9 +983,10 @@ if __name__ == "__main__":
 
         order_of_spgs, spg_list = simulator.plot_histogram_of_spgs(
             do_show=False,
-            do_sort=True,
+            do_sort=False,
             spgs_list=spg_list,  # , process_only_N=10000
             spgs_to_stripe=spgs_excluded,
+            display_count=False,
         )
 
         # plt.scatter(

@@ -37,12 +37,10 @@ def __get_pattern_optimized(
     recip_pts_sorted_1,
     recip_pts_sorted_2,
 ):
-
     peaks = {}
     two_thetas = []
 
     for i in range(0, len(recip_pts_sorted_0)):
-
         hkl = recip_pts_sorted_0[i]
         g_hkl = recip_pts_sorted_1[i]
         ind = recip_pts_sorted_2[i]
@@ -50,7 +48,6 @@ def __get_pattern_optimized(
         # Force miller indices to be integers.
         hkl = [round(i) for i in hkl]
         if g_hkl != 0:
-
             # Bragg condition
             theta = asin(wavelength * g_hkl / 2)
 
@@ -328,7 +325,6 @@ def get_pattern(structure, wavelength, two_theta_range=(0, 90)):
         # Force miller indices to be integers.
         hkl = [int(round(i)) for i in hkl]
         if g_hkl != 0:
-
             d_hkl = 1 / g_hkl
 
             # Bragg condition
