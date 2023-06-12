@@ -272,6 +272,7 @@ def randomize(
     randomize_coordinates=True,
     randomize_lattice=False,
     lattice_paras_density_per_lattice_type=None,
+    denseness_factors_conditional_sampler_seeds_per_spg=None,
 ):
     """This function can be used to randomize parts of a given (ICSD) crystal.
     If randomize_coordinates is True, then the coordinates are replaced with uniformly
@@ -284,7 +285,9 @@ def randomize(
         randomize_lattice (bool, optional): Whether or not to randomize the lattice parameters. Defaults to False.
         lattice_paras_density_per_lattice_type (dict of scipy.stats.kde.gaussian_kde|None): Dictionary yielding the KDE for each lattice type.
             If randomize_lattice is False, this is not used and can be None.
-
+        denseness_factors_conditional_sampler_seeds_per_spg (dict of tuple, optional): dictionary containing tuple for each spg:
+            (conditional probability density of denseness factor conditioned on sum of atomic volumes of type statsmodels.api.nonparametric.KDEMultivariateConditional,
+            minimum denseness factor, maximum denseness factor). Defaults to None.
     Returns:
         tuple: (list of randomized crystals, list of reference crystals, spg as output by pyxtal)
             The reference crystals are rebuilt using the pyxtal object, yielding essentially the same crystals as in `crystals`.
@@ -300,9 +303,53 @@ def randomize(
 
         try:
             pyxtal_object.from_seed(crystal)
+
+            # Determine the atomic volume V_atomic of the structure
+            volume = 0
+            for site in pyxtal_object.atom_sites:
+                specie_str = str(site.specie)
+                r = (
+                    Element(specie_str).covalent_radius + Element(specie_str).vdw_radius
+                ) / 2
+                volume += site.wp.multiplicity * 4 / 3 * np.pi * r**3
+
         except Exception as ex:
             print(ex)
 
+            labels.append(None)
+            reference_crystals.append(None)
+            randomized_crystals.append(None)
+
+            continue
+
+        max_sum_cov_volumes = denseness_factors_conditional_sampler_seeds_per_spg[
+            pyxtal_object.group.number
+        ][3]
+
+        if volume > max_sum_cov_volumes:
+            labels.append(None)
+            reference_crystals.append(None)
+            randomized_crystals.append(None)
+
+            continue
+
+        factor = sample_denseness_factor(
+            volume,
+            denseness_factors_conditional_sampler_seeds_per_spg[
+                pyxtal_object.group.number
+            ],
+        )
+
+        if factor is None:  # rejection sampler didn't converge
+            labels.append(None)
+            reference_crystals.append(None)
+            randomized_crystals.append(None)
+
+            continue
+
+        volume *= factor
+
+        if volume > 7000:
             labels.append(None)
             reference_crystals.append(None)
             randomized_crystals.append(None)
@@ -315,13 +362,11 @@ def randomize(
         reference_crystals.append(reference_crystal)
 
         if randomize_lattice:  # regenerate the lattice
-            pyxtal_object.lattice = Lattice(
-                pyxtal_object.group.lattice_type, pyxtal_object.lattice.volume
-            )
+            pyxtal_object.lattice = Lattice(pyxtal_object.group.lattice_type, volume)
 
             if lattice_paras_density_per_lattice_type is not None:
                 paras = sample_lattice_paras(
-                    pyxtal_object.lattice.volume,
+                    volume,
                     pyxtal_object.group.lattice_type,
                     lattice_paras_density_per_lattice_type,
                 )

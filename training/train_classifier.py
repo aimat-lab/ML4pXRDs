@@ -39,11 +39,11 @@ import math
 #######################################################################################################################
 ##### Configuration of the training script
 
-tag = "ResNet-101_synthetic_crystals"
+tag = "ResNet-101_randomized_+_statistics_dataset_+_analysis"
 description = ""  # description of current run
 
 run_analysis_after_training = (
-    True  # run analysis script "compare_random_distribution.py" after training
+    False  # run analysis script "compare_random_distribution.py" after training
 )
 analysis_per_spg = False  # run the analysis script separately for each spg (and once for all spgs together)
 
@@ -61,7 +61,7 @@ max_NO_samples_to_test_on = 10000
 # The following setting only applies for training on synthetic crystals. When
 # training on ICSD crystals directly, the whole dataset is used for each epoch.
 batches_per_epoch = 150 * 6
-NO_epochs = 2000
+NO_epochs = 0
 start_epoch = 0
 
 # How many structures to generate per spg. Only applies for training using synthetic crystals.
@@ -88,7 +88,7 @@ do_symmetry_checks = True
 # dataset. This setting cannot be used together with
 # `use_icsd_structures_directly`, since here the statistics dataset is already
 # used for training.
-use_statistics_dataset_as_validation = False
+use_statistics_dataset_as_validation = True
 
 # The following setting can be used to analyze the difference in accuracy
 # between training (using synthetic crystals) and patterns simulated from the
@@ -99,8 +99,8 @@ use_statistics_dataset_as_validation = False
 # crystals). In the second one, the lattice parameters are replaced (lattice
 # parameters are sampled using the KDE as described in the paper). In the third
 # one, both coordinates and the lattice parameters are replaced / resampled.
-generate_randomized_validation_datasets = False
-generate_randomized_statistics_datasets = False
+generate_randomized_validation_datasets = True
+generate_randomized_statistics_datasets = True
 randomization_max_samples = 22500
 
 # This only applies to the models that support dropout, especially those
@@ -150,7 +150,7 @@ uniformly_distributed = False
 # test performance.
 shuffle_test_match_train_match = False
 
-use_pretrained_model = False  # Make it possible to resume from a previous training run
+use_pretrained_model = True  # Make it possible to resume from a previous training run
 pretrained_model_path = (
     "/home/ws/ez5583/ML4pXRDs/training/classifier_spgs/07-01-2023_18-31-34/final"
 )
@@ -487,6 +487,7 @@ def prepare_randomized_dataset(
         randomize_coordinates=randomize_coordinates,
         randomize_lattice=randomize_lattice,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+        denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
     )
     # We also get reference crystals, where nothing has been randomized.
     # They differ slightly from the input crystals, because partial occupancies have been ignored.
@@ -525,9 +526,13 @@ def prepare_randomized_dataset(
         f"{before - len(labels)} of {before} excluded (not in spgs)\nwhen preparing randomized dataset {output_filename}"
     )
 
+    before = len(labels)
     randomized_crystals = [item for item in randomized_crystals if item is not None]
     reference_crystals = [item for item in reference_crystals if item is not None]
     labels = [item for item in labels if item is not None]
+    print(
+        f"{before - len(labels)} of {before} excluded (None)\nwhen preparing randomized dataset {output_filename}"
+    )
 
     # Simulate patterns on ray cluster:
     scheduler_fn = lambda crystal: get_xy_pattern_wrapper.remote(crystal)
