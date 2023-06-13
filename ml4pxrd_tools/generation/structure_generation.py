@@ -273,6 +273,7 @@ def randomize(
     randomize_lattice=False,
     lattice_paras_density_per_lattice_type=None,
     denseness_factors_conditional_sampler_seeds_per_spg=None,
+    spgs=None,
 ):
     """This function can be used to randomize parts of a given (ICSD) crystal.
     If randomize_coordinates is True, then the coordinates are replaced with uniformly
@@ -288,6 +289,7 @@ def randomize(
         denseness_factors_conditional_sampler_seeds_per_spg (dict of tuple, optional): dictionary containing tuple for each spg:
             (conditional probability density of denseness factor conditioned on sum of atomic volumes of type statsmodels.api.nonparametric.KDEMultivariateConditional,
             minimum denseness factor, maximum denseness factor). Defaults to None.
+        spgs (list of int, optional): List of space group numbers to operate on. Defaults to None.
     Returns:
         tuple: (list of randomized crystals, list of reference crystals, spg as output by pyxtal)
             The reference crystals are rebuilt using the pyxtal object, yielding essentially the same crystals as in `crystals`.
@@ -303,6 +305,13 @@ def randomize(
 
         try:
             pyxtal_object.from_seed(crystal)
+
+            if pyxtal_object.group.number not in spgs:
+                labels.append(None)
+                reference_crystals.append(None)
+                randomized_crystals.append(None)
+
+                continue
 
             # Determine the atomic volume V_atomic of the structure
             volume = 0

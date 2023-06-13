@@ -488,6 +488,7 @@ def prepare_randomized_dataset(
         randomize_lattice=randomize_lattice,
         lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
         denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+        spgs=spgs,
     )
     # We also get reference crystals, where nothing has been randomized.
     # They differ slightly from the input crystals, because partial occupancies have been ignored.
@@ -512,19 +513,6 @@ def prepare_randomized_dataset(
         print(
             f"{errors_counter} of {len(labels)} mismatched (different tolerances)\nwhen preparing randomized dataset {output_filename}"
         )
-
-    before = len(labels)
-    for i in reversed(range(len(labels))):
-        label = labels[i]
-
-        if label not in spgs:
-            del labels[i]
-            del randomized_crystals[i]
-            del reference_crystals[i]
-
-    print(
-        f"{before - len(labels)} of {before} excluded (not in spgs)\nwhen preparing randomized dataset {output_filename}"
-    )
 
     before = len(labels)
     randomized_crystals = [item for item in randomized_crystals if item is not None]
