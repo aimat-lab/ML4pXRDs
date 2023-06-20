@@ -14,6 +14,8 @@ import random
 from pyxtal.symmetry import Group
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from ml4pxrd_tools.manage_dataset import load_dataset_info
+import time
+import yappi
 
 
 def rejection_sampler(p, xbounds, pmax):
@@ -808,13 +810,19 @@ if __name__ == "__main__":
         probability_per_spg,
     ) = load_dataset_info(load_public_statistics_only=True)
 
-    structures = generate_structures(
-        125,
-        N=1,
-        probability_per_spg_per_element=probability_per_spg_per_element,
-        probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
-        NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
-        NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
-        denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
-        lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
-    )
+    yappi.start()
+
+    for i in range(0, 100):
+        structures = generate_structures(
+            125,
+            N=1,
+            probability_per_spg_per_element=probability_per_spg_per_element,
+            probability_per_spg_per_element_per_wyckoff=probability_per_spg_per_element_per_wyckoff,
+            NO_unique_elements_prob_per_spg=NO_unique_elements_prob_per_spg,
+            NO_repetitions_prob_per_spg_per_element=NO_repetitions_prob_per_spg_per_element,
+            denseness_factors_conditional_sampler_seeds_per_spg=denseness_factors_conditional_sampler_seeds_per_spg,
+            lattice_paras_density_per_lattice_type=lattice_paras_density_per_lattice_type,
+        )
+
+    yappi.stop()
+    yappi.get_func_stats().print_all()
