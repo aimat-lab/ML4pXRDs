@@ -261,3 +261,17 @@ occupancies are used.
 
 Additionally to those metrics, after each epoch, the current learning rate and the current
 size of the `ray` queue object (indicating if enough workers are used) are logged.
+
+## Inference
+
+You can either use one of the models provided in our [latest release](https://github.com/aimat-lab/ML4pXRDs/releases/tag/v1.0)
+or your own trained models to run inference on new diffractograms.
+
+```python
+import tensorflow.keras as keras
+
+model = keras.models.load_model("path/to/your/model")
+
+predictions = model.predict(your_diffractograms, batch_size=145)
+
+```
