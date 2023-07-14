@@ -613,14 +613,38 @@ if __name__ == "__main__":
         probability_per_spg=probability_per_spg,
     )
 
+    # For the table of contents figure
+    if True:
+        plt.rc("ytick", labelsize=20)
+        plt.rc("xtick", labelsize=20)
+        plt.rc("axes", labelsize=20)
+
     # Plot the synthetically generated patterns
     for i, pattern in enumerate(patterns):
         plt.figure(
             figsize=(
-                matplotlib_defaults.pub_width * 0.7,
+                # matplotlib_defaults.pub_width * 0.7,
+                matplotlib_defaults.pub_width * 0.6,  # For the table of contents figure
                 matplotlib_defaults.pub_width * 0.5,
             )
         )
+
+        # For the table of contents figure
+        plt.tick_params(
+            axis="x",  # changes apply to the x-axis
+            which="both",  # both major and minor ticks are affected
+            bottom=False,  # ticks along the bottom edge are off
+            top=False,  # ticks along the top edge are off
+            labelbottom=False,
+        )  # labels along the bottom edge are off
+        plt.tick_params(
+            axis="y",  # changes apply to the x-axis
+            which="both",  # both major and minor ticks are affected
+            left=False,  # ticks along the bottom edge are off
+            right=False,  # ticks along the top edge are off
+            labelleft=False,
+        )  # labels along the bottom edge are off
+
         plt.plot(np.linspace(5, 90, 8501), pattern)
 
         plt.xlabel(r"$2\theta$")

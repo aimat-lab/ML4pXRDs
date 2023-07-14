@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib
 import random
+from matplotlib import ticker
+from matplotlib.ticker import ScalarFormatter
+
 
 figure_double_width_pub = ml4pxrd_tools.matplotlib_defaults.pub_width
 
@@ -109,7 +112,10 @@ if __name__ == "__main__":
             figure_double_width_pub * 0.5,
         )
     )
-    plt.xlim([-500, 2000])
+    # plt.xlim([-500, 2000])
+    plt.xlim([1, 2000])
+
+    plt.ticklabel_format(style="plain")
 
     # Main training curve plot
     plot_training_curve(
@@ -127,8 +133,8 @@ if __name__ == "__main__":
         # ["solid", "--", (0, (1, 10))],
         ["solid", "solid", "solid"],
         start_epoch=5,
-        x_log=False,
-        y_log=False,
+        x_log=True,
+        y_log=True,
     )
 
     plot_training_curve(
@@ -155,8 +161,8 @@ if __name__ == "__main__":
         # ["solid", "--", (0, (1, 10))],
         ["solid", "solid", "solid"],
         start_epoch=5,
-        x_log=False,
-        y_log=False,
+        x_log=True,
+        y_log=True,
     )
 
     plot_training_curve(
@@ -183,11 +189,22 @@ if __name__ == "__main__":
         # ["solid", "--", (0, (1, 10))],
         ["solid", "solid", "solid"],
         start_epoch=5,
-        x_log=False,
-        y_log=False,
+        x_log=True,
+        y_log=True,
     )
 
     plt.gca().get_legend().remove()
+
+    formatter = ticker.FuncFormatter(lambda x, pos: "{:.1f}".format(x))
+    plt.gca().yaxis.set_major_formatter(formatter)
+    plt.gca().yaxis.set_minor_formatter(formatter)
+    # ax = plt.gca()
+    # ax.yaxis.set_major_formatter(ScalarFormatter())
+
+    secax = plt.gca().secondary_xaxis(
+        "top", functions=(lambda x: 130500 * x, lambda x: x / 130500)
+    )
+    secax.set_xlabel("Number of unique diffractograms")
 
     patches = [
         mpatches.Patch(color="b", label="ResNet-101"),
@@ -200,9 +217,8 @@ if __name__ == "__main__":
     plt.savefig("training_curve_main.pdf", bbox_inches="tight")
     plt.show()
 
-    # Plots of 1-acc.
-
     """
+    # Plots of 1-acc.
     plot_training_curve(
         [
             "training_curves/resnet_10_training.csv",
